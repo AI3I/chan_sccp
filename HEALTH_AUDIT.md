@@ -48,20 +48,28 @@ configured Asterisk 22 tree unless noted:
   Stylesheet failed" / "Stylesheet could not be found" logged with a
   `stylesheetFilename` variable sitting right there, unused. Fixed to name the
   actual file and the handler URI.
+- **Race condition, the most serious item in the whole audit** —
+  `firewall_holepunch` in `sccp_channel.c` was read/written from two different
+  threads (SCCP device-indication thread vs. Asterisk's own RTP-read thread, one
+  call site in every `pbx_impl/ast11x.c`) with no lock at all. The code had its
+  own unresolved comment admitting this (`sccp_indicate.c:283`: *"Do we need to
+  lock the channel here... or is locking done there already iirc?"*). Fixed by
+  wrapping `startHolePunch()`/`finishHolePunch()`/`holePunchPending()` with the
+  channel's own existing `sccp_channel_lock`/`unlock` — confirmed safe to hold
+  across the media-transmission calls since `AST_MUTEX_KIND` is
+  `PTHREAD_MUTEX_RECURSIVE` on this build (checked `lock.h` directly, didn't
+  assume).
+- **Build-breaking argument mismatch**: `ast112.c` and `ast114.c` still called
+  `sccp_channel_finishHolePunch(c)` with one argument against the current
+  two-argument prototype; every other version file (`ast111`/`113`/`115-119`)
+  already called it correctly. Fixed to match. Could not compile-test these two
+  specific files directly (no Asterisk 12/14 headers installed here), but the
+  change is a one-argument mechanical fix matching a pattern proven in 8 other
+  files.
 
 ## Open — correctness bugs (from the `/code-review high` pass, not yet fixed)
 
-- **Race condition, confirmed real**: `firewall_holepunch` in `sccp_channel.c:793`
-  is read/written from two different threads (SCCP device thread vs. Asterisk
-  RTP/channel thread calling `sccp_channel_finishHolePunch()`) with no lock at
-  all. The code has its own unresolved comment admitting this
-  (`sccp_indicate.c:283`: *"Do we need to lock the channel here... or is locking
-  done there already iirc?"*). Needs a real lock (or atomic) around the flag.
-- **Build-breaking argument mismatch**: `ast112.c:465` and `ast114.c:943` call
-  `sccp_channel_finishHolePunch(c)` with one argument; the current prototype
-  (`sccp_channel.h:148`, added by the holepunch refactor) takes two
-  (`constChannelPtr channel, boolean_t keepChannelOpen`). Won't compile clean
-  against Asterisk 12/14 as-is.
+None remaining from that pass — both were fixed above.
 
 ## Open — Asterisk version compatibility (the big one)
 

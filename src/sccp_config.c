@@ -1634,7 +1634,7 @@ sccp_value_changed_t sccp_config_parse_codec_preferences(void * const dest, cons
 	sccp_get_codecs_bytype(new_codecs, video_prefs, SKINNY_CODEC_TYPE_VIDEO);
 #endif
 	if (errors) {
-		pbx_log(LOG_NOTICE, "SCCP: (parse_codec preference) Error occured during parsing of the disallowed / allowed codecs\n");
+		pbx_log(LOG_NOTICE, "SCCP: (parse_codec preference) Error occurred during parsing of the disallowed / allowed codecs\n");
 		changed = SCCP_CONFIG_CHANGE_INVALIDVALUE;
 	} else {
 		if (memcmp(prefs->audio, audio_prefs, sizeof prefs->audio) != 0) {
@@ -1705,7 +1705,7 @@ sccp_value_changed_t sccp_config_parse_deny_permit(void * const dest, const size
 				ha                       = NULL;                                        // passed on to dest, will not be freed at exit
 			}
 		} else {
-			pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+			pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 			changed = SCCP_CONFIG_CHANGE_ERROR;
 		}
 	} else {
@@ -1757,7 +1757,7 @@ sccp_value_changed_t sccp_config_parse_permithosts(void * const dest, const size
 		}
 		for (v = vroot; v; v = v->next) {
 			if (!(permithost = (sccp_hostname_t *)sccp_calloc(1, sizeof(sccp_hostname_t)))) {
-				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 				return SCCP_CONFIG_CHANGE_ERROR;
 			}
 			sccp_copy_string(permithost->name, v->value, sizeof(permithost->name));
@@ -1842,7 +1842,7 @@ sccp_value_changed_t sccp_config_parse_addons(void * const dest, const size_t si
 				if ((addon_type = addonstr2enum(v->value)) && addon_type != SKINNY_DEVICETYPE_SENTINEL) {
 					sccp_log_and((DEBUGCAT_CONFIG + DEBUGCAT_HIGH))("add new addon: %s(%d)\n", skinny_devicetype2str(addon_type), addon_type);
 					if (!(addon = (sccp_addon_t *)sccp_calloc(1, sizeof(sccp_addon_t)))) {
-						pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+						pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 						return SCCP_CONFIG_CHANGE_ERROR;
 					}
 					addon->type = addon_type;
@@ -1909,7 +1909,7 @@ sccp_value_changed_t sccp_config_parse_mailbox(void * const dest, const size_t s
 			if (!sccp_strlen_zero(v->value)) {
 				sccp_log_and((DEBUGCAT_CONFIG + DEBUGCAT_HIGH))(VERBOSE_PREFIX_3 "add new mailbox: '%s'\n", v->value);
 				if (!(mailbox = (sccp_mailbox_t *)sccp_calloc(1, sizeof(sccp_mailbox_t)))) {
-					pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+					pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 					return SCCP_CONFIG_CHANGE_ERROR;
 				}
 				snprintf(mailbox->uniqueid, sizeof(mailbox->uniqueid), "%s%s", v->value, !strstr(v->value, "@") ? "@default" : "");
@@ -1950,14 +1950,14 @@ sccp_value_changed_t sccp_config_parse_variables(void * const dest, const size_t
 			sccp_log_and((DEBUGCAT_CONFIG + DEBUGCAT_HIGH))("add new variable: %s=%s\n", var_name, var_value);
 			if (!variable) {
 				if (!(variableList = pbx_variable_new(var_name, var_value, ""))) {
-					pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+					pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 					variableList = NULL;
 					break;
 				}
 				variable = variableList;
 			} else {
 				if (!(variable->next = pbx_variable_new(var_name, var_value, ""))) {
-					pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+					pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 					pbx_variables_destroy(variableList);
 					variableList = NULL;
 					break;
@@ -2281,7 +2281,7 @@ sccp_value_changed_t sccp_config_addButton(sccp_buttonconfig_list_t * buttonconf
 
 	SCCP_LIST_LOCK(buttonconfigList);
 	if (!(config = (sccp_buttonconfig_t *)sccp_calloc(1, sizeof(sccp_buttonconfig_t)))) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return SCCP_CONFIG_CHANGE_ERROR;
 	}
 	config->index = buttonindex;
@@ -2303,7 +2303,7 @@ sccp_value_changed_t sccp_config_addButton(sccp_buttonconfig_list_t * buttonconf
 				char                     extension[SCCP_MAX_EXTENSION];
 				sccp_subscription_id_t * subscriptionId = (sccp_subscription_id_t *)sccp_calloc(1, sizeof(sccp_subscription_id_t));
 				if (!subscriptionId) {
-					pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+					pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 					return SCCP_CONFIG_CHANGE_INVALIDVALUE;
 				}
 				if (sccp_parseComposedId(name, 80, subscriptionId, extension)) {

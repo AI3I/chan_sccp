@@ -567,7 +567,7 @@ static void sccp_sk_select(const sccp_softkeyMap_cb_t * const softkeyMap_cb, con
 				SCCP_LIST_UNLOCK(&device->selectedChannels);
 				status = 1;
 			} else {
-				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 				return;
 			}	
 		}
@@ -923,7 +923,7 @@ static void sccp_sk_uriaction(const sccp_softkeyMap_cb_t * const softkeyMap_cb, 
 	/* build parameters */
 	struct ast_str *paramStr = pbx_str_alloca(DEFAULT_PBX_STR_BUFFERSIZE);
 	if (!paramStr) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	ast_str_append(&paramStr, DEFAULT_PBX_STR_BUFFERSIZE, "name=%s", d->id);
@@ -948,7 +948,7 @@ static void sccp_sk_uriaction(const sccp_softkeyMap_cb_t * const softkeyMap_cb, 
 	/* build xmlStr */
 	struct ast_str *xmlStr = pbx_str_alloca(DEFAULT_PBX_STR_BUFFERSIZE);
 	if (!xmlStr) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 
@@ -1114,7 +1114,7 @@ sccp_softkeyMap_cb_t __attribute__ ((malloc)) * sccp_softkeyMap_copyStaticallyMa
 {
 	sccp_softkeyMap_cb_t *newSoftKeyMap = (sccp_softkeyMap_cb_t *) sccp_malloc((sizeof *newSoftKeyMap) * ARRAY_LEN(softkeyCbMap));
 	if (!newSoftKeyMap) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return NULL;
 	}
 	memcpy(newSoftKeyMap, softkeyCbMap, ARRAY_LEN(softkeyCbMap) * sizeof(sccp_softkeyMap_cb_t));

@@ -1,5 +1,5 @@
 /*!
- * \file	sccp_session.c
+ * \file	sccp_transport_tls.c
  * \brief       SCCP Session Class
  * \author      Sergio Chersovani <mlists [at] c-net.it>
  * \note	Reworked, but based on chan_sccp code.
@@ -167,7 +167,7 @@ static sccp_socket_connection_t * tls_accept(sccp_socket_connection_t * in_sc, s
 		SSL_set_fd(ssl, newfd);
 		ssl_err = SSL_accept(ssl);
 		if (ssl_err <= 0) {
-			pbx_log(LOG_ERROR, "SSL Error occured: %lu '%s'.\n", ssl_err, ERR_reason_error_string(ssl_err));
+			pbx_log(LOG_ERROR, "SSL Error occurred: %lu '%s'.\n", ssl_err, ERR_reason_error_string(ssl_err));
 			break;
 		}
 		out_sc->fd  = newfd;

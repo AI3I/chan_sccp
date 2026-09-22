@@ -42,7 +42,7 @@ struct sccp_line {
 	char secondary_dialtone_digits[SCCP_MAX_SECONDARY_DIALTONE_DIGITS];					/*!< secondary dialtone digits */
 
 	char *trnsfvm;												/*!< transfer to voicemail softkey. Basically a call forward */
-	sccp_group_t callgroup;											/*!< callgroups assigned (seperated by commas) to this lines */
+	sccp_group_t callgroup;											/*!< callgroups assigned (separated by commas) to this lines */
 #ifdef CS_SCCP_PICKUP
 	sccp_group_t pickupgroup;										/*!< pickupgroup assigned to this line */
 

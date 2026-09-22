@@ -133,7 +133,7 @@ void sccp_event_module_start(void)
 		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "Starting event system\n");
 		for (_idx = 0; _idx < NUMBER_OF_EVENT_TYPES; _idx++) {
 			if (SCCP_VECTOR_RW_INIT(&event_subscriptions[_idx].subscribers, SCCP_EVENT_EXPECTED_SUBSCRIPTIONS) != 0) {
-				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 				return;
 			}
 		}
@@ -181,7 +181,7 @@ boolean_t sccp_event_subscribe(int eventType /*sccp_event_type_t*/, sccp_event_c
 			if (SCCP_VECTOR_APPEND(subscribers, subscriber) == 0) {
 				res = TRUE;
 			} else {
-				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 			}
 			SCCP_VECTOR_RW_UNLOCK(subscribers);
 		}

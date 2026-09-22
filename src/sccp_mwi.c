@@ -1,5 +1,5 @@
 /*!
- * \file	sccp_featureParkingLot.c
+ * \file	sccp_mwi.c
  * \brief	SCCP ParkingLot Class
  * \author	Diederik de Groot <ddegroot [at] users.sf.net>
  * \date	2015-Sept-16
@@ -250,7 +250,7 @@ static void createSubscription(sccp_mailbox_t * mailbox, constLinePtr line)
 
 	mwi_subscription_t *subscription = (mwi_subscription_t *)sccp_calloc(sizeof *subscription,1);
 	if (!subscription) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	subscription->mailbox = mailbox;

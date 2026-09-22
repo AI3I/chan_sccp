@@ -79,7 +79,7 @@ SCCP_FILE_VERSION(__FILE__, "");
                                         <option name="conf_show_conflist"><para>Should the conference list be displayed when conference is used (boolean).</para></option>
                                         <option name="conflist_active"><para>Is the conference list currently actively shown (boolean).</para></option>
                                         <option name="current_line"><para>Currently Active Line ID (integer).</para></option>
-                                        <option name="button_config"><para>Array of buttons associated with this device (comma seperated string).</para></option>
+                                        <option name="button_config"><para>Array of buttons associated with this device (comma separated string).</para></option>
                                         <option name="pending_delete"><para>Reload is active and device is going to be removed (boolean).</para></option>
                                         <option name="pending_update"><para>Reload is active and device is going to be updated (boolean).</para></option>
                                         <option name="rtpqos"><para>Aggregated Call Statistics for this device (string).</para></option>
@@ -167,9 +167,9 @@ SCCP_FILE_VERSION(__FILE__, "");
                                         <option name="oldmsgs"><para>Number of old voicemail messages (integer).</para></option>
                                         <option name="videomode"><para>Video mode (string).</para></option>
                                         <option name="num_devices"><para>Number of devices this line has been registed on (integer).</para></option>
-                                        <option name="mailboxes"><para>Returns a comma seperated list of voicemail mailboxes connected to this line (csv).</para></option>
-                                        <option name="cfwd"><para>Returns a comma seperated list of callforward set on this line (csv).</para></option>
-                                        <option name="devices"><para>Returns a comma seperated list of devicesId's that are connected to this line(csv).</para></option>
+                                        <option name="mailboxes"><para>Returns a comma separated list of voicemail mailboxes connected to this line (csv).</para></option>
+                                        <option name="cfwd"><para>Returns a comma separated list of callforward set on this line (csv).</para></option>
+                                        <option name="devices"><para>Returns a comma separated list of devicesId's that are connected to this line(csv).</para></option>
                                         <option name="chanvar[setvar]" hasparams="true">
                                                 <argument name="setvar" required="true">
                                                         <para>Name of the <replaceable>setvar</replaceable>, associated with this device, to be queried (string).</para>

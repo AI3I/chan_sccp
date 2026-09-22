@@ -163,7 +163,7 @@ void sccp_line_addToGlobals(constLinePtr line)
  * \param line SCCP line pointer
  * 
  * \note needs to be called with a retained line
- * \note removes the retained line withing the list (refcount - 1)
+ * \note removes the retained line within the list (refcount - 1)
  */
 void sccp_line_removeFromGlobals(sccp_line_t * line)
 {
@@ -190,7 +190,7 @@ void *sccp_create_hotline(void)
 
 	GLOB(hotline) = (sccp_hotline_t *) sccp_malloc(sizeof(sccp_hotline_t));
 	if (!GLOB(hotline)) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return NULL;
 	}
 	memset(GLOB(hotline), 0, sizeof(sccp_hotline_t));

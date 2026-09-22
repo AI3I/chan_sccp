@@ -75,7 +75,7 @@ sccp_threadpool_t *sccp_threadpool_init(int threadsN)
 	}
 	/* Make new thread pool */
 	if (!(tp_p = (sccp_threadpool_t *) sccp_calloc(sizeof *tp_p, 1))) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return NULL;
 	}
 
@@ -112,7 +112,7 @@ void sccp_threadpool_grow_locked(sccp_threadpool_t * tp_p, int amount)
 	if (tp_p && !tp_p->sccp_threadpool_shuttingdown) {
 		for (t = 0; t < amount; t++) {
 			if (!(tp_thread = (sccp_threadpool_thread_t *) sccp_calloc(sizeof *tp_thread, 1))) {
-                		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+                		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 				return;
 			}
 			tp_thread->die = FALSE;
@@ -269,7 +269,7 @@ int sccp_threadpool_add_work(sccp_threadpool_t * tp_p, void *(*function_p) (void
 		sccp_threadpool_job_t * newJob = NULL;
 
 		if (!(newJob = (sccp_threadpool_job_t *) sccp_calloc(sizeof *newJob, 1))) {
-        		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+        		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 			exit(1);
 		}
 

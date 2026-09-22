@@ -2306,7 +2306,7 @@ void sccp_channel_addCleanupJob(channelPtr c, void *(*function_p) (void *), void
 	}
 	sccp_threadpool_job_t * newJob = NULL;
 	if (!(newJob = (sccp_threadpool_job_t *) sccp_calloc(sizeof *newJob, 1))) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		exit(1);
 	}
 

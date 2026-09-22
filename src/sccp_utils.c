@@ -1018,7 +1018,7 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 	}
 
 	if (!(ha = (struct sccp_ha *)sccp_calloc(sizeof *ha, 1))) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		if (error) {
 			*error = 1;
 		}
@@ -1758,7 +1758,7 @@ static char **__sccp_bt_get_symbols(void **addresses, size_t num_frames)
 	eachlen = (size_t *) sccp_calloc(sizeof *eachlen, num_frames);
 	strings = (char **) sccp_calloc(sizeof *strings, num_frames);
 	if (!eachlen || !strings) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		sccp_free(eachlen);
 		sccp_free(strings);
 		return NULL;
@@ -1860,7 +1860,7 @@ static char **__sccp_bt_get_symbols(void **addresses, size_t num_frames)
 
 			eachlen[stackfr] = strlen(msg) + 1;
 			if (!(tmp = (char **)sccp_realloc(strings, strings_size + eachlen[stackfr]))) {
-				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 				sccp_free(strings);
 				strings = NULL;
 				break; /* out of stack frame iteration */

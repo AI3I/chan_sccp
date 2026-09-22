@@ -1621,7 +1621,7 @@ void sccp_conference_play_music_on_hold_to_participant(constConferencePtr confer
 /*!
  * \brief Promote Participant to Moderator
  *
- * paramater moderator can be provided as NULL (cli/ami actions)
+ * parameter moderator can be provided as NULL (cli/ami actions)
  */
 void sccp_conference_promote_demote_participant(conferencePtr conference, participantPtr participant, constParticipantPtr moderator)
 {

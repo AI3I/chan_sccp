@@ -1,5 +1,5 @@
 /*!
- * \file	sccp_session.c
+ * \file	sccp_transport_tcp.c
  * \brief       SCCP Session Class
  * \author      Sergio Chersovani <mlists [at] c-net.it>
  * \note	Reworked, but based on chan_sccp code.

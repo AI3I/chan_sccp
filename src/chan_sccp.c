@@ -94,7 +94,7 @@ boolean_t sccp_prePBXLoad(void)
 	/* make globals */
 	sccp_globals = (struct sccp_global_vars *) sccp_calloc(sizeof *sccp_globals, 1);
 	if (!sccp_globals) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return FALSE;
 	}
 

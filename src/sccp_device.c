@@ -885,7 +885,7 @@ void sccp_device_addToGlobals(constDevicePtr device)
  * \return device or NULL
  *
  * \note needs to be called with a retained device
- * \note removes the retained device withing the list (refcount - 1)
+ * \note removes the retained device within the list (refcount - 1)
  */
 void sccp_device_removeFromGlobals(devicePtr device)
 {
@@ -1450,7 +1450,7 @@ void sccp_dev_set_keyset(constDevicePtr d, uint8_t lineInstance, uint32_t callid
 	}
 	REQ(msg, SelectSoftKeysMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	msg->data.SelectSoftKeysMessage.lel_lineInstance = htolel(lineInstance);
@@ -1509,7 +1509,7 @@ void sccp_dev_set_ringer(constDevicePtr d, skinny_ringtype_t ringtype, skinny_ri
 
 	REQ(msg, SetRingerMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	msg->data.SetRingerMessage.lel_ringMode = htolel(ringtype);
@@ -1537,7 +1537,7 @@ void sccp_dev_set_speaker(constDevicePtr d, uint8_t mode)
 	}
 	REQ(msg, SetSpeakerModeMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	msg->data.SetSpeakerModeMessage.lel_speakerMode = htolel(mode);
@@ -1558,7 +1558,7 @@ static void sccp_dev_setHookFlashDetect(constDevicePtr d)
 	}
 	REQ(msg, SetHookFlashDetectMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	sccp_dev_send(d, msg);
@@ -1579,7 +1579,7 @@ void sccp_dev_set_microphone(devicePtr d, uint8_t mode)
 	}
 	REQ(msg, SetMicroModeMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	msg->data.SetMicroModeMessage.lel_micMode = htolel(mode);
@@ -1606,7 +1606,7 @@ void sccp_dev_set_cplane(constDevicePtr device, uint8_t lineInstance, int status
 	}
 	REQ(msg, ActivateCallPlaneMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	if (status) {
@@ -1655,7 +1655,7 @@ void sccp_dev_starttone(constDevicePtr d, skinny_tone_t tone, uint8_t lineInstan
 
 	REQ(msg, StartToneMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	msg->data.StartToneMessage.lel_tone = htolel(tone);
@@ -1682,7 +1682,7 @@ void sccp_dev_stoptone(constDevicePtr d, uint8_t lineInstance, uint32_t callid)
 	}
 	REQ(msg, StopToneMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	msg->data.StopToneMessage.lel_lineInstance = htolel(lineInstance);
@@ -1770,7 +1770,7 @@ void sccp_dev_clearprompt(constDevicePtr d, const uint8_t lineInstance, const ui
 	}
 	REQ(msg, ClearPromptStatusMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	msg->data.ClearPromptStatusMessage.lel_callReference = htolel(callid);
@@ -1852,7 +1852,7 @@ void sccp_dev_display_debug(constDevicePtr d, const char *msgstr, const char *fi
 	}
 	REQ(msg, DisplayTextMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	sccp_copy_string(msg->data.DisplayTextMessage.displayMessage, msgstr, sizeof(msg->data.DisplayTextMessage.displayMessage));
@@ -1923,7 +1923,7 @@ void sccp_dev_cleardisplayprinotify(constDevicePtr d, const uint8_t priority)
 	}
 	REQ(msg, ClearPriNotifyMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	msg->data.ClearPriNotifyMessage.lel_priority = htolel(priority);
@@ -2732,7 +2732,7 @@ int sccp_device_sendReset(devicePtr d, skinny_resetType_t reset_type)
 
 	REQ(msg, Reset);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return 0;
 	}
 	msg->data.Reset.lel_resetType = htolel(reset_type);
@@ -2763,7 +2763,7 @@ void sccp_device_sendcallstate(constDevicePtr d, uint8_t instance, uint32_t call
 	}
 	REQ(msg, CallStateMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	msg->data.CallStateMessage.lel_callState = htolel(state);
@@ -2779,7 +2779,7 @@ void sccp_device_sendcallstate(constDevicePtr d, uint8_t instance, uint32_t call
 /*!
  * \brief Send Call History Disposition
  *
- * \note Only works on a limitted set of devices and firmware revisions (more research needed).
+ * \note Only works on a limited set of devices and firmware revisions (more research needed).
  */
 void sccp_device_sendCallHistoryDisposition(constDevicePtr d, uint8_t lineInstance, uint32_t callid, skinny_callHistoryDisposition_t disposition)
 {
@@ -2789,7 +2789,7 @@ void sccp_device_sendCallHistoryDisposition(constDevicePtr d, uint8_t lineInstan
 	}
 	REQ(msg, CallHistoryDispositionMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	msg->data.CallHistoryDispositionMessage.lel_disposition = htolel(disposition);
@@ -2867,7 +2867,7 @@ void sccp_dev_keypadbutton(devicePtr d, char digit, uint8_t line, uint32_t calli
 
 	REQ(msg, KeypadButtonMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	msg->data.KeypadButtonMessage.lel_kpButton = htolel(digit);
@@ -3378,7 +3378,7 @@ void sccp_device_setLamp(constDevicePtr device, skinny_stimulus_t stimulus, uint
 
 	REQ(msg, SetLampMessage);
 	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return;
 	}
 	msg->data.SetLampMessage.lel_stimulus         = htolel(stimulus);

@@ -79,7 +79,7 @@ sccp_servercontext_t * sccp_servercontext_create(struct sockaddr_storage * binda
 {
 	sccp_servercontext_t * context = NULL;
 	if(!(context = (sccp_servercontext_t *)sccp_calloc(sizeof *context, 1))) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return NULL;
 	}
 	context->type = type;
@@ -905,7 +905,7 @@ static boolean_t sccp_session_new_socket_allowed(struct sockaddr_storage *sin)
 			sccp_print_ha(buf, DEFAULT_PBX_STR_BUFFERSIZE, GLOB(ha));
 			pbx_log(LOG_NOTICE, "SCCP: Rejecting Connection: Ip-address '%s' denied. Check general deny/permit settings (%s).\n", addrStr, pbx_str_buffer(buf));
 		} else {
-			pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+			pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		}
 		//sccp_session_reject(s, "Device ip not authorized");
 		return FALSE;
@@ -919,7 +919,7 @@ static sccp_session_t * sccp_create_session(sccp_servercontext_t * context, sccp
 	sccp_session_t * s = NULL;
 
 	if (!(s = (sccp_session_t *)sccp_calloc(sizeof *s, 1))) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return NULL;
 	}
 

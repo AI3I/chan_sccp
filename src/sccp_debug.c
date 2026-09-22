@@ -118,7 +118,7 @@ int32_t sccp_parse_debugline(char * arguments[], int startat, int argc, int32_t 
 /*!
  * \brief Write the current debug value to debug categories
  * \param debugvalue DebugValue as uint32_t
- * \return string containing list of categories comma seperated (you need to free it)
+ * \return string containing list of categories comma separated (you need to free it)
  */
 char * sccp_get_debugcategories(int32_t debugvalue)
 {
@@ -133,7 +133,7 @@ char * sccp_get_debugcategories(int32_t debugvalue)
 			new_size += strlen(sccp_debug_categories[i].key) + 1 /*sizeof(sep) */ + 1;
 			tmpres = (char *)sccp_realloc(res, new_size);
 			if (tmpres == NULL) {
-				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 				sccp_free(res);
 				return NULL;
 			}

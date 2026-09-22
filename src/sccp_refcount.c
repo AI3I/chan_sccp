@@ -462,7 +462,7 @@ static gcc_inline RefCountedObject * sccp_refcount_find_obj(const void * const p
 	if (do_expect(obj && obj->data == ptr && SCCP_LIVE_MARKER == obj->alive)) {
 		return obj;
 	} else {
-		/* Replace seperate log lines with one line of debug */
+		/* Replace separate log lines with one line of debug */
 		if (!obj) {
 			sccp_log((DEBUGCAT_REFCOUNT)) (VERBOSE_PREFIX_1 "SCCP: (sccp_refcount_find_obj) failed to find obj using container_of for %p\n", ptr);
 		}

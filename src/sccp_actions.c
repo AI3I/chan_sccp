@@ -4616,7 +4616,7 @@ void handle_extension_devicecaps(constSessionPtr s, devicePtr d, constMessagePtr
 		pbx_log(LOG_NOTICE, "%s: sccp.conf device section is missing addon entry for extension module %d. Please add one.", d->id, instance);
 		sccp_addon_t *addon = (sccp_addon_t *)sccp_calloc(1, sizeof(sccp_addon_t));
 		if (!addon) {
-			pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP");
+			pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 			return;
 		}
 		addon->type = SKINNY_DEVICETYPE_UNDEFINED;

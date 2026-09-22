@@ -133,12 +133,30 @@ None remaining from that pass — both were fixed above.
   content and correct grammar, not boilerplate or copy-paste slop.** Apply this
   standard to every file touched going forward, not just `sccp_webservice.c`.
 
-## Open — tooling itself is broken
+## Fixed — the formatter tooling itself (item 4)
 
-- `.clang-format` has a duplicated `BreakBeforeBraces` key (line 29: `Custom`,
-  line 51: `Linux`) — invalid YAML, clang-format refuses to load it at all. Fixed
-  in a scratch test copy by deleting the stray `Linux` duplicate, but the
-  resulting reformat of `sccp_webservice.c` was still badly broken (ratcheting,
-  inconsistent indentation) even after that fix — there's a deeper problem in the
-  config beyond the one duplicate key. **Do not run a tree-wide `clang-format -i`
-  until this is properly debugged** — it would make things worse, not better.
+`.clang-format` had two independent real bugs, not one:
+
+1. Duplicate `BreakBeforeBraces` key (`Custom` at line 29, a stray `Linux` at
+   line 51) — invalid YAML, clang-format refused to load the file at all.
+   Removed the duplicate; `Custom` was clearly intended (it's immediately
+   followed by a 20-line `BraceWrapping` block that only applies under
+   `Custom`).
+2. Even after #1, a test reformat of `sccp_webservice.c` was still badly
+   broken — not just differently-styled, genuinely wrong (closing braces not
+   aligned with their own opening statement). Root-caused to
+   `BraceWrapping.IndentBraces: true`, a Whitesmiths-style setting that adds a
+   *compounding* extra indent at every brace nesting level — inconsistent with
+   the WebKit-derived style the rest of the config implements. Flipping it to
+   `false` fixed it: that file's diff dropped from 915 lines of garbage to 44
+   lines of exactly the sane cleanup you'd want.
+
+Verified against 3 files of increasing size (`sccp_webservice.c`,
+`sccp_channel.c`, `sccp_cli.c`) — all produce sane, reviewable diffs now
+(comment alignment, `//` spacing, declaration alignment — real accumulated
+drift, correctly cleaned up, no more indentation corruption).
+
+**Not done as part of this fix**: an actual tree-wide `clang-format -i` sweep.
+The config is now trustworthy, but running it across every file is a separate,
+much bigger decision (touches every file, one huge commit) — do that
+deliberately, not as a side effect of fixing the tool.

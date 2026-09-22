@@ -112,20 +112,60 @@ before it.
 
 Asterisk stopped maintaining a single `UPGRADE.txt` after the 16 branch — later
 branches (18/20/21/22/23) have no such file at the repo root or under `doc/`.
-Whatever replaced it wasn't found in the time spent tonight. **Next session:**
-either check Asterisk's GitHub Releases pages directly (`gh release view
-<tag>`) for per-version release notes, or diff `include/asterisk/*.h` between
-tagged branches directly for the specific APIs `ast116.c` actually calls — that
-second approach is more work but doesn't depend on Asterisk's documentation
-habits.
+Whatever replaced it wasn't found in the time spent tonight.
 
-### Recommendation
+### Real progress: pulled the actual headers and did the diffing directly
 
-Properly review `ast116.c` against each target version's real API surface (not
-just what happens to still compile) and commit real `ast120`/`ast121`/`ast123`/
-`ast124` implementations to `chan_sccp-modern` (ast122 already effectively
-exists via the hand-hack; formalize it the same way). Given the version count,
-this is realistically its own multi-session project, not a single sitting.
+Fetched `include/asterisk/*.h` for all 5 target versions straight from
+`github.com/asterisk/asterisk` (branches `20`/`21`/`22`/`23`/`24` all exist;
+kept locally at `~/GitHub/asterisk-headers/<version>/include/asterisk/`, ~3.4MB
+per version, **not** committed into this repo - reference material, not
+project source). This produced real, concrete findings, not just a plan:
+
+- **22, 23, and 24 need zero additional work.** `channel.h` is byte-identical
+  across all three. The only two files that differ at all between 22→23→24 are
+  `manager.h` (confirmed: the only difference is a cosmetic `AMI_VERSION`
+  string bump, `"11.0.0"` → `"12.0.0"` — the actual macro `ast116.c` calls,
+  `ast_manager_register`, is unchanged) and `musiconhold.h` (confirmed:
+  `ast116.c` never references it at all). **The existing `ast122` hand-hack
+  already validly covers 22, 23, and 24 as-is** - the real work is only 20 and
+  21.
+- **20→21 and 21→22 have real churn**: 56 and 40 header files differ,
+  respectively (vs. 1-2 files for the 22→23→24 range). Confirmed the known
+  `ast_channel_macroexten`/`macrocontext` (+ `_set` variants) removal lands
+  exactly at the 20→21 boundary, matching what the existing hack already
+  stubs.
+- Tried filtering the raw diffs down to only lines mentioning symbols
+  `ast116.c` actually references (extracted all 319 `ast_*` identifiers from
+  the file, grepped the diffs against that list) - cut 2272 raw diff lines
+  down to ~40-56 candidates per version boundary. **This method has a real
+  blind spot, found the hard way**: `ast116.c` doesn't call
+  `ast_channel_macroexten()` directly even though it's confirmed to use it -
+  it goes through this codebase's own macro layer
+  (`DECLARE_PBX_CHANNEL_STRGET(macroexten)`), which only expands to the real
+  Asterisk symbol elsewhere. A handful of other candidates that grepped as
+  "zero references" (`ast_bridge_get_variable`, `ast_channel_endpoint`,
+  `ast_channel_monitor`, `ast_channel_tech_hangupcause`, the
+  `ast_app_exec_macro`/`ast_channel_*_macro` family - all of which look like
+  they're part of the same "legacy Macro() app" removal as macroexten/context)
+  could genuinely be unused, or could be hidden behind the same kind of macro
+  indirection. Grep alone can't tell the difference reliably.
+
+### Recommendation - the decisive next step
+
+The methods tried tonight (UPGRADE.txt, header diffing + symbol filtering) got
+real, useful signal but can't give full confidence given the macro-indirection
+blind spot above. **The actually decisive test**: attempt a real compile of
+`ast116.c` against Asterisk 20's real configured build (not just the header
+tree pulled tonight - need a full `./configure` run against real Asterisk 20
+source to generate `autoconfig.h` and the other build-generated headers Asterisk
+itself needs). The compiler will surface every genuine breakage directly, cutting
+through the macro-indirection ambiguity grep can't resolve. That's a bigger,
+separate task than tonight's remaining scope - realistically the actual start
+of next session's work: get Asterisk 20 built (even just enough for headers +
+`./configure`, not a full install) and try compiling `ast116.c` against it
+directly, then repeat for 21. Once 20 and 21 are done, 22/23/24 are already
+covered per above - no separate work needed for those three.
 
 ## Fixed — FreeBSD one-way audio / dual-stack bind bug (researched + fixed + validated on real hardware, 2026-09-22)
 

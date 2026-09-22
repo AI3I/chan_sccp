@@ -783,7 +783,10 @@ void sccp_channel_StatisticsRequest(constChannelPtr channel)
 boolean_t sccp_channel_holePunchPending(constChannelPtr c)
 {
 	pbx_assert(c != NULL && c->privateData);
-	return c->privateData->firewall_holepunch;
+	sccp_channel_lock(c);
+	boolean_t pending = c->privateData->firewall_holepunch;
+	sccp_channel_unlock(c);
+	return pending;
 }
 
 /*
@@ -792,7 +795,7 @@ boolean_t sccp_channel_holePunchPending(constChannelPtr c)
  */
 void sccp_channel_startHolePunch(constChannelPtr c)
 {
-	pbx_assert(c != NULL && c->privateData && !c->privateData->firewall_holepunch);
+	pbx_assert(c != NULL && c->privateData);
 	//sccp_rtp_t * audio = (sccp_rtp_t *)&(c->rtp.audio);
 	/*! \todo
 		// punching is only necessary if the rtp-instance ip-address+mask differs from the rtp->phone+mask
@@ -803,9 +806,16 @@ void sccp_channel_startHolePunch(constChannelPtr c)
 	*/
 	// No checks necessary here, since everything gets called exactly in one place, and that is when one-way-audio is requested in progress.
 	//if(!sccp_rtp_getState(audio, SCCP_RTP_TRANSMISSION) && pbx_channel_state(c->owner) != AST_STATE_UP && c->wantsEarlyRTP()) {
+		// firewall_holepunch is also read/written from finishHolePunch() (called concurrently
+		// from both the SCCP device-indication thread and Asterisk's RTP-read thread) and
+		// holePunchPending() - c->lock (recursive, safe to hold across the calls below)
+		// protects all three against each other.
+		sccp_channel_lock(c);
+		pbx_assert(!c->privateData->firewall_holepunch);
 		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: (%s) start Punching a hole through the firewall (if necessary)\n", c->designator, __func__);
 		c->privateData->firewall_holepunch = TRUE;
 		sccp_channel_startMediaTransmission(c);
+		sccp_channel_unlock(c);
 	//}
 }
 
@@ -824,7 +834,13 @@ boolean_t sccp_channel_finishHolePunch(constChannelPtr c, boolean_t keepChannelO
 	   /* If phones fully support acknowledging start of media transmission, the following more strict check can be applied. Since we do not even consider
 		  this check without receiving a voice packet in the first place, it seems adequate to do away with it for compatibility. */
        /* if(c->privateData->firewall_holepunch && ((sccp_rtp_getState(audio, SCCP_RTP_TRANSMISSION) & SCCP_RTP_STATUS_ACTIVE) == SCCP_RTP_STATUS_ACTIVE)) { */
-       if(c->privateData->firewall_holepunch) {
+	// See startHolePunch() above: this is called concurrently from both the SCCP
+	// device-indication thread and Asterisk's RTP-read thread, racing on the same
+	// unlocked flag before this fix (could start/stop media transmission twice, or
+	// never). c->lock is recursive, so holding it across the calls below is safe even
+	// if they re-lock the same channel from this same thread.
+	sccp_channel_lock(c);
+	if(c->privateData->firewall_holepunch) {
 		if(!keepChannelOpen) {
 			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: (%s) stop punching a hole through the firewall\n", c->designator, __func__);
 			sccp_channel_stopMediaTransmission(c, TRUE);
@@ -840,7 +856,9 @@ boolean_t sccp_channel_finishHolePunch(constChannelPtr c, boolean_t keepChannelO
 	//		We use this for cases where we are already connected / are about to connect the channel and would open the media transmission somewhere else
 	//		Yet to be checked if this is actually needed.
 	//      This is a workaround only for our trick.
-	return c->privateData->firewall_holepunch;
+	boolean_t still_pending = c->privateData->firewall_holepunch;
+	sccp_channel_unlock(c);
+	return still_pending;
 }
 
 /*!

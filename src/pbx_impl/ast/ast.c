@@ -1090,13 +1090,11 @@ int sccp_parse_dial_options(char *options, sccp_autoanswer_t *autoanswer_type, u
 					optv[opti] += 4;
 				} else if (!strncasecmp(optv[opti], "aa=", 3)) {
 					optv[opti] += 3;
-					pbx_log(LOG_NOTICE, "parsing aa\n");
 					if (!strncasecmp(optv[opti], "1w", 2)) {
 						*autoanswer_type = SCCP_AUTOANSWER_1W;
 						optv[opti] += 2;
 					} else if (!strncasecmp(optv[opti], "2w", 2)) {
 						*autoanswer_type = SCCP_AUTOANSWER_2W;
-						pbx_log(LOG_NOTICE, "set aa to 2w\n");
 						optv[opti] += 2;
 					}
 				}

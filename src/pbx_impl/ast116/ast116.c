@@ -1960,7 +1960,16 @@ static int sccp_astwrap_answer(PBX_CHANNEL_TYPE * pbxchan)
 			pbx_channel_lock(pbxchan);
 		}
 		if (!timedout) {
-			// pbx_indicate(pbxchan, AST_CONTROL_PROGRESS);
+			// Ensure the RTP instance's write/read format actually gets negotiated for this
+			// leg. It's otherwise only set from AST_CONTROL_PROGRESS (which many auto-answer /
+			// paged calls never receive - Page() typically answers directly) or from the
+			// masquerade/fixup path (transfers only) - neither of which reliably fires here.
+			// Without this, Asterisk starts writing audio to an RTP instance whose payload-type
+			// table was never told what codec to expect ("Don't know how to send format ulaw
+			// packets with RTP").
+			if (c->remoteCapabilities.audio[0] == SKINNY_CODEC_NONE) {
+				pbx_retrieve_remote_capabilities(c);
+			}
 			res = sccp_pbx_remote_answer(c);
 		}
 	}

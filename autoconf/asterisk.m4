@@ -219,8 +219,8 @@ AC_DEFUN([AST_GET_VERSION], [
 							const char *test_src = PACKAGE_VERSION;
 						]
 					)],[
-					pbx_major_ver=`eval "$ac_cpp conftest.$ac_ext" 2>/dev/null | $EGREP test_src | $EGREP -o '\".*\"' | sed 's/"//g'`
-					if echo "$pbx_major_ver" | $EGREP -q '^[0-9][0-9]$' && test "$pbx_major_ver" -ge 20 2>/dev/null; then
+					pbx_major_ver=`eval "$ac_cpp conftest.$ac_ext" 2>/dev/null | $EGREP -A3 test_src | $EGREP -v '^#' | $EGREP -o '"[0-9][0-9]*"' | sed 's/"//g' | head -1`
+					if echo "$pbx_major_ver" | $EGREP -q '^@<:@0-9@:>@@<:@0-9@:>@$' && test "$pbx_major_ver" -ge 20 2>/dev/null; then
 						ASTERISK_VER_GROUP="1${pbx_major_ver}"
 						ASTERISK_VERSION_NUMBER="${ASTERISK_VER_GROUP}00"
 						ASTERISK_REPOS_LOCATION=TRUNK

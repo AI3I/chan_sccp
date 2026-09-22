@@ -1,5 +1,49 @@
 # chan_sccp-modern Health Audit
 
+## Fixed — RTP write/read format never negotiated for auto-answered/paged calls (2026-09-22)
+
+Found live, in production: paging multiple SCCP devices produced repeated
+`ast_rtp_write: Don't know how to send format ulaw packets with RTP`
+warnings plus `(autoanswer_thread) no channel` on several legs. Root cause:
+`sccp_astwrap_answer()` in `ast116.c` (the function Asterisk core calls
+whenever *it* answers a channel - exactly what Page()/auto-answer does) had
+a commented-out `pbx_indicate(pbxchan, AST_CONTROL_PROGRESS)` with nothing
+put in its place. That indication used to be the only thing that triggered
+`pbx_retrieve_remote_capabilities()`, which is the only code that calls
+`ast_rtp_instance_set_write_format()`/`set_read_format()` on the audio RTP
+instance. `AST_CONTROL_PROGRESS` is sent by the far end; Page()-style
+auto-answered legs typically never receive it, so those calls' RTP
+instances never got their payload-type table configured at all. Fixed by
+calling `pbx_retrieve_remote_capabilities()` directly at answer time.
+Also removed two leftover `pbx_log(LOG_NOTICE, "parsing aa"/"set aa to
+2w")` debug statements in `sccp_parse_dial_options` (ast.c) that fired
+once per paged device at always-visible NOTICE level - the log spam that
+surfaced this in the first place. Deployed to production (commit
+`15bb25ce`); Asterisk core stayed up through the module swap (used atomic
+temp-file + rename, not in-place overwrite - see the deployment incident
+noted below for why that matters).
+
+**Not yet done**: this fix was deployed same-session under real time
+pressure. It hasn't been proven via an actual live page/call test yet
+(only build + module-load verified) - a full page test with a device
+that has actually re-registered should happen next session before
+calling this fully closed.
+
+## Incident — in-place `cp` over a loaded module crashed Asterisk (2026-09-22)
+
+While deploying the first build of tonight's work, used `cp` to overwrite
+`/usr/lib/asterisk/modules/chan_sccp.so` while the *old* module was still
+loaded and memory-mapped by the running Asterisk process. `cp` writes into
+the existing file's inode in place rather than atomically replacing it, so
+it corrupted the running process's own code pages mid-flight; Asterisk
+segfaulted a few seconds later (confirmed in `dmesg`). ~2 minutes of full
+outage before `systemctl restart asterisk` recovered it. The file on disk
+was fine the whole time (the corruption was only in the already-running
+process's memory), so a fresh process start loaded correctly.
+**Lesson, now applied for the rest of this session**: any module swap on a
+running Asterisk must be unload → replace file via temp+atomic-rename →
+load, never `cp` directly over a file a live process may have mapped.
+
 Running log of the cleanup effort started 2026-09-22. Not a formal issue tracker —
 just a durable record of what's been found and fixed, so work can resume across
 sessions without re-deriving everything. Append to this as new issues are found;

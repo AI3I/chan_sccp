@@ -729,7 +729,7 @@ int sccp_pbx_remote_answer(constChannelPtr channel)
 		if (d) {
 			const char * application = ast_channel_appl (c->owner);
 			if (application && sccp_strequals (application, "ParkedCall")) {
-				sccp_log ((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: !! retrieving parked call !!\n", c->designator);
+				sccp_log ((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: retrieving parked call\n", c->designator);
 				sccp_channel_setChannelstate (c, SCCP_CHANNELSTATE_CALLPARK);
 				pbx_builtin_setvar_helper (c->owner, "_PARK_RETRIEVER", c->designator);
 			}

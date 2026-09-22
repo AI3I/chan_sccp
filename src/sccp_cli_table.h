@@ -41,7 +41,6 @@ CLI_AMI_TABLE_LIST_ITER_TYPE *CLI_AMI_TABLE_LIST_ITER_VAR = NULL;
 #endif
 
 /* print headers */
-int UNIQUE_VAR(table_width_, CLI_AMI_TABLE_NAME) = 0;
 int UNIQUE_VAR(table_entries_, CLI_AMI_TABLE_NAME) = 0;
 const char * UNIQUE_VAR(id_, CLI_AMI_TABLE_NAME)            = s && m ? astman_get_header(m, "ActionID") : "";
 char         UNIQUE_VAR(idText_, CLI_AMI_TABLE_NAME)[256];
@@ -59,26 +58,37 @@ if (!sccp_strlen_zero(UNIQUE_VAR(id_, CLI_AMI_TABLE_NAME))) {
 char UNIQUE_VAR(eventText_, CLI_AMI_TABLE_NAME)[256];
 snprintf(UNIQUE_VAR(eventText_, CLI_AMI_TABLE_NAME), sizeof(UNIQUE_VAR(eventText_, CLI_AMI_TABLE_NAME)), "Event: SCCP%sEntry\r\n", STRINGIFY(CLI_AMI_TABLE_PER_ENTRY_NAME));
 
-// table used variable declarations
-#	define CLI_AMI_TABLE_FIELD(_a, _b, _c, _d, _e) UNIQUE_VAR(table_width_, CLI_AMI_TABLE_NAME) = UNIQUE_VAR(table_width_, CLI_AMI_TABLE_NAME) + _d + 1;
-#	define CLI_AMI_TABLE_UTF8_FIELD                CLI_AMI_TABLE_FIELD
-CLI_AMI_TABLE_FIELDS
-#undef CLI_AMI_TABLE_FIELD
+// CLI_AMI_TABLE_FIELD_NAMED(_a, _label, ...) is CLI_AMI_TABLE_FIELD with one extra arg: a
+// separate human-readable CLI column label. Use it when the clearest label needs a space
+// or other character a bare C identifier can't contain (e.g. "IP Address"); for anything
+// that reads fine as a single word, just name the field that directly and skip it.
 if (!s)
 {
-pbx_cli(fd, "+--- %s %.*s+\n", STRINGIFY(CLI_AMI_TABLE_NAME), UNIQUE_VAR(table_width_, CLI_AMI_TABLE_NAME) - (int) strlen(STRINGIFY(CLI_AMI_TABLE_NAME)) - 4, "------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+pbx_cli(fd, "\n%s:\n", STRINGIFY(CLI_AMI_TABLE_NAME));
 
 pbx_cli(fd, "| ");
 #define CLI_AMI_TABLE_FIELD(_a,_b,_c,_d,_e) pbx_cli(fd,"%*s ",-_d,#_a);
+#define CLI_AMI_TABLE_FIELD_NAMED(_a,_label,_b,_c,_d,_e) pbx_cli(fd,"%*s ",-_d,_label);
+#define CLI_AMI_TABLE_UTF8_FIELD(_a,_b,_c,_d,_e) CLI_AMI_TABLE_FIELD(_a,_b,_c,_d,_e)
+#define CLI_AMI_TABLE_UTF8_FIELD_NAMED(_a,_label,_b,_c,_d,_e) CLI_AMI_TABLE_FIELD_NAMED(_a,_label,_b,_c,_d,_e)
 CLI_AMI_TABLE_FIELDS
 #undef CLI_AMI_TABLE_FIELD
+#undef CLI_AMI_TABLE_FIELD_NAMED
+#undef CLI_AMI_TABLE_UTF8_FIELD
+#undef CLI_AMI_TABLE_UTF8_FIELD_NAMED
     pbx_cli(fd, "|\n");
 
-pbx_cli(fd, "+ ");
-#define CLI_AMI_TABLE_FIELD(_a,_b,_c,_d,_e) pbx_cli(fd,"%." STRINGIFY(_d) "s ",	"==================================================================================================================================================================");
+pbx_cli(fd, "| ");
+#define CLI_AMI_TABLE_FIELD(_a,_b,_c,_d,_e) pbx_cli(fd,"%." STRINGIFY(_d) "s ",	"------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+#define CLI_AMI_TABLE_FIELD_NAMED(_a,_label,_b,_c,_d,_e) CLI_AMI_TABLE_FIELD(_a,_b,_c,_d,_e)
+#define CLI_AMI_TABLE_UTF8_FIELD(_a,_b,_c,_d,_e) CLI_AMI_TABLE_FIELD(_a,_b,_c,_d,_e)
+#define CLI_AMI_TABLE_UTF8_FIELD_NAMED(_a,_label,_b,_c,_d,_e) CLI_AMI_TABLE_FIELD(_a,_b,_c,_d,_e)
 CLI_AMI_TABLE_FIELDS
 #undef CLI_AMI_TABLE_FIELD
-    pbx_cli(fd, "+\n");
+#undef CLI_AMI_TABLE_FIELD_NAMED
+#undef CLI_AMI_TABLE_UTF8_FIELD
+#undef CLI_AMI_TABLE_UTF8_FIELD_NAMED
+    pbx_cli(fd, "|\n");
 } else {
 	astman_append_inc(s, "Event: TableStart\r\n");
 	astman_append_inc(s, "TableName: %s\r\n", STRINGIFY(CLI_AMI_TABLE_NAME));
@@ -93,8 +103,9 @@ CLI_AMI_TABLE_FIELDS
 	/* iterator through list */
 if (!s) {
 #define CLI_AMI_TABLE_FIELD(_a,_b,_c,_d,_e) pbx_cli(fd,"%" _b #_c " ",_e);
-#undef CLI_AMI_TABLE_UTF8_FIELD
+#define CLI_AMI_TABLE_FIELD_NAMED(_a,_label,_b,_c,_d,_e) CLI_AMI_TABLE_FIELD(_a,_b,_c,_d,_e)
 #define CLI_AMI_TABLE_UTF8_FIELD(_a,_b,_c,_d,_e) pbx_cli(fd,"%-*" #_c " ", sccp_utf8_columnwidth(_d,_e), _e);
+#define CLI_AMI_TABLE_UTF8_FIELD_NAMED(_a,_label,_b,_c,_d,_e) CLI_AMI_TABLE_UTF8_FIELD(_a,_b,_c,_d,_e)
 #ifdef CLI_AMI_TABLE_LIST_ITERATOR
 	_CLI_AMI_TABLE_LIST_LOCK(CLI_AMI_TABLE_LIST_ITER_HEAD);
 	_CLI_AMI_TABLE_LIST_ITERATOR(CLI_AMI_TABLE_LIST_ITER_HEAD, CLI_AMI_TABLE_LIST_ITER_VAR, list) {
@@ -108,11 +119,15 @@ if (!s) {
 	_CLI_AMI_TABLE_LIST_UNLOCK(CLI_AMI_TABLE_LIST_ITER_HEAD);
 #endif
 #undef CLI_AMI_TABLE_FIELD
+#undef CLI_AMI_TABLE_FIELD_NAMED
 #undef CLI_AMI_TABLE_UTF8_FIELD
-#define CLI_AMI_TABLE_UTF8_FIELD CLI_AMI_TABLE_FIELD
+#undef CLI_AMI_TABLE_UTF8_FIELD_NAMED
 } else {
 #	define CLI_AMI_TABLE_FIELD1(_paramstr, _fmtstr, _vargs)        CLI_AMI_OUTPUT_PARAM(_paramstr, 0, _fmtstr, _vargs);
 #	define CLI_AMI_TABLE_FIELD(_param, _width, _fmt, _len, _vargs) CLI_AMI_TABLE_FIELD1(#        _param, "%" #        _fmt, _vargs)
+#	define CLI_AMI_TABLE_FIELD_NAMED(_param, _label, _width, _fmt, _len, _vargs) CLI_AMI_TABLE_FIELD(_param, _width, _fmt, _len, _vargs)
+#	define CLI_AMI_TABLE_UTF8_FIELD(_param, _width, _fmt, _len, _vargs) CLI_AMI_TABLE_FIELD(_param, _width, _fmt, _len, _vargs)
+#	define CLI_AMI_TABLE_UTF8_FIELD_NAMED(_param, _label, _width, _fmt, _len, _vargs) CLI_AMI_TABLE_FIELD(_param, _width, _fmt, _len, _vargs)
 #	ifdef CLI_AMI_TABLE_LIST_ITERATOR
 	_CLI_AMI_TABLE_LIST_LOCK(CLI_AMI_TABLE_LIST_ITER_HEAD);
 	_CLI_AMI_TABLE_LIST_ITERATOR(CLI_AMI_TABLE_LIST_ITER_HEAD, CLI_AMI_TABLE_LIST_ITER_VAR, list) {
@@ -135,12 +150,14 @@ if (!s) {
 #endif
 #	undef CLI_AMI_TABLE_FIELD1
 #	undef CLI_AMI_TABLE_FIELD
+#	undef CLI_AMI_TABLE_FIELD_NAMED
+#	undef CLI_AMI_TABLE_UTF8_FIELD
+#	undef CLI_AMI_TABLE_UTF8_FIELD_NAMED
 }
 
 	/* print footer */
 if (!s) {
-	pbx_cli(fd, "+%.*s+\n", UNIQUE_VAR(table_width_, CLI_AMI_TABLE_NAME) + 1, "------------------------------------------------------------------------------------------------------------------------------------------------------------------");
-
+	pbx_cli(fd, "\n");
 } else {
 	astman_append_inc(s, "Event: TableEnd\r\n");
 	astman_append_inc(s, "TableName: %s\r\n", STRINGIFY(CLI_AMI_TABLE_NAME));

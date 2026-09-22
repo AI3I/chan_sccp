@@ -439,14 +439,14 @@ static void sccp_sk_answer(const sccp_softkeyMap_cb_t * const softkeyMap_cb, con
 	if (!c) {
 		char buf[100];
 		ast_log(LOG_WARNING, "%s: (sccp_sk_answer) Pressed the answer key without any channel%s%s\n", d->id, l ? " on line: " : "", l ? l->name : "");
-		snprintf(buf, 100, SKINNY_DISP_NO_CHANNEL_TO_PERFORM_XXXXXXX_ON " " SKINNY_GIVING_UP, "ANSWER");
+		snprintf(buf, 100, SKINNY_DISP_NO_CHANNEL_TO_PERFORM_ACTION_ON " " SKINNY_GIVING_UP, "ANSWER");
 		sccp_dev_displayprinotify(d, buf, SCCP_MESSAGE_PRIORITY_TIMEOUT, 5);
 		sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, lineInstance, 0, SKINNY_TONEDIRECTION_USER);
 		return;
 	}
 	sccp_log((DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: SoftKey Answer Pressed, instance: %d\n", DEV_ID_LOG(d), lineInstance);
 
-	/* taking the reference during a locked ast channel allows us to call sccp_channel_answer unlock without the risk of loosing the channel */
+	/* taking the reference during a locked ast channel allows us to call sccp_channel_answer unlock without the risk of losing the channel */
 	if (c->owner) {
 		sccp_channel_answer(d, c);
 	}

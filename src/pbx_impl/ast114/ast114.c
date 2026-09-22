@@ -2874,7 +2874,7 @@ static boolean_t sccp_astwrap_getRemoteChannel(constChannelPtr channel, PBX_CHAN
  * \brief Send Text to Asterisk Channel
  * \param ast Asterisk Channel as ast_channel
  * \param text Text to be send as char
- * \return Succes as int
+ * \return Success as int
  *
  * \called_from_asterisk
  */

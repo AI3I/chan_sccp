@@ -497,7 +497,7 @@ AC_DEFUN([CS_GET_VERSION], [
   SCCP_REVISION="unknown"
 
   CURRENT=`pwd`
-  BASE=`dirname $ac_dir`
+  BASE="$srcdir"
   cd $BASE >/dev/null
   . ./tools/versioncheck silent
   cd $CURRENT >/dev/null

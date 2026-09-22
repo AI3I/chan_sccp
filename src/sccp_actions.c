@@ -936,7 +936,7 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 				sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Auto Detected Remote NAT. Session IP '%s' does not match IpAddr '%s' Reported by Device.  We will use externip or externhost for the RTP stream\n", deviceName, session_ipv4, phone_ipv4);
 				device->nat = SCCP_NAT_AUTO_ON;
 			//} else {
-			//	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Device Not NATTED. Device IP '%s' falls in localnet scope\n", deviceName, phone_ipv4);
+			//	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Device not behind NAT. Device IP '%s' falls in localnet scope\n", deviceName, phone_ipv4);
 			}
 		} else {
 			char *session_ipv6 = pbx_strdupa(sccp_netsock_stringify_host(&session_sas));
@@ -944,7 +944,7 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 				sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Auto Detected Remote NAT. Session IP '%s' does not match IpAddr '%s' Reported by Device.  We will use externip or externhost for the RTP stream\n", deviceName, session_ipv6, phone_ipv6);
 				device->nat = SCCP_NAT_AUTO_ON;
 			//} else {
-			//	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Device Not NATTED. Device IP '%s' same as it's session: '%s'\n", deviceName, phone_ipv6, session_ipv6);
+			//	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Device not behind NAT. Device IP '%s' same as it's session: '%s'\n", deviceName, phone_ipv6, session_ipv6);
 			}
 		}
 	} else {
@@ -3305,7 +3305,7 @@ void handle_soft_key_event(constSessionPtr s, devicePtr d, constMessagePtr msg_i
 
 		/* skipping message if event is endcall, because they can coincide when both parties hangup around the same time */
 		if (event != SKINNY_LBL_ENDCALL) {
-			snprintf(buf, sizeof(buf), SKINNY_DISP_NO_CHANNEL_TO_PERFORM_XXXXXXX_ON " " SKINNY_GIVING_UP, label2str(event));
+			snprintf(buf, sizeof(buf), SKINNY_DISP_NO_CHANNEL_TO_PERFORM_ACTION_ON " " SKINNY_GIVING_UP, label2str(event));
 			sccp_dev_displayprinotify(d, buf, SCCP_MESSAGE_PRIORITY_TIMEOUT, 5);
 			sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, lineInstance, callid, SKINNY_TONEDIRECTION_USER);
 			pbx_log(LOG_WARNING, "%s: Skip handling of Softkey %s (%d) line=%d callid=%d, because a channel is required, but not provided. Exiting\n", d->id, label2str(event), event, lineInstance, callid);
@@ -3385,7 +3385,7 @@ void handle_port_response(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 				rtp = &(channel->rtp.video);
 				break;
 			case SKINNY_MEDIA_TYPE_INVALID:
-				pbx_log(LOG_ERROR, "%s: PortReponse is Invalid. Skipping Request\n", d->id);
+				pbx_log(LOG_ERROR, "%s: PortResponse is Invalid. Skipping Request\n", d->id);
 				return;
 			default:
 				pbx_log(LOG_ERROR, "%s: Cannot handling incoming PortResponse MediaType:%s (yet)!\n", d->id, skinny_mediaType2str(mediaType));

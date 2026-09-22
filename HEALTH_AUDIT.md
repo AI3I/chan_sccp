@@ -5,6 +5,68 @@ just a durable record of what's been found and fixed, so work can resume across
 sessions without re-deriving everything. Append to this as new issues are found;
 move items from "Open" to "Fixed" with the commit/branch that fixed them.
 
+**Note (2026-09-22, later)**: the user has decided this project's real home going
+forward is the public `AI3I/chan_sccp` repo, not this private `chan_sccp-modern`
+one (which was only ever a parking/staging area). Plan: push this repo's full
+history into `chan_sccp`'s main/master branch, then delete the `chan_sccp-modern`
+GitHub repo and its local `~/GitHub/chan_sccp-modern` clone. Not done yet -
+pending a natural stopping point in the current cleanup pass. Also: AMI is
+confirmed disabled on the production PBX (`manager.conf: enabled=no`, no login
+history ever) and SCCP+AMI is a dead combination in practice, so field/identifier
+naming in CLI tables no longer needs to preserve any legacy AMI-facing name -
+clean them up freely, just don't break compilation or Asterisk's own behavior.
+
+## Fixed — config parameter documentation (`sccp_config_entries.hh`) (2026-09-22)
+
+This file (not the `conf/*.annotated`/`conf/*.conf` files, which are just
+generated output - editing those directly would be overwritten) is the real
+source of every parameter description shown in the annotated sample configs.
+Found and fixed real problems, not just polish:
+
+- **A real functional bug in `autoconf/extra.m4`**: `--enable-park`/
+  `--disable-park` had a misplaced m4 quote bracket (`[ac_cv_use_park=$enableva]l,`
+  - note "enableva" + stray "l,"), splitting `$enableval` and very likely
+  breaking that configure flag. Fixed to `[ac_cv_use_park=$enableval],`.
+- **`park`'s own doc was factually wrong** - claimed "not compiled by default";
+  the real configure default is enabled. Rewritten to state what it does and
+  the correct default.
+- **`monitor`'s description was completely empty** (`""`) - the worst case of
+  "poorly documented." Traced what it actually does (toggles Asterisk's automon
+  call recording) and wrote a real description.
+- **Two unbalanced-parenthesis bugs** (3 occurrences) in `pickupgroup`/
+  `namedpickupgroup` descriptions - an opened paren that was never closed,
+  confusing to read. Also expanded the cryptic internal `(ast111)` shorthand
+  (this codebase's own `ASTERISK_VER_GROUP` jargon) to "Requires Asterisk 1.11
+  or later" - not something an end user reading sccp.conf should have to
+  decode.
+- **~15 grammar/typo fixes**: "for for", "seperate", "direcrtp" (a parameter
+  described using a misspelling of its own name), duplicated "Options:
+  Options:", "will we added"→"will be added" (2x, same bug in two sibling
+  entries), duplicated periods, "datebasetable"→"database table" (2x),
+  "beused"→"be used", "to registered"→"to register", "whe dialing"→"used when
+  dialing", "line if not"→"line is not" (changed actual meaning), "a ip
+  address"→"an IP address" (2x), "will be use."→"will be used.", three
+  missing-space string-concatenation gaps, "to work correct"→"to work
+  correctly", "replaced by in favor of"→"in favor of".
+- **Content quality, not just correctness** (per explicit direction: real
+  errors not filler, real values not deprecated cruft): `earlyrtp`'s
+  description used to enumerate 6 specific "deprecated option" values
+  (none/offhook/immediate/dial/ringout/progress) as if they were deliberately
+  supported aliases - checked the actual parser (`sccp_config_parse_earlyrtp`
+  in `sccp_config.c`) and confirmed only `"none"` is special-cased; everything
+  else just falls through to "not recognized as false" = true, same as any
+  typo would. Rewrote to lead with the two real values and drop the misleading
+  list. Replaced all 4 uses of the word "stuff" (`cfwdall`/`cfwdbusy`/
+  `cfwdnoanswer` descriptions, general and device sections) with what's
+  actually being enabled. Rewrote `callgroup`/`pickupgroup`'s first-person
+  template artifacts ("We are in caller groups 1,3,4" - reads like an example
+  site's real config asserted as fact, not a parameter description) into
+  proper generic descriptions. Fixed "natted" (informal jargon-as-verb) in the
+  `externhost` description and in a live `sccp show globals` CLI message
+  (`sccp_cli.c`, which also had its own typo, "IP-addres") to plain "behind
+  NAT" phrasing; same fix applied to two comments (`sccp_channel.c`,
+  `sccp_actions.c`) for consistency, though those aren't user-facing.
+
 ## Fixed
 
 All on branch `feature/parkedcalls-webservice`, in `src/sccp_webservice.c` /
@@ -71,22 +133,24 @@ configured Asterisk 22 tree unless noted:
 
 None remaining from that pass — both were fixed above.
 
-## Open — Asterisk version compatibility (the big one)
+## Fixed — Asterisk version compatibility, 20 through 24 (the big one)
 
-- `configure.ac` declares `MAX_ASTERISK_VERSION=113`. The real upstream
-  (`github.com/chan-sccp/chan-sccp`, `develop` branch) only has genuine
-  implementations through `ast119` — nothing for 120/121/122 in any commit, on
-  any branch, anywhere in git history.
-- The production PBX runs Asterisk 22.8.2 successfully because someone
-  hand-created `src/pbx_impl/ast122/` **directly on that one server's disk** —
-  untracked by git, not gitignored, not backed up anywhere found. Its entire
-  content: `#include "../ast116/ast116.c"` (Asterisk 1.16, ~2018) plus two
-  `#define` stubs for `ast_channel_macroexten`/`macrocontext` (removed in
-  Asterisk 21+, would otherwise fail to compile). Nothing else that changed
-  across ~7 major Asterisk versions was audited or adapted.
-- **Risk**: this is a single point of failure. A disk failure or a fresh
-  `git clone` of any of the forks loses Asterisk 22 support entirely, with no
-  documented way to reconstruct it except redoing this by hand.
+**Starting state**: `configure.ac` declared `MAX_ASTERISK_VERSION=113`. The
+real upstream (`github.com/chan-sccp/chan-sccp`, `develop` branch) only had
+genuine implementations through `ast119` — nothing for 120+ in any commit, on
+any branch, anywhere in git history. The production PBX ran Asterisk 22.8.2
+successfully only because someone hand-created `src/pbx_impl/ast122/`
+**directly on that one server's disk** — untracked by git, not gitignored,
+not backed up anywhere found — a single point of failure: a disk failure or
+fresh `git clone` would have lost Asterisk 22 support entirely, with no
+documented way to reconstruct it.
+
+**Now resolved** — see the dated subsections below for the full investigation
+and fix. Summary: real Asterisk 20/21/22/23/24 source, configured and
+compiled/linked against this fork end to end, on real hardware, producing a
+working `chan_sccp.so` for all five. `configure.ac`/`extra.m4`/`asterisk.m4`/
+`ast.h` all now natively support 120-124 - the working `ast122` hack is
+committed into git history instead of living only on one server's disk.
 
 ### The real target version matrix (researched 2026-09-22, sourced from
 ### docs.asterisk.org/About-the-Project/Asterisk-Versions)
@@ -151,21 +215,145 @@ project source). This produced real, concrete findings, not just a plan:
   could genuinely be unused, or could be hidden behind the same kind of macro
   indirection. Grep alone can't tell the difference reliably.
 
-### Recommendation - the decisive next step
+### Resolved: real compile test against 20 and 21 (2026-09-22)
 
-The methods tried tonight (UPGRADE.txt, header diffing + symbol filtering) got
-real, useful signal but can't give full confidence given the macro-indirection
-blind spot above. **The actually decisive test**: attempt a real compile of
-`ast116.c` against Asterisk 20's real configured build (not just the header
-tree pulled tonight - need a full `./configure` run against real Asterisk 20
-source to generate `autoconfig.h` and the other build-generated headers Asterisk
-itself needs). The compiler will surface every genuine breakage directly, cutting
-through the macro-indirection ambiguity grep can't resolve. That's a bigger,
-separate task than tonight's remaining scope - realistically the actual start
-of next session's work: get Asterisk 20 built (even just enough for headers +
-`./configure`, not a full install) and try compiling `ast116.c` against it
-directly, then repeat for 21. Once 20 and 21 are done, 22/23/24 are already
-covered per above - no separate work needed for those three.
+Ran the decisive test instead of continuing to reason from header diffs.
+Cloned `asterisk/asterisk` branches `20` and `21` directly from GitHub into
+`/usr/src/ast-versions/` on the PBX, ran `./configure` against each (enough to
+generate `autoconfig.h` and every other build-time header, without a full
+`make`), then compiled `ast116.c` against each tree using the **exact flag
+set** the production `ast122` object is actually built with (pulled via
+`make V=1` from the real `/usr/src/chan-sccp/src/pbx_impl/ast122/`), including
+`-Werror=implicit -Wfatal-errors` so a silently-hidden implicit-declaration
+break couldn't slip past a trimmed-down test command.
+
+**Result: `ast116.c`, completely unmodified, compiles clean against real
+Asterisk 20 and 21 headers.** Zero errors, zero warnings beyond one unrelated
+cosmetic `-Wmissing-include-dirs` about a stale relative path in the test
+harness itself. `nm -u` on the resulting `.o` confirms `ast_channel_macroexten`
+/ `ast_channel_macrocontext` aren't even in the undefined-symbol table for the
+Asterisk 21 build — the existing `ast122` stub's two macro `#define`s turn out
+to be defensive, not load-bearing; this codebase's actual compiled code path
+never calls those functions at all. So the previously-suspected 20→21
+"macroexten removal" boundary doesn't affect `ast116.c` in practice.
+
+**Bottom line: the C source needs zero changes across the entire 20-24
+matrix.** Combined with the earlier header-diff finding for 22→23→24 and the
+fact the identical `ast116.c`-via-`ast122` file has run in production for
+weeks without incident, this closes the "is chan_sccp-modern far from Asterisk
+20-24 support" question definitively - it already isn't, at the C level.
+
+**The one real remaining gap is packaging, not code**: `configure.ac` /
+`autoconf/extra.m4` in this repo only defines `AM_CONDITIONAL`/
+`AC_CONFIG_FILES` entries through `ASTERISK_VER_GROUP_119` - there's no
+`_120`/`_121`/`_122` wiring at all, so `./configure` against a real Asterisk
+20/21/22 install doesn't generate `src/pbx_impl/ast120/Makefile` (etc.) and
+the build fails at the Makefile-generation step, never reaching the compiler.
+This is exactly why the production box's actual `ast122/` (a single
+`#include "../ast116/ast116.c"` plus the two now-proven-unnecessary-but-
+harmless stub macros) had to be hand-created directly on disk, untracked -
+the fork's own build system doesn't know versions past 119 exist.
+
+**Fix is small and mechanical** (not attempted yet, but now fully scoped):
+add three `ast120`/`ast121`/`ast122` directories (each just
+`#include "../ast116/ast116.c"`, matching the proven-in-production file
+verbatim), three trivial `Makefile.am`s copied from `ast119`'s, and three
+`AM_CONDITIONAL`/`AC_CONFIG_FILES` blocks in `extra.m4` following the existing
+106-119 pattern exactly. Also bump `configure.ac`'s stale
+`MAX_ASTERISK_VERSION=113` to `122` (or higher). No new C code, no design
+decisions - just committing the working hack into the actual git history so it
+survives a disk failure or fresh clone, which was the real risk identified
+earlier.
+
+### Done: 20-24 wired up, real build-tested, and committed (2026-09-22)
+
+Went further than 20/21 - the user asked to cover 23 and 24 too, not just
+close the gap the header-diff research had already flagged as free (22→23→24
+being header-identical doesn't help if the *build system* can't even reach
+the compiler for those version numbers, which turned out to be the real
+story below). Full real `./configure && make` runs (not just header diffs)
+against freshly cloned/configured Asterisk 20, 21, 22 (system-installed),
+23, and 24 source trees on the PBX, iterating until all five produced a
+working `chan_sccp.so`. Found and fixed four real, independent bugs along
+the way - none of them hypothetical, all caught by the compiler or by
+`./configure` itself refusing to proceed:
+
+1. **`ASTTERISK_VER_GROUP` (double-T) typo in `autoconf/extra.m4`** - every
+   `AM_CONDITIONAL([ASTERISK_VER_GROUP_1xx], [test x${ASTTERISK_VER_GROUP} = x1xx])`
+   line (12 of them, for versions 106-119) tested a variable that is never
+   assigned anywhere in the codebase; only the correctly-spelled
+   `ASTERISK_VER_GROUP` is ever set (in `autoconf/asterisk.m4`). Fixed by
+   correcting the variable name at all 15 occurrences (12 pre-existing + 3
+   just added for 120-122). Whether this ever caused a real-world failure for
+   106-119 wasn't fully run to ground (the currently-shipped, pre-built
+   `configure` may predate the typo's introduction), but it's unambiguously
+   wrong now and was copied verbatim into the hand-hacked upstream tree's
+   own extra.m4 too - worth fixing regardless of whether it was live.
+2. **`CS_GET_VERSION` in `autoconf/acinclude.m4`** computed
+   `BASE=\`dirname $ac_dir\`` where `$ac_dir` is never actually set by this
+   macro - it was silently reusing whatever value a *different*, unrelated
+   `for ac_dir in ...` loop inside `libtool.m4` happened to leave behind as
+   a shell-global side effect. This "worked" only by the accident of which
+   macro autoconf happened to expand last, which is why the currently-shipped
+   `configure` (built by an older autoconf) tolerated it but a fresh
+   `autoreconf -fi` with a newer autoconf/automake on this box didn't
+   (`dirname: missing operand` / `tools/versioncheck: No such file or
+   directory`, well before ever reaching Asterisk detection). Fixed by using
+   autoconf's own reliably-set `$srcdir` instead. This one blocked *any*
+   regeneration of the build system, for any Asterisk version, not just
+   20-24 - a real durability bug independent of this task.
+3. **`NEWCONST` undefined for any new version group** - `src/pbx_impl/ast/ast.h`
+   (the shared wrapper header every compilation unit includes) has a chain of
+   `#ifdef ASTERISK_CONF_1_16` / `#ifdef ASTERISK_CONF_1_17` ... conditionally
+   including each version's own header, but the chain stopped at
+   `ASTERISK_CONF_1_19`. The `ASTERISK_CONF_1_2x` macros themselves also
+   weren't defined anywhere - `autoconf/asterisk.m4`'s version-detection
+   `case` statement (both the explicit `--with-asterisk-version=` override
+   path and the dead legacy auto-detect path, see #4) also stopped at 119.
+   Result: building against a detected version >119 compiled `pbx_impl.c`
+   with `NEWCONST` completely undefined, a hard compile error. Fixed by
+   adding `120`-`124` entries to both `case` statements in `asterisk.m4` and
+   the matching `#ifdef ASTERISK_CONF_1_2x` / `#include` blocks in `ast.h`.
+4. **Asterisk 20 specifically can't use the `ast122`-style stub wrapper** -
+   confirmed by a real compile failure, not a guess:
+   `#define ast_channel_macrocontext(chan) ("")` in `ast120.c` collided with
+   the *real* `ast_channel_macrocontext()` declaration still present in
+   genuine Asterisk 20 headers (`error: expected identifier or '(' before
+   string constant`), because the macroexten/macrocontext removal doesn't
+   land until 21. This is the direct, compiler-verified confirmation of what
+   the earlier header-diff research predicted. Fixed by making `ast120` a
+   plain symlink to `ast116.c`/`ast116.h` - identical to how `ast117`/`118`/
+   `119` already handle versions that need zero changes - instead of the
+   defensive-stub wrapper pattern, which is now used only for `ast121`
+   through `ast124` (the versions that actually lack those functions).
+
+**Verified with real `./configure && make` runs producing an actual
+`chan_sccp.so`** against: Asterisk 20 (clone, symlink wrapper), 21 (clone,
+stub wrapper), 22 (the box's real system-installed 22.8.2, stub wrapper,
+matching production), 23 (clone, stub wrapper), 24 (clone, stub wrapper).
+All five link cleanly.
+
+**Also found, not yet fixed (separate, lower-priority bug)**: when no
+`--with-asterisk-version=` is given, `./configure`'s auto-detection can't
+identify Asterisk 20+ at all. `asterisk/version.h` (the header the primary
+detection path parses) was removed from Asterisk entirely in favor of
+`asterisk/ast_version.h` - including the old header is now a hard
+`#error` in modern Asterisk, so `AC_CHECK_HEADER` correctly reports it
+missing and falls through to a much cruder fallback heuristic
+(`autoconf/asterisk.m4` ~line 197-220) that greps for `AMI_VERSION` /
+`res_audiosocket.h` and, finding them present (true for any Asterisk from
+118 onward), **always reports "Found 'Asterisk Version 11900'"** regardless
+of whether the real install is 19, 20, 22, or 24. Confirmed directly: a
+plain `./configure` against this box's real Asterisk 22.8.2 prints "Found
+'Asterisk Version 11900'" and builds using the `ast119` symlink - which
+happens to be harmless today (proven identical to `ast120`-`124` for this
+file) but is a real, misleading operator-facing message and means the new
+120-124 code paths are *only* reachable via the explicit
+`--with-asterisk-version=` flag, never by auto-detection. Fixing this
+properly needs new version-string parsing logic for Asterisk's modern
+integer-only scheme (checking `AST_MAJOR_VERSION` or similar from
+`ast_version.h`), not a mechanical list extension - scoped as a real,
+separate follow-up.
 
 ## Fixed — FreeBSD one-way audio / dual-stack bind bug (researched + fixed + validated on real hardware, 2026-09-22)
 
@@ -259,20 +447,141 @@ version coverage is wanted, same as the Asterisk version work above.
   on any file under `pbx_impl/` — several version directories are legitimately
   symlinked to a shared implementation, not independent copies.**
 
+## Fixed — second typo sweep + TODO/FIXME/XXX/HACK triage (2026-09-22)
+
+Re-scanned the whole tree (not just previously-touched files) for common
+English misspellings and fixed everything found:
+
+- `ommitted`→`omitted` (`sccp_appfunctions.c`, `sccp_cli.c`), `begining`→
+  `beginning` and `Seperate`→`Separate` (`sccp_utils.c`), `untill`→`until`
+  (`sccp_threadpool.c`), `prefered`→`preferred` (`sccp_appfunctions.c`,
+  `sccp_codec.c` x2), `Silence supression`→`Silence suppression`
+  (`sccp_protocol.c` x3), `transfered`→`transferred` (`sccp_appfunctions.c`,
+  `sccp_channel.c` x2), `loosing`→`losing` (`sccp_softkeys.c`),
+  `PortReponse`→`PortResponse` (`sccp_actions.c` — the very next case in the
+  same `switch` already spells it correctly, confirming this was a typo, not
+  a deliberate distinct name), `Succes as int`→`Success as int` (a
+  copy-pasted doxygen `\return` line duplicated identically across all 9 real
+  `ast106`-`ast116` implementation files).
+- **`Priviledge: Command`→`Privilege: Command`** (`sccp_config.c`, 2 AMI
+  manager-action response sites) — worth calling out separately from the
+  rest: this string is sent over the wire to Asterisk Manager Interface
+  clients, not just read by a developer in a log. Any AMI client written to
+  expect Asterisk's own standard `Privilege:` header spelling would have
+  silently failed to match on this one.
+- **`SKINNY_DISP_NO_CHANNEL_TO_PERFORM_XXXXXXX_ON`** (`sccp_labels.h`) — the
+  literal string of X's was baked into the `#define`'s own identifier
+  (substituted via `%s` at its 2 call sites in `sccp_softkeys.c`/
+  `sccp_actions.c`). Renamed to `SKINNY_DISP_NO_CHANNEL_TO_PERFORM_ACTION_ON`
+  at all 3 sites - the string value itself (`"No Channel to perform %s on
+  !"`) was already fine.
+
+**TODO/FIXME/XXX/HACK triage** (19 real markers in `src/`, not the 148
+figure from the initial broad-strokes estimate — that count included
+non-source directories/looser matching): one is externally-mandated and
+must not change (`_XXX_AST_CONTROL_T38` across 9 `pbx_impl/ast10x-116`
+files is Asterisk's *own* upstream enum constant name, marking that value
+deprecated in Asterisk's own headers — confirmed it's never defined
+anywhere in this codebase, only referenced, so renaming it would break the
+`switch` match against the real enum). The `XXXXXXX` one above was the only
+genuinely-fixable naming issue found in that set. The rest are real,
+substantive TODOs left as-is (need a design decision or deeper testing, not
+a text cleanup):
+- `sccp_cli.c:2419-2438` — "temporary backward compatible version
+  (2020-11-16)" — now 5+ years old; worth revisiting whether it can be
+  removed, but that's a compatibility-scope decision, not this pass.
+- `sccp_feature.c:524` — voicemail-button workaround for old hint style /
+  speeddials before the first line.
+- `pbx_impl/ast113,114,115,116/*.c` — "convert format_type to ast_format",
+  the same note duplicated across 4 files, a real data-type migration.
+
 ## Open — message quality (broader pass needed, this is a standing concern now)
 
-- **55 separate call sites** log the byte-identical generic string via the
-  `SS_Memory_Allocation_Error` macro for any out-of-memory condition — tells an
-  operator *that* something failed, never *which* allocation or *where*. Needs a
-  design decision: pass context into the macro, or accept `pbx_log`'s own
-  file/line and just improve the message text.
-- **148 TODO/FIXME/XXX/HACK markers**, concentrated in the hottest paths:
-  `sccp_channel.c` (23), `sccp_config.c` (17), `sccp_pbx.c` (16),
-  `sccp_actions.c` (16). Not individually triaged yet.
+- (The "55 call sites with the generic OOM string" item that used to be here
+  is done — verified zero remaining `SS_Memory_Allocation_Error, "SCCP")`
+  call sites in `src/`. Removed as stale; see the earlier **Fixed** entry.)
 - General standing instruction from the user (2026-09-22): **any message shown to
   a human — phone display text, CLI console output, or log lines — needs real
   content and correct grammar, not boilerplate or copy-paste slop.** Apply this
   standard to every file touched going forward, not just `sccp_webservice.c`.
+- **Refined standard (2026-09-22, later the same day)**: the user gave two
+  sharper rules for this class of fix, worth calling out because they change
+  *what counts as done*, not just *what to touch*:
+  1. **Report errors, not instructions.** State the fact, the location, and
+     *why it matters* (what it implies) - don't append a "please do X" unless
+     X is something the reader can reliably act on themselves. Never point at
+     a dead/inactive upstream project's issue tracker as if filing a bug
+     there will do anything.
+  2. **The bar for a good message**: "If you were reading this, even with a
+     few machine-jargon items here and there, what would you want to see in
+     the log that would prompt you to go back and analyze a fix?" - i.e. does
+     it give enough real technical content to judge severity, without telling
+     the reader what to do about it.
+  3. Also: **freely rewrite misleading/stale comments in anything actually
+     touched**, regardless of original authorship ("to hell with what anyone
+     else put in there").
+  4. **Scope for this whole effort, restated plainly**: anything that pushes
+     a response back to the phone, prints to Asterisk's CLI (`pbx_cli`), or
+     logs via `pbx_log` is in scope for review.
+
+## Fixed — refcount ALARM messages, CLI table engine, and CLI labels (2026-09-22)
+
+- **`sccp_refcount.c` retain/release failure paths** - three real problems in
+  one small block, not just wording: (1) the `retain` path's log line said
+  `"(release)"` - a copy-paste mislabel naming the wrong function; (2) both
+  paths logged `obj`, which is *always NULL* on this failure branch (it's
+  only ever assigned on the success path) - a real logging bug, the pointer
+  value shown was never the one that actually failed; (3) two near-duplicate
+  log lines per failure (an "ALARM" line with location context, then a
+  vaguer `LOG_ERROR` "Major Logic Error. Please report to developers" line
+  with no location and a dead GitHub link). Collapsed to one line per
+  function with correct location (`file:line(func)`), the *actual* failing
+  pointer (`ptr`/`*ptr`, not `obj`), and named the real bug class this
+  pattern indicates - a double-release, use-after-free, or dangling pointer -
+  instead of a vague "this should never happen" plus an instruction to
+  contact a project that isn't active.
+- **`sccp_cli_table.h`, the shared macro engine behind every CLI table**
+  (Devices, Buttons, LineButtons, SpeeddialButtons, FeatureButtons, ...) -
+  the top/bottom `+--- TableName ---+` frame and its width, computed
+  separately from the header/data rows, could drift out of sync with actual
+  content (exactly the misalignment the user flagged in `sccp show devices`
+  output). Replaced with a simpler, structurally-guaranteed-consistent
+  layout: a title line, then header/separator/data rows that all share the
+  *same* per-field width logic - nothing to independently drift. Also added
+  an opt-in `CLI_AMI_TABLE_FIELD_NAMED` (and UTF8 counterpart) so a table can
+  show a friendlier CLI column label without renaming the underlying field
+  identifier - that identifier doubles as the AMI manager-interface
+  protocol's field name, so renaming it outright would silently break any
+  AMI client parsing these tables. Verified by hand-tracing all four
+  generation phases (CLI header/separator/data-row, AMI) for macro-alias
+  symmetry, since an initial pass accidentally deleted the one line that
+  defined `CLI_AMI_TABLE_UTF8_FIELD` for every later phase (a real would-be
+  compile break, caught before being called done).
+- **`sccp show devices` column labels** - applied the new `_NAMED` mechanism:
+  `Descr`→"Description", `Address`→"IP Address", `Mac`→"MAC Address",
+  `RegState`→"Status", `RegTime`→"Registered", `Act`→"Active" (widened its
+  column from 3 to 6 to fit), `Nat`→"NAT", `Type`→"Model". `Token` and
+  `Lines` were already clear, left as-is. **Found a real data bug while doing
+  this, not just a naming one**: `LoadInfo` has never shown load/firmware
+  info - it prints `d->skinny_type`, the exact same raw numeric device-type
+  enum `Type` already shows as a readable string. Nothing in this codebase
+  tracks the phone's actual reported firmware/load ID at all (`grep`
+  confirms no `loadid`/`loadInformation`/firmware field anywhere in
+  `sccp_device.h`/`.c` or the protocol-parsing code) - despite `SEP*.cnf.xml`
+  provisioning files (this project's other half) having a real
+  `loadInformation` tag, the SCCP session layer never captures what the phone
+  reports back. Relabeled to `TypeID` (accurate for what it actually shows)
+  rather than inventing fake data; real firmware/load-ID tracking is a
+  genuine, separate feature gap - noted here, not attempted.
+- **Other `pbx_cli`/`pbx_log` message fixes this pass**: `sccp_hint.c` debug
+  log with 13 exclamation marks reduced to a normal sentence that also now
+  names which `switch` case it's in (`AST_EXTENSION_INUSE`) instead of just
+  noise; `sccp_pbx.c`'s `"!! retrieving parked call !!"` normalized;
+  `sccp_cli.c` debug test message's trailing `!!` dropped; `chan_sccp.c`'s
+  two config-reload `LOG_ERROR` messages had real broken grammar ("an
+  configuration file is not following the sccp format") rewritten as plain,
+  correct sentences (these two remain self-actionable - "please update your
+  own config file" - unlike the refcount ones, so they keep their guidance).
 
 ## Fixed — the formatter tooling itself (item 4)
 

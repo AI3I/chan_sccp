@@ -308,7 +308,7 @@ boolean_t sccp_threadpool_destroy(sccp_threadpool_t * tp_p)
 	}
 	SCCP_LIST_UNLOCK(&(tp_p->threads));
 
-	// wake up jobs untill jobqueue is empty, before shutting down, to make sure all jobs have been processed
+	// wake up jobs until jobqueue is empty, before shutting down, to make sure all jobs have been processed
 	pbx_cond_broadcast(&(tp_p->work));
 
 	// wait for all threads to exit

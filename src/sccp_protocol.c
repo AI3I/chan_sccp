@@ -1039,7 +1039,7 @@ static void sccp_protocol_sendStartMediaTransmissionV3(constDevicePtr device, co
 	//msg->data.StartMediaTransmission.v3.lel_payloadType = htolel(channel->rtp.audio.transmission.format);
 	msg->data.StartMediaTransmission.v3.lel_codecType = htolel(channel->rtp.audio.transmission.format);
 	msg->data.StartMediaTransmission.v3.lel_precedenceValue = htolel((uint32_t)device->audio_tos);
-	msg->data.StartMediaTransmission.v3.lel_ssValue = htolel(channel->line->silencesuppression);		// Silence supression
+	msg->data.StartMediaTransmission.v3.lel_ssValue = htolel(channel->line->silencesuppression);		// Silence suppression
 	msg->data.StartMediaTransmission.v3.lel_maxFramesPerPacket = htolel(0);
 	msg->data.StartMediaTransmission.v3.lel_RFC2833Type = htolel(dtmf_payload_code);
 	msg->data.StartMediaTransmission.v3.lel_dtmfType = htolel(10);;
@@ -1076,7 +1076,7 @@ static void sccp_protocol_sendStartMediaTransmissionV17(constDevicePtr device, c
 	//msg->data.StartMediaTransmission.v17.lel_payloadType = htolel(channel->rtp.audio.transmission.format);
 	msg->data.StartMediaTransmission.v17.lel_codecType = htolel(channel->rtp.audio.transmission.format);
 	msg->data.StartMediaTransmission.v17.lel_precedenceValue = htolel((uint32_t)device->audio_tos);
-	msg->data.StartMediaTransmission.v17.lel_ssValue = htolel(channel->line->silencesuppression);		// Silence supression
+	msg->data.StartMediaTransmission.v17.lel_ssValue = htolel(channel->line->silencesuppression);		// Silence suppression
 	msg->data.StartMediaTransmission.v17.lel_maxFramesPerPacket = htolel(0);
 	msg->data.StartMediaTransmission.v17.lel_RFC2833Type = htolel(dtmf_payload_code);
 	msg->data.StartMediaTransmission.v17.lel_dtmfType = htolel(10);;
@@ -1115,7 +1115,7 @@ static void sccp_protocol_sendStartMediaTransmissionv22(constDevicePtr device, c
 	//msg->data.StartMediaTransmission.v22.lel_payloadType = htolel(channel->rtp.audio.transmission.format);
 	msg->data.StartMediaTransmission.v22.lel_codecType = htolel(channel->rtp.audio.transmission.format);
 	msg->data.StartMediaTransmission.v22.lel_precedenceValue = htolel((uint32_t)device->audio_tos);
-	msg->data.StartMediaTransmission.v22.lel_ssValue = htolel(channel->line->silencesuppression);		// Silence supression
+	msg->data.StartMediaTransmission.v22.lel_ssValue = htolel(channel->line->silencesuppression);		// Silence suppression
 	msg->data.StartMediaTransmission.v22.lel_maxFramesPerPacket = htolel(0);
 	msg->data.StartMediaTransmission.v22.lel_RFC2833Type = htolel(dtmf_payload_code);
 	msg->data.StartMediaTransmission.v22.lel_dtmfType = htolel(10);;

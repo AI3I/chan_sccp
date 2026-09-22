@@ -70,7 +70,7 @@ SCCP_FILE_VERSION(__FILE__, "");
                                         <option name="dynamic"><para>Is Realtime Device (boolean).</para></option>
                                         <option name="realtime"><para>Is Realtime Device (boolean).</para></option>
                                         <option name="active_channel"><para>CallID of active Channel (integer).</para></option>
-                                        <option name="transfer_channel"><para>CallID of channel being transfered (integer).</para></option>
+                                        <option name="transfer_channel"><para>CallID of channel being transferred (integer).</para></option>
                                         <option name="allow_conference"><para>Allow Conference (boolean).</para></option>
                                         <option name="conf_play_general_announce"><para>Play General Announcements (boolean).</para></option>
                                         <option name="conf_play_part_announce"><para>Play Announcement to participants (boolean).</para></option>
@@ -302,7 +302,7 @@ SCCP_FILE_VERSION(__FILE__, "");
         </application>
         <application name="SCCPSetCodec" language="en_US">
                 <synopsis>
-                        Set the prefered codec for the current sccp channel to be used before dialing the destination channel.
+                        Set the preferred codec for the current sccp channel to be used before dialing the destination channel.
                 </synopsis>
                 <syntax>
                         <parameter name="codec" required="true">
@@ -331,7 +331,7 @@ SCCP_FILE_VERSION(__FILE__, "");
                         </parameter>
                         <parameter name="timeout" required="false">
                                 <para>Number of seconds the message should be displayed.</para>
-                                <para>If timeout is ommitted, the message will remain until the next/empty message.</para>
+                                <para>If timeout is omitted, the message will remain until the next/empty message.</para>
                         </parameter>
                         <parameter name="priority" required="false">
                                 <para>Use priority to set/clear priority notifications.</para>

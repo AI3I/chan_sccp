@@ -35,10 +35,15 @@ AC_DEFUN([AST_GET_VERSION], [
 			117) AC_DEFINE([ASTERISK_CONF_1_17], [1], [Defined ASTERISK_CONF_1_17]);;
 			118) AC_DEFINE([ASTERISK_CONF_1_18], [1], [Defined ASTERISK_CONF_1_18]);;
 			119) AC_DEFINE([ASTERISK_CONF_1_19], [1], [Defined ASTERISK_CONF_1_19]);;
+			120) AC_DEFINE([ASTERISK_CONF_1_20], [1], [Defined ASTERISK_CONF_1_20]);;
+			121) AC_DEFINE([ASTERISK_CONF_1_21], [1], [Defined ASTERISK_CONF_1_21]);;
+			122) AC_DEFINE([ASTERISK_CONF_1_22], [1], [Defined ASTERISK_CONF_1_22]);;
+			123) AC_DEFINE([ASTERISK_CONF_1_23], [1], [Defined ASTERISK_CONF_1_23]);;
+			124) AC_DEFINE([ASTERISK_CONF_1_24], [1], [Defined ASTERISK_CONF_1_24]);;
 			*)
 				AC_DEFINE([ASTERISK_CONF], [0], [NOT Defined ASTERISK_CONF !!])
 				ASTERISK_INCOMPATIBLE=yes;;
-		esac 
+		esac
 		AC_DEFINE_UNQUOTED([ASTERISK_VERSION_NUMBER], ${ASTERISK_VERSION_NUMBER}, [ASTERISK Version Number])
 		AC_DEFINE_UNQUOTED([ASTERISK_VERSION_GROUP], ${ASTERISK_VER_GROUP}, [ASTERISK Version Group])
 		AC_DEFINE_UNQUOTED([ASTERISK_REPOS_LOCATION], ${ASTERISK_REPOS_LOCATION},[ASTERISK Source Location])
@@ -144,10 +149,15 @@ AC_DEFUN([AST_GET_VERSION], [
 								117) AC_DEFINE([ASTERISK_CONF_1_17], [1], [Defined ASTERISK_CONF_1_17]);;
 								118) AC_DEFINE([ASTERISK_CONF_1_18], [1], [Defined ASTERISK_CONF_1_18]);;
 								119) AC_DEFINE([ASTERISK_CONF_1_19], [1], [Defined ASTERISK_CONF_1_19]);;
+								120) AC_DEFINE([ASTERISK_CONF_1_20], [1], [Defined ASTERISK_CONF_1_20]);;
+								121) AC_DEFINE([ASTERISK_CONF_1_21], [1], [Defined ASTERISK_CONF_1_21]);;
+								122) AC_DEFINE([ASTERISK_CONF_1_22], [1], [Defined ASTERISK_CONF_1_22]);;
+								123) AC_DEFINE([ASTERISK_CONF_1_23], [1], [Defined ASTERISK_CONF_1_23]);;
+								124) AC_DEFINE([ASTERISK_CONF_1_24], [1], [Defined ASTERISK_CONF_1_24]);;
 								*)
 									AC_DEFINE([ASTERISK_CONF], [0], [NOT Defined ASTERISK_CONF !!])
 									ASTERISK_INCOMPATIBLE=yes;;
-							esac 
+							esac
 
 							if [ test ${ASTERISK_VER_GROUP} -lt ${MIN_ASTERISK_VERSION} ]; then
 								echo ""
@@ -188,12 +198,64 @@ AC_DEFUN([AST_GET_VERSION], [
 				AC_MSG_RESULT('ASTERISK_VERSION could not be established)
 			])
 		], [
+			dnl Modern Asterisk (20+) removed asterisk/version.h (including it is now a
+			dnl hard #error telling you to use asterisk/ast_version.h instead), so the
+			dnl AC_CHECK_HEADER([asterisk/version.h]) branch above never fires for it.
+			dnl asterisk/ast_version.h only declares runtime functions (ast_get_version()),
+			dnl nothing readable by the preprocessor - but every real Asterisk install
+			dnl also ships its own build-generated asterisk/autoconfig.h, which defines
+			dnl PACKAGE_VERSION as a bare major-version string (e.g. "22") for 20+. Try
+			dnl that first; only fall through to the older per-header heuristic guessing
+			dnl (which caps out at 119 and can't tell 20 from 24) if this doesn't pan out.
+			AC_CHECK_HEADER([asterisk/autoconfig.h], [
+				AC_MSG_CHECKING([for major version via asterisk/autoconfig.h PACKAGE_VERSION])
+				AC_COMPILE_IFELSE(
+					[AC_LANG_PROGRAM(
+						[
+							#define AST_MODULE_SELF_SYM "__internal_chan_sccp_la_self"
+							#define AST_MODULE "chan_sccp"
+							#include <asterisk/autoconfig.h>
+						],[
+							const char *test_src = PACKAGE_VERSION;
+						]
+					)],[
+					pbx_major_ver=`eval "$ac_cpp conftest.$ac_ext" 2>/dev/null | $EGREP test_src | $EGREP -o '\".*\"' | sed 's/"//g'`
+					if echo "$pbx_major_ver" | $EGREP -q '^[0-9][0-9]$' && test "$pbx_major_ver" -ge 20 2>/dev/null; then
+						ASTERISK_VER_GROUP="1${pbx_major_ver}"
+						ASTERISK_VERSION_NUMBER="${ASTERISK_VER_GROUP}00"
+						ASTERISK_REPOS_LOCATION=TRUNK
+
+						AC_DEFINE_UNQUOTED([ASTERISK_VERSION_NUMBER], ${ASTERISK_VERSION_NUMBER}, [ASTERISK Version Number])
+						AC_DEFINE_UNQUOTED([ASTERISK_VERSION_GROUP], ${ASTERISK_VER_GROUP}, [ASTERISK Version Group])
+						AC_DEFINE_UNQUOTED([ASTERISK_REPOS_LOCATION], ["${ASTERISK_REPOS_LOCATION}"], [ASTERISK Source Location])
+						AC_SUBST([ASTERISK_VER_GROUP])
+						AC_SUBST([ASTERISK_VERSION_NUMBER])
+						AC_SUBST([ASTERISK_REPOS_LOCATION])
+
+						case "${ASTERISK_VER_GROUP}" in
+							120) AC_DEFINE([ASTERISK_CONF_1_20], [1], [Defined ASTERISK_CONF_1_20]);;
+							121) AC_DEFINE([ASTERISK_CONF_1_21], [1], [Defined ASTERISK_CONF_1_21]);;
+							122) AC_DEFINE([ASTERISK_CONF_1_22], [1], [Defined ASTERISK_CONF_1_22]);;
+							123) AC_DEFINE([ASTERISK_CONF_1_23], [1], [Defined ASTERISK_CONF_1_23]);;
+							124) AC_DEFINE([ASTERISK_CONF_1_24], [1], [Defined ASTERISK_CONF_1_24]);;
+							*) AC_DEFINE([ASTERISK_CONF], [0], [NOT Defined ASTERISK_CONF !!])
+							   ASTERISK_INCOMPATIBLE=yes;;
+						esac
+
+						version_found=1
+						AC_MSG_RESULT([Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}' (PACKAGE_VERSION=${pbx_major_ver})])
+					else
+						AC_MSG_RESULT([not a recognized modern major version ('${pbx_major_ver}')])
+					fi
+					])
+			])
 			HEADER_INCLUDE="
 	#define HAVE_ARPA_INET_H 1
 	#define AST_MODULE_SELF_SYM __internal_chan_sccp_la_self
 	#define AST_MODULE "chan_sccp"
 	#include <asterisk.h>
 	"
+			AS_IF([test "$version_found" = "0"], [
 			AC_CHECK_HEADER([asterisk/ast_version.h],
 			[
 				AC_EGREP_CPP([8.0.0], [
@@ -350,9 +412,10 @@ AC_DEFUN([AST_GET_VERSION], [
 			],[
 				AC_MSG_RESULT(['ASTERISK_VERSION could not be established'])
 			], [$HEADER_INCLUDE])
+			])
 		])
 	])
-	
+
 	if test $version_found == 0; then
 		echo ""
 		echo ""

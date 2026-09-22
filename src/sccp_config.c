@@ -3314,7 +3314,7 @@ int sccp_manager_config_metadata(struct mansession * s, const struct message * m
 			astman_append(s, "Event: SCCPConfigMetaData\r\n");
 		} else if (sccp_strcaseequals(req_resultformat, "command")) {
 			astman_append(s, "Response: Follows\r\n");
-			astman_append(s, "Priviledge: Command\r\n");
+			astman_append(s, "Privilege: Command\r\n");
 		} else {
 			astman_append(s, "Response: Success\r\n");
 		}
@@ -3574,7 +3574,7 @@ int sccp_manager_config_metadata(struct mansession * s, const struct message * m
 				} else if (sccp_strcaseequals(req_resultformat, "command")) {
 					astman_append(s, "--END COMMAND--\r\n"
 							 "DataType: JSON\r\n"
-							 "Priviledge: Command\r\n");
+							 "Privilege: Command\r\n");
 				}
 				astman_append(s, "\r\n");
 			}

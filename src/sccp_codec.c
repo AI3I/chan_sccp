@@ -393,10 +393,10 @@ skinny_codec_t sccp_codec_findBestJoint(constChannelPtr c, const skinny_codec_t 
 
 EXIT:
 	if (res == SKINNY_CODEC_NONE && fallback) {
-		sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_3 "%s, Could not find a common prefered codec (yet), using %s (%d)\n", c->designator, codec2name(ourPreferences[0]), ourPreferences[0]);
+		sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_3 "%s, Could not find a common preferred codec (yet), using %s (%d)\n", c->designator, codec2name(ourPreferences[0]), ourPreferences[0]);
 		res = ourPreferences[0];
 	}
-	sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_3 "%s: (findBestJoint) returning prefered codec %s (%d)\n", c->designator, codec2name(res), res);
+	sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_3 "%s: (findBestJoint) returning preferred codec %s (%d)\n", c->designator, codec2name(res), res);
 	return res;
 }
 

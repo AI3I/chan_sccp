@@ -914,7 +914,7 @@ void sccp_channel_openReceiveChannel(constChannelPtr channel)
 		);
 
 	sccp_rtp_setState(audio, SCCP_RTP_RECEPTION, SCCP_RTP_STATUS_PROGRESS);
-	if (d->nat >= SCCP_NAT_ON) {												// device is natted
+	if (d->nat >= SCCP_NAT_ON) {												// device is behind NAT
 		sccp_rtp_updateNatRemotePhone(channel, audio);
 	}
 
@@ -1364,7 +1364,7 @@ void sccp_channel_startMultiMediaTransmission(constChannelPtr channel)
 		sccp_channel_setVideoMode((channelPtr)channel, "off");								// discard const
 		return;
 	}
-	//if (d->nat >= SCCP_NAT_ON) {												/* device is natted */
+	//if (d->nat >= SCCP_NAT_ON) {												/* device is behind NAT */
 	//	sccp_rtp_updateNatRemotePhone(channel, video);
 	//}
 
@@ -2544,7 +2544,7 @@ void sccp_channel_transfer(channelPtr channel, constDevicePtr device)
 		sccp_channel_release(&d->transferChannels.transferer);						/* explicit release */
 	}
 
-	if ((d->transferChannels.transferee = sccp_channel_retain(channel))) {					/** channel to be transfered */
+	if ((d->transferChannels.transferee = sccp_channel_retain(channel))) {					/** channel to be transferred */
 		sccp_log((DEBUGCAT_CHANNEL + DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Transfer request from line channel %s\n", d->id, channel->designator);
 
 		prev_channel_state = channel->state;
@@ -2657,7 +2657,7 @@ void sccp_channel_transfer_cancel(devicePtr d, channelPtr c)
 	/**
 	 * workaround to fix issue with 7960 and protocol version != 6
 	 * 7960 loses callplane when cancel transfer (end call on other channel).
-	 * This script sets the hold state for transfered channel explicitly -MC
+	 * This script sets the hold state for transferred channel explicitly -MC
 	 */
 	AUTO_RELEASE(sccp_channel_t, transferee , d->transferChannels.transferee ? sccp_channel_retain(d->transferChannels.transferee) : NULL);
 	if (transferee && transferee != c) {

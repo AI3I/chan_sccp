@@ -147,7 +147,7 @@ char *pbx_skip_blanks(char *str)
 
 /*!
  * \brief Asterisk Trim Blanks
- * Remove Blanks from the begining and end of a string
+ * Remove Blanks from the beginning and end of a string
  * \param str as Character
  * \return String without Beginning or Ending Blanks
  */
@@ -194,7 +194,7 @@ char *pbx_strip(char *s)
 #ifndef CS_AST_HAS_APP_SEPARATE_ARGS
 
 /*!
- * \brief Seperate App Args
+ * \brief Separate App Args
  * \param buf Buffer as Char
  * \param delim Delimiter as Char
  * \param array Array as Char Array

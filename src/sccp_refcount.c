@@ -821,8 +821,7 @@ gcc_inline void * const sccp_refcount_retain(const void * const ptr, const char 
 #	if CS_REFCOUNT_DEBUG
 	__sccp_refcount_debug((void *) ptr, NULL, 1, filename, lineno, func);
 #	endif
-	pbx_log(__LOG_VERBOSE, __FILE__, 0, "retain", "SCCP: (%-15.15s:%-4.4d (%-35.35s)) ALARM !! trying to retain %p with invalid memory reference! this should never happen !\n", filename, lineno, func, obj);
-	pbx_log(LOG_ERROR, "SCCP: (release) Refcount Object %p could not be found (Major Logic Error). Please report to developers\n", ptr);
+	pbx_log(LOG_ERROR, "SCCP: (%-15.15s:%-4.4d (%-35.35s)) refcount_retain: %p is not a tracked refcounted object - indicates a double-release, use-after-free, or dangling pointer bug.\n", filename, lineno, func, ptr);
 	#ifdef DEBUG
 	sccp_do_backtrace();
 	#endif
@@ -877,8 +876,7 @@ gcc_inline void * const sccp_refcount_release(const void * * const ptr, const ch
 #if CS_REFCOUNT_DEBUG
 	__sccp_refcount_debug((void *) *ptr, NULL, -1, filename, lineno, func);
 #endif
-	pbx_log(__LOG_VERBOSE, __FILE__, 0, "release", "SCCP (%-15.15s:%-4.4d (%-35.35s)) ALARM !! trying to release a %p with invalid memory reference! this should never happen !\n", filename, lineno, func, obj);
-	pbx_log(LOG_ERROR, "SCCP: (release) Refcount Object %p could not be found (Major Logic Error). Please report to developers\n", *ptr);
+	pbx_log(LOG_ERROR, "SCCP: (%-15.15s:%-4.4d (%-35.35s)) refcount_release: %p is not a tracked refcounted object - indicates a double-release, use-after-free, or dangling pointer bug.\n", filename, lineno, func, *ptr);
 	#ifdef DEBUG
 	sccp_do_backtrace();
 	#endif

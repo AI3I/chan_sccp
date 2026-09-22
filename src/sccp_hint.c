@@ -353,7 +353,7 @@ static int sccp_hint_devstate_cb(char *context, char *id, enum ast_extension_sta
 			hint->currentState = SCCP_CHANNELSTATE_ONHOOK;
 			break;
 		case AST_EXTENSION_INUSE:
-			sccp_log ((DEBUGCAT_HINT)) (VERBOSE_PREFIX_2 "%s !!!!!! (hint_devstate_cb) !!!!!!! previousState:%s, currentState:%s\n", hint->exten, sccp_channelstate2str (hint->previousState),
+			sccp_log ((DEBUGCAT_HINT)) (VERBOSE_PREFIX_2 "%s: (hint_devstate_cb) AST_EXTENSION_INUSE: previousState:%s, currentState:%s\n", hint->exten, sccp_channelstate2str (hint->previousState),
 						    sccp_channelstate2str (hint->currentState));
 			if (SCCP_CHANNELSTATE_Idling (hint->currentState)) {
 				hint->currentState = SCCP_CHANNELSTATE_DIALING;

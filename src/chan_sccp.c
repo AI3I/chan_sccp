@@ -398,12 +398,12 @@ int sccp_reload(void)
 			break;
 		case CONFIG_STATUS_FILE_OLD:
 			pbx_log(LOG_ERROR, "Error reloading from '%s'\n", GLOB(config_file_name));
-			pbx_log(LOG_ERROR, "\n\n --> You are using an old configuration format, please update '%s'!!\n --> Loading of module chan_sccp with current sccp.conf has terminated\n --> Check http://chan-sccp-b.sourceforge.net/doc_setup.shtml for more information.\n\n", GLOB(config_file_name));
+			pbx_log(LOG_ERROR, "\n\n --> '%s' uses an old configuration format; please update it.\n --> Loading of module chan_sccp with the current sccp.conf has been aborted.\n\n", GLOB(config_file_name));
 			returnval = 3;
 			break;
 		case CONFIG_STATUS_FILE_NOT_SCCP:
 			pbx_log(LOG_ERROR, "Error reloading from '%s'\n", GLOB(config_file_name));
-			pbx_log(LOG_ERROR, "\n\n --> You are using an configuration file is not following the sccp format, please check '%s'!!\n --> Loading of module chan_sccp with current sccp.conf has terminated\n --> Check http://chan-sccp-b.sourceforge.net/doc_setup.shtml for more information.\n\n", GLOB(config_file_name));
+			pbx_log(LOG_ERROR, "\n\n --> '%s' does not follow the expected sccp.conf format; please check it.\n --> Loading of module chan_sccp with the current sccp.conf has been aborted.\n\n", GLOB(config_file_name));
 			returnval = 3;
 			break;
 		case CONFIG_STATUS_FILE_NOT_FOUND:

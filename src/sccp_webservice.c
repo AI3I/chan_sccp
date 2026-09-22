@@ -247,24 +247,42 @@ static Process_XSLT_t parse_useragent(PBX_VARIABLE_TYPE * request_headers)
 	return res;
 }
 
-static handler_t * get_request_handler(PBX_VARIABLE_TYPE * request_params)
+/*!
+ * \brief Look up the handler for this request's "handler" URI param.
+ *
+ * Returns a copy of the matched handler_t, not a pointer into &handlers'
+ * backing storage - the vector is only protected by its lock while we hold
+ * it here, and handler_t (fixed-size uri[], a function pointer, an enum) is
+ * cheap to copy. Returning a live pointer instead would let a concurrent
+ * iWebService.addHandler()/removeHandler() call (SCCP_VECTOR_APPEND can
+ * realloc the backing array on growth) invalidate it while the caller is
+ * still dereferencing handler->callback/uri/outputfmt after we've already
+ * released the lock.
+ *
+ * \retval TRUE  *out was filled in with a valid handler copy
+ * \retval FALSE no matching handler (or no "handler" param); *out untouched
+ */
+static boolean_t get_request_handler(PBX_VARIABLE_TYPE * request_params, handler_t * const out)
 {
-	const char * uri     = sccp_retrieve_str_variable_byKey(request_params, "handler");
-	handler_t *  handler = NULL;
+	const char * uri = sccp_retrieve_str_variable_byKey(request_params, "handler");
 
-	if (uri) {
-		SCCP_VECTOR_RW_RDLOCK(&handlers);
-		handler = (handler_t *)SCCP_VECTOR_GET_CMP(&handlers, uri, HANDLER_CB_CMP);
-		SCCP_VECTOR_RW_UNLOCK(&handlers);
-
-		if (!handler) {
-			pbx_log(LOG_ERROR, "no handler found for uri:%s\n", uri);
-		}
-	} else {
+	if (!uri) {
 		pbx_log(LOG_ERROR, "no 'handler' parameter provided in request\n");
+		return FALSE;
 	}
 
-	return handler;
+	SCCP_VECTOR_RW_RDLOCK(&handlers);
+	handler_t * found = (handler_t *)SCCP_VECTOR_GET_CMP(&handlers, uri, HANDLER_CB_CMP);
+	if (found) {
+		*out = *found;
+	}
+	SCCP_VECTOR_RW_UNLOCK(&handlers);
+
+	if (!found) {
+		pbx_log(LOG_ERROR, "no handler found for uri:%s\n", uri);
+		return FALSE;
+	}
+	return TRUE;
 }
 
 static int parse_request_headers(PBX_VARIABLE_TYPE * request_headers, const char * locale)
@@ -276,15 +294,26 @@ static int parse_request_headers(PBX_VARIABLE_TYPE * request_headers, const char
 
 static int parse_outputfmt(PBX_VARIABLE_TYPE * request_params, PBX_VARIABLE_TYPE * request_headers, sccp_xml_outputfmt_t * outputfmt)
 {
+	// A real Cisco phone identifies itself this way regardless of any caller-supplied
+	// default (e.g. request_parser() seeds *outputfmt with HTML for browser clients) -
+	// detecting one always takes priority over that default.
 	const char * user_agent = sccp_retrieve_str_variable_byKey(request_headers, "User-Agent");
-	if (*outputfmt == SCCP_XML_OUTPUTFMT_NULL && !sccp_strlen_zero(user_agent) && !strcasecmp(user_agent, "Allegro-Software-WebClient")) {
+	if (!sccp_strlen_zero(user_agent) && !strcasecmp(user_agent, "Allegro-Software-WebClient")) {
 		*outputfmt = SCCP_XML_OUTPUTFMT_CXML;
 		return 0;
 	}
 
 	const char * requested_outputfmt = sccp_retrieve_str_variable_byKey(request_params, "outformat");
 	if (!sccp_strlen_zero(requested_outputfmt)) {
-		*outputfmt = sccp_xml_outputfmt_str2val(requested_outputfmt);
+		sccp_xml_outputfmt_t parsed = sccp_xml_outputfmt_str2val(requested_outputfmt);
+		if (!sccp_xml_outputfmt_exists(parsed)) {
+			// unrecognized ?outformat=... value - do not let the SENTINEL flow on to
+			// be used as an outputfmt2contenttype[] index (out of bounds: valid
+			// indices are 0..SCCP_XML_OUTPUTFMT_SENTINEL-1)
+			pbx_log(LOG_WARNING, "SCCP: (parse_outputfmt) unrecognized outformat '%s'\n", requested_outputfmt);
+			return -1;
+		}
+		*outputfmt = parsed;
 		return 0;
 	}
 	return (*outputfmt == SCCP_XML_OUTPUTFMT_NULL) ? -1 : 0;
@@ -345,10 +374,15 @@ static int request_parser(struct ast_tcptls_session_instance * ser, enum ast_htt
 	pbx_str_t * out         = NULL;
 	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_1 "SCCP: (request_parser) Handling Callback\n");
 
-	handler_t * handler = get_request_handler(request_params);
-	if (!handler) {
-		pbx_log(LOG_ERROR, "could not parse the requested uri or handler not found\n");
-		ast_http_error(ser, 500, "Server Error", "Internal Server Error\nURI could not be parsed / Not handler found\n");
+	handler_t handler;
+	if (!get_request_handler(request_params, &handler)) {
+		// get_request_handler() already logged the specific reason (missing
+		// 'handler' param, or no registered handler matches it); this line adds
+		// the request context (uri/remote address) that log line doesn't have.
+		pbx_log(LOG_WARNING, "SCCP: (request_parser) rejecting request for '%s' from %s - see prior log line for reason\n",
+			request_uri, ast_sockaddr_stringify(&ser->remote_address));
+		// this is a malformed/unrecognized client request, not a server-side failure
+		ast_http_error(ser, 404, "Not Found", "No SCCP XML service is registered for the requested 'handler' parameter.\n");
 		return -1;
 	}
 	// Process_XSLT_t process_side = parse_useragent(request_headers);
@@ -378,21 +412,21 @@ static int request_parser(struct ast_tcptls_session_instance * ser, enum ast_htt
 		http_header = pbx_str_create(80);
 		out         = pbx_str_create(4196);
 		if (!http_header || !out) {
-			pbx_log(LOG_ERROR, "pbx_str_create() out of memory\n");
-			ast_http_error(ser, 500, "Server Error", "Internal Server Error\nast_str_create() out of memory\n");
+			pbx_log(LOG_ERROR, "SCCP: (request_parser) pbx_str_create() failed to allocate the HTTP response buffer (out of memory)\n");
+			ast_http_error(ser, 500, "Server Error", "The server ran out of memory building this response. Try again; if this persists, check Asterisk's memory usage.\n");
 			break;
 		}
 
 		if (result != 0) {
-			pbx_log(LOG_ERROR, "could not parse the uri or headers\n");
+			pbx_log(LOG_ERROR, "SCCP: (request_parser) rejecting request for '%s': the request's URI, headers, or 'outformat' parameter could not be parsed (see prior log line for detail)\n", request_uri);
 			ast_http_request_close_on_completion(ser);
-			ast_http_error(ser, 500, "Server Error", "Internal Server Error\nURI or Headers could not be parsed\n");
+			ast_http_error(ser, 400, "Bad Request", "The request's URI, headers, or 'outformat' parameter could not be parsed.\n");
 			break;
 		}
-		if (!handler->callback(handler->uri, request_params, request_headers, &out)) {
-			pbx_log(LOG_ERROR, "could not process request, callback failed\n");
+		if (!handler.callback(handler.uri, request_params, request_headers, &out)) {
+			pbx_log(LOG_ERROR, "SCCP: (request_parser) handler '%s' failed while building its response for '%s'\n", handler.uri, request_uri);
 			ast_http_request_close_on_completion(ser);
-			ast_http_error(ser, 500, "Server Error", "Internal Server Error\nCould not process request, callback failed\n");
+			ast_http_error(ser, 500, "Server Error", "The matched SCCP XML service handler failed while building its response.\n");
 			break;
 		}
 		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (request_parser) Handling Callback: %s, remote-address: %s\n", request_uri, ast_sockaddr_stringify(&ser->remote_address));
@@ -450,7 +484,16 @@ static int sccp_webservice_callback(struct ast_tcptls_session_instance * ser, co
 	struct ast_variable * params = get_params;
 
 	if (running) {
-		pbx_log(LOG_NOTICE, "Handle incoming %s request for %s, %p, %p\n", method == AST_HTTP_POST ? "POST" : "GET", uri, get_params, headers);
+		int param_count = 0, header_count = 0;
+		for (PBX_VARIABLE_TYPE * v = get_params; v; v = v->next) {
+			param_count++;
+		}
+		for (PBX_VARIABLE_TYPE * v = headers; v; v = v->next) {
+			header_count++;
+		}
+		pbx_log(LOG_NOTICE, "SCCP: (sccp_webservice_callback) incoming %s request for '%s' (%d param%s, %d header%s)\n",
+			method == AST_HTTP_POST ? "POST" : "GET", uri,
+			param_count, param_count == 1 ? "" : "s", header_count, header_count == 1 ? "" : "s");
 		if (method == AST_HTTP_POST) {
 			params = ast_http_get_post_vars(ser, headers);
 		}
@@ -646,13 +689,14 @@ static boolean_t xmlPostProcess(xmlDoc * const doc, const char * const uri, PBX_
 			char * stylesheetFilename = findStylesheet(uri, outputfmt);
 			if (stylesheetFilename) {
 				if (!iXML.applyStyleSheetByName(doc, stylesheetFilename, params, resultstr)) {
-					pbx_log(LOG_ERROR, "Applying Stylesheet failed\n");
+					pbx_log(LOG_ERROR, "SCCP: (xmlPostProcess) handler '%s' matched stylesheet '%s', but applying it failed (see prior log line for the specific XSLT/parse error)\n", uri, stylesheetFilename);
 					res = FALSE;
 				}
 				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (xmlPostProcess) resultstr:%s\n", *resultstr);
 				sccp_free(stylesheetFilename);
 			} else {
-				pbx_log(LOG_ERROR, "Stylesheet could not be found\n");
+				pbx_log(LOG_ERROR, "SCCP: (xmlPostProcess) no '%s2%s.xsl' stylesheet found under " PBX_VARLIB "/sccpxslt/ for handler '%s'\n",
+					uri, sccp_xml_outputfmt2str(outputfmt), uri);
 				res = FALSE;
 			}
 		} else {

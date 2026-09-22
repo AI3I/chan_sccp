@@ -192,8 +192,14 @@ static boolean_t applyStyleSheetByName(xmlDoc * const doc, const char * const st
 	}
 
 	if (styleSheetFilename) {
-		xsltStylesheet * const xslt   = xsltParseStylesheetFile((const xmlChar *)styleSheetFilename);
-		xmlDoc * const         newdoc = xsltApplyStylesheet(xslt, doc, params);
+		xsltStylesheet * const xslt = xsltParseStylesheetFile((const xmlChar *)styleSheetFilename);
+		if (!xslt) {
+			// malformed/unparseable .xsl file - xsltApplyStylesheet() would otherwise
+			// be handed a NULL stylesheet and crash the process on an ordinary request
+			pbx_log(LOG_ERROR, "SCCP: (applyStyleSheetByName) failed to parse stylesheet '%s'\n", styleSheetFilename);
+			return res;
+		}
+		xmlDoc * const newdoc = xsltApplyStylesheet(xslt, doc, params);
 		if (newdoc) {                                        // switch xml doc with newdoc which got the stylesheet applied, free original xml doc
 			int output_len = 0;
 			xmlDocDumpFormatMemoryEnc(newdoc, (xmlChar **)result, &output_len, "UTF-8", 1);

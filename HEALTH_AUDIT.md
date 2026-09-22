@@ -127,7 +127,7 @@ just what happens to still compile) and commit real `ast120`/`ast121`/`ast123`/
 exists via the hand-hack; formalize it the same way). Given the version count,
 this is realistically its own multi-session project, not a single sitting.
 
-## Open — FreeBSD support (researched 2026-09-22)
+## Fixed — FreeBSD one-way audio / dual-stack bind bug (researched + fixed + validated on real hardware, 2026-09-22)
 
 chan-sccp had a working FreeBSD port at one point per the user's own
 recollection, which checks out: Asterisk itself ships a `BSDmakefile` at its
@@ -157,19 +157,41 @@ option explicitly, so it silently inherits whatever the OS defaults to. That's
 exactly why this worked for essentially every tester (who are on Linux) and
 silently broke for the one person on FreeBSD.
 
-**Recommendation**: before the `bind()` call in `sccp_transport_tcp.c`,
-explicitly `setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off))` when
-binding to a dual-stack/wildcard address, so behavior is consistent across
-platforms instead of silently OS-dependent. This is a small, targeted,
-plausible fix — but **cannot be verified without an actual FreeBSD box**, which
-isn't available tonight. Don't ship this untested; get access to a FreeBSD VM
-first (even a throwaway one) and reproduce the original bug before trusting
-the fix.
+**Fixed and validated on real hardware** — the user offered an actual FreeBSD
+box (`belvedere`, FreeBSD 15.1-RELEASE-p3) specifically for this. Confirmed
+`net.inet6.ip6.v6only=1` as the live system default, then:
 
-**Still unknown**: which FreeBSD versions matter today (the original report
-was FreeBSD 12.1, now itself EOL) — worth checking FreeBSD's own supported
--RELEASE list before committing to a target, same as the Asterisk version work
-above.
+1. Reproduced the exact historical bug with a minimal standalone C program:
+   bind `::` without clearing `V6ONLY` → IPv4 connection refused at the kernel
+   level, matching the old issue's symptom precisely.
+2. Fixed in `sccp_netsock_setoptions()` (not `tcp_bind()`/`tls_bind()`
+   individually — every transport already calls this function immediately
+   before `bind()`, so fixing it here covers both TCP and TLS uniformly).
+   Detects the socket's family via `getsockname()` and clears `IPV6_V6ONLY`
+   only for `AF_INET6` sockets, in the function's existing cross-platform
+   section (ahead of the `#if defined(linux)` block) since this needs to run
+   on every OS — it's a no-op on Linux, whose default is already 0.
+3. **A real gotcha caught by testing, not assumed away**: `IPV6_V6ONLY` can
+   only be changed *before* `bind()` on FreeBSD — an initial test that set it
+   *after* binding correctly failed with `EINVAL`. The real code already calls
+   `sccp_netsock_setoptions()` before `bind()` (confirmed in `sccp_session.c`),
+   so this isn't an issue for the actual fix, but it's exactly the kind of
+   assumption that would've been wrong if shipped without checking.
+4. Validated the exact real logic (pre-bind `getsockname()` → conditional
+   `setsockopt`) in isolation: family correctly detected on an *unbound*
+   socket, `V6ONLY` successfully cleared, confirmed 0 after `bind()`+`listen()`.
+5. Also compiled clean (full `make`, `CCLD chan_sccp.la`) against the Linux/
+   Asterisk 22 build tree this actually runs on tonight — no regression.
+
+**Not done**: no Asterisk/chan-sccp install exists on `belvedere` (offered
+purely as a test box) — only the standalone socket mechanism was validated,
+not a full build. A real end-to-end test (phone registration, actual RTP flow
+on FreeBSD) is still open for whenever a full install is set up there.
+
+**Still unknown**: which FreeBSD versions matter today for broader testing
+(the original bug report was FreeBSD 12.1, now itself EOL; `belvedere` runs
+15.1) — worth checking FreeBSD's own supported `-RELEASE` list if wider
+version coverage is wanted, same as the Asterisk version work above.
 
 ## Fixed — message quality, spelling, and file headers (continued)
 

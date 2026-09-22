@@ -42,13 +42,12 @@ BraceWrapping:
   BeforeElse:            false
   BeforeLambdaBody:      false
   BeforeWhile:           false
-  IndentBraces:          true
+  IndentBraces:          false
   SplitEmptyFunction:    false
   SplitEmptyRecord:      false
   SplitEmptyNamespace:   false
 BreakAfterJavaFieldAnnotations: false
 BreakBeforeBinaryOperators: NonAssignment
-BreakBeforeBraces: Linux
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializers: AfterColon
 BreakInheritanceList: BeforeComma

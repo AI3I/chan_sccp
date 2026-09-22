@@ -2534,6 +2534,17 @@ static boolean_t sccp_astwrap_createRtpInstance(constDevicePtr d, constChannelPt
 	ast_rtp_instance_set_qos(instance, tos, cos, "SCCP RTP");
 
 	if (rtp->type == SCCP_RTP_AUDIO) {
+		/* SCCP has no SDP offer/answer to populate Asterisk's transmit
+		 * payload table. Register the standard static audio mappings before
+		 * early media or answer; set_write_format does not do this for the
+		 * "asterisk" RTP engine. Codec selection remains per channel.
+		 */
+		static const int audio_payloads[] = { 0, 3, 4, 8, 9, 18 };
+		unsigned int i;
+		for (i = 0; i < ARRAY_LEN(audio_payloads); ++i) {
+			ast_rtp_codecs_payloads_set_m_type(ast_rtp_instance_get_codecs(instance), instance, audio_payloads[i]);
+		}
+
 		sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_2 "%s: update rtpmap: format:%s, payload:%d, mime:%s, rate:%d\n",
 			c->designator, "CISCO-DTMF", 101, "audio", 0);
 		ast_rtp_codecs_payloads_set_m_type(ast_rtp_instance_get_codecs(instance), instance, 101);

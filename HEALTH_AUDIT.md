@@ -1,6 +1,39 @@
 # chan_sccp-modern Health Audit
 
-## Fixed — RTP write/read format never negotiated for auto-answered/paged calls (2026-09-22)
+## RTP transmit payload initialization correction (2026-09-22)
+
+The answer-time format changes described below did **not** fix the live
+`Don't know how to send format ulaw packets with RTP` warning. On the PBX's
+Asterisk 22.8.2, `res_rtp_asterisk` implements neither `set_write_format` nor
+`set_read_format`; the instance wrappers return -1 without initializing
+payload mappings. `ast_rtp_write` uses the separate transmit payload table,
+while `ast_rtp_codecs_payload_code` allocates receive mappings.
+
+The deployed `chan-sccp-rtpfix2` module matched the local ast116 source and
+registered telephone-event but no standard audio transmit mappings. RTP
+instance creation now explicitly registers static payloads 0 (PCMU), 3
+(GSM), 4 (G723), 8 (PCMA), 9 (G722), and 18 (G729), before activation and
+early media. Channel codec selection is unchanged. This covers the standard
+static audio codecs; dynamic audio/video mappings need separate validation.
+
+Comparison with `/usr/src/chan-sccp` confirms that the older source explicitly
+registered these six payloads. Disassembly of its September 12 module also
+shows the six registration calls, confirming this behavior existed in the
+compiled artifact, not just the source left on disk.
+
+Validation: rebuilt the ast122 wrapper and module against the PBX's headers
+in `/usr/src/chan-sccp-rtp-payload-fix`; build succeeded. With zero active
+channels, backed up the previous module to
+`/root/chan_sccp_backups/chan_sccp-before-payload-fix.so`, unloaded SCCP,
+atomically replaced the module, and loaded it successfully. Installed and
+built module SHA-256 hashes match. The user subsequently reported that calls
+were working after deployment. Separate paging and broader codec coverage
+have not been verified.
+
+## Earlier attempt — RTP format setup for auto-answered/paged calls (2026-09-22)
+
+**Correction:** the original diagnosis below incorrectly attributed payload
+initialization to the RTP format setters. See the transmit mapping fix above.
 
 Found live, in production: paging multiple SCCP devices produced repeated
 `ast_rtp_write: Don't know how to send format ulaw packets with RTP`

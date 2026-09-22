@@ -935,7 +935,7 @@ static int sccp_show_devices(int fd, sccp_cli_totals_t *totals, struct mansessio
 		CLI_AMI_TABLE_FIELD(Lines, 		"-5",		d,	5, 	d->configurationStatistic.numberOfLines)				\
 		CLI_AMI_TABLE_FIELD(NAT,		"9.9",		s, 	9,	sccp_nat2str(d->nat))							\
 		CLI_AMI_TABLE_FIELD(Model,		"10.10",	s, 	10,	skinny_devicetype2str(d->skinny_type))					\
-		CLI_AMI_TABLE_FIELD(TypeID,		"5.5",		d, 	5,	d->skinny_type)
+		CLI_AMI_TABLE_FIELD(TypeID,		"6.6",		d, 	6,	d->skinny_type)
 // TypeID doesn't actually carry firmware/load-file info despite the column existing for that
 // reason historically (it prints d->skinny_type, the same raw device-type enum "Model" already
 // shows as a readable string). Nothing in this codebase tracks the phone's actual reported

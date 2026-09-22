@@ -1960,15 +1960,20 @@ static int sccp_astwrap_answer(PBX_CHANNEL_TYPE * pbxchan)
 			pbx_channel_lock(pbxchan);
 		}
 		if (!timedout) {
-			// Ensure the RTP instance's write/read format actually gets negotiated for this
-			// leg. It's otherwise only set from AST_CONTROL_PROGRESS (which many auto-answer /
-			// paged calls never receive - Page() typically answers directly) or from the
-			// masquerade/fixup path (transfers only) - neither of which reliably fires here.
-			// Without this, Asterisk starts writing audio to an RTP instance whose payload-type
-			// table was never told what codec to expect ("Don't know how to send format ulaw
-			// packets with RTP").
+			// Ensure the RTP instance's write/read format actually gets set for this leg.
+			// pbx_retrieve_remote_capabilities() needs a linked peer channel (it's meant for
+			// normal 2-party calls); Page()-style broadcast calls mix multiple sources and may
+			// have no single linked peer at answer time, so that lookup alone isn't enough here.
+			// Fall back to the channel's own preferred codec directly if nothing's negotiated.
 			if (c->remoteCapabilities.audio[0] == SKINNY_CODEC_NONE) {
 				pbx_retrieve_remote_capabilities(c);
+			}
+			if (c->rtp.audio.instance && c->preferences.audio[0] != SKINNY_CODEC_NONE) {
+				struct ast_format *astCodec = sccp_astwrap_skinny2ast_format(c->preferences.audio[0]);
+				if (astCodec != ast_format_none) {
+					ast_rtp_instance_set_write_format(c->rtp.audio.instance, astCodec);
+					ast_rtp_instance_set_read_format(c->rtp.audio.instance, astCodec);
+				}
 			}
 			res = sccp_pbx_remote_answer(c);
 		}

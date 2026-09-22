@@ -22,6 +22,7 @@ SCCP_FILE_VERSION(__FILE__, "");
 #	include <asterisk/http.h>
 #	include <asterisk/paths.h>
 #	include <asterisk/file.h>
+#	include <asterisk/channel.h>                                 // sccp_webservice_parkedcalls: channel iteration
 #	include <sys/stat.h>                                        // sccp_webservice_xslt_callback:stat
 
 /* forward declarations */
@@ -736,6 +737,59 @@ static boolean_t sccp_webservice_xmltest(const char * const uri, PBX_VARIABLE_TY
 }
 /* end test */
 
+/*!
+ * \brief Webservice handler for the "parkedcalls" URI.
+ *
+ * Builds a <response><generic event="ParkedCall" .../></response> document
+ * matching the shape parkedcalls2cxml.xsl already expects (mirrors what an
+ * AMI ParkedCalls action would return), by iterating currently active
+ * channels and filtering to the "parkedcalls" context. There is no core
+ * Asterisk API to query current parking-lot occupancy directly (parking.h
+ * only exposes the park action and an event-based Stasis topic, not a
+ * point-in-time snapshot), so channel iteration + context filtering is the
+ * same technique used by AMI/CLI parking introspection internally.
+ */
+static boolean_t sccp_webservice_parkedcalls(const char * const uri, PBX_VARIABLE_TYPE * params, PBX_VARIABLE_TYPE * headers, pbx_str_t ** result)
+{
+	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (sccp_webservice_parkedcalls) Parked Calls Webservice\n");
+
+	xmlDoc *  doc  = iXML.createDoc();
+	xmlNode * root = iXML.createNode("response");
+	iXML.setRootElement(doc, root);
+
+	struct ast_channel_iterator * iter = ast_channel_iterator_all_new();
+	if (iter) {
+		struct ast_channel * chan;
+		while ((chan = ast_channel_iterator_next(iter))) {
+			ast_channel_lock(chan);
+			if (sccp_strcaseequals(ast_channel_context(chan), "parkedcalls")) {
+				struct ast_party_caller *          caller    = ast_channel_caller(chan);
+				struct ast_party_connected_line *  connected = ast_channel_connected(chan);
+
+				xmlNode * entry = iXML.addElement(root, "generic", NULL);
+				iXML.addProperty(entry, "event", "%s", "ParkedCall");
+				iXML.addProperty(entry, "exten", "%s", ast_channel_exten(chan));
+				iXML.addProperty(entry, "calleridname", "%s", (caller && caller->id.name.str) ? caller->id.name.str : "");
+				iXML.addProperty(entry, "calleridnum", "%s", (caller && caller->id.number.str) ? caller->id.number.str : "");
+				iXML.addProperty(entry, "connectedlinename", "%s", (connected && connected->id.name.str) ? connected->id.name.str : "");
+			}
+			ast_channel_unlock(chan);
+			chan = ast_channel_unref(chan);
+		}
+		ast_channel_iterator_destroy(iter);
+	}
+
+	char *     resultstr = NULL;
+	boolean_t  res        = xmlPostProcess(doc, uri, params, headers, &resultstr);
+	if (res && resultstr) {
+		pbx_str_append(result, 0, "%s", resultstr);
+		sccp_free(resultstr);
+	}
+	iXML.destroyDoc(&doc);
+
+	return res;
+}
+
 static void __attribute__((constructor)) init_webservice(void)
 {
 	if (!running && parse_manager_conf() && parse_http_conf(baseURL)) {
@@ -745,6 +799,8 @@ static void __attribute__((constructor)) init_webservice(void)
 		iWebService.addHandler("testhtml", sccp_webservice_htmltest, SCCP_XML_OUTPUTFMT_HTML);
 		iWebService.addHandler("testxml", sccp_webservice_xmltest, SCCP_XML_OUTPUTFMT_XML);
 		/* end test */
+
+		iWebService.addHandler("parkedcalls", sccp_webservice_parkedcalls, SCCP_XML_OUTPUTFMT_CXML);
 
 		ast_http_uri_link(&sccp_webservice_uri);
 		ast_http_uri_link(&sccp_webservice_xslt_uri);

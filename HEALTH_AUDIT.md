@@ -92,21 +92,31 @@ None remaining from that pass — both were fixed above.
   a real `ast120`/`ast122` implementation to `chan_sccp-modern`, not just the
   compile-fix shim.
 
-## Open — spelling/grammar (13 confirmed instances, sweep was not exhaustive)
+## Fixed — message quality, spelling, and file headers (continued)
 
-`seperated`/`seperate`: `sccp_debug.c:121`, `sccp_appfunctions.c:82,170-172`,
-`sccp_line.c:166`/`sccp_line.h:45`, `sccp_netsock.c:194`, `sccp_refcount.c:465`.
-`occured`: `sccp_transport_tls.c:170`, `sccp_config.c:1637`. `paramater`:
-`sccp_conference.c:1624`. `withing`: `sccp_line.c:166`, `sccp_device.c:888`.
-`limitted`: comment on `sccp_device_sendCallHistoryDisposition` in
-`sccp_device.c`.
-
-## Open — copy-pasted file headers (Doxygen `\file` doesn't match actual filename)
-
-`sccp_mwi.c` → claims `sccp_featureParkingLot.c`. `sccp_transport_tcp.c` and
-`sccp_transport_tls.c` → both claim `sccp_session.c`. `ast114.c` → claims
-`ast113.c`. `ast117.c`, `ast118.c`, `ast119.c` → all claim `ast116.c`.
-`ast_announce.c` → claims `ast112_announce.c`. All one-line fixes.
+- **The 55 identical OOM messages** — 45 of the 55 call sites for
+  `SS_Memory_Allocation_Error` passed the same hardcoded literal `"SCCP"` as
+  context, telling an operator nothing about which allocation failed. Replaced
+  with `__func__` at all 45 sites — gives the exact enclosing function name
+  automatically, can't go stale. The 10 sites that already passed something
+  specific (`"devstate::addSubscriber"`, `c->designator`, etc.) were left as-is.
+- **13 misspellings** fixed: `seperated`/`seperate`, `occured`, `paramater`,
+  `withing`, `limitted`, across `sccp_debug.c`, `sccp_appfunctions.c`,
+  `sccp_line.c`/`.h`, `sccp_netsock.c`, `sccp_refcount.c`,
+  `sccp_transport_tls.c`, `sccp_config.c`, `sccp_conference.c`, `sccp_device.c`.
+- **Copy-pasted `\file` headers** — **only 5 of the originally-reported 7 were
+  real bugs**: `sccp_mwi.c`, `sccp_transport_tcp.c`, `sccp_transport_tls.c`,
+  `ast114.c`, `ast_announce.c` were genuine regular files with a stale comment,
+  fixed. **`ast117.c`/`ast118.c`/`ast119.c` were never bugs** — they're symlinks
+  to `../ast116/ast116.c` (mode `120000`, confirmed via `git ls-tree`), so their
+  header correctly said `ast116.c`. Caught a real mistake here: an earlier
+  `sed -i` pass in this session silently materialized those three symlinks into
+  full standalone 4000-line copies while "fixing" a header that was never
+  wrong. Caught before committing (git flagged them as type-changes, `M` → `T`)
+  and reverted with `git checkout HEAD --` before anything landed. Lesson for
+  future sweeps in this repo: **check `git ls-tree` mode before running `sed -i`
+  on any file under `pbx_impl/` — several version directories are legitimately
+  symlinked to a shared implementation, not independent copies.**
 
 ## Open — message quality (broader pass needed, this is a standing concern now)
 

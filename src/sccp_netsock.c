@@ -484,6 +484,28 @@ void sccp_netsock_setoptions(int new_socket, int reuse, int linger, int keepaliv
 #endif
 	}
 
+	/* dual-stack bind: on Linux, IPV6_V6ONLY defaults to 0, so a socket bound to
+	 * the IPv6 wildcard address transparently also accepts IPv4 clients. BSD
+	 * (confirmed on FreeBSD 15.1, and this is FreeBSD's documented default, not
+	 * a quirk of one box) defaults IPV6_V6ONLY to 1 - a v6 socket accepts only
+	 * v6 traffic unless told otherwise. This codebase never set this option
+	 * explicitly, so it silently inherited the OS default: worked on every
+	 * Linux install, silently produced a socket that refuses all IPv4 SCCP/RTP
+	 * traffic on BSD (see github.com/chan-sccp/chan-sccp#499 - one-way audio,
+	 * zero RTP packets in "from" direction, sockstat showing only tcp6/udp6
+	 * bound). Explicitly clearing it here makes behavior consistent across
+	 * platforms instead of OS-dependent, for every AF_INET6 socket regardless
+	 * of which transport (TCP/TLS) or context (client/server) creates it.
+	 */
+	{
+		struct sockaddr_storage boundaddr;
+		socklen_t               boundaddrlen = sizeof(boundaddr);
+		if (getsockname(new_socket, (struct sockaddr *)&boundaddr, &boundaddrlen) == 0 && boundaddr.ss_family == AF_INET6) {
+			int v6only_off = 0;
+			SCCP_NETSOCK_SETOPTION(new_socket, IPPROTO_IPV6, IPV6_V6ONLY, &v6only_off, sizeof(v6only_off));
+		}
+	}
+
 	/* nodelay */
 	SCCP_NETSOCK_SETOPTION(new_socket, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(on));
 

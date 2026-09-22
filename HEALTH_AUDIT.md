@@ -87,10 +87,89 @@ None remaining from that pass — both were fixed above.
 - **Risk**: this is a single point of failure. A disk failure or a fresh
   `git clone` of any of the forks loses Asterisk 22 support entirely, with no
   documented way to reconstruct it except redoing this by hand.
-- **Recommendation for later**: properly review `ast116.c` against the real
-  Asterisk 20-22 API surface (not just what happens to still compile) and commit
-  a real `ast120`/`ast122` implementation to `chan_sccp-modern`, not just the
-  compile-fix shim.
+
+### The real target version matrix (researched 2026-09-22, sourced from
+### docs.asterisk.org/About-the-Project/Asterisk-Versions)
+
+| Version | Type | Status |
+|---|---|---|
+| 16 | LTS | EOL Oct 2023 — not worth new investment |
+| 18 | LTS | EOL Oct 2025 — just died, borderline |
+| 20 | LTS | Supported to Oct 2027 — **target** |
+| 21 | Standard | Maintenance-only, dies Oct 2026 — **target** |
+| 22 | LTS | Supported to Oct 2029 (what the PBX runs) — **target** |
+| 23 | Standard | Supported to Oct 2027 — **target** |
+| 24 | LTS | **Releases Oct 15, 2026** (~3 weeks out), pre-release now — **target, get ahead of it** |
+
+So "as many versions as reasonable" = real per-version review for **20, 21, 22,
+23, and 24**, not just a compile-fix shim for whichever one happens to be
+installed locally. `ast116` through `ast119` are confirmed byte-identical
+(`ast117`/`118`/`119` are literally symlinks to `ast116.c` — zero API drift
+across those four versions), so the real work starts at the 20 boundary, not
+before it.
+
+### Why `UPGRADE.txt`-diffing didn't pan out as a research method
+
+Asterisk stopped maintaining a single `UPGRADE.txt` after the 16 branch — later
+branches (18/20/21/22/23) have no such file at the repo root or under `doc/`.
+Whatever replaced it wasn't found in the time spent tonight. **Next session:**
+either check Asterisk's GitHub Releases pages directly (`gh release view
+<tag>`) for per-version release notes, or diff `include/asterisk/*.h` between
+tagged branches directly for the specific APIs `ast116.c` actually calls — that
+second approach is more work but doesn't depend on Asterisk's documentation
+habits.
+
+### Recommendation
+
+Properly review `ast116.c` against each target version's real API surface (not
+just what happens to still compile) and commit real `ast120`/`ast121`/`ast123`/
+`ast124` implementations to `chan_sccp-modern` (ast122 already effectively
+exists via the hand-hack; formalize it the same way). Given the version count,
+this is realistically its own multi-session project, not a single sitting.
+
+## Open — FreeBSD support (researched 2026-09-22)
+
+chan-sccp had a working FreeBSD port at one point per the user's own
+recollection, which checks out: Asterisk itself ships a `BSDmakefile` at its
+repo root (confirmed on the `22` branch), so FreeBSD is a genuine first-class
+Asterisk build target, not an afterthought.
+
+**Found the specific RTP audio bug being recalled**: [chan-sccp/chan-sccp
+issue #499](https://github.com/chan-sccp/chan-sccp/issues/499) — a Cisco 6901
+on FreeBSD 12.1-RELEASE got one-way audio (phone received audio, but tcpdump
+showed zero RTP packets flowing *from* the phone back to Asterisk). The
+reporter's own `sockstat -v` output is the smoking gun:
+
+```
+asterisk asterisk   10169 13 tcp6   *:2000                *:*
+```
+
+— only `tcp6`/`udp6` bound, no `tcp4`/`udp4` counterpart, despite the phones
+being plain IPv4 DHCP/TFTP clients.
+
+**Root cause, confirmed against this codebase, not just the old issue thread**:
+FreeBSD defaults to `IPV6_V6ONLY=1` (a v6 socket accepts only v6 traffic unless
+told otherwise); Linux defaults to `IPV6_V6ONLY=0` (a v6 wildcard socket
+transparently also accepts v4 traffic). `grep -rn "IPV6_V6ONLY" src/` returns
+**zero results anywhere in this codebase** — the dual-stack bind at
+`sccp_transport_tcp.c:35` (`bind(sc->fd, addr, addrlen)`) never sets this
+option explicitly, so it silently inherits whatever the OS defaults to. That's
+exactly why this worked for essentially every tester (who are on Linux) and
+silently broke for the one person on FreeBSD.
+
+**Recommendation**: before the `bind()` call in `sccp_transport_tcp.c`,
+explicitly `setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off))` when
+binding to a dual-stack/wildcard address, so behavior is consistent across
+platforms instead of silently OS-dependent. This is a small, targeted,
+plausible fix — but **cannot be verified without an actual FreeBSD box**, which
+isn't available tonight. Don't ship this untested; get access to a FreeBSD VM
+first (even a throwaway one) and reproduce the original bug before trusting
+the fix.
+
+**Still unknown**: which FreeBSD versions matter today (the original report
+was FreeBSD 12.1, now itself EOL) — worth checking FreeBSD's own supported
+-RELEASE list before committing to a target, same as the Asterisk version work
+above.
 
 ## Fixed — message quality, spelling, and file headers (continued)
 

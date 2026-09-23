@@ -178,9 +178,6 @@ boolean_t sccp_prePBXLoad(void)
 	GLOB(privacy) = TRUE;											/* permit private function */
 	GLOB(mwilamp) = SKINNY_LAMP_ON;
 	GLOB(ringtype) = SKINNY_RINGTYPE_OUTSIDE;
-	#if 0
-	GLOB(protocolversion) = SCCP_DRIVER_SUPPORTED_PROTOCOL_HIGH;
-	#endif
 	GLOB(amaflags) = pbx_channel_string2amaflag("documentation");
 	GLOB(callanswerorder) = SCCP_ANSWER_OLDEST_FIRST;
 	GLOB(earlyrtp) = TRUE;

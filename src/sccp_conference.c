@@ -1320,13 +1320,6 @@ void sccp_conference_show_list(constConferencePtr conference, constChannelPtr ch
 			pbx_str_append(&xmlStr, 0, "<Position>5</Position>");
 			pbx_str_append(&xmlStr, 0, "<URL>UserDataSoftKey:Select:%d:MODERATE/%d</URL>", appID, participant->transactionID);
 			pbx_str_append(&xmlStr, 0, "</SoftKeyItem>\n");
-#if 0 /* INVITE */
-			pbx_str_append(&xmlStr, 0, "<SoftKeyItem>");
-			pbx_str_append(&xmlStr, 0, "<Name>Invite</Name>");
-			pbx_str_append(&xmlStr, 0, "<Position>6</Position>");
-			pbx_str_append(&xmlStr, 0, "<URL>UserDataSoftKey:Select:%d:INVITE/%d/%d</URL>", appID, participant->lineInstance, participant->transactionID);
-			pbx_str_append(&xmlStr, 0, "</SoftKeyItem>\n");
-#endif
 		}
 		// CiscoIPPhoneIconMenu Icons
 		if (participant->device->protocolversion >= 15) {
@@ -1464,10 +1457,6 @@ void sccp_conference_handle_device_to_user(devicePtr d, uint32_t callReference, 
 			}
 		} else if (!strcmp(d->dtu_softkey.action, "EXIT")) {
 			d->conferencelist_active = FALSE;
-#if 0 /* INVITE */
-		} else if (!strcmp(d->dtu_softkey.action, "INVITE")) {
-			sccp_conference_invite_participant(conference, moderator);
-#endif
 		} else if(strcmp(d->dtu_softkey.action, "MODERATE") == 0) {
 			sccp_conference_promote_demote_participant(conference, participant, moderator);
 		}
@@ -1519,25 +1508,6 @@ void *sccp_participant_kicker(void *data)
 	}
 	return NULL;
 }
-
-/*!
- * \brief Toggle Conference Lock
- * \note Not Used at the moment -> Commented out
- */
-#if 0
-static void sccp_conference_toggle_lock_conference(conferencePtr conference, constParticipantPtr participant)
-{
-	sccp_log((DEBUGCAT_CONFERENCE)) (VERBOSE_PREFIX_3 "SCCPCONF/%04d: Toggle Conference Lock\n", conference->id);
-	conference->isLocked = (!conference->isLocked ? 1 : 0);
-	playback_to_channel(participant, (conference->isLocked ? "conf-lockednow" : "conf-unlockednow"), -1);
-#ifdef CS_MANAGER_EVENTS
-	if (GLOB(callevents)) {
-		manager_event(EVENT_FLAG_CALL, "SCCPConfLock", "ConfId: %d\r\n" "Enabled: %s\r\n", conference->id, conference->isLocked ? "Yes" : "No");
-	}
-#endif
-	sccp_conference_update_conflist(conference);
-}
-#endif
 
 /*!
  * \brief Toggle Participant Mute Status

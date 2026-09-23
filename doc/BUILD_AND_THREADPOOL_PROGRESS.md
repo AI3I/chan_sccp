@@ -277,9 +277,9 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   The signed RX/TX lookup and conservative mappings below are compile-only.
 - **High-value cleanup:** HTTP/CLI test handlers and `libpbximpl.la` were
   removed in the batch below.
-- **Structural cleanup:** the shared adapter was moved into `ast120` below,
-  and unused C++ build scaffolding was removed. Consolidate small per-version
-  wrappers and remove unreachable `#if 0` implementations in reviewable batches.
+- **Structural cleanup:** the shared adapter was moved into `ast120`, unused
+  C++ build scaffolding was removed, and disabled `#if 0` blocks were retired.
+  The four small per-version wrappers still duplicate compatibility macros.
 - **Deferred validation:** physical Cisco call behavior and the compile-only
   R2/R3/R5/R6/R7/R11/R12 paths. The user requested code progress now and no
   test cycle after every change. Keep all lab actions recorded in wadsworth's
@@ -350,3 +350,19 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - Local `autoreconf` is unavailable, so generation was done in the private lab.
   The large generated `configure` diff is primarily removal of the Autoconf
   C++ compiler probe and libtool C++ tag. CI across 20–24 remains pending.
+
+## Disabled code removal (2026-09-23)
+
+- Removed 12 outer `#if 0` regions (roughly 300 lines) containing unused RTP bridge and
+  set-option implementations, a dead transfer function, reference-count macros
+  and examples, conference invite/lock stubs, a socket comparison, and debug
+  snippets. The nested disabled reference-count example was removed with its
+  enclosing block. In the transfer path, preserved the active `#else` branch.
+- Removed a stale transfer prototype and comments that still named the
+  discarded implementations. This
+  is preprocessor-dead code only; no live branch was changed. Source diff and
+  `git diff --check` were reviewed. Per the user's request to avoid repeated
+  builds, no additional compile or runtime test was run for this deletion.
+- Next structural question: the 21–24 wrappers are tiny copies of the same
+  macro definitions and include `ast120`. They are functional and remain until
+  version dispatch and archive selection can be simplified together.

@@ -88,9 +88,6 @@ static int sccp_astwrap_indicate(PBX_CHANNEL_TYPE * ast, int ind, const void *da
 static int sccp_astwrap_fixup(PBX_CHANNEL_TYPE * oldchan, PBX_CHANNEL_TYPE * newchan);
 static void sccp_astwrap_setDialedNumber(constChannelPtr channel, const char *number);
 
-//#ifdef CS_AST_RTP_INSTANCE_BRIDGE
-//static enum ast_bridge_result sccp_astwrap_rtpBridge(PBX_CHANNEL_TYPE * c0, PBX_CHANNEL_TYPE * c1, int flags, PBX_FRAME_TYPE ** fo, PBX_CHANNEL_TYPE ** rc, int timeoutms);
-//#endif
 static int sccp_pbx_sendtext(PBX_CHANNEL_TYPE * ast, const char *text);
 static int sccp_wrapper_recvdigit_begin(PBX_CHANNEL_TYPE * ast, char digit);
 static int sccp_wrapper_recvdigit_end(PBX_CHANNEL_TYPE * ast, char digit, unsigned int duration);
@@ -259,7 +256,6 @@ static struct ast_channel_tech sccp_tech = {
 	send_image: NULL,
 	send_html: sccp_pbx_sendHTML,
 	exception: NULL,
-	//	bridge:			sccp_astwrap_rtpBridge,
 	bridge: ast_rtp_instance_bridge,
 	early_bridge: ast_rtp_instance_early_bridge,
 	indicate: sccp_astwrap_indicate,
@@ -306,10 +302,8 @@ struct ast_channel_tech sccp_tech = {
 	.write_video = sccp_astwrap_rtp_write,
 	.indicate = sccp_astwrap_indicate,
 	.fixup = sccp_astwrap_fixup,
-//.transfer 		= sccp_pbx_transfer,
 #ifdef CS_AST_RTP_INSTANCE_BRIDGE
 	.bridge = ast_rtp_instance_bridge,
-//	.bridge 		= sccp_astwrap_rtpBridge,
 #endif
 	// asterisk-13 rtp_engine.h implementation of ast_rtp_instance_early_bridge is actually not fully c++ compatible to their own definition, so a cast is required
 	.early_bridge = (enum ast_bridge_result(*)(struct ast_channel *, struct ast_channel *)) & ast_rtp_instance_early_bridge,
@@ -329,7 +323,6 @@ struct ast_channel_tech sccp_tech = {
 	//.write_video          =
 	//.cc_callback          =                                              // ccss, new >1.6.0
 	//.exception            =                                              // new >1.6.0
-	//.setoption            = sccp_astwrap_setOption,
 	//.queryoption          =                                              // new >1.6.0
 	//.get_pvt_uniqueid     = sccp_pbx_get_callid,                         // new >1.6.0
 	//.get_base_channel     =
@@ -2044,62 +2037,6 @@ static int sccp_astwrap_fixup(PBX_CHANNEL_TYPE * oldchan, PBX_CHANNEL_TYPE * new
 	return res;
 }
 
-#if 0
-#ifdef CS_AST_RTP_INSTANCE_BRIDGE
-static enum ast_bridge_result sccp_astwrap_rtpBridge(PBX_CHANNEL_TYPE * c0, PBX_CHANNEL_TYPE * c1, int flags, PBX_FRAME_TYPE ** fo, PBX_CHANNEL_TYPE ** rc, int timeoutms)
-{
-	enum ast_bridge_result res;
-	int new_flags = flags;
-
-	/* \note temporarily marked out until we figure out how to get directrtp back on track - DdG */
-	AUTO_RELEASE(sccp_channel_t, sc0 , get_sccp_channel_from_pbx_channel(c0));
-	AUTO_RELEASE(sccp_channel_t, sc1 , get_sccp_channel_from_pbx_channel(c1));
-
-	if ((sc0 && sc1)) {
-		// Switch off DTMF between SCCP phones
-		new_flags &= !AST_BRIDGE_DTMF_CHANNEL_0;
-		new_flags &= !AST_BRIDGE_DTMF_CHANNEL_1;
-		if (GLOB(directrtp)) {
-			ast_channel_defer_dtmf(c0);
-			ast_channel_defer_dtmf(c1);
-		} else {
-			AUTO_RELEASE(sccp_device_t, d0 , sccp_channel_getDevice(sc0));
-			AUTO_RELEASE(sccp_device_t, d1 , sccp_channel_getDevice(sc1));
-			if ((d0 && d1) && ((d0->directrtp && d1->directrtp)) {
-				ast_channel_defer_dtmf(c0);
-				ast_channel_defer_dtmf(c1);
-			}
-		}
-		sc0->peerIsSCCP = TRUE;
-		sc1->peerIsSCCP = TRUE;
-		// SCCP Key handle direction to asterisk is still to be implemented here
-		// sccp_pbx_senddigit
-	} else {
-		// Switch on DTMF between differing channels
-		ast_channel_undefer_dtmf(c0);
-		ast_channel_undefer_dtmf(c1);
-	}
-	//res = ast_rtp_bridge(c0, c1, new_flags, fo, rc, timeoutms);
-	res = ast_rtp_instance_bridge(c0, c1, new_flags, fo, rc, timeoutms);
-	switch (res) {
-		case AST_BRIDGE_COMPLETE:
-			sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_1 "SCCP: Bridge chan %s and chan %s: Complete\n", ast_channel_name(c0), ast_channel_name(c1));
-			break;
-		case AST_BRIDGE_FAILED:
-			sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_1 "SCCP: Bridge chan %s and chan %s: Failed\n", ast_channel_name(c0), ast_channel_name(c1));
-			break;
-		case AST_BRIDGE_FAILED_NOWARN:
-			sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_1 "SCCP: Bridge chan %s and chan %s: Failed NoWarn\n", ast_channel_name(c0), ast_channel_name(c1));
-			break;
-		case AST_BRIDGE_RETRY:
-			sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_1 "SCCP: Bridge chan %s and chan %s: Failed Retry\n", ast_channel_name(c0), ast_channel_name(c1));
-			break;
-	}
-	/*! \todo Implement callback function queue upon completion */
-	return res;
-}
-#endif
-#endif
 
 static enum ast_rtp_glue_result sccp_astwrap_get_rtp_info(PBX_CHANNEL_TYPE * ast, PBX_RTP_TYPE ** rtp)
 {
@@ -3056,48 +2993,6 @@ static PBX_CHANNEL_TYPE *sccp_astwrap_findChannelWithCallback(int (*const found_
 
 	return remotePeer;
 }
-
-/*! \brief Set an option on a asterisk channel */
-#if 0
-static int sccp_astwrap_setOption(PBX_CHANNEL_TYPE * ast, int option, void *data, int datalen)
-{
-	int res = -1;
-	AUTO_RELEASE(sccp_channel_t, c , get_sccp_channel_from_pbx_channel(ast));
-
-	if (c) {
-		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "%s: channel: %s(%s) setOption: %d\n", c->currentDeviceId, sccp_channel_toString(c), pbx_channel_name(ast), option);
-		//! if AST_OPTION_FORMAT_READ / AST_OPTION_FORMAT_WRITE are available we might be indication that we can do transcoding (channel.c:set_format). Correct ? */
-		switch (option) {
-			case AST_OPTION_FORMAT_READ:
-				if (c->rtp.audio.instance) {
-					res = ast_rtp_instance_set_read_format(c->rtp.audio.instance, (struct ast_format *) data);
-				}
-				//sccp_astwrap_setReadFormat(c, (struct ast_format *) data);
-				break;
-			case AST_OPTION_FORMAT_WRITE:
-				if (c->rtp.audio.instance) {
-					res = ast_rtp_instance_set_write_format(c->rtp.audio.instance, (struct ast_format *) data);
-				}
-				//sccp_astwrap_setWriteFormat(c, (struct ast_format *) data);
-				break;
-
-			case AST_OPTION_MAKE_COMPATIBLE:
-				if (c->rtp.audio.instance) {
-					res = ast_rtp_instance_make_compatible(ast, c->rtp.audio.instance, (PBX_CHANNEL_TYPE *) data);
-				}
-				break;
-			case AST_OPTION_DIGIT_DETECT:
-			case AST_OPTION_SECURE_SIGNALING:
-			case AST_OPTION_SECURE_MEDIA:
-				res = -1;
-				break;
-			default:
-				break;
-		}
-	}
-	return res;
-}
-#endif
 
 static void sccp_astwrap_set_pbxchannel_linkedid(PBX_CHANNEL_TYPE * pbx_channel, const char *new_linkedid)
 {

@@ -2593,17 +2593,9 @@ void sccp_channel_transfer(channelPtr channel, constDevicePtr device)
 				sccp_device_setLamp(d, SKINNY_STIMULUS_TRANSFER, instance, SKINNY_LAMP_FLASH);
 
 				/* set a var for BLINDTRANSFER. It will be removed if the user manually answers the call Otherwise it is a real BLINDTRANSFER */
-#if 0
-				if (blindTransfer || (sccp_channel_new && sccp_channel_new->owner && pbx_channel_owner && pbx_channel_bridgepeer)) {
-					//! \todo use pbx impl
-					pbx_builtin_setvar_helper(sccp_channel_new->owner, "BLINDTRANSFER", pbx_channel_name(pbx_channel_bridgepeer));
-					pbx_builtin_setvar_helper(pbx_channel_bridgepeer, "BLINDTRANSFER", pbx_channel_name(sccp_channel_new->owner));
-				}
-#else
 				if (blindTransfer || (sccp_channel_new && sccp_channel_new->owner && pbx_channel_owner && pbx_channel_bridgepeer)) {
 					pbx_builtin_setvar_helper(sccp_channel_new->owner, "BLINDTRANSFER", pbx_channel_name(channel->owner));
 				}
-#endif
 				// should go on, even if there is no bridged channel (yet/anymore) ?
 				d->transferChannels.transferer = sccp_channel_retain(sccp_channel_new);
 				pbx_channel_unref(pbx_channel_bridgepeer);

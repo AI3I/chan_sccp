@@ -1450,59 +1450,5 @@ EXIT_FUNC:
 	return NULL;
 }
 
-#if 0
-/*!
- * \brief Handle Dialplan Transfer
- *
- * This will allow asterisk to transfer an SCCP Channel via the dialplan transfer function
- *
- * \param ast Asterisk Channel
- * \param dest Destination as char *
- * \return result as int
- *
- * \test Dialplan Transfer Needs to be tested
- * \todo pbx_transfer needs to be implemented correctly
- *
- * \called_from_asterisk
- */
-int sccp_pbx_transfer(PBX_CHANNEL_TYPE * ast, const char *dest)
-{
-	int res = 0;
-
-	if (dest == NULL) {											/* functions below do not take a NULL */
-		dest = "";
-		return -1;
-	}
-
-	AUTO_RELEASE(sccp_channel_t, c , get_sccp_channel_from_pbx_channel(ast));
-
-	if (!c) {
-		return -1;
-	}
-
-	/*
-	   sccp_device_t *d = NULL;
-	   sccp_channel_t *newcall = NULL;
-	 */
-
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_1 "Transferring '%s' to '%s'\n", iPbx.getChannelName(c), dest);
-	if (pbx_channel_state(ast) == AST_STATE_RING) {
-		//! \todo Blindtransfer needs to be implemented correctly
-
-		/*
-		   res = sccp_blindxfer(p, dest);
-		 */
-		res = -1;
-	} else {
-		//! \todo Transfer needs to be implemented correctly
-
-		/*
-		   res=sccp_channel_transfer(p,dest);
-		 */
-		res = -1;
-	}
-	return res;
-}
-#endif
 
 // kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

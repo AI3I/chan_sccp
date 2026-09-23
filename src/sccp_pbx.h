@@ -16,7 +16,6 @@ SCCP_API boolean_t SCCP_CALL sccp_pbx_channel_allocate(constChannelPtr channel, 
 SCCP_API int SCCP_CALL sccp_pbx_sched_dial(const void *data);
 SCCP_API sccp_extension_status_t SCCP_CALL sccp_pbx_helper(constChannelPtr c);
 SCCP_API void * SCCP_CALL sccp_pbx_softswitch(constChannelPtr channel);
-SCCP_API int SCCP_CALL sccp_pbx_transfer(PBX_CHANNEL_TYPE * ast, const char *dest);
 SCCP_API channelPtr SCCP_CALL sccp_pbx_hangup(constChannelPtr channel);
 SCCP_API int SCCP_CALL sccp_pbx_call(channelPtr c, const char * dest, int timeout);
 SCCP_API int sccp_pbx_cfwdnoanswer_cb(const void * data);

@@ -300,14 +300,6 @@ static void sccp_sk_endcall(const sccp_softkeyMap_cb_t * const softkeyMap_cb, co
 		sccp_channel_endcall(c);
 	}
 
-#if 0														/* new */
-	if (!(c->calltype == SKINNY_CALLTYPE_INBOUND && 1 < c->subscribers--)) {
-		sccp_channel_endcall(c);
-	}
-	if (d && d->indicate && d->indicate->onhook) {
-		d->indicate->onhook(d, lineInstance, c->callid);
-	}
-#endif
 }
 
 /*!

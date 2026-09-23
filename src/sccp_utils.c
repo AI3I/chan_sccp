@@ -558,13 +558,6 @@ boolean_t __PURE__ sccp_util_matchSubscriptionId(constChannelPtr channel, const 
 		   (0 != strncasecmp(channel->subscriptionId.number, subscriptionIdNum, sccp_strlen(channel->subscriptionId.number)))) {	/* Do the match! */
 		result = FALSE;
 	}
-#if 0
-	pbx_log(LOG_NOTICE, "sccp_channel->subscriptionId.number=%s, length=%d\n", channel->subscriptionId.number, sccp_strlen(channel->subscriptionId.number));
-	pbx_log(LOG_NOTICE, "subscriptionIdNum=%s, length=%d\n", subscriptionIdNum ? subscriptionIdNum : "NULL", subscriptionIdNum ? sccp_strlen(subscriptionIdNum) : -1);
-
-	pbx_log(LOG_NOTICE, "sccp_util_matchSubscriptionId: sccp_channel->subscriptionId.number=%s, SubscriptionId=%s\n", (channel->subscriptionId.number) ? channel->subscriptionId.number : "NULL", (subscriptionIdNum) ? subscriptionIdNum : "NULL");
-	pbx_log(LOG_NOTICE, "sccp_util_matchSubscriptionId: result: %d\n", result);
-#endif
 	return result;
 }
 
@@ -1366,42 +1359,6 @@ void sccp_print_group(struct ast_str *buf, int buflen, sccp_group_t group)
 	}
 }
 
-#if 0
-/*!
- * \brief Compare two socket addressed with each other
- *
- * \note not used
- */
-int sockaddr_cmp_addr(struct sockaddr_storage *addr1, socklen_t len1, struct sockaddr_storage *addr2, socklen_t len2)
-{
-	struct sockaddr_in *p1_in = (struct sockaddr_in *) addr1;
-	struct sockaddr_in *p2_in = (struct sockaddr_in *) addr2;
-	struct sockaddr_in6 *p1_in6 = (struct sockaddr_in6 *) addr1;
-	struct sockaddr_in6 *p2_in6 = (struct sockaddr_in6 *) addr2;
-
-	if (len1 < len2) {
-		return -1;
-	}
-	if (len1 > len2) {
-		return 1;
-	}
-	if (p1_in->sin_family < p2_in->sin_family) {
-		return -1;
-	}
-	if (p1_in->sin_family > p2_in->sin_family) {
-		return 1;
-	}
-	/* compare ip4 */
-	if (p1_in->sin_family == AF_INET) {
-		return memcmp(&p1_in->sin_addr, &p2_in->sin_addr, sizeof(p1_in->sin_addr));
-	} else if (p1_in6->sin6_family == AF_INET6) {
-		return memcmp(&p1_in6->sin6_addr, &p2_in6->sin6_addr, sizeof(p1_in6->sin6_addr));
-	} else {
-		/* unknown type, compare for sanity. */
-		return memcmp(addr1, addr2, len1);
-	}
-}
-#endif
 
 int __PURE__ sccp_strversioncmp(const char *s1, const char *s2)
 {

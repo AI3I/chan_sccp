@@ -335,11 +335,11 @@ feature repairs. Keep that progress document updated as implementation proceeds.
 
 ## Remaining findings after `126ede59`
 
-R1/R2/R3/R4/R5/R6/R9/R10/R11/R12 and the pre-20 adapter removal are
-implemented. R7/R8 remain. R2, R3, R5, R6, R11, and R12 have compile-only
+R1/R2/R3/R4/R5/R6/R7/R9/R10/R11/R12 and the pre-20 adapter removal
+are implemented. R8 remains. R2, R3, R5, R6, R7, R11, and R12 have compile-only
 validation; configured scripts, XML requests, concurrent partial writes,
 fragmented/coalesced TCP frames, and physical phone behavior remain untested.
-R7 (read-format setter) and R8 (TLS) follow. The
+R8 (TLS handshake and read/write error handling) follows. The
 discard/consolidation candidates in the table above remain proposals unless
 explicitly called out as retired; obsolete packaging, upstream service
 metadata, and old Asterisk patches were also removed in the later repository

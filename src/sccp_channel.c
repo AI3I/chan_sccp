@@ -556,8 +556,8 @@ static boolean_t sccp_channel_recalculateVideoCodecFormat(channelPtr channel)
 		//}
 		channel->rtp.video.reception.format = joint;
 		channel->rtp.video.transmission.format = joint;
-		iPbx.rtp_setWriteFormat(channel, joint);
-		iPbx.rtp_setReadFormat(channel, joint);
+		/* Video is selected through native video capabilities, not the audio
+		 * channel translator or audio RTP format wrappers. */
 	}
 	sccp_log((DEBUGCAT_CODEC + DEBUGCAT_CHANNEL)) (VERBOSE_PREFIX_3
 		"%s - %s: (recalculateVideoCodecformat) \n\t"

@@ -252,3 +252,17 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   separate R8 review of `SSL_get_error`, handshake failure, and retry direction;
   no TLS behavior claim is made here. Concurrent partial-write behavior and
   fragmented/coalesced frames still need runtime or focused transport tests.
+
+## Codec read/write format correction (R7)
+
+- The read-format wrapper now calls `ast_set_read_format`; the write wrapper
+  keeps `ast_set_write_format`. Both reject missing channel owners and non-audio
+  codecs and return failure if Asterisk rejects the channel format change.
+- RTP-engine format callbacks remain best effort: Asterisk's default RTP engine
+  does not implement them, and their failure is not a channel-format failure.
+  Video codec recalculation no longer routes video codecs through wrappers that
+  address the audio RTP instance. Native video capabilities remain selected.
+- One private Asterisk 22 compile passed on wadsworth; the source sync, build
+  log, and absence of install/runtime testing were recorded in
+  `/root/asterisk.txt` there. No physical-phone or bidirectional transcoding
+  test was run. Production was untouched.

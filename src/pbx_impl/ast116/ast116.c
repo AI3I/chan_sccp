@@ -2697,15 +2697,18 @@ static int sccp_astwrap_setNativeVideoFormats(constChannelPtr channel, skinny_co
 
 static boolean_t sccp_astwrap_setWriteFormat(constChannelPtr channel, skinny_codec_t codec)
 {
-	if (!channel) {
+	if (!channel || !channel->owner || codec2type(codec) != SKINNY_CODEC_TYPE_AUDIO) {
 		return FALSE;
 	}
 	struct ast_format *ast_format = sccp_astwrap_skinny2ast_format(codec);
 	if (ast_format == ast_format_none)
 		return FALSE;
 
-	ast_set_write_format(channel->owner, ast_format);
+	if (ast_set_write_format(channel->owner, ast_format) != 0) {
+		return FALSE;
+	}
 	if (NULL != channel->rtp.audio.instance) {
+		/* The default Asterisk RTP engine has no format callback; this is optional. */
 		ast_rtp_instance_set_write_format(channel->rtp.audio.instance, ast_format);
 	}
 	return TRUE;
@@ -2713,7 +2716,7 @@ static boolean_t sccp_astwrap_setWriteFormat(constChannelPtr channel, skinny_cod
 
 static boolean_t sccp_astwrap_setReadFormat(constChannelPtr channel, skinny_codec_t codec)
 {
-	if (!channel) {
+	if (!channel || !channel->owner || codec2type(codec) != SKINNY_CODEC_TYPE_AUDIO) {
 		return FALSE;
 	}
 
@@ -2721,8 +2724,11 @@ static boolean_t sccp_astwrap_setReadFormat(constChannelPtr channel, skinny_code
 	if (ast_format == ast_format_none)
 		return FALSE;
 
-	ast_set_write_format(channel->owner, ast_format);
+	if (ast_set_read_format(channel->owner, ast_format) != 0) {
+		return FALSE;
+	}
 	if (NULL != channel->rtp.audio.instance) {
+		/* The default Asterisk RTP engine has no format callback; this is optional. */
 		ast_rtp_instance_set_read_format(channel->rtp.audio.instance, ast_format);
 	}
 	return TRUE;

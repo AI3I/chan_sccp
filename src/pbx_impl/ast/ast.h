@@ -26,20 +26,16 @@
 #include "define.h"
 #include "sccp_protocol.h"
 
-#ifdef ASTERISK_CONF_1_20
+#if defined(ASTERISK_CONF_1_21) || defined(ASTERISK_CONF_1_22) || defined(ASTERISK_CONF_1_23) || defined(ASTERISK_CONF_1_24)
+/* Asterisk 21 removed the macro extension/context channel API. */
+#define ast_channel_macroexten(chan) ("")
+#define ast_channel_macroexten_set(chan, val) ((void)0)
+#define ast_channel_macrocontext(chan) ("")
+#define ast_channel_macrocontext_set(chan, val) ((void)0)
+#endif
+
+#if defined(ASTERISK_CONF_1_20) || defined(ASTERISK_CONF_1_21) || defined(ASTERISK_CONF_1_22) || defined(ASTERISK_CONF_1_23) || defined(ASTERISK_CONF_1_24)
 #	include "pbx_impl/ast120/ast120.h"
-#endif
-#ifdef ASTERISK_CONF_1_21
-#	include "pbx_impl/ast121/ast121.h"
-#endif
-#ifdef ASTERISK_CONF_1_22
-#	include "pbx_impl/ast122/ast122.h"
-#endif
-#ifdef ASTERISK_CONF_1_23
-#	include "pbx_impl/ast123/ast123.h"
-#endif
-#ifdef ASTERISK_CONF_1_24
-#	include "pbx_impl/ast124/ast124.h"
 #endif
 
 /* only trunk version has AST_CAUSE_ANSWERED_ELSEWHERE */

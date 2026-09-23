@@ -8,7 +8,7 @@
 include 		$(top_srcdir)/src/Makefile.inc.am
 
 SUBDIRS			= pbx_impl $(PBX_COND_SUBDIR) $(PBXVER_COND_SUBDIR) $(PBXVER_COND_ANNOUNCE_SUBDIR) .
-DIST_SUBDIRS = pbx_impl pbx_impl/ast pbx_impl/ast120 pbx_impl/ast121 pbx_impl/ast122 pbx_impl/ast123 pbx_impl/ast124 pbx_impl/ast_announce .
+DIST_SUBDIRS = pbx_impl pbx_impl/ast pbx_impl/ast120 pbx_impl/ast_announce .
 EXTRA_DIST 		= .indent.pro sccp_enum.in sccp_config_entries.hh sccp_cli_table_data.h
 BUILT_SOURCES           = revision.h sccp_enum.h sccp_enum.c
 CLEANFILES              = revision.h sccp_enum.h sccp_enum.c stamp-g1

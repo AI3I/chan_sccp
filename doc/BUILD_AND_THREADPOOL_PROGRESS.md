@@ -278,8 +278,8 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - **High-value cleanup:** HTTP/CLI test handlers and `libpbximpl.la` were
   removed in the batch below.
 - **Structural cleanup:** the shared adapter was moved into `ast120`, unused
-  C++ build scaffolding was removed, and disabled `#if 0` blocks were retired.
-  The four small per-version wrappers still duplicate compatibility macros.
+  C++ build scaffolding and disabled `#if 0` blocks were retired, and the four
+  identical 21–24 wrappers were consolidated below.
 - **Deferred validation:** physical Cisco call behavior and the compile-only
   R2/R3/R5/R6/R7/R11/R12 paths. The user requested code progress now and no
   test cycle after every change. Keep all lab actions recorded in wadsworth's
@@ -331,8 +331,8 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   `make dist` passed. The generated `configure` and `src/Makefile.in` were
   copied back and staged. Log paths and all lab actions are recorded in
   `/root/asterisk.txt`. No module installation or live phone test was done.
-- Next: consolidate wrappers and review disabled code in small batches.
-  Asterisk 20–24 CI is still needed for this relocation.
+- The 21–24 wrappers were later consolidated below. Asterisk 20–24 CI is still
+  needed for the completed adapter simplification.
 
 ## C-only build configuration (2026-09-23)
 
@@ -363,9 +363,21 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   is preprocessor-dead code only; no live branch was changed. Source diff and
   `git diff --check` were reviewed. Per the user's request to avoid repeated
   builds, no additional compile or runtime test was run for this deletion.
-- Next structural question: the 21–24 wrappers are tiny copies of the same
-  macro definitions and include `ast120`. They are functional and remain until
-  version dispatch and archive selection can be simplified together.
+- The 21–24 wrappers were tiny copies of the same macro definitions and
+  included `ast120`; they were removed in the next checkpoint.
+
+## Adapter wrapper consolidation (2026-09-23)
+
+- All supported Asterisk 20–24 builds now select `ast120` directly. The four
+  21–24 wrapper source/header/Makefile directories were removed. The shared
+  `ast.h` defines the Asterisk 21+ macro extension/context compatibility stubs
+  once, guarded by the existing version defines, before including `ast120.h`.
+- Configure and distribution lists now contain only the actual adapter. The
+  regenerated `configure` and `src/Makefile.in` were copied back from the lab.
+- Wadsworth private Asterisk 22 bootstrap, configure, compile, and source
+  archive passed. The archive contains `ast120` and omits `ast121`–`ast124`.
+  No module was installed or live phone test run. Logs and lab activity are
+  recorded in `/root/asterisk.txt`; 20, 21, 23, and 24 builds await hosted CI.
 
 ## TLS transport repair (2026-09-23)
 

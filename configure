@@ -659,16 +659,6 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
-ASTERISK_VER_GROUP_124_FALSE
-ASTERISK_VER_GROUP_124_TRUE
-ASTERISK_VER_GROUP_123_FALSE
-ASTERISK_VER_GROUP_123_TRUE
-ASTERISK_VER_GROUP_122_FALSE
-ASTERISK_VER_GROUP_122_TRUE
-ASTERISK_VER_GROUP_121_FALSE
-ASTERISK_VER_GROUP_121_TRUE
-ASTERISK_VER_GROUP_120_FALSE
-ASTERISK_VER_GROUP_120_TRUE
 PBXVER_COND_ANNOUNCE_LIBADD
 PBXVER_COND_ANNOUNCE_SUBDIR
 PBXVER_COND_LIBADD
@@ -28618,7 +28608,7 @@ printf "%s\n" "${T_MD}Generating Configuration and Makefiles${T_ME}" >&6; }
 
 ac_config_commands="$ac_config_commands src/sccp_enum.h"
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/pbx_impl/Makefile src/pbx_impl/ast/Makefile src/pbx_impl/ast_announce/Makefile src/pbx_impl/ast120/Makefile src/pbx_impl/ast121/Makefile src/pbx_impl/ast122/Makefile src/pbx_impl/ast123/Makefile src/pbx_impl/ast124/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/pbx_impl/Makefile src/pbx_impl/ast/Makefile src/pbx_impl/ast_announce/Makefile src/pbx_impl/ast120/Makefile"
 
 
 	 if test "$PBX_TYPE" == "Asterisk"; then
@@ -28638,8 +28628,8 @@ fi
 	if test "$PBX_TYPE" == "Asterisk"; then
 		PBX_COND_SUBDIR=pbx_impl/ast
 		PBX_COND_LIBADD=pbx_impl/ast/libast.la
-		PBXVER_COND_SUBDIR=pbx_impl/ast${ASTERISK_VER_GROUP}/
-		PBXVER_COND_LIBADD=pbx_impl/ast${ASTERISK_VER_GROUP}/libast${ASTERISK_VER_GROUP}.la
+		PBXVER_COND_SUBDIR=pbx_impl/ast120/
+		PBXVER_COND_LIBADD=pbx_impl/ast120/libast120.la
 		if test ${ASTERISK_VER_GROUP} -ge 120;then
 			PBXVER_COND_ANNOUNCE_SUBDIR=pbx_impl/ast_announce
 			PBXVER_COND_ANNOUNCE_LIBADD=pbx_impl/ast_announce/libast_announce.la
@@ -28649,47 +28639,6 @@ fi
 
 
 
-
-
-	 if test x${ASTERISK_VER_GROUP} = x120; then
-  ASTERISK_VER_GROUP_120_TRUE=
-  ASTERISK_VER_GROUP_120_FALSE='#'
-else
-  ASTERISK_VER_GROUP_120_TRUE='#'
-  ASTERISK_VER_GROUP_120_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x121; then
-  ASTERISK_VER_GROUP_121_TRUE=
-  ASTERISK_VER_GROUP_121_FALSE='#'
-else
-  ASTERISK_VER_GROUP_121_TRUE='#'
-  ASTERISK_VER_GROUP_121_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x122; then
-  ASTERISK_VER_GROUP_122_TRUE=
-  ASTERISK_VER_GROUP_122_FALSE='#'
-else
-  ASTERISK_VER_GROUP_122_TRUE='#'
-  ASTERISK_VER_GROUP_122_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x123; then
-  ASTERISK_VER_GROUP_123_TRUE=
-  ASTERISK_VER_GROUP_123_FALSE='#'
-else
-  ASTERISK_VER_GROUP_123_TRUE='#'
-  ASTERISK_VER_GROUP_123_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x124; then
-  ASTERISK_VER_GROUP_124_TRUE=
-  ASTERISK_VER_GROUP_124_FALSE='#'
-else
-  ASTERISK_VER_GROUP_124_TRUE='#'
-  ASTERISK_VER_GROUP_124_FALSE=
-fi
 
 
 
@@ -28863,26 +28812,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_AST_TRUE}" && test -z "${BUILD_AST_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_AST\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_120_TRUE}" && test -z "${ASTERISK_VER_GROUP_120_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_120\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_121_TRUE}" && test -z "${ASTERISK_VER_GROUP_121_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_121\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_122_TRUE}" && test -z "${ASTERISK_VER_GROUP_122_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_122\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_123_TRUE}" && test -z "${ASTERISK_VER_GROUP_123_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_123\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_124_TRUE}" && test -z "${ASTERISK_VER_GROUP_124_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_124\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
@@ -29770,10 +29699,6 @@ do
     "src/pbx_impl/ast/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast/Makefile" ;;
     "src/pbx_impl/ast_announce/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast_announce/Makefile" ;;
     "src/pbx_impl/ast120/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast120/Makefile" ;;
-    "src/pbx_impl/ast121/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast121/Makefile" ;;
-    "src/pbx_impl/ast122/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast122/Makefile" ;;
-    "src/pbx_impl/ast123/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast123/Makefile" ;;
-    "src/pbx_impl/ast124/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast124/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: '$ac_config_target'" "$LINENO" 5;;
   esac

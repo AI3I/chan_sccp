@@ -200,7 +200,7 @@ meetme = ""                                                                     
 meetmeopts = ""                                                                   ; options to send the app_meetme application (default 'qd' = quiet,dynamic pin)
                                                                                   ; Other options (A,a,b,c,C,d,D,E,e,F,i,I,l,L,m,M,o,p,P,q,r,s,S,t,T,w,x,X,1) see app_meetme documentation
 ;softkeyset = default                                                             ; use specified softkeyset with name 'default'
-;useRedialMenu = no                                                               ; show redial phone book list instead of dialing the last number (adv_feature). Requires a Phone Service block in SEP....cnf.xml to work correct on Java phones (See conf/tftp/SEP example files)
+;useRedialMenu = no                                                               ; show redial phone book list instead of dialing the last number (adv_feature). Requires a Phone Service block in SEP....cnf.xml to work correct on Java phones (see the SEP TFTP templates)
 callhistory_answered_elsewhere = ""                                               ; Where to store callinfo for calls answered on a remote device. Options: Options: Ignore, Missed Calls (or Placed Calls, Received Calls which are less usefull)
                                                                                   ; (POSSIBLE VALUES: ["Ignore","Placed Calls","Received Calls","Missed Calls","Unknown"])
 monitor = ""                                                                      ; 

@@ -434,25 +434,6 @@ AC_DEFUN([CS_WITH_PBX], [
 	AC_SUBST([PBX_TYPE])
 ])
 
-AC_DEFUN([CS_SETUP_DOXYGEN], [
-	CONFIGURE_PART([Checking for Doxygen:])
-	AC_ARG_ENABLE([devdoc], 
-		[AC_HELP_STRING([--enable-devdoc], [Generate developer documentation])], 
-		[ac_cv_use_devdoc=$enableval], 
-		[ac_cv_use_devdoc=no]
-	)
-	AS_IF([test "_${ac_cv_use_devdoc}" == "_yes"], [DX_ENV_APPEND([INPUT],[. src src/pbx_impl src/pbx_impl/ast src/pbx_impl/ast116 src/pbx_impl/ast120 src/pbx_impl/ast121 src/pbx_impl/ast122 src/pbx_impl/ast123 src/pbx_impl/ast124 src/pbx_impl/ast_announce])])
-	DX_HTML_FEATURE(ON)
-	DX_CHM_FEATURE(OFF)
-	DX_CHI_FEATURE(OFF)
-	DX_MAN_FEATURE(OFF)
-	DX_RTF_FEATURE(OFF)
-	DX_XML_FEATURE(OFF)
-	DX_PDF_FEATURE(OFF)
-	DX_PS_FEATURE(OFF)
-	DX_INIT_DOXYGEN($PACKAGE, doc/doxygen.cfg)
-])
-
 AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 	AC_ARG_ENABLE(optimization, [
 		AC_HELP_STRING([--enable-optimization],[do not detecti or tune flags for cpu version])], 
@@ -1156,7 +1137,6 @@ AC_DEFUN([CS_PARSE_WITH_AND_ENABLE], [
 	CS_DISABLE_SECTION_RELOCATION
 	AC_MSG_RESULT([--enable-optimization: ${enable_optimization}]) 
 	AC_MSG_RESULT([--enable-debug: ${enable_debug}])
-	AC_MSG_RESULT([--enable-devdoc: ${ac_cv_use_devdoc}])
 	AC_MSG_RESULT([--enable-tls: ${ac_cv_tls}])
 	CS_ENABLE_GCOV
 	CS_ENABLE_REFCOUNT_DEBUG

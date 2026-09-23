@@ -1,6 +1,12 @@
-language dependent xslt stylesheets for CiscoIpPhone xml messages
+Optional Cisco IP Phone XML stylesheets
 
-Please copy these xslt file to the asterisk DATA_DIR/static-http directory, most likely this will be either:
-/usr/share/asterisk/static-http 
-or 
-/var/lib/asterisk/static-http
+These files are used only when chan_sccp is built with experimental XML support.
+Copy this directory's .xsl and translations.xml files, preserving the lib/
+subdirectory, to Asterisk's data directory under sccpxslt/. For example:
+
+    /var/lib/asterisk/sccpxslt/
+
+The module reads stylesheets from this directory and serves files from it at
+its /sccpxslt HTTP endpoint. The Asterisk data directory can be changed in
+asterisk.conf; use that configured location rather than assuming the example
+path. These files are not installed by the module's make install target.

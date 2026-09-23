@@ -40,7 +40,7 @@ gen_enum:
 noinst_LTLIBRARIES	= libsccp.la
 csmod_LTLIBRARIES	= chan_sccp.la
 
-noinst_HEADERS		= forward_declarations.h sccp_globals.h sccp_xml_embedded.h  chan_sccp.h			sccp_actions.h			sccp_cli.h			sccp_devstate.h			\
+noinst_HEADERS		= forward_declarations.h sccp_globals.h chan_sccp.h			sccp_actions.h			sccp_cli.h			sccp_devstate.h			\
 			  sccp_featureButton.h		sccp_line.h			sccp_linedevice.h		sccp_refcount.h			\
 			  common.h			sccp_appfunctions.h		sccp_cli_table.h		sccp_dllists.h			\
 			  sccp_feature.h		sccp_management.h		sccp_rtp.h			sccp_vector.h			\

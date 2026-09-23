@@ -89,7 +89,6 @@ CS_CHECK_TYPES
 CONFIGURE_PART([Checking Configure Options:])
 CS_WITH_PBX
 
-CS_SETUP_DOXYGEN
 CS_ENABLE_EXPERIMENTAL_XML
 CONFIGURE_PART([Checking Enable/Disable:])
 CS_PARSE_WITH_LIBEV
@@ -113,7 +112,7 @@ CONFIGURE_PART([Generating Configuration and Makefiles])
 AC_CONFIG_COMMANDS([src/sccp_enum.h],
 	output=`cd ${ac_abs_top_builddir}/src/;awk -f "${ac_abs_top_srcdir}/tools/gen_sccp_enum.awk" < ${ac_abs_top_srcdir}/src/sccp_enum.in >/dev/null 2>&1`
 )
-AC_CONFIG_FILES([Makefile doc/Makefile src/Makefile src/pbx_impl/Makefile src/pbx_impl/ast/Makefile src/pbx_impl/ast_announce/Makefile src/pbx_impl/ast116/Makefile src/pbx_impl/ast120/Makefile src/pbx_impl/ast121/Makefile src/pbx_impl/ast122/Makefile src/pbx_impl/ast123/Makefile src/pbx_impl/ast124/Makefile contrib/gen_sccpconf/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile src/pbx_impl/Makefile src/pbx_impl/ast/Makefile src/pbx_impl/ast_announce/Makefile src/pbx_impl/ast116/Makefile src/pbx_impl/ast120/Makefile src/pbx_impl/ast121/Makefile src/pbx_impl/ast122/Makefile src/pbx_impl/ast123/Makefile src/pbx_impl/ast124/Makefile])
 AST_SET_PBX_AMCONDITIONALS
 
 VERSION="$SCCP_VERSION"

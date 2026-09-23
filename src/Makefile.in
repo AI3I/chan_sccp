@@ -381,33 +381,8 @@ DEBUG = @DEBUG@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
-DOXYGEN_PAPER_SIZE = @DOXYGEN_PAPER_SIZE@
 DSYMUTIL = @DSYMUTIL@
 DUMPBIN = @DUMPBIN@
-DX_CONFIG = @DX_CONFIG@
-DX_DOCDIR = @DX_DOCDIR@
-DX_DOT = @DX_DOT@
-DX_DOXYGEN = @DX_DOXYGEN@
-DX_DVIPS = @DX_DVIPS@
-DX_EGREP = @DX_EGREP@
-DX_ENV = @DX_ENV@
-DX_FLAG_DX_CURRENT_FEATURE = @DX_FLAG_DX_CURRENT_FEATURE@
-DX_FLAG_chi = @DX_FLAG_chi@
-DX_FLAG_chm = @DX_FLAG_chm@
-DX_FLAG_doc = @DX_FLAG_doc@
-DX_FLAG_dot = @DX_FLAG_dot@
-DX_FLAG_html = @DX_FLAG_html@
-DX_FLAG_man = @DX_FLAG_man@
-DX_FLAG_pdf = @DX_FLAG_pdf@
-DX_FLAG_ps = @DX_FLAG_ps@
-DX_FLAG_rtf = @DX_FLAG_rtf@
-DX_FLAG_xml = @DX_FLAG_xml@
-DX_HHC = @DX_HHC@
-DX_LATEX = @DX_LATEX@
-DX_MAKEINDEX = @DX_MAKEINDEX@
-DX_PDFLATEX = @DX_PDFLATEX@
-DX_PERL = @DX_PERL@
-DX_PROJECT = @DX_PROJECT@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -609,7 +584,7 @@ CLEANFILES = revision.h sccp_enum.h sccp_enum.c stamp-g1
 # libsccp.la and chan_sccp.so
 noinst_LTLIBRARIES = libsccp.la
 csmod_LTLIBRARIES = chan_sccp.la
-noinst_HEADERS = forward_declarations.h sccp_globals.h sccp_xml_embedded.h  chan_sccp.h			sccp_actions.h			sccp_cli.h			sccp_devstate.h			\
+noinst_HEADERS = forward_declarations.h sccp_globals.h chan_sccp.h			sccp_actions.h			sccp_cli.h			sccp_devstate.h			\
 			  sccp_featureButton.h		sccp_line.h			sccp_linedevice.h		sccp_refcount.h			\
 			  common.h			sccp_appfunctions.h		sccp_cli_table.h		sccp_dllists.h			\
 			  sccp_feature.h		sccp_management.h		sccp_rtp.h			sccp_vector.h			\
@@ -1486,7 +1461,7 @@ install-csmodLTLIBRARIES:
 		echo    "===============================================================================================";		\
 	else 																\
 		$(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) ".libs/chan_sccp.so" "$(DESTDIR)$(csmoddir)"; \
- 		echo    "==============================================================================================="; 		\
+		echo    "==============================================================================================="; 		\
 		echo    "Installed chan_sccp.so to '$(DESTDIR)$(csmoddir)'...";           						\
 		echo    "===============================================================================================";		\
 	fi

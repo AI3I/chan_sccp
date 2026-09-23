@@ -204,3 +204,29 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - The optional XML configuration compiled against wadsworth's private
   Asterisk 22 headers. No module was installed; concurrent HTTP requests,
   stylesheet behavior, and unload/reload under XML traffic remain untested.
+
+## Documentation, contrib, and configuration inventory
+
+- Removed the unused Doxygen integration (`amdoxygen.am`, Autoconf macros,
+  `doc/Makefile`, generated templates, and Doxygen assets). The Markdown
+  progress/review notes remain in `doc/`.
+- Removed `contrib/`, including the manually invoked, outdated config
+  generator and standalone diagnostics. Nothing in the module's normal build,
+  install, or runtime paths uses these files. Git history retains them if a
+  specific diagnostic is needed later. The build no longer configures or
+  advertises `gen_sccpconf` targets.
+- Removed old SQL/LDAP schema files, FreePBX and alternate SCCP config
+  examples, and bundled TFTP wallpaper images. Kept the installed
+  `conf/sccp.conf`, its annotated option reference, and the Cisco SEP TFTP
+  templates: the latter can still assist handset provisioning, including
+  796x phones. Kept the optional XML service's XSLT files and updated their
+  installation instructions to match its actual `sccpxslt/` data path.
+- Removed `src/sccp_xml_embedded.h` and its generator; the runtime XML path
+  loads stylesheets from disk and did not reference the embedded array.
+- Regenerated `configure`, `Makefile.in`, and `src/Makefile.in`. Wadsworth's
+  private Asterisk 22 build tree configured with experimental XML and `make
+  dist` passed. The archive includes `conf/sccp.conf` and XSLT files and
+  excludes Doxygen/contrib. No compile, module installation, or phone test
+  was run for this file/build metadata cleanup.
+- The test-tree sync, bootstrap, configure, and archive check were logged in
+  wadsworth's `/root/asterisk.txt`. Production was untouched.

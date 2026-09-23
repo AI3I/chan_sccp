@@ -4,11 +4,9 @@
 # LICENSE:		This program is free software and may be modified and distributed under the terms of the GNU Public License.
 # 			See the LICENSE file at the top of the source tree.
 # NOTE:			Process this file with automake to produce a makefile.in script.
-include 		$(top_srcdir)/amdoxygen.am
-
 AUTOMAKE_OPTIONS	= gnu foreign
-EXTRA_DIST 		= .version tools conf contrib/gen_sccpconf
-SUBDIRS 		= src doc
+EXTRA_DIST 		= .version tools conf
+SUBDIRS 		= src
 ACLOCAL_AMFLAGS		= -I autoconf
 AM_CPPFLAGS		= $(LTDLINCL)
 
@@ -28,15 +26,6 @@ ChangeLog:
 	else \
 	  echo 'See NEWS and the repository history for changes.' > $@; \
 	fi
-
-# Update ChangeLog Files and Generate Doxygen Documentation
-doxygen: ChangeLog doxygen-doc
-
-gen_sccpconf:
-	cd contrib/gen_sccpconf && $(MAKE) $(AM_MAKEFLAGS) all
-
-gen_sccpconf_install:
-	cd contrib/gen_sccpconf && $(MAKE) $(AM_MAKEFLAGS) install
 
 isntall: install
 

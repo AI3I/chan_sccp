@@ -13,36 +13,6 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
-
-# Copyright (C) 2004 Oren Ben-Kiki This file is distributed under the same
-# terms as the Automake macro files.
-
-# Generate automatic documentation using Doxygen. Goals and variables values
-# are controlled by the various DX_COND_??? conditionals set by autoconf.
-#
-# The provided goals are:
-# doxygen-doc: Generate all doxygen documentation.
-# doxygen-run: Run doxygen, which will generate some of the documentation
-#              (HTML, CHM, CHI, MAN, RTF, XML) but will not do the post
-#              processing required for the rest of it (PS, PDF, and some MAN).
-# doxygen-man: Rename some doxygen generated man pages.
-# doxygen-ps: Generate doxygen PostScript documentation.
-# doxygen-pdf: Generate doxygen PDF documentation.
-#
-# Note that by default these are not integrated into the automake goals. If
-# doxygen is used to generate man pages, you can achieve this integration by
-# setting man3_MANS to the list of man pages generated and then adding the
-# dependency:
-#
-#   $(man3_MANS): doxygen-doc
-#
-# This will cause make to run doxygen and generate all the documentation.
-#
-# The following variable is intended for use in Makefile.am:
-#
-# DX_CLEANFILES = everything to clean.
-#
-# This is usually added to MOSTLYCLEANFILES.
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -197,8 +167,7 @@ am__define_uniq_tagged_files = \
     if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
   done | $(am__uniquify_input)`
 DIST_SUBDIRS = $(SUBDIRS)
-am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/amdoxygen.am \
-	$(top_srcdir)/autoconf/compile \
+am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/autoconf/compile \
 	$(top_srcdir)/autoconf/config.guess \
 	$(top_srcdir)/autoconf/config.rpath \
 	$(top_srcdir)/autoconf/config.sub \
@@ -298,33 +267,8 @@ DEBUG = @DEBUG@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
-DOXYGEN_PAPER_SIZE = @DOXYGEN_PAPER_SIZE@
 DSYMUTIL = @DSYMUTIL@
 DUMPBIN = @DUMPBIN@
-DX_CONFIG = @DX_CONFIG@
-DX_DOCDIR = @DX_DOCDIR@
-DX_DOT = @DX_DOT@
-DX_DOXYGEN = @DX_DOXYGEN@
-DX_DVIPS = @DX_DVIPS@
-DX_EGREP = @DX_EGREP@
-DX_ENV = @DX_ENV@
-DX_FLAG_DX_CURRENT_FEATURE = @DX_FLAG_DX_CURRENT_FEATURE@
-DX_FLAG_chi = @DX_FLAG_chi@
-DX_FLAG_chm = @DX_FLAG_chm@
-DX_FLAG_doc = @DX_FLAG_doc@
-DX_FLAG_dot = @DX_FLAG_dot@
-DX_FLAG_html = @DX_FLAG_html@
-DX_FLAG_man = @DX_FLAG_man@
-DX_FLAG_pdf = @DX_FLAG_pdf@
-DX_FLAG_ps = @DX_FLAG_ps@
-DX_FLAG_rtf = @DX_FLAG_rtf@
-DX_FLAG_xml = @DX_FLAG_xml@
-DX_HHC = @DX_HHC@
-DX_LATEX = @DX_LATEX@
-DX_MAKEINDEX = @DX_MAKEINDEX@
-DX_PDFLATEX = @DX_PDFLATEX@
-DX_PERL = @DX_PERL@
-DX_PROJECT = @DX_PROJECT@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -497,30 +441,6 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@DX_COND_doc_TRUE@@DX_COND_html_TRUE@DX_CLEAN_HTML = @DX_DOCDIR@/html
-@DX_COND_chm_TRUE@@DX_COND_doc_TRUE@DX_CLEAN_CHM = @DX_DOCDIR@/chm
-@DX_COND_chi_TRUE@@DX_COND_chm_TRUE@@DX_COND_doc_TRUE@DX_CLEAN_CHI = @DX_DOCDIR@/@PACKAGE@.chi
-@DX_COND_doc_TRUE@@DX_COND_man_TRUE@DX_CLEAN_MAN = @DX_DOCDIR@/man
-@DX_COND_doc_TRUE@@DX_COND_rtf_TRUE@DX_CLEAN_RTF = @DX_DOCDIR@/rtf
-@DX_COND_doc_TRUE@@DX_COND_xml_TRUE@DX_CLEAN_XML = @DX_DOCDIR@/xml
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@DX_CLEAN_PS = @DX_DOCDIR@/@PACKAGE@.ps
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@DX_PS_GOAL = doxygen-ps
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@DX_CLEAN_PDF = @DX_DOCDIR@/@PACKAGE@.pdf
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@DX_PDF_GOAL = doxygen-pdf
-@DX_COND_doc_TRUE@@DX_COND_latex_TRUE@DX_CLEAN_LATEX = @DX_DOCDIR@/latex
-@DX_COND_doc_TRUE@DX_CLEANFILES = \
-@DX_COND_doc_TRUE@    @DX_DOCDIR@/@PACKAGE@.tag \
-@DX_COND_doc_TRUE@    -r \
-@DX_COND_doc_TRUE@    $(DX_CLEAN_HTML) \
-@DX_COND_doc_TRUE@    $(DX_CLEAN_CHM) \
-@DX_COND_doc_TRUE@    $(DX_CLEAN_CHI) \
-@DX_COND_doc_TRUE@    $(DX_CLEAN_MAN) \
-@DX_COND_doc_TRUE@    $(DX_CLEAN_RTF) \
-@DX_COND_doc_TRUE@    $(DX_CLEAN_XML) \
-@DX_COND_doc_TRUE@    $(DX_CLEAN_PS) \
-@DX_COND_doc_TRUE@    $(DX_CLEAN_PDF) \
-@DX_COND_doc_TRUE@    $(DX_CLEAN_LATEX)
-
 
 # FILE:			AutoMake Makefile for chan-sccp
 # COPYRIGHT:		http://chan-sccp.github.io/chan-sccp/ group 2009
@@ -529,8 +449,8 @@ top_srcdir = @top_srcdir@
 # 			See the LICENSE file at the top of the source tree.
 # NOTE:			Process this file with automake to produce a makefile.in script.
 AUTOMAKE_OPTIONS = gnu foreign
-EXTRA_DIST = .version tools conf contrib/gen_sccpconf
-SUBDIRS = src doc
+EXTRA_DIST = .version tools conf
+SUBDIRS = src
 ACLOCAL_AMFLAGS = -I autoconf
 AM_CPPFLAGS = $(LTDLINCL)
 distdir = $(PACKAGE)-$(VERSION)
@@ -540,7 +460,7 @@ all: all-recursive
 .SUFFIXES:
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/amdoxygen.am $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -562,7 +482,6 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles);; \
 	esac;
-$(top_srcdir)/amdoxygen.am $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -1017,52 +936,6 @@ uninstall-am:
 .PRECIOUS: Makefile
 
 
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@doxygen-ps: @DX_DOCDIR@/@PACKAGE@.ps
-
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@@DX_DOCDIR@/@PACKAGE@.ps: @DX_DOCDIR@/@PACKAGE@.tag
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	cd doc/latex; \
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	rm -f *.aux *.toc *.idx *.ind *.ilg *.log *.out; \
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	$(DX_LATEX) refman.tex; \
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	$(MAKEINDEX_PATH) refman.idx; \
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	$(DX_LATEX) refman.tex; \
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	countdown=5; \
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	while $(DX_EGREP) 'Rerun (LaTeX|to get cross-references right)' \
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	                  refman.log > /dev/null 2>&1 \
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	   && test $$countdown -gt 0; do \
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	    $(DX_LATEX) refman.tex; \
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	    countdown=`expr $$countdown - 1`; \
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	done; \
-@DX_COND_doc_TRUE@@DX_COND_ps_TRUE@	$(DX_DVIPS) -o ../@PACKAGE@.ps refman.dvi
-
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@doxygen-pdf: @DX_DOCDIR@/@PACKAGE@.pdf
-
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@@DX_DOCDIR@/@PACKAGE@.pdf: @DX_DOCDIR@/@PACKAGE@.tag
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	cd doc/latex; \
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	rm -f *.aux *.toc *.idx *.ind *.ilg *.log *.out; \
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	$(DX_PDFLATEX) refman.tex; \
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	$(DX_MAKEINDEX) refman.idx; \
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	$(DX_PDFLATEX) refman.tex; \
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	countdown=5; \
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	while $(DX_EGREP) 'Rerun (LaTeX|to get cross-references right)' \
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	                  refman.log > /dev/null 2>&1 \
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	   && test $$countdown -gt 0; do \
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	    $(DX_PDFLATEX) refman.tex; \
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	    countdown=`expr $$countdown - 1`; \
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	done; \
-@DX_COND_doc_TRUE@@DX_COND_pdf_TRUE@	mv refman.pdf ../@PACKAGE@.pdf
-
-@DX_COND_doc_TRUE@.PHONY: doxygen-run doxygen-doc $(DX_PS_GOAL) $(DX_PDF_GOAL)
-
-@DX_COND_doc_TRUE@.INTERMEDIATE: doxygen-run $(DX_PS_GOAL) $(DX_PDF_GOAL)
-
-@DX_COND_doc_TRUE@doxygen-run: @DX_DOCDIR@/@PACKAGE@.tag
-
-@DX_COND_doc_TRUE@doxygen-doc: doxygen-run $(DX_PS_GOAL) $(DX_PDF_GOAL)
-
-@DX_COND_doc_TRUE@@DX_DOCDIR@/@PACKAGE@.tag: $(DX_CONFIG) $(pkginclude_HEADERS)
-@DX_COND_doc_TRUE@	rm -rf @DX_DOCDIR@
-@DX_COND_doc_TRUE@	$(DX_ENV) $(DX_DOXYGEN) $(srcdir)/$(DX_CONFIG)
-
 # Update libtool if necessary
 libtool: 		@LIBTOOL_DEPS@
 			cd $(srcdir) && \
@@ -1077,15 +950,6 @@ ChangeLog:
 	else \
 	  echo 'See NEWS and the repository history for changes.' > $@; \
 	fi
-
-# Update ChangeLog Files and Generate Doxygen Documentation
-doxygen: ChangeLog doxygen-doc
-
-gen_sccpconf:
-	cd contrib/gen_sccpconf && $(MAKE) $(AM_MAKEFLAGS) all
-
-gen_sccpconf_install:
-	cd contrib/gen_sccpconf && $(MAKE) $(AM_MAKEFLAGS) install
 
 isntall: install
 

@@ -824,7 +824,7 @@ gcc_inline void * const sccp_refcount_retain(const void * const ptr, const char 
 	__sccp_refcount_debug((void *) ptr, NULL, 1, filename, lineno, func);
 #	endif
 	pbx_log(LOG_ERROR, "SCCP: (%-15.15s:%-4.4d (%-35.35s)) refcount_retain: %p is not a tracked refcounted object - indicates a double-release, use-after-free, or dangling pointer bug.\n", filename, lineno, func, ptr);
-	#ifdef DEBUG
+	#if DEBUG
 	sccp_do_backtrace();
 	#endif
 	return NULL;
@@ -879,7 +879,7 @@ gcc_inline void * const sccp_refcount_release(const void * * const ptr, const ch
 	__sccp_refcount_debug((void *) *ptr, NULL, -1, filename, lineno, func);
 #endif
 	pbx_log(LOG_ERROR, "SCCP: (%-15.15s:%-4.4d (%-35.35s)) refcount_release: %p is not a tracked refcounted object - indicates a double-release, use-after-free, or dangling pointer bug.\n", filename, lineno, func, *ptr);
-	#ifdef DEBUG
+	#if DEBUG
 	sccp_do_backtrace();
 	#endif
 	*ptr = NULL;

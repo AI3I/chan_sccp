@@ -438,7 +438,6 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 		[enable_debug=yes;if test "${REPOS_TYPE}" = "TGZ"; then enable_debug=no; fi]
 	)
 
-	LIBBFD=""
 	if test -n "${CPPFLAGS_saved}"; then
 	 	CPPFLAGS_saved="${CPPFLAGS_saved} -U_FORTIFY_SOURCE"
  	else 
@@ -684,12 +683,6 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 			[
 				AC_DEFINE(HAVE_EXECINFO_H,1,[Found 'execinfo.h'])
 				AC_CHECK_LIB([execinfo], [backtrace_symbols], [LIBEXECINFO="-lexecinfo"], [LIBEXECINFO=""])
-				AC_CHECK_HEADER([dlfcn.h], [AC_DEFINE(HAVE_DLADDR_H, 1, [Found 'dlfcn.h'])])
-				dnl AC_SEARCH_LIBS([bfd_openr], [bfd], [
-				dnl 	AC_CHECK_HEADER([bfd.h], [AC_DEFINE(HAVE_BFD_H, 1, [Found 'bfd.h'])])
-				dnl 	LIBBFD="-lbfd"
-				dnl ])
-				CS_CHECK_BFD()
 			]
 		)
 	], [
@@ -721,7 +714,6 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 	LDFLAGS="${LDFLAGS_saved}"
 	AC_SUBST([DEBUG])
 	AC_SUBST([GDB_FLAGS])
-	AC_SUBST([LIBBFD])
 	AC_SUBST([LIBEXECINFO])
 ])
 
@@ -1242,54 +1234,4 @@ AC_DEFUN([CS_PARSE_WITH_LIBEV], [
 	AC_SUBST([EVENT_LIBS])
 	AC_SUBST([EVENT_CFLAGS])
 	AC_SUBST([EVENT_TYPE])
-])
-
-AC_DEFUN([CS_CHECK_BFD], [
-	AC_ARG_ENABLE([backtrace-detail],
-		AS_HELP_STRING([--disable-backtrace-detail], [Disable detailed backtrace support, default: NO]),
-		[],
-		[enable_backtrace_detail=yes])
-	AS_IF([test "x$enable_backtrace_detail" = xyes],
-		[
-		BT=1
-		AC_CHECK_HEADER([bfd.h], [], [AC_MSG_WARN([binutils headers not found])]; BT=0)
-		AC_CHECK_LIB(bfd, bfd_openr,  LIBS="$LIBS -lbfd", [AC_MSG_WARN([bfd library not found])];BT=0)
-		AC_CHECK_LIB(dl, dlopen, LIBS="$LIBS -ldl", [AC_MSG_WARN([dl library not found])];BT=0)
-		dnl AC_CHECK_LIB(intl, main, LIBS="$LIBS -lintl", [AC_MSG_WARN([intl library not found])])
-		AC_CHECK_TYPES([struct dl_phdr_info], [], [AC_MSG_WARN([struct dl_phdr_info not defined])];BT=0,
-						[#define _GNU_SOURCE 1
-						 #include <link.h>]) 
-		AC_CHECK_DECLS([bfd_get_section_flags, bfd_section_flags, bfd_get_section_vma, bfd_section_vma],
-			       [], [], [#include <bfd.h>])
-		AC_MSG_CHECKING([bfd_section_size API version])
-		AC_LANG_PUSH([C])
-		SAVE_CFLAGS="$CFLAGS"
-		AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
-			#include <bfd.h>
-			int main(int argc, char** argv) {
-				asection *sec = malloc(sizeof(*sec));
-				bfd_section_size(sec);
-				free(sec);
-				return 0;
-			} ]])],
-			[AC_MSG_RESULT([1-arg API])
-			 AC_DEFINE([HAVE_1_ARG_BFD_SECTION_SIZE], [1],
-				   [bfd_section_size 1-arg version])],
-			[AC_MSG_RESULT([2-args API])
-			 AC_DEFINE([HAVE_1_ARG_BFD_SECTION_SIZE], [0],
-				   [bfd_section_size 2-args version])])
-		CFLAGS="$SAVE_CFLAGS"
-		AC_LANG_POP([C])
-		if test "x$BT" = "x1"; then
-			AC_CHECK_FUNCS([cplus_demangle])
-			AC_DEFINE(HAVE_BFD_H, 1, [Found 'bfd.h'])
-			AC_DEFINE([HAVE_DETAILED_BACKTRACE], 1, [Enable detailed backtrace])
-		case ${host} in
-		    aarch64*) CFLAGS="$CFLAGS -funwind-tables" ;;
-		esac
-		else
-			AC_MSG_WARN([detailed backtrace is not supported])
-		fi
-		]
-	)
 ])

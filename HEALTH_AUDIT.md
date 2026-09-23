@@ -1,5 +1,31 @@
 # chan_sccp-modern Health Audit
 
+## Fixed — libbfd backtrace support removed; `#ifdef DEBUG` guards (2026-09-23)
+
+`DEBUG` is always defined by configure (1 or 0), so every `#ifdef DEBUG` was
+true, including in `--disable-debug` builds. Removed the `CS_CHECK_BFD`
+configure block and `LIBBFD` link flag; `sccp_do_backtrace()` now exists only
+when `DEBUG` is 1 and uses execinfo/Asterisk `ast_bt_get_symbols`. Its two
+callers in `sccp_refcount.c`, the declaration in `sccp_utils.h`, and the
+AMI "ConfigureEnabled" `"debug"` entry in `sccp_config.c` now use
+`#if DEBUG`. Behavior change: release builds that had libbfd no longer print
+a backtrace on refcount errors.
+
+Generated files (`configure`, five `Makefile.in`, `src/config.h.in`) were
+regenerated with `tools/bootstrap.sh` on wadsworth (Autoconf 2.72, Automake
+1.17, libtool 2.5.4 Debian-2.5.4-4, matching the committed files); only
+non-whitespace changes were kept. The larger `configure` diff is autoconf
+dropping helpers (`ac_fn_c_check_type`, etc.) only the bfd checks used.
+
+Validation on wadsworth against the lab Asterisk 22 prefix
+(`~/asterisk-lab/bfd-cleanup-build`, `bfd-cleanup-nodebug`): default
+(`DEBUG 1`) and `--disable-debug` (`DEBUG 0`) builds both configure, build and
+pass `make check`. Default build warnings unchanged from the previous lab
+build except the `sccp_do_backtrace()` old-style definition, now fixed.
+The `--disable-debug` build also shows ~25 pre-existing `-Wformat-truncation`
+warnings (sccp_pbx.c, sccp_cli.c, sccp_utils.c, sccp_hint.c, others) that are
+not addressed here. Not deployed to the PBX.
+
 ## Fixed — sscanf format and return checks (CodeQL, 2026-09-23)
 
 CodeQL `cpp/incorrectly-checked-scanf` flagged 8 calls that tested
@@ -14,8 +40,10 @@ wrong formats:
 All eight now require a return of exactly 1. Empty config values still
 become `"0"` before parsing, so the numeric path's behavior is unchanged
 except for the hex fix. An empty group entry (`1,,3`) used to re-add the
-previous group; it is now logged as a syntax error and skipped. Validation: CI build (`ccpp.yml` and the CodeQL c-cpp
-build); not rebuilt or deployed to the PBX.
+previous group; it is now logged as a syntax error and skipped.
+
+Validation: built and tested on wadsworth together with the libbfd removal
+above; not deployed to the PBX.
 
 ## RTP transmit payload initialization correction (2026-09-22)
 

@@ -115,7 +115,7 @@ SCCP_INLINE sccp_cfwd_t SCCP_CALL sccp_feature2cfwd(const sccp_feature_type_t ty
 SCCP_INLINE const char * const SCCP_CALL sccp_cfwd2disp(const sccp_cfwd_t type);
 SCCP_INLINE skinny_stimulus_t SCCP_CALL sccp_cfwd2stimulus(const sccp_cfwd_t type);
 
-#ifdef DEBUG
+#if DEBUG
 SCCP_API void SCCP_CALL sccp_do_backtrace(void);
 #endif
 __END_C_EXTERN__

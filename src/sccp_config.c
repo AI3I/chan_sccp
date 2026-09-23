@@ -3376,7 +3376,7 @@ int sccp_manager_config_metadata(struct mansession * s, const struct message * m
 #ifdef CS_EXPERIMENTAL
 			"experimental",
 #endif
-#ifdef DEBUG
+#if DEBUG
 			"debug",
 #endif
 		};

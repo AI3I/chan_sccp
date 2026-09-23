@@ -1676,9 +1676,8 @@ static void __attribute__((destructor)) sccp_unregister_tests(void)
 }
 #endif
 
-#ifdef DEBUG
-#	if defined(HAVE_BFD_H) && defined(HAVE_DETAILED_BACKTRACE)
-void sccp_do_backtrace()
+#if DEBUG
+void sccp_do_backtrace(void)
 {
 	pbx_rwlock_rdlock(&GLOB(lock));
 	boolean_t running = GLOB(module_running);
@@ -1700,9 +1699,6 @@ void sccp_do_backtrace()
 	
 	pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "================================================================================\n");
 	pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "OPERATING SYSTEM: %s, ARCHITECTURE: %s, KERNEL: %s\nASTERISK: %s\nCHAN-SCCP-b: %s\n", BUILD_OS, BUILD_MACHINE, BUILD_KERNEL, pbx_get_version(), SCCP_VERSIONSTR);
-#if !defined(HAVE_DLADDR_H) || !defined(HAVE_BFD_H)
-	pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "To get a better backtrace you would need to install libbfd (package binutils devel package)\n");
-#endif		
 	pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "--------------------------------------------------------------------------(bt)--\n");
 	size = backtrace(addresses, SCCP_BACKTRACE_SIZE);
 	strings = ast_bt_get_symbols(addresses, size);
@@ -1721,13 +1717,7 @@ void sccp_do_backtrace()
 		pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "================================================================================\n");
 		pbx_log(LOG_WARNING, "SCCP: (backtrace) \n%s\n", pbx_str_buffer(btbuf));
 	}
-#endif	// HAVE_EXECINFO_H
+#endif	// HAVE_EXECINFO_H && HAVE_BKTR
 }
-#	else
-void sccp_do_backtrace()
-{
-	// not implemented
-}
-#	endif                                        // HAVE_BFD_H && HAVE_DETAILED_BACKTRACE
-#endif                                                // DEBUG
+#endif // DEBUG
 // kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

@@ -753,7 +753,6 @@ SCCP_REVISION
 SCCP_BRANCH
 SCCP_VERSION
 LIBEXECINFO
-LIBBFD
 GDB_FLAGS
 DEBUG
 strip_binaries
@@ -885,7 +884,6 @@ enable_silent_rules
 enable_static
 enable_optimization
 enable_debug
-enable_backtrace_detail
 enable_lto
 enable_builtin_atomics
 enable_cross_cmpxchg16b
@@ -1582,8 +1580,6 @@ Optional Features:
 
 		  --enable-optimization   do not detecti or tune flags for cpu version
   --disable-debug         disable debug information
-  --disable-backtrace-detail
-                          Disable detailed backtrace support, default: NO
   --enable-lto            Enable link-time optimization (disabled by default)
   --disable-builtin-atomics
                           force the use of inline-assembly (if possible)
@@ -1880,183 +1876,6 @@ fi
 
 } # ac_fn_c_try_link
 
-# ac_fn_c_check_type LINENO TYPE VAR INCLUDES
-# -------------------------------------------
-# Tests whether TYPE exists after having included INCLUDES, setting cache
-# variable VAR accordingly.
-ac_fn_c_check_type ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-printf %s "checking for $2... " >&6; }
-if eval test \${$3+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) eval "$3=no"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main (void)
-{
-if (sizeof ($2))
-	 return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main (void)
-{
-if (sizeof (($2)))
-	    return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-else case e in #(
-  e) eval "$3=yes" ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
-eval ac_res=\$$3
-	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-printf "%s\n" "$ac_res" >&6; }
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-
-} # ac_fn_c_check_type
-
-# ac_fn_check_decl LINENO SYMBOL VAR INCLUDES EXTRA-OPTIONS FLAG-VAR
-# ------------------------------------------------------------------
-# Tests whether SYMBOL is declared in INCLUDES, setting cache variable VAR
-# accordingly. Pass EXTRA-OPTIONS to the compiler, using FLAG-VAR.
-ac_fn_check_decl ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  as_decl_name=`echo $2|sed 's/ *(.*//'`
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $as_decl_name is declared" >&5
-printf %s "checking whether $as_decl_name is declared... " >&6; }
-if eval test \${$3+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) as_decl_use=`echo $2|sed -e 's/(/((/' -e 's/)/) 0&/' -e 's/,/) 0& (/g'`
-  eval ac_save_FLAGS=\$$6
-  as_fn_append $6 " $5"
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-$4
-int
-main (void)
-{
-#ifndef $as_decl_name
-#ifdef __cplusplus
-  (void) $as_decl_use;
-#else
-  (void) $as_decl_name;
-#endif
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  eval "$3=yes"
-else case e in #(
-  e) eval "$3=no" ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-  eval $6=\$ac_save_FLAGS
- ;;
-esac
-fi
-eval ac_res=\$$3
-	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-printf "%s\n" "$ac_res" >&6; }
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-
-} # ac_fn_check_decl
-
-# ac_fn_c_check_func LINENO FUNC VAR
-# ----------------------------------
-# Tests whether FUNC exists, setting the cache variable VAR accordingly
-ac_fn_c_check_func ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
-printf %s "checking for $2... " >&6; }
-if eval test \${$3+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-/* Define $2 to an innocuous variant, in case <limits.h> declares $2.
-   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define $2 innocuous_$2
-
-/* System header to define __stub macros and hopefully few prototypes,
-   which can conflict with char $2 (void); below.  */
-
-#include <limits.h>
-#undef $2
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char $2 (void);
-/* The GNU C library defines this for functions which it implements
-    to always fail with ENOSYS.  Some functions are actually named
-    something starting with __ and the normal name is an alias.  */
-#if defined __stub_$2 || defined __stub___$2
-choke me
-#endif
-
-int
-main (void)
-{
-return $2 ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  eval "$3=yes"
-else case e in #(
-  e) eval "$3=no" ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext ;;
-esac
-fi
-eval ac_res=\$$3
-	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-printf "%s\n" "$ac_res" >&6; }
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-
-} # ac_fn_c_check_func
-
 # ac_fn_c_try_run LINENO
 # ----------------------
 # Try to run conftest.$ac_ext, and return whether this succeeded. Assumes that
@@ -2140,6 +1959,129 @@ fi
 
 } # ac_fn_c_try_cpp
 
+# ac_fn_c_check_func LINENO FUNC VAR
+# ----------------------------------
+# Tests whether FUNC exists, setting the cache variable VAR accordingly
+ac_fn_c_check_func ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+printf %s "checking for $2... " >&6; }
+if eval test \${$3+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+/* Define $2 to an innocuous variant, in case <limits.h> declares $2.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define $2 innocuous_$2
+
+/* System header to define __stub macros and hopefully few prototypes,
+   which can conflict with char $2 (void); below.  */
+
+#include <limits.h>
+#undef $2
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char $2 (void);
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined __stub_$2 || defined __stub___$2
+choke me
+#endif
+
+int
+main (void)
+{
+return $2 ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  eval "$3=yes"
+else case e in #(
+  e) eval "$3=no" ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext ;;
+esac
+fi
+eval ac_res=\$$3
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_c_check_func
+
+# ac_fn_c_check_type LINENO TYPE VAR INCLUDES
+# -------------------------------------------
+# Tests whether TYPE exists after having included INCLUDES, setting cache
+# variable VAR accordingly.
+ac_fn_c_check_type ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
+printf %s "checking for $2... " >&6; }
+if eval test \${$3+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) eval "$3=no"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main (void)
+{
+if (sizeof ($2))
+	 return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main (void)
+{
+if (sizeof (($2)))
+	    return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+else case e in #(
+  e) eval "$3=yes" ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+eval ac_res=\$$3
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_c_check_type
+
 # ac_fn_c_check_member LINENO AGGR MEMBER VAR INCLUDES
 # ----------------------------------------------------
 # Tries to find if the field MEMBER exists in type AGGR, after including
@@ -2202,6 +2144,60 @@ printf "%s\n" "$ac_res" >&6; }
   eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
 
 } # ac_fn_c_check_member
+
+# ac_fn_check_decl LINENO SYMBOL VAR INCLUDES EXTRA-OPTIONS FLAG-VAR
+# ------------------------------------------------------------------
+# Tests whether SYMBOL is declared in INCLUDES, setting cache variable VAR
+# accordingly. Pass EXTRA-OPTIONS to the compiler, using FLAG-VAR.
+ac_fn_check_decl ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  as_decl_name=`echo $2|sed 's/ *(.*//'`
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether $as_decl_name is declared" >&5
+printf %s "checking whether $as_decl_name is declared... " >&6; }
+if eval test \${$3+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) as_decl_use=`echo $2|sed -e 's/(/((/' -e 's/)/) 0&/' -e 's/,/) 0& (/g'`
+  eval ac_save_FLAGS=\$$6
+  as_fn_append $6 " $5"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+$4
+int
+main (void)
+{
+#ifndef $as_decl_name
+#ifdef __cplusplus
+  (void) $as_decl_use;
+#else
+  (void) $as_decl_name;
+#endif
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  eval "$3=yes"
+else case e in #(
+  e) eval "$3=no" ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  eval $6=\$ac_save_FLAGS
+ ;;
+esac
+fi
+eval ac_res=\$$3
+	       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+printf "%s\n" "$ac_res" >&6; }
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+
+} # ac_fn_check_decl
 ac_configure_args_raw=
 for ac_arg
 do
@@ -5900,12 +5896,12 @@ _ACEOF
 then :
 
 		echo "Utility 'awk' is missing"
-		echo "==================================="
+ 		echo "==================================="
 		echo "The awk programm is missing on your platform, this is required though."
 		echo "Please install awk / gnu-awk / mawk / nawk or some other Posix compatible version of AWK"
 		echo "And then rerun the configure process"
 		echo "==================================="
-		echo "Exitting now."
+ 		echo "Exitting now."
 		exit
 
 fi
@@ -6048,89 +6044,6 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 	fi
 
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $CC options needed to detect all undeclared functions" >&5
-printf %s "checking for $CC options needed to detect all undeclared functions... " >&6; }
-if test ${ac_cv_c_undeclared_builtin_options+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_save_CFLAGS=$CFLAGS
-   ac_cv_c_undeclared_builtin_options='cannot detect'
-   for ac_arg in '' -fno-builtin; do
-     CFLAGS="$ac_save_CFLAGS $ac_arg"
-     # This test program should *not* compile successfully.
-     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main (void)
-{
-(void) strchr;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-else case e in #(
-  e) # This test program should compile successfully.
-        # No library function is consistently available on
-        # freestanding implementations, so test against a dummy
-        # declaration.  Include always-available headers on the
-        # off chance that they somehow elicit warnings.
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <float.h>
-#include <limits.h>
-#include <stdarg.h>
-#include <stddef.h>
-extern void ac_decl (int, char *);
-
-int
-main (void)
-{
-(void) ac_decl (0, (char *) 0);
-  (void) ac_decl;
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  if test x"$ac_arg" = x
-then :
-  ac_cv_c_undeclared_builtin_options='none needed'
-else case e in #(
-  e) ac_cv_c_undeclared_builtin_options=$ac_arg ;;
-esac
-fi
-          break
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-    done
-    CFLAGS=$ac_save_CFLAGS
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_undeclared_builtin_options" >&5
-printf "%s\n" "$ac_cv_c_undeclared_builtin_options" >&6; }
-  case $ac_cv_c_undeclared_builtin_options in #(
-  'cannot detect') :
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
-printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
-as_fn_error $? "cannot make $CC report undeclared builtins
-See 'config.log' for more details" "$LINENO" 5; } ;; #(
-  'none needed') :
-    ac_c_undeclared_builtin_options='' ;; #(
-  *) :
-    ac_c_undeclared_builtin_options=$ac_cv_c_undeclared_builtin_options ;;
-esac
-
 
 	# Check whether --enable-optimization was given.
 if test ${enable_optimization+y}
@@ -6153,13 +6066,12 @@ esac
 fi
 
 
-	LIBBFD=""
 	if test -n "${CPPFLAGS_saved}"; then
-		CPPFLAGS_saved="${CPPFLAGS_saved} -U_FORTIFY_SOURCE"
-	else
-		CPPFLAGS_saved="-U_FORTIFY_SOURCE"
-	fi
-	LDFLAGS_saved="${LDFLAGS}"
+	 	CPPFLAGS_saved="${CPPFLAGS_saved} -U_FORTIFY_SOURCE"
+ 	else
+ 		CPPFLAGS_saved="-U_FORTIFY_SOURCE"
+ 	fi
+ 	LDFLAGS_saved="${LDFLAGS}"
 
 	if test "X$enable_optimization" == "Xyes"
 then :
@@ -6171,7 +6083,7 @@ then :
 			CFLAGS_saved="${CFLAGS_saved} -O3 "
 
 fi
-		CPPFLAGS_saved="${CPPFLAGS_saved} -D_FORTIFY_SOURCE=2"
+	 	CPPFLAGS_saved="${CPPFLAGS_saved} -D_FORTIFY_SOURCE=2"
 		GDB_FLAGS=""
 		if test "x${GCC}" = "xyes"
 then :
@@ -6270,7 +6182,7 @@ fi
 
 else case e in #(
   e)
-		CFLAGS_saved="`echo ${CFLAGS_saved} |sed -e 's/\-O0-9\ \?//g' -e 's/^|\ \-g$|\ //g'`"
+	 	CFLAGS_saved="`echo ${CFLAGS_saved} |sed -e 's/\-O0-9\ \?//g' -e 's/^|\ \-g$|\ //g'`"
 		optimize_flag="-O0"
 		case "${CC}" in
 			*gcc*)
@@ -6334,7 +6246,7 @@ printf "%s\n" "#define DEBUG 1" >>confdefs.h
 		enable_do_crash="yes"
 		enable_debug_mutex="yes"
 
-				CFLAGS_saved="${CFLAGS_saved} -Wall"
+	 			CFLAGS_saved="${CFLAGS_saved} -Wall"
 		GDB_FLAGS="-g3 -ggdb3"
 
 		if test "x${GCC}" = "xyes"
@@ -7044,266 +6956,6 @@ else case e in #(
 esac
 fi
 
-				ac_fn_c_check_header_compile "$LINENO" "dlfcn.h" "ac_cv_header_dlfcn_h" "$ac_includes_default"
-if test "x$ac_cv_header_dlfcn_h" = xyes
-then :
-
-printf "%s\n" "#define HAVE_DLADDR_H 1" >>confdefs.h
-
-fi
-
-
-	# Check whether --enable-backtrace-detail was given.
-if test ${enable_backtrace_detail+y}
-then :
-  enableval=$enable_backtrace_detail;
-else case e in #(
-  e) enable_backtrace_detail=yes ;;
-esac
-fi
-
-	if test "x$enable_backtrace_detail" = xyes
-then :
-
-		BT=1
-		ac_fn_c_check_header_compile "$LINENO" "bfd.h" "ac_cv_header_bfd_h" "$ac_includes_default"
-if test "x$ac_cv_header_bfd_h" = xyes
-then :
-
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: binutils headers not found" >&5
-printf "%s\n" "$as_me: WARNING: binutils headers not found" >&2;}; BT=0 ;;
-esac
-fi
-
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for bfd_openr in -lbfd" >&5
-printf %s "checking for bfd_openr in -lbfd... " >&6; }
-if test ${ac_cv_lib_bfd_bfd_openr+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lbfd  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char bfd_openr (void);
-int
-main (void)
-{
-return bfd_openr ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_bfd_bfd_openr=yes
-else case e in #(
-  e) ac_cv_lib_bfd_bfd_openr=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_bfd_bfd_openr" >&5
-printf "%s\n" "$ac_cv_lib_bfd_bfd_openr" >&6; }
-if test "x$ac_cv_lib_bfd_bfd_openr" = xyes
-then :
-  LIBS="$LIBS -lbfd"
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: bfd library not found" >&5
-printf "%s\n" "$as_me: WARNING: bfd library not found" >&2;};BT=0 ;;
-esac
-fi
-
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for dlopen in -ldl" >&5
-printf %s "checking for dlopen in -ldl... " >&6; }
-if test ${ac_cv_lib_dl_dlopen+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-ldl  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char dlopen (void);
-int
-main (void)
-{
-return dlopen ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_dl_dlopen=yes
-else case e in #(
-  e) ac_cv_lib_dl_dlopen=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dl_dlopen" >&5
-printf "%s\n" "$ac_cv_lib_dl_dlopen" >&6; }
-if test "x$ac_cv_lib_dl_dlopen" = xyes
-then :
-  LIBS="$LIBS -ldl"
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: dl library not found" >&5
-printf "%s\n" "$as_me: WARNING: dl library not found" >&2;};BT=0 ;;
-esac
-fi
-
-				ac_fn_c_check_type "$LINENO" "struct dl_phdr_info" "ac_cv_type_struct_dl_phdr_info" "#define _GNU_SOURCE 1
-						 #include <link.h>
-"
-if test "x$ac_cv_type_struct_dl_phdr_info" = xyes
-then :
-
-printf "%s\n" "#define HAVE_STRUCT_DL_PHDR_INFO 1" >>confdefs.h
-
-
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: struct dl_phdr_info not defined" >&5
-printf "%s\n" "$as_me: WARNING: struct dl_phdr_info not defined" >&2;};BT=0 ;;
-esac
-fi
-
-		ac_fn_check_decl "$LINENO" "bfd_get_section_flags" "ac_cv_have_decl_bfd_get_section_flags" "#include <bfd.h>
-" "$ac_c_undeclared_builtin_options" "CFLAGS"
-if test "x$ac_cv_have_decl_bfd_get_section_flags" = xyes
-then :
-  ac_have_decl=1
-else case e in #(
-  e) ac_have_decl=0 ;;
-esac
-fi
-printf "%s\n" "#define HAVE_DECL_BFD_GET_SECTION_FLAGS $ac_have_decl" >>confdefs.h
-ac_fn_check_decl "$LINENO" "bfd_section_flags" "ac_cv_have_decl_bfd_section_flags" "#include <bfd.h>
-" "$ac_c_undeclared_builtin_options" "CFLAGS"
-if test "x$ac_cv_have_decl_bfd_section_flags" = xyes
-then :
-  ac_have_decl=1
-else case e in #(
-  e) ac_have_decl=0 ;;
-esac
-fi
-printf "%s\n" "#define HAVE_DECL_BFD_SECTION_FLAGS $ac_have_decl" >>confdefs.h
-ac_fn_check_decl "$LINENO" "bfd_get_section_vma" "ac_cv_have_decl_bfd_get_section_vma" "#include <bfd.h>
-" "$ac_c_undeclared_builtin_options" "CFLAGS"
-if test "x$ac_cv_have_decl_bfd_get_section_vma" = xyes
-then :
-  ac_have_decl=1
-else case e in #(
-  e) ac_have_decl=0 ;;
-esac
-fi
-printf "%s\n" "#define HAVE_DECL_BFD_GET_SECTION_VMA $ac_have_decl" >>confdefs.h
-ac_fn_check_decl "$LINENO" "bfd_section_vma" "ac_cv_have_decl_bfd_section_vma" "#include <bfd.h>
-" "$ac_c_undeclared_builtin_options" "CFLAGS"
-if test "x$ac_cv_have_decl_bfd_section_vma" = xyes
-then :
-  ac_have_decl=1
-else case e in #(
-  e) ac_have_decl=0 ;;
-esac
-fi
-printf "%s\n" "#define HAVE_DECL_BFD_SECTION_VMA $ac_have_decl" >>confdefs.h
-
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking bfd_section_size API version" >&5
-printf %s "checking bfd_section_size API version... " >&6; }
-		ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-		SAVE_CFLAGS="$CFLAGS"
-		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-			#include <bfd.h>
-			int main(int argc, char** argv) {
-				asection *sec = malloc(sizeof(*sec));
-				bfd_section_size(sec);
-				free(sec);
-				return 0;
-			}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: 1-arg API" >&5
-printf "%s\n" "1-arg API" >&6; }
-
-printf "%s\n" "#define HAVE_1_ARG_BFD_SECTION_SIZE 1" >>confdefs.h
-
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: 2-args API" >&5
-printf "%s\n" "2-args API" >&6; }
-
-printf "%s\n" "#define HAVE_1_ARG_BFD_SECTION_SIZE 0" >>confdefs.h
- ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-		CFLAGS="$SAVE_CFLAGS"
-		ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-		if test "x$BT" = "x1"; then
-			ac_fn_c_check_func "$LINENO" "cplus_demangle" "ac_cv_func_cplus_demangle"
-if test "x$ac_cv_func_cplus_demangle" = xyes
-then :
-  printf "%s\n" "#define HAVE_CPLUS_DEMANGLE 1" >>confdefs.h
-
-fi
-
-
-printf "%s\n" "#define HAVE_BFD_H 1" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_DETAILED_BACKTRACE 1" >>confdefs.h
-
-		case ${host} in
-		    aarch64*) CFLAGS="$CFLAGS -funwind-tables" ;;
-		esac
-		else
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: detailed backtrace is not supported" >&5
-printf "%s\n" "$as_me: WARNING: detailed backtrace is not supported" >&2;}
-		fi
-
-
-fi
-
 
 
 fi
@@ -7425,7 +7077,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 	CFLAGS_saved="${CFLAGS_saved} -I."			CFLAGS="${CFLAGS_saved} "
 	CPPFLAGS="${CPPFLAGS_saved} -I. "
 	LDFLAGS="${LDFLAGS_saved}"
-
 
 
 
@@ -8554,7 +8205,7 @@ fi
 if test "$sccp_cv_atomic_CAS32" = "yes" -a "x$sccp_cv_atomic_CASptr" = "xyes" -a "$sccp_cv_atomic_incr" = "yes"
 then :
 
-	using_atomic_buildin="yes"
+                 	using_atomic_buildin="yes"
 
 printf "%s\n" "#define SCCP_ATOMIC 1" >>confdefs.h
 
@@ -21292,6 +20943,89 @@ printf "%s\n" "#define ICONV_CONST $iconv_arg1" >>confdefs.h
     fi
   fi
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $CC options needed to detect all undeclared functions" >&5
+printf %s "checking for $CC options needed to detect all undeclared functions... " >&6; }
+if test ${ac_cv_c_undeclared_builtin_options+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_save_CFLAGS=$CFLAGS
+   ac_cv_c_undeclared_builtin_options='cannot detect'
+   for ac_arg in '' -fno-builtin; do
+     CFLAGS="$ac_save_CFLAGS $ac_arg"
+     # This test program should *not* compile successfully.
+     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+(void) strchr;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+
+else case e in #(
+  e) # This test program should compile successfully.
+        # No library function is consistently available on
+        # freestanding implementations, so test against a dummy
+        # declaration.  Include always-available headers on the
+        # off chance that they somehow elicit warnings.
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <float.h>
+#include <limits.h>
+#include <stdarg.h>
+#include <stddef.h>
+extern void ac_decl (int, char *);
+
+int
+main (void)
+{
+(void) ac_decl (0, (char *) 0);
+  (void) ac_decl;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  if test x"$ac_arg" = x
+then :
+  ac_cv_c_undeclared_builtin_options='none needed'
+else case e in #(
+  e) ac_cv_c_undeclared_builtin_options=$ac_arg ;;
+esac
+fi
+          break
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+    done
+    CFLAGS=$ac_save_CFLAGS
+   ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_c_undeclared_builtin_options" >&5
+printf "%s\n" "$ac_cv_c_undeclared_builtin_options" >&6; }
+  case $ac_cv_c_undeclared_builtin_options in #(
+  'cannot detect') :
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
+as_fn_error $? "cannot make $CC report undeclared builtins
+See 'config.log' for more details" "$LINENO" 5; } ;; #(
+  'none needed') :
+    ac_c_undeclared_builtin_options='' ;; #(
+  *) :
+    ac_c_undeclared_builtin_options=$ac_cv_c_undeclared_builtin_options ;;
+esac
+
 
 	LIBS_save=$LIBS
 	LIBS="$LIBS $EXTRA_LIBS"
@@ -22381,7 +22115,7 @@ fi
 	if test -z "$NEW_PBX_PATH" && test ! x"${PKGCONFIG}" = xNo; then
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking pkg-config asterisk" >&5
 printf %s "checking pkg-config asterisk... " >&6; }
-		if $(${PKGCONFIG} --exists asterisk); then
+	 	if $(${PKGCONFIG} --exists asterisk); then
 			PBX_TYPE="Asterisk"
 			PBX_ETC="$(${PKGCONFIG} --variable=etcdir asterisk)"
 			PBX_PREFIX="$(${PKGCONFIG} --variable=install_prefix asterisk)"
@@ -22399,8 +22133,8 @@ printf "%s\n" "$as_me: Fixed fauly asterisk.pc pkg-config file. Advise:You ought
 				PBX_CPPFLAGS="${PBX_CFLAGS}"
 				CFLAGS="${CFLAGS} ${PBX_CFLAGS}"
 				CPPFLAGS="${CPPFLAGS} ${PBX_CPPFLAGS}"
-				PBX_LIB="$(${PKGCONFIG} --variable=libdir asterisk)"
-				if test -f "${PBX_ETC}/asterisk.conf"; then
+	 			PBX_LIB="$(${PKGCONFIG} --variable=libdir asterisk)"
+		 		if test -f "${PBX_ETC}/asterisk.conf"; then
 					PBX_TEMPMODDIR="`${SED} -n 's/astmoddir\(.*\)$/\1/p' ${PBX_ETC}/asterisk.conf|${TR} -d ' \t=>'`"
 					if test -z "$PBX_TEMPMODDIR"; then
 						echo ""
@@ -22420,11 +22154,11 @@ printf "%s\n" "$as_me: astvarlibdir could not be found in ${PBX_ETC}/asterisk.co
 printf "%s\n" "$as_me: astsbindir could not be found in ${PBX_ETC}/asterisk.conf." >&6;}
 					fi
 					PBX_DATADIR="`${SED} -n 's/astdatadir\(.*\)$/\1/p' ${PBX_ETC}/asterisk.conf|${TR} -d ' \t=>'`"
-				else
-					PBX_TEMPMODDIR="$(${PKGCONFIG} --variable=moddir asterisk)"
-					PBX_VARLIB="$(${PKGCONFIG} --variable=varlibdir asterisk)"
+		 		else
+		 			PBX_TEMPMODDIR="$(${PKGCONFIG} --variable=moddir asterisk)"
+		 			PBX_VARLIB="$(${PKGCONFIG} --variable=varlibdir asterisk)"
 					PBX_SBINDIR="${PBX_PREFIX}/sbin/"
-				fi
+		 		fi
                 if test -z "$PBX_SDATADIR"; then
                         PBX_DATADIR="${PBX_VARLIB}"
                 fi
@@ -22437,7 +22171,7 @@ printf "%s\n" "found" >&6; }
 		else
 			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 printf "%s\n" "not found" >&6; }
-		fi
+	 	fi
 	fi
 	if test x_$HAVE_ASTERISK != x_yes; then
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking Search Path: $PBX_PATH" >&5
@@ -22521,7 +22255,7 @@ printf "%s\n" "Asterisk found in ${checkdir}" >&6; }
 						PBX_LIB="${checkdir}/lib"
 					fi
 				fi
-				if test -f "${PBX_ETC}/asterisk.conf"; then
+		 		if test -f "${PBX_ETC}/asterisk.conf"; then
 					PBX_TEMPMODDIR="`${SED} -n 's/astmoddir\(.*\)$/\1/p' ${PBX_ETC}/asterisk.conf|${TR} -d ' \t=>'`"
 					if test -z "$PBX_TEMPMODDIR"; then
 						echo ""
@@ -22541,7 +22275,7 @@ printf "%s\n" "$as_me: astvarlibdir could not be found in ${PBX_ETC}/asterisk.co
 printf "%s\n" "$as_me: astsbindir could not be found in ${PBX_ETC}/asterisk.conf." >&6;}
 					fi
 					PBX_DATADIR="`${SED} -n 's/astdatadir\(.*\)$/\1/p' ${PBX_ETC}/asterisk.conf|${TR} -d ' \t=>'`"
-				fi
+		 		fi
 				PBX_LDFLAGS="$LDFLAGS -L${checkdir}/lib"
 				case "${build_cpu}" in
 					x86_64|amd64|ppc64)
@@ -23025,16 +22759,16 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
 
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+	        	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-		eval "ac_cv_type_$ac_lib_var=yes"
+	        	eval "ac_cv_type_$ac_lib_var=yes"
 
 else case e in #(
   e)
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+	        	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-		eval "ac_cv_type_$ac_lib_var=no"
-		 ;;
+	        	eval "ac_cv_type_$ac_lib_var=no"
+	       	 ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
@@ -23845,16 +23579,16 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
 
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+	        	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-		eval "ac_cv_type_$ac_lib_var=yes"
+	        	eval "ac_cv_type_$ac_lib_var=yes"
 
 else case e in #(
   e)
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+	        	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-		eval "ac_cv_type_$ac_lib_var=no"
-		 ;;
+	        	eval "ac_cv_type_$ac_lib_var=no"
+	       	 ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
@@ -24214,16 +23948,16 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
 
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+	        	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-		eval "ac_cv_type_$ac_lib_var=yes"
+	        	eval "ac_cv_type_$ac_lib_var=yes"
 
 else case e in #(
   e)
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+	        	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-		eval "ac_cv_type_$ac_lib_var=no"
-		 ;;
+	        	eval "ac_cv_type_$ac_lib_var=no"
+	       	 ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
@@ -26075,7 +25809,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-				CFLAGS="${CFLAGS_saved} ${TEST_SUPPORTED_CFLAGS} -Werror"
+			CFLAGS="${CFLAGS_saved} ${TEST_SUPPORTED_CFLAGS} -Werror"
 
 		ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -26093,17 +25827,17 @@ else case e in #(
                         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-					$HEADER_INCLUDE
-					#include <asterisk/pbx.h>
-					static int test_cb(const char *context, const char *exten, struct ast_state_cb_info *info, void *data) {
-						return 0;
-					}
+				$HEADER_INCLUDE
+				#include <asterisk/pbx.h>
+				static int test_cb(const char *context, const char *exten, struct ast_state_cb_info *info, void *data) {
+					return 0;
+				}
 
 int
 main (void)
 {
 
-						int __attribute__((unused)) id = ast_extension_state_add("","",test_cb,"");
+					int __attribute__((unused)) id = ast_extension_state_add("","",test_cb,"");
 
   ;
   return 0;
@@ -26178,8 +25912,8 @@ else case e in #(
                         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-					$HEADER_INCLUDE
-					#include <asterisk/pbx.h>
+				$HEADER_INCLUDE
+				#include <asterisk/pbx.h>
 
 int
 main (void)
@@ -26354,7 +26088,7 @@ printf %s "checking  - availability 'ast_rtp_instance_bridge'...... " >&6; }
 				$HEADER_INCLUDE
 				#define new avoid_cxx_new_keyword
 				#include <asterisk/rtp_engine.h>
-			#undef new
+				#undef new
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
@@ -26409,7 +26143,7 @@ else case e in #(
                         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-				$HEADER_INCLUDE
+							$HEADER_INCLUDE
 							#include <asterisk/rtp.h>
 
 int
@@ -28169,7 +27903,7 @@ fi
 			 ;; #(
   *) :
 
-			if test 0${ac_cv_set_hashsize} -lt 563
+	    		if test 0${ac_cv_set_hashsize} -lt 563
 then :
   ac_cv_set_hashsize=563
 fi
@@ -28284,8 +28018,8 @@ fi
 		PBX_COND_LIBADD=pbx_impl/ast/libast.la
 		PBXVER_COND_SUBDIR=pbx_impl/ast120/
 		PBXVER_COND_LIBADD=pbx_impl/ast120/libast120.la
-			PBXVER_COND_ANNOUNCE_SUBDIR=pbx_impl/ast_announce
-			PBXVER_COND_ANNOUNCE_LIBADD=pbx_impl/ast_announce/libast_announce.la
+		PBXVER_COND_ANNOUNCE_SUBDIR=pbx_impl/ast_announce
+		PBXVER_COND_ANNOUNCE_LIBADD=pbx_impl/ast_announce/libast_announce.la
 	fi
 
 
@@ -30648,7 +30382,7 @@ echo "         HOST_CC : ${CC}"
 fi
 echo "          CFLAGS : ${CFLAGS} ${AM_CFLAGS} ${PBX_CFLAGS} ${GDB_FLAGS} ${PTHREAD_CFLAGS} ${COVERAGE_CFLAGS} ${EVENT_CFLAGS} ${LIBEXSLT_CFLAGS} ${LIBCURL_CFLAGS}"
 echo "        CPPFLAGS : ${CPPFLAGS} ${AM_CPPFLAGS} ${PBX_CPPFLAGS} ${SANITIZE_CFLAGS} ${GDB_FLAGS} ${PTHREAD_CPPFLAGS} ${COVERAGE_CPPFLAGS} ${EVENT_CPPFLAGS} ${LIBEXSLT_CPPFLAGS} ${LIBCURL_CPPFLAGS}"
-echo "         LDFLAGS : ${LDFLAGS} ${LIBS} ${SANITIZE_LDFLAGS} ${SUPPORTED_LDFLAGS} ${PBX_LDFLAGS} ${PTHREAD_LIBS} ${EVENT_LIBS} ${LIBEXSLT_LIBS} ${LIBCURL_LIBS} ${AST_CLANG_BLOCKS_LIBS} ${LIBBFD} ${LIBEXECINFO} ${LTLIBICONV}"
+echo "         LDFLAGS : ${LDFLAGS} ${LIBS} ${SANITIZE_LDFLAGS} ${SUPPORTED_LDFLAGS} ${PBX_LDFLAGS} ${PTHREAD_LIBS} ${EVENT_LIBS} ${LIBEXSLT_LIBS} ${LIBCURL_LIBS} ${AST_CLANG_BLOCKS_LIBS} ${LIBEXECINFO} ${LTLIBICONV}"
 echo "        PBX_TYPE : ${PBX_TYPE}"
 echo "      PBX_PREFIX : ${PBX_PREFIX}"
 echo "         PBX_ETC : ${PBX_ETC}"
@@ -30669,3 +30403,4 @@ if test CC_works = 0; then
 	tput sgr0
 	echo ""
 fi
+

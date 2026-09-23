@@ -961,6 +961,7 @@ int playback_to_conference(conferencePtr conference, const char *filename, int s
 
 	if (filename && !sccp_strlen_zero(filename) && !pbx_fileexists(filename, NULL, NULL)) {
 		pbx_log(LOG_WARNING, "File %s does not exists in any format\n", !sccp_strlen_zero(filename) ? filename : "<unknown>");
+		pbx_mutex_unlock(&conference->playback.lock);
 		return 1;
 	}
 
@@ -1012,6 +1013,7 @@ int playback_to_conference(conferencePtr conference, const char *filename, int s
 
 	if (!sccp_strlen_zero(filename) && !pbx_fileexists(filename, NULL, NULL)) {
 		pbx_log(LOG_WARNING, "File %s does not exists in any format\n", !sccp_strlen_zero(filename) ? filename : "<unknown>");
+		pbx_mutex_unlock(&conference->playback.lock);
 		return 0;
 	}
 

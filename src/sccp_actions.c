@@ -3876,6 +3876,7 @@ void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessa
 	struct ast_str *output_buf = pbx_str_alloca(buffersize);
 	char QualityStats[600] = "";
 	uint32_t QualityStatsSize = 0;
+	const uint32_t protocol_version = letohl(msg_in->header.lel_protocolVer);
 
 	AUTO_RELEASE(sccp_device_t, d , sccp_device_retain(device));
 
@@ -3883,27 +3884,27 @@ void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessa
 		// update last_call_statistics
 		sccp_call_statistics_t *call_stats = d->call_statistics;
 
-		if (letohl(msg_in->header.lel_protocolVer < 20)) {
+		if (protocol_version < 20) {
 			call_stats[SCCP_CALLSTATISTIC_LAST].num = letohl(msg_in->data.ConnectionStatisticsRes.v3.lel_CallIdentifier);
 			call_stats[SCCP_CALLSTATISTIC_LAST].packets_sent = letohl(msg_in->data.ConnectionStatisticsRes.v3.lel_SentPackets);
 			call_stats[SCCP_CALLSTATISTIC_LAST].packets_received = letohl(msg_in->data.ConnectionStatisticsRes.v3.lel_RecvdPackets);
 			call_stats[SCCP_CALLSTATISTIC_LAST].packets_lost = letohl(msg_in->data.ConnectionStatisticsRes.v3.lel_LostPkts);
 			call_stats[SCCP_CALLSTATISTIC_LAST].jitter = letohl(msg_in->data.ConnectionStatisticsRes.v3.lel_Jitter);
 			call_stats[SCCP_CALLSTATISTIC_LAST].latency = letohl(msg_in->data.ConnectionStatisticsRes.v3.lel_latency);
-			QualityStatsSize = letohl(msg_in->data.ConnectionStatisticsRes.v3.lel_QualityStatsSize) + 1;
-			QualityStatsSize = QualityStatsSize < sizeof(QualityStats) ? QualityStatsSize : sizeof(QualityStats);
+			QualityStatsSize = letohl(msg_in->data.ConnectionStatisticsRes.v3.lel_QualityStatsSize);
+			QualityStatsSize = QualityStatsSize < sizeof(QualityStats) ? QualityStatsSize + 1 : sizeof(QualityStats);
 			if (QualityStatsSize) {
 				sccp_copy_string(QualityStats, msg_in->data.ConnectionStatisticsRes.v3.QualityStats, QualityStatsSize);
 			}
-		} else if (letohl(msg_in->header.lel_protocolVer < 22)) {
+		} else if (protocol_version < 22) {
 			call_stats[SCCP_CALLSTATISTIC_LAST].num = letohl(msg_in->data.ConnectionStatisticsRes.v20.lel_CallIdentifier);
 			call_stats[SCCP_CALLSTATISTIC_LAST].packets_sent = letohl(msg_in->data.ConnectionStatisticsRes.v20.lel_SentPackets);
 			call_stats[SCCP_CALLSTATISTIC_LAST].packets_received = letohl(msg_in->data.ConnectionStatisticsRes.v20.lel_RecvdPackets);
 			call_stats[SCCP_CALLSTATISTIC_LAST].packets_lost = letohl(msg_in->data.ConnectionStatisticsRes.v20.lel_LostPkts);
 			call_stats[SCCP_CALLSTATISTIC_LAST].jitter = letohl(msg_in->data.ConnectionStatisticsRes.v20.lel_Jitter);
 			call_stats[SCCP_CALLSTATISTIC_LAST].latency = letohl(msg_in->data.ConnectionStatisticsRes.v20.lel_latency);
-			QualityStatsSize = letohl(msg_in->data.ConnectionStatisticsRes.v20.lel_QualityStatsSize) + 1;
-			QualityStatsSize = QualityStatsSize < sizeof(QualityStats) ? QualityStatsSize : sizeof(QualityStats);
+			QualityStatsSize = letohl(msg_in->data.ConnectionStatisticsRes.v20.lel_QualityStatsSize);
+			QualityStatsSize = QualityStatsSize < sizeof(QualityStats) ? QualityStatsSize + 1 : sizeof(QualityStats);
 			if (QualityStatsSize) {
 				sccp_copy_string(QualityStats, msg_in->data.ConnectionStatisticsRes.v20.QualityStats, QualityStatsSize);
 			}
@@ -3924,9 +3925,9 @@ void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessa
 			call_stats[SCCP_CALLSTATISTIC_LAST].packets_lost = letohl(msg_in->data.ConnectionStatisticsRes.v22.lel_LostPkts);
 			call_stats[SCCP_CALLSTATISTIC_LAST].jitter = letohl(msg_in->data.ConnectionStatisticsRes.v22.lel_Jitter);
 			call_stats[SCCP_CALLSTATISTIC_LAST].latency = letohl(msg_in->data.ConnectionStatisticsRes.v22.lel_latency);
-			QualityStatsSize = letohl(msg_in->data.ConnectionStatisticsRes.v22.lel_QualityStatsSize) + 1;
+			QualityStatsSize = letohl(msg_in->data.ConnectionStatisticsRes.v22.lel_QualityStatsSize);
 #endif
-			QualityStatsSize = QualityStatsSize < sizeof(QualityStats) ? QualityStatsSize : sizeof(QualityStats);
+			QualityStatsSize = QualityStatsSize < sizeof(QualityStats) ? QualityStatsSize + 1 : sizeof(QualityStats);
 			if (QualityStatsSize) {
 				sccp_copy_string(QualityStats, msg_in->data.ConnectionStatisticsRes.v22.QualityStats, QualityStatsSize);
 			}
@@ -3937,12 +3938,12 @@ void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessa
 		pbx_str_append(&output_buf, buffersize, "         Last Call        : CallID: %d Packets sent: %d rcvd: %d lost: %d jitter: %d latency: %d\n", call_stats[SCCP_CALLSTATISTIC_LAST].num, call_stats[SCCP_CALLSTATISTIC_LAST].packets_sent, call_stats[SCCP_CALLSTATISTIC_LAST].packets_received, call_stats[SCCP_CALLSTATISTIC_LAST].packets_lost, call_stats[SCCP_CALLSTATISTIC_LAST].jitter, call_stats[SCCP_CALLSTATISTIC_LAST].latency);
 		sccp_log(DEBUGCAT_CORE) (VERBOSE_PREFIX_3 "QualityStats: %s\n", QualityStats);
 		if (!sccp_strlen_zero(QualityStats)) {
-			if (letohl(msg_in->header.lel_protocolVer < 20)) {
+			if (protocol_version < 20) {
 				sscanf(QualityStats, "MLQK=%f;MLQKav=%f;MLQKmn=%f;MLQKmx=%f;MLQKvr=%f;CCR=%f;ICR=%f;ICRmx=%f;CS=%d;SCS=%d",
 				       &call_stats[SCCP_CALLSTATISTIC_LAST].opinion_score_listening_quality, &call_stats[SCCP_CALLSTATISTIC_LAST].avg_opinion_score_listening_quality,
 				       &call_stats[SCCP_CALLSTATISTIC_LAST].mean_opinion_score_listening_quality, &call_stats[SCCP_CALLSTATISTIC_LAST].max_opinion_score_listening_quality,
 				       &call_stats[SCCP_CALLSTATISTIC_LAST].variance_opinion_score_listening_quality, &call_stats[SCCP_CALLSTATISTIC_LAST].cumulative_concealement_ratio, &call_stats[SCCP_CALLSTATISTIC_LAST].interval_concealement_ratio, &call_stats[SCCP_CALLSTATISTIC_LAST].max_concealement_ratio, &call_stats[SCCP_CALLSTATISTIC_LAST].concealed_seconds, &call_stats[SCCP_CALLSTATISTIC_LAST].severely_concealed_seconds);
-			} else if (letohl(msg_in->header.lel_protocolVer < 22)) {
+			} else if (protocol_version < 22) {
 				int Log = 0;
 
 				sscanf(QualityStats, "Log %d: mos %f, avgMos %f, maxMos %f, minMos %f, CS %d, SCS %d, CCR %f, ICR %f, maxCR %f",

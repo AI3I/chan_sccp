@@ -3212,34 +3212,33 @@ static sccp_push_result_t sccp_device_pushURL(constDevicePtr device, const char 
  *
  * \note
  * title field can be max 32 characters long
- * protocolversion < 17 allows for maximum of 1024 characters in the text block / maximum 2000 characted in overall message
- * protocolversion > 17 allows variable sized messages up to 4000 char in the text block (using multiple messages if necessary)
+ * protocolversion < 17 allows a maximum of 1024 characters in the text block
+ * protocolversion >= 17 allows variable sized messages up to 4000 characters in the text block
  */
 static sccp_push_result_t sccp_device_pushTextMessage(constDevicePtr device, const char *messageText, const char *from, uint8_t priority, skinny_tone_t tone)
 {
 	const char *xmlFormat = "<CiscoIPPhoneText>%s<Text>%s</Text></CiscoIPPhoneText>";
-	size_t msg_length = strlen(xmlFormat) + sccp_strlen(messageText) - 4 /* for the %s' */  + 1 /* for terminator */ ;
+	const char *xmlTitleFormat = "<Title>%s</Title>";
+	size_t text_length = sccp_strlen(messageText);
+	size_t from_length = sccp_strlen(from);
+	char title[sizeof("<Title></Title>") + 32] = "";
 	unsigned int transactionID = sccp_random();
 
-	if (sccp_strlen(from) > 32) {
-		sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: (pushTextMessage) from is to long (max 32 char).\n", DEV_ID_LOG(device));
+	if (!messageText || from_length > 32) {
+		sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: (pushTextMessage) invalid text or sender longer than 32 characters.\n", DEV_ID_LOG(device));
 		return SCCP_PUSH_RESULT_FAIL;
 	}
 
-	if ((device->protocolversion < 17 && 1024 > msg_length) || sccp_strlen(messageText) > 4000) {
-		sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: (pushTextMessage) messageText is to long.\n", DEV_ID_LOG(device));
+	if (text_length > (device->protocolversion < 17 ? 1024 : 4000)) {
+		sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: (pushTextMessage) message text is too long.\n", DEV_ID_LOG(device));
 		return SCCP_PUSH_RESULT_FAIL;
 	}
 
-	const char *xmlTitleFormat = "<Title>%s</Title>";
-	size_t title_length = strlen(xmlTitleFormat) + sccp_strlen(from) - 2 /* for the %s */  + 1 /* for terminator */ ;
-	char title[title_length];
-
-	if (!sccp_strlen_zero(from)) {
-		msg_length += title_length;
-		snprintf(title, title_length, xmlTitleFormat, from);
+	if (from_length) {
+		snprintf(title, sizeof(title), xmlTitleFormat, from);
 	}
 
+	size_t msg_length = strlen(xmlFormat) - 4 /* two %s placeholders */ + strlen(title) + text_length + 1;
 	char xmlData[msg_length];
 
 	snprintf(xmlData, msg_length, xmlFormat, title, messageText);

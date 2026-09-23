@@ -1385,11 +1385,17 @@ static PBX_CHANNEL_TYPE *sccp_astwrap_requestAnnouncementChannel(pbx_format_type
 	struct ast_format *ast_format;
 	unsigned int framing;
 
+	/* The supported conference playback path requests A-law. Do not silently
+	 * create an A-law channel if a caller requests another format. */
+	if (format_type != AST_FORMAT_ALAW) {
+		pbx_log(LOG_WARNING, "SCCP: Unsupported announcement channel format\n");
+		return NULL;
+	}
+
 	cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
 	if (!cap) {
 		return NULL;
 	}
-	// TODO(dkgroot): convert format_type to ast_format
 	ast_format = ast_format_alaw;
 	framing = ast_format_get_default_ms(ast_format);
 

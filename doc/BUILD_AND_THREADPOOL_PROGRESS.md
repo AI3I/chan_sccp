@@ -269,9 +269,9 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 
 ## Remaining work inventory (2026-09-23)
 
-- **Open reviewed defect:** R8, TLS accept/handshake and SSL read/write retry
-  handling, including connection and `SSL_CTX` ownership. This is the only
-  unimplemented R1–R12 finding; see the review for the precise failure paths.
+- **TLS follow-up (R8):** the accept/handshake, bounded I/O retry, and ownership
+  fixes below are compile-only. Bad handshakes, clean closure, stalled clients,
+  and reconnects still need focused runtime validation before closing R8.
 - **Media follow-up:** validate dynamic audio/video mappings, bidirectional
   transcoding, early media, paging, hold/resume, and transfer on a handset.
   The signed RX/TX lookup and conservative mappings below are compile-only.
@@ -366,3 +366,30 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - Next structural question: the 21–24 wrappers are tiny copies of the same
   macro definitions and include `ast120`. They are functional and remain until
   version dispatch and archive selection can be simplified together.
+
+## TLS transport repair (2026-09-23)
+
+- The listener now initializes each descriptor to `-1`, checks the transport's
+  returned pointer, resets the address length before each accept, and transfers
+  accepted socket/TLS ownership to the session explicitly. TCP accept uses the
+  same pointer-or-NULL contract. A failed server-context bind also releases its
+  allocated context and transport.
+- TLS handshake uses the signed `SSL_accept` result and `SSL_get_error`, waits
+  for the requested socket direction on a nonblocking socket, and has a five
+  second deadline. Read/write likewise use `SSL_get_error`, retry the same
+  operation after readiness, and expose closure/errno consistently to the
+  session code. Buffered plaintext is checked before the session polls again.
+  The retry behavior follows the OpenSSL
+  [accept](https://docs.openssl.org/3.0/man3/SSL_accept/),
+  [error](https://docs.openssl.org/3.0/man3/SSL_get_error/), and
+  [write](https://docs.openssl.org/3.0/man3/SSL_write/) contracts.
+- TLS context creation failures and transport destruction now release
+  `SSL_CTX`; TLS close clears the socket and SSL pointers. Module teardown no
+  longer calls OpenSSL-wide cleanup that could affect Asterisk's other users.
+- Private Asterisk 22 with `HAVE_LIBSSL` compiled the batch on wadsworth,
+  including the final context/error-path edits. No TLS listener or handset
+  test was run at the user's request. All lab activity and build logs are in
+  `/root/asterisk.txt` there.
+- Remaining TLS risk: runtime handshake/closure/reconnect behavior and
+  concurrent SSL read/write access on a session need dedicated review; this
+  compile-only pass does not establish safe live TLS behavior.

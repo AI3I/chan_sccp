@@ -36,6 +36,7 @@ struct sccp_transport {
 	int (* const listen)(sccp_socket_connection_t * sc, int backlog);
 	sccp_socket_connection_t * (* const accept)(sccp_socket_connection_t * in_sc, struct sockaddr *, socklen_t * len, sccp_socket_connection_t * out_sc);
 	int (* const recv)(sccp_socket_connection_t * sc, void * buf, size_t buflen, int flags);
+	int (* const pending)(sccp_socket_connection_t * sc);
 	// int (*const recv_timeout)(int fd, void *buf, size_t buflen, int flags, int secs);
 	int (* const send)(sccp_socket_connection_t * sc, void * buf, size_t buflen, int flags);
 	// int (*const send_timeout)(int fd, void *buf, size_t buflen, int flags, int secs);

@@ -43,12 +43,17 @@ static int tcp_listen(sccp_socket_connection_t * sc, int backlog)
 static sccp_socket_connection_t * tcp_accept(sccp_socket_connection_t * in_sc, struct sockaddr * addr, socklen_t * addrlen, sccp_socket_connection_t * out_sc)
 {
 	out_sc->fd = accept(in_sc->fd, addr, addrlen);
-	return out_sc;
+	return out_sc->fd >= 0 ? out_sc : NULL;
 }
 
 static int tcp_recv(sccp_socket_connection_t * sc, void * buf, size_t buflen, int flags)
 {
 	return recv(sc->fd, buf, buflen, flags);
+}
+
+static int tcp_pending(sccp_socket_connection_t * sc)
+{
+	return 0;
 }
 
 static int tcp_send(sccp_socket_connection_t * sc, void * buf, size_t buflen, int flags)
@@ -63,7 +68,9 @@ static int tcp_shutdown(sccp_socket_connection_t * sc, int how)
 
 static int tcp_close(sccp_socket_connection_t * sc)
 {
-	return close(sc->fd);
+	int fd = sc->fd;
+	sc->fd = -1;
+	return fd >= 0 ? close(fd) : 0;
 }
 
 static const sccp_transport_t * const tcp_destroy(uint8_t h)
@@ -88,6 +95,7 @@ const sccp_transport_t tcptransport = {
 	.listen   = tcp_listen,
 	.accept   = tcp_accept,
 	.recv     = tcp_recv,
+	.pending  = tcp_pending,
 	.send     = tcp_send,
 	.shutdown = tcp_shutdown,
 	.close    = tcp_close,

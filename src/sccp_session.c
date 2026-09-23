@@ -106,7 +106,12 @@ sccp_servercontext_t * sccp_servercontext_create(struct sockaddr_storage * binda
 	context->stopListening = sccp_servercontext_stopListening;
 	context->sc.fd = -1;
 	context->accept_tid = AST_PTHREADT_NULL;
-	return sccp_servercontext_reload(context, bindaddr) ? context : NULL;
+	if (!sccp_servercontext_reload(context, bindaddr)) {
+		context->transport->destroy(1);
+		sccp_free(context);
+		return NULL;
+	}
+	return context;
 }
 
 int sccp_servercontext_stopListening(sccp_servercontext_t * context)
@@ -784,7 +789,12 @@ void *sccp_session_device_thread(void *session)
 		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 		sccp_log_and((DEBUGCAT_SOCKET + DEBUGCAT_HIGH))(VERBOSE_PREFIX_4 "%s: set poll timeout %d for session %d\n", DEV_ID_LOG(s->device), (int)s->keepAliveInterval, fds[0].fd);
 
-		res = sccp_netsock_poll(fds, 1, s->keepAliveInterval * 1000);
+		if (s->srvcontext->transport->pending(&s->sc) > 0) {
+			fds[0].revents = POLLIN;
+			res = 1;
+		} else {
+			res = sccp_netsock_poll(fds, 1, s->keepAliveInterval * 1000);
+		}
 		pthread_testcancel();
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 		if (-1 == res) {										/* poll data processing */
@@ -989,7 +999,7 @@ static boolean_t sccp_session_set_ourip(sccp_session_t * s)
 static void * accept_thread(void * data)
 {
 	sccp_servercontext_t * context = (sccp_servercontext_t *)data;
-	sccp_socket_connection_t new_sc = { 0, 0 };
+	sccp_socket_connection_t new_sc = { -1, NULL };
 	struct sockaddr_storage incoming;
 	sccp_session_t *s = NULL;
 	socklen_t length = (socklen_t)(sizeof(struct sockaddr_storage));
@@ -997,10 +1007,11 @@ static void * accept_thread(void * data)
 	while (GLOB(module_running)) {
 		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 		pthread_testcancel();
-		memset(&new_sc, 0, sizeof(new_sc));
-		context->transport->accept(&context->sc, (struct sockaddr *)&incoming, &length, &new_sc);
-		if(new_sc.fd < 0) {
-			pbx_log(LOG_ERROR, "Error accepting new socket %s on acceptFD:%d\n", strerror(errno), context->sc.fd);
+		new_sc.fd = -1;
+		new_sc.ssl = NULL;
+		length = (socklen_t)sizeof(incoming);
+		if (context->transport->accept(&context->sc, (struct sockaddr *)&incoming, &length, &new_sc) != &new_sc || new_sc.fd < 0) {
+			pbx_log(LOG_ERROR, "SCCP: Connection accept failed on fd %d: %s\n", context->sc.fd, strerror(errno));
 			usleep(1000);
 			continue;
 		}
@@ -1018,6 +1029,9 @@ static void * accept_thread(void * data)
 			context->transport->close(&new_sc);
 			continue;
 		}
+		/* The session now owns the accepted socket and TLS object. */
+		new_sc.fd = -1;
+		new_sc.ssl = NULL;
 		memcpy(&s->sin, &incoming, sizeof(s->sin));
 		sccp_session_set_ourip(s);
 		sccp_session_addToGlobals(s);

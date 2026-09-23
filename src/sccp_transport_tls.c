@@ -14,6 +14,10 @@
 SCCP_FILE_VERSION(__FILE__, "");
 
 #include "sccp_transport.h"
+#include <fcntl.h>
+#include <limits.h>
+#include <poll.h>
+#include <time.h>
 
 #ifdef HAVE_LIBSSL
 #	include <openssl/err.h> /* for ERR_print_errors_fp */
@@ -25,6 +29,7 @@ SCCP_FILE_VERSION(__FILE__, "");
 #	define REQUEST_RETRY_INTERVAL 5
 #	define REQUEST_RETRY_COUNT    2
 #	define DUPLICATE_INTERVAL     REQUEST_RETRY_INTERVAL * REQUEST_RETRY_COUNT
+#	define TLS_IO_TIMEOUT_MS      5000
 
 /* local variables */
 static SSL_CTX * sslctx = NULL;
@@ -53,27 +58,58 @@ static void write_openssl_error_to_log(void)
 	ast_free(buffer);
 }
 
-static void InitializeSSL()
+static int64_t tls_now_ms(void)
 {
-	SSL_load_error_strings();
-	SSL_library_init();
-	OpenSSL_add_all_algorithms();
-	SSL_load_error_strings();
+	struct timespec now;
+	if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) {
+		return -1;
+	}
+	return (int64_t)now.tv_sec * 1000 + now.tv_nsec / 1000000;
 }
 
-static void DestroySSL()
+static int tls_wait_for_io(int fd, int ssl_error, int64_t deadline)
 {
-	ERR_free_strings();
-	EVP_cleanup();
+	struct pollfd pfd = { .fd = fd, .events = ssl_error == SSL_ERROR_WANT_WRITE ? POLLOUT : POLLIN };
+	for (;;) {
+		int64_t now = tls_now_ms();
+		int64_t remaining;
+		int result;
+		if (now < 0) {
+			return -1;
+		}
+		remaining = deadline - now;
+		if (remaining <= 0) {
+			errno = ETIMEDOUT;
+			return -1;
+		}
+		result = poll(&pfd, 1, remaining > INT_MAX ? INT_MAX : (int)remaining);
+		if (result > 0 && (pfd.revents & pfd.events)) {
+			return 0;
+		}
+		if (result > 0) {
+			errno = ECONNRESET;
+			return -1;
+		}
+		if (result == 0) {
+			errno = ETIMEDOUT;
+			return -1;
+		}
+		if (errno != EINTR) {
+			return -1;
+		}
+	}
 }
 
-static void ShutdownSSL(SSL * ssl)
+static int tls_error_result(int ssl_error, int saved_errno)
 {
-	SSL_shutdown(ssl);
-	SSL_free(ssl);
+	if (ssl_error == SSL_ERROR_ZERO_RETURN) {
+		return 0;
+	}
+	errno = ssl_error == SSL_ERROR_SYSCALL && saved_errno ? saved_errno : EPROTO;
+	return -1;
 }
 
-static SSL_CTX * create_context()
+static SSL_CTX * create_context(void)
 {
 	sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport create context...\n");
 	// const SSL_METHOD * method = TLS_server_method();
@@ -125,11 +161,17 @@ static boolean_t configure_context(SSL_CTX * ctx)
 const sccp_transport_t * const tls_init(void)
 {
 	sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport Initializing...\n");
-	sslctx = create_context();
-	if (sslctx && configure_context(sslctx)) {
-		InitializeSSL();
+	if (sslctx) {
 		return &tlstransport;
 	}
+	SSL_load_error_strings();
+	SSL_library_init();
+	sslctx = create_context();
+	if (sslctx && configure_context(sslctx)) {
+		return &tlstransport;
+	}
+	SSL_CTX_free(sslctx);
+	sslctx = NULL;
 	return NULL;
 }
 
@@ -147,56 +189,105 @@ static int tls_listen(sccp_socket_connection_t * sc, int backlog)
 
 static sccp_socket_connection_t * tls_accept(sccp_socket_connection_t * in_sc, struct sockaddr * addr, socklen_t * addrlen, sccp_socket_connection_t * out_sc)
 {
-	unsigned long ssl_err;
-	int           newfd = 0;
+	int           newfd = -1;
+	int           flags;
+	int           result;
+	int           ssl_error;
+	int           saved_errno;
+	int64_t       deadline;
 	SSL *         ssl   = NULL;
-	// sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport accept...\n");
-	do {
-		newfd = accept(in_sc->fd, addr, addrlen);
-		if (newfd < 0) {
-			pbx_log(LOG_ERROR, "Error accepting new socket %s on fd:%d\n", strerror(errno), in_sc->fd);
+	newfd = accept(in_sc->fd, addr, addrlen);
+	if (newfd < 0) {
+		return NULL;
+	}
+	flags = fcntl(newfd, F_GETFL);
+	if (flags < 0 || fcntl(newfd, F_SETFL, flags | O_NONBLOCK) < 0) {
+		goto failed;
+	}
+	ssl = SSL_new(sslctx);
+	if (!ssl || SSL_set_fd(ssl, newfd) != 1) {
+		errno = EPROTO;
+		goto failed;
+	}
+	deadline = tls_now_ms();
+	if (deadline < 0) {
+		goto failed;
+	}
+	deadline += TLS_IO_TIMEOUT_MS;
+	for (;;) {
+		errno = 0;
+		result = SSL_accept(ssl);
+		if (result == 1) {
+			out_sc->fd = newfd;
+			out_sc->ssl = ssl;
+			return out_sc;
+		}
+		saved_errno = errno;
+		ssl_error = SSL_get_error(ssl, result);
+		if (ssl_error != SSL_ERROR_WANT_READ && ssl_error != SSL_ERROR_WANT_WRITE) {
+			if (tls_error_result(ssl_error, saved_errno) == 0) {
+				errno = ECONNRESET;
+			}
 			break;
 		}
-
-		ssl = SSL_new(sslctx);
-		if (!ssl) {
-			pbx_log(LOG_ERROR, "Error creating new SSL structure\n");
+		if (tls_wait_for_io(newfd, ssl_error, deadline) < 0) {
 			break;
 		}
-
-		SSL_set_fd(ssl, newfd);
-		ssl_err = SSL_accept(ssl);
-		if (ssl_err <= 0) {
-			pbx_log(LOG_ERROR, "SSL Error occurred: %lu '%s'.\n", ssl_err, ERR_reason_error_string(ssl_err));
-			break;
-		}
-		out_sc->fd  = newfd;
-		out_sc->ssl = ssl;
-		sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport accept returning:%d...\n", newfd);
-		return out_sc;
-	} while (0);
-
-	// cleanup:
+	}
+failed:
+	saved_errno = errno;
 	if (ssl) {
 		write_openssl_error_to_log();
-		ShutdownSSL(ssl);
+		SSL_free(ssl);
 	}
-	if (newfd >= 0) {
-		close(newfd);
-	}
+	close(newfd);
+	errno = saved_errno;
 	return NULL;
+}
+
+static int tls_io(sccp_socket_connection_t * sc, void * buf, size_t buflen, boolean_t writing)
+{
+	int64_t deadline = tls_now_ms();
+	int result;
+	int ssl_error;
+	int saved_errno;
+	if (deadline < 0) {
+		return -1;
+	}
+	deadline += TLS_IO_TIMEOUT_MS;
+	if (buflen > INT_MAX) {
+		buflen = INT_MAX;
+	}
+	for (;;) {
+		errno = 0;
+		result = writing ? SSL_write(sc->ssl, buf, (int)buflen) : SSL_read(sc->ssl, buf, (int)buflen);
+		if (result > 0) {
+			return result;
+		}
+		saved_errno = errno;
+		ssl_error = SSL_get_error(sc->ssl, result);
+		if (ssl_error != SSL_ERROR_WANT_READ && ssl_error != SSL_ERROR_WANT_WRITE) {
+			return tls_error_result(ssl_error, saved_errno);
+		}
+		if (tls_wait_for_io(sc->fd, ssl_error, deadline) < 0) {
+			return -1;
+		}
+	}
 }
 
 static int tls_recv(sccp_socket_connection_t * sc, void * buf, size_t buflen, int flags)
 {
-	// sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport recv...\n");
-	return SSL_read(sc->ssl, buf, buflen);
+	return tls_io(sc, buf, buflen, FALSE);
+}
+
+static int tls_pending(sccp_socket_connection_t * sc)
+{
+	return SSL_pending(sc->ssl);
 }
 
 static int tls_send(sccp_socket_connection_t * sc, void * buf, size_t buflen, int flags)
 {
-	// sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport send...\n");
-	return SSL_write(sc->ssl, buf, buflen);
+	return tls_io(sc, buf, buflen, TRUE);
 }
 
 static int tls_shutdown(sccp_socket_connection_t * sc, int how)
@@ -208,13 +299,14 @@ static int tls_shutdown(sccp_socket_connection_t * sc, int how)
 
 static int tls_close(sccp_socket_connection_t * sc)
 {
-	// sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport close...\n");
 	int res = 0;
-	if (sc->fd) {
-		res = close(sc->fd);
-	}
 	if (sc->ssl) {
 		SSL_free(sc->ssl);
+		sc->ssl = NULL;
+	}
+	if (sc->fd >= 0) {
+		res = close(sc->fd);
+		sc->fd = -1;
 	}
 	return res;
 }
@@ -222,7 +314,8 @@ static int tls_close(sccp_socket_connection_t * sc)
 static const sccp_transport_t * const tls_destroy(uint8_t h)
 {
 	sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport destroy...\n");
-	DestroySSL();
+	SSL_CTX_free(sslctx);
+	sslctx = NULL;
 	return NULL;
 }
 
@@ -243,6 +336,7 @@ const sccp_transport_t tlstransport = {
 	.listen   = tls_listen,
 	.accept   = tls_accept,
 	.recv     = tls_recv,
+	.pending  = tls_pending,
 	.send     = tls_send,
 	.shutdown = tls_shutdown,
 	.close    = tls_close,

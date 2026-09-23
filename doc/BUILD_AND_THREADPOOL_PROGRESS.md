@@ -67,14 +67,16 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - Asterisk 20 header preparation: `/tmp/sccp-headers-20.log`, private prefix
   `/tmp/sccp-headers-20/prefix`.
 - Keep this document current with results, limitations, commits and deployment.
-- GitHub Actions was disabled when the first push landed, so no run was
-  created. Actions was enabled on 2026-09-23 and a follow-up push triggered
-  the build matrix and CodeQL. The first hosted run found a missing `gettext` package for
-  the bootstrap lane (`AM_ICONV`); the workflow dependency is corrected. CodeQL init also rejected manual
-  mode for Python; it now uses a separate no-build Python job and a manual C
-  job. The subsequent hosted results are pending.
-- Next: run the GitHub matrix, validate live SCCP behavior on a genuine test
-  PBX, and retire older adapters in a separate reviewable change.
+- GitHub Actions was enabled on 2026-09-23. The first hosted run found two
+  workflow setup issues: the bootstrap lane needed Ubuntu `gettext` for
+  `AM_ICONV`, and Python CodeQL needed no-build mode. Both were fixed.
+- [Build run 35804033178](https://github.com/AI3I/chan_sccp/actions/runs/35804033178)
+  passed all ten Asterisk 20–24/default/optional jobs. This includes the
+  sanitizer, source archive, and bootstrap lanes.
+- [CodeQL run 35804033083](https://github.com/AI3I/chan_sccp/actions/runs/35804033083)
+  passed both C/C++ and Python analysis jobs.
+- Next: validate a live SCCP call workload on a genuine test PBX, then retire
+  older adapters in a separate reviewable change.
 
 ## Additional user decisions during this work
 
@@ -125,5 +127,6 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - Wadsworth (`192.168.0.62`) is reachable as `jdlewis` with passwordless sudo,
   but currently has no Asterisk binary, process, or SCCP module. It can become
   a dedicated integration host after Asterisk is installed there.
-- Current changes are not deployed to production. The isolated process was stopped after checks. Production remains at the previous CLI/tone hash
-  noted above.
+- Current changes are not deployed to production. The isolated process was
+  stopped after checks. Production remains at the previous CLI/tone hash noted
+  above.

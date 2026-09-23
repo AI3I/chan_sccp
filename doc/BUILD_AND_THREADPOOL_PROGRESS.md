@@ -405,7 +405,15 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   including the final context/error-path edits. No TLS listener or handset
   test was run at the user's request. All lab activity and build logs are in
   `/root/asterisk.txt` there.
-- Remaining TLS risk: runtime handshake/closure/reconnect behavior and
-  concurrent SSL read/write access on a session need dedicated review. OpenSSL
-  [requires serial access to each SSL object](https://docs.openssl.org/master/man7/openssl-threads/);
-  this compile-only pass does not establish safe live TLS behavior.
+- Follow-up: OpenSSL
+  [requires serial access to each SSL object](https://docs.openssl.org/master/man7/openssl-threads/).
+  A per-connection mutex now serializes TLS read, write, pending, shutdown,
+  and free; session teardown also waits for in-flight sends. The lock is
+  allocated after the handshake and transferred with the accepted connection.
+  Listener cancellation is disabled from accepted fd through the TLS handoff,
+  with a five-second handshake bound; the accept loop re-enables it afterward.
+  A private Asterisk 22 compile passed after using the project's mutex type;
+  the first attempt with raw `pthread_mutex_t` failed because Asterisk headers
+  prohibit that type. The change has not been exercised with a live TLS client.
+  Runtime handshake/closure/reconnect and teardown races remain for focused
+  validation before claiming safe live TLS behavior.

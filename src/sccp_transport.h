@@ -17,6 +17,7 @@ typedef struct ssl_st ssl_t;
 typedef struct sccp_socket_connection {
 	int     fd;
 	ssl_t * ssl;
+	sccp_mutex_t *ssl_lock; /* Owned by a TLS connection; shared on session transfer. */
 } sccp_socket_connection_t;
 
 struct sccp_transport {

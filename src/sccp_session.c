@@ -653,6 +653,7 @@ static void destroy_session(sccp_session_t * s)
 	if (s) {
 		sccp_log((DEBUGCAT_SOCKET)) (VERBOSE_PREFIX_3 "SCCP: Destroy Session %s\n", addrStr);
 		/* closing fd's */
+		pbx_mutex_lock(&s->write_lock);
 		sccp_session_lock(s);
 		if(s->sc.fd > 0) {
 			sccp_log((DEBUGCAT_SOCKET))(VERBOSE_PREFIX_3 "SCCP: Shutdown socket %d\n", s->sc.fd);
@@ -662,6 +663,7 @@ static void destroy_session(sccp_session_t * s)
 			s->sc.fd = -1;
 		}
 		sccp_session_unlock(s);
+		pbx_mutex_unlock(&s->write_lock);
 
 		/* destroying mutex and cleaning the session */
 		sccp_mutex_destroy(&s->lock);
@@ -952,6 +954,7 @@ static sccp_session_t * sccp_create_session(sccp_servercontext_t * context, sccp
 
 	s->sc.fd = sc->fd;
 	s->sc.ssl = sc->ssl;
+	s->sc.ssl_lock = sc->ssl_lock;
 	s->protocolType = SCCP_PROTOCOL;
 	s->srvcontext = context;
 
@@ -999,7 +1002,7 @@ static boolean_t sccp_session_set_ourip(sccp_session_t * s)
 static void * accept_thread(void * data)
 {
 	sccp_servercontext_t * context = (sccp_servercontext_t *)data;
-	sccp_socket_connection_t new_sc = { -1, NULL };
+	sccp_socket_connection_t new_sc = { .fd = -1 };
 	struct sockaddr_storage incoming;
 	sccp_session_t *s = NULL;
 	socklen_t length = (socklen_t)(sizeof(struct sockaddr_storage));
@@ -1009,6 +1012,7 @@ static void * accept_thread(void * data)
 		pthread_testcancel();
 		new_sc.fd = -1;
 		new_sc.ssl = NULL;
+		new_sc.ssl_lock = NULL;
 		length = (socklen_t)sizeof(incoming);
 		if (context->transport->accept(&context->sc, (struct sockaddr *)&incoming, &length, &new_sc) != &new_sc || new_sc.fd < 0) {
 			pbx_log(LOG_ERROR, "SCCP: Connection accept failed on fd %d: %s\n", context->sc.fd, strerror(errno));
@@ -1032,6 +1036,7 @@ static void * accept_thread(void * data)
 		/* The session now owns the accepted socket and TLS object. */
 		new_sc.fd = -1;
 		new_sc.ssl = NULL;
+		new_sc.ssl_lock = NULL;
 		memcpy(&s->sin, &incoming, sizeof(s->sin));
 		sccp_session_set_ourip(s);
 		sccp_session_addToGlobals(s);

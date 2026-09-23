@@ -194,12 +194,18 @@ static sccp_socket_connection_t * tls_accept(sccp_socket_connection_t * in_sc, s
 	int           result;
 	int           ssl_error;
 	int           saved_errno;
+	int           lock_result;
 	int64_t       deadline;
 	SSL *         ssl   = NULL;
+	sccp_mutex_t *ssl_lock = NULL;
 	newfd = accept(in_sc->fd, addr, addrlen);
 	if (newfd < 0) {
 		return NULL;
 	}
+	/* The caller re-enables cancellation before its next accept. Keep the
+	 * handshake and ownership handoff together so cancellation cannot leak
+	 * an accepted socket or interrupt an OpenSSL call. */
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 	flags = fcntl(newfd, F_GETFL);
 	if (flags < 0 || fcntl(newfd, F_SETFL, flags | O_NONBLOCK) < 0) {
 		goto failed;
@@ -218,8 +224,21 @@ static sccp_socket_connection_t * tls_accept(sccp_socket_connection_t * in_sc, s
 		errno = 0;
 		result = SSL_accept(ssl);
 		if (result == 1) {
+			ssl_lock = ast_malloc(sizeof(*ssl_lock));
+			if (!ssl_lock) {
+				errno = ENOMEM;
+				goto failed;
+			}
+			lock_result = sccp_mutex_init(ssl_lock);
+			if (lock_result != 0) {
+				errno = lock_result;
+				ast_free(ssl_lock);
+				ssl_lock = NULL;
+				goto failed;
+			}
 			out_sc->fd = newfd;
 			out_sc->ssl = ssl;
+			out_sc->ssl_lock = ssl_lock;
 			return out_sc;
 		}
 		saved_errno = errno;
@@ -245,7 +264,7 @@ failed:
 	return NULL;
 }
 
-static int tls_io(sccp_socket_connection_t * sc, void * buf, size_t buflen, boolean_t writing)
+static int tls_io_locked(sccp_socket_connection_t * sc, void * buf, size_t buflen, boolean_t writing)
 {
 	int64_t deadline = tls_now_ms();
 	int result;
@@ -275,6 +294,15 @@ static int tls_io(sccp_socket_connection_t * sc, void * buf, size_t buflen, bool
 	}
 }
 
+static int tls_io(sccp_socket_connection_t * sc, void * buf, size_t buflen, boolean_t writing)
+{
+	int result;
+	sccp_mutex_lock(sc->ssl_lock);
+	result = tls_io_locked(sc, buf, buflen, writing);
+	sccp_mutex_unlock(sc->ssl_lock);
+	return result;
+}
+
 static int tls_recv(sccp_socket_connection_t * sc, void * buf, size_t buflen, int flags)
 {
 	return tls_io(sc, buf, buflen, FALSE);
@@ -282,7 +310,11 @@ static int tls_recv(sccp_socket_connection_t * sc, void * buf, size_t buflen, in
 
 static int tls_pending(sccp_socket_connection_t * sc)
 {
-	return SSL_pending(sc->ssl);
+	int pending;
+	sccp_mutex_lock(sc->ssl_lock);
+	pending = SSL_pending(sc->ssl);
+	sccp_mutex_unlock(sc->ssl_lock);
+	return pending;
 }
 
 static int tls_send(sccp_socket_connection_t * sc, void * buf, size_t buflen, int flags)
@@ -293,16 +325,27 @@ static int tls_send(sccp_socket_connection_t * sc, void * buf, size_t buflen, in
 static int tls_shutdown(sccp_socket_connection_t * sc, int how)
 {
 	// sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport shutdown...\n");
+	sccp_mutex_lock(sc->ssl_lock);
 	SSL_shutdown(sc->ssl);
+	sccp_mutex_unlock(sc->ssl_lock);
 	return shutdown(sc->fd, how);
 }
 
 static int tls_close(sccp_socket_connection_t * sc)
 {
 	int res = 0;
+	if (sc->ssl_lock) {
+		sccp_mutex_lock(sc->ssl_lock);
+	}
 	if (sc->ssl) {
 		SSL_free(sc->ssl);
 		sc->ssl = NULL;
+	}
+	if (sc->ssl_lock) {
+		sccp_mutex_unlock(sc->ssl_lock);
+		sccp_mutex_destroy(sc->ssl_lock);
+		ast_free(sc->ssl_lock);
+		sc->ssl_lock = NULL;
 	}
 	if (sc->fd >= 0) {
 		res = close(sc->fd);

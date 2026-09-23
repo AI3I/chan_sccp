@@ -1627,13 +1627,15 @@ static boolean_t sccp_astwrap_getPickupExtension(constChannelPtr channel, char e
 	return res;
 }
 
-static uint8_t sccp_astwrap_get_payloadType(const struct sccp_rtp *rtp, skinny_codec_t codec)
+static int sccp_astwrap_get_payloadType(const struct sccp_rtp *rtp, skinny_codec_t codec, boolean_t pbx_transmit)
 {
 	struct ast_format *astCodec = sccp_astwrap_skinny2ast_format(codec);
-	if (astCodec != ast_format_none) {
-		return ast_rtp_codecs_payload_code(ast_rtp_instance_get_codecs(rtp->instance), 1, astCodec, 0);
+	if (rtp && rtp->instance && astCodec != ast_format_none) {
+		struct ast_rtp_codecs *codecs = ast_rtp_instance_get_codecs(rtp->instance);
+		return pbx_transmit ? ast_rtp_codecs_payload_code_tx(codecs, 1, astCodec, 0)
+		                    : ast_rtp_codecs_payload_code(codecs, 1, astCodec, 0);
 	}
-	return 0;
+	return -1;
 }
 
 static int sccp_astwrap_get_sampleRate(skinny_codec_t codec)
@@ -2467,6 +2469,27 @@ static sccp_callerid_presentation_t sccp_astwrap_callerid_presentation(PBX_CHANN
 	return CALLERID_PRESENTATION_FORBIDDEN;
 }
 
+/* SCCP has no SDP exchange to populate Asterisk's per-instance RTP maps. */
+static void sccp_astwrap_registerDynamicPayload(PBX_RTP_TYPE *instance, int payload,
+	char *media, char *subtype, unsigned int sample_rate, struct ast_format *format)
+{
+	struct ast_rtp_codecs *codecs = ast_rtp_instance_get_codecs(instance);
+	if (format == ast_format_none) {
+		return;
+	}
+	if (ast_rtp_codecs_payloads_set_rtpmap_type_rate(codecs, instance, payload,
+			media, subtype, (enum ast_rtp_options)0, sample_rate) != 0) {
+		pbx_log(LOG_WARNING, "SCCP: RTP payload %d (%s/%s) is not supported by Asterisk\n",
+			payload, media, subtype);
+		return;
+	}
+	if (ast_rtp_codecs_payload_set_rx(codecs, payload, format) < 0) {
+		ast_rtp_codecs_payloads_unset(codecs, instance, payload);
+		pbx_log(LOG_WARNING, "SCCP: Could not assign receive RTP payload %d (%s/%s)\n",
+			payload, media, subtype);
+	}
+}
+
 static boolean_t sccp_astwrap_createRtpInstance(constDevicePtr d, constChannelPtr c, sccp_rtp_t *rtp)
 {
 	uint32_t tos = 0, cos = 0;
@@ -2544,6 +2567,13 @@ static boolean_t sccp_astwrap_createRtpInstance(constDevicePtr d, constChannelPt
 		for (i = 0; i < ARRAY_LEN(audio_payloads); ++i) {
 			ast_rtp_codecs_payloads_set_m_type(ast_rtp_instance_get_codecs(instance), instance, audio_payloads[i]);
 		}
+		/* These assignments are present in the SCCP codec table. Other dynamic
+		 * codecs have no confirmed phone payload and are left unavailable. */
+		sccp_astwrap_registerDynamicPayload(instance, 97, "audio", "iLBC", 8000, ast_format_ilbc);
+#ifdef AST_FORMAT_SIREN7
+		sccp_astwrap_registerDynamicPayload(instance, 102, "audio", "G7221", 16000, ast_format_siren7);
+		sccp_astwrap_registerDynamicPayload(instance, 115, "audio", "G7221", 32000, ast_format_siren14);
+#endif
 
 		sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_2 "%s: update rtpmap: format:%s, payload:%d, mime:%s, rate:%d\n",
 			c->designator, "CISCO-DTMF", 101, "audio", 0);
@@ -2552,6 +2582,18 @@ static boolean_t sccp_astwrap_createRtpInstance(constDevicePtr d, constChannelPt
 			ast_rtp_codecs_payloads_unset(ast_rtp_instance_get_codecs(instance), instance, 101);
  		}
 		ast_rtp_codecs_payload_replace_format(ast_rtp_instance_get_codecs(instance), 25, ast_format_slin16);				// replace slin16 RTPPayloadType=25 (wideband-256)
+#if CS_SCCP_VIDEO
+	} else if (rtp->type == SCCP_RTP_VIDEO) {
+		struct ast_rtp_codecs *codecs = ast_rtp_instance_get_codecs(instance);
+		ast_rtp_codecs_payloads_set_m_type(codecs, instance, 31); /* H.261 */
+		ast_rtp_codecs_payloads_set_m_type(codecs, instance, 34); /* H.263 */
+		if (ast_rtp_codecs_payload_set_rx(codecs, 31, ast_format_h261) < 0 ||
+		    ast_rtp_codecs_payload_set_rx(codecs, 34, ast_format_h263) < 0) {
+			pbx_log(LOG_WARNING, "%s: Could not assign a static video RTP receive payload\n", c->designator);
+		}
+		sccp_astwrap_registerDynamicPayload(instance, 98, "video", "h263-1998", 90000, ast_format_h263p);
+		sccp_astwrap_registerDynamicPayload(instance, 103, "video", "H264", 90000, ast_format_h264);
+#endif
 	}
 
 	ast_rtp_codecs_set_framing(ast_rtp_instance_get_codecs(instance), ast_format_cap_get_framing(ast_channel_nativeformats(c->owner)));

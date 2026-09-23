@@ -1218,9 +1218,14 @@ void sccp_channel_openMultiMediaReceiveChannel(constChannelPtr channel)
 	//if (d->nat >= SCCP_NAT_ON) {
 	//	sccp_rtp_updateNatRemotePhone(channel, video);
 	//}
+	payloadType = sccp_rtp_get_payloadType(&channel->rtp.video, video->reception.format, TRUE);
+	if (payloadType < 0 || payloadType > 127) {
+		pbx_log(LOG_ERROR, "%s: No transmit RTP payload mapping for video codec %s; video receive channel was not opened\n",
+			channel->designator, codec2str(video->reception.format));
+		sccp_channel_setVideoMode((channelPtr)channel, "off");
+		return;
+	}
 	sccp_rtp_setState(video, SCCP_RTP_RECEPTION, SCCP_RTP_STATUS_PROGRESS);
-
-	payloadType = sccp_rtp_get_payloadType(&channel->rtp.video, video->reception.format);
 	lineInstance = sccp_device_find_index_for_line(d, channel->line->name);
 
 	d->protocol->sendOpenMultiMediaChannel(d, channel, video->reception.format, payloadType, lineInstance, bitRate);                                        // extra receive channel retension
@@ -1368,10 +1373,15 @@ void sccp_channel_startMultiMediaTransmission(constChannelPtr channel)
 	//	sccp_rtp_updateNatRemotePhone(channel, video);
 	//}
 
-	sccp_rtp_setState(video, SCCP_RTP_TRANSMISSION, SCCP_RTP_STATUS_PROGRESS);
-
 	/* lookup payloadType */
-	payloadType = sccp_rtp_get_payloadType(&channel->rtp.video, video->transmission.format);
+	payloadType = sccp_rtp_get_payloadType(&channel->rtp.video, video->transmission.format, FALSE);
+	if (payloadType < 0 || payloadType > 127) {
+		pbx_log(LOG_ERROR, "%s: No receive RTP payload mapping for video codec %s; video transmission was not started\n",
+			channel->designator, codec2str(video->transmission.format));
+		sccp_channel_setVideoMode((channelPtr)channel, "off");
+		return;
+	}
+	sccp_rtp_setState(video, SCCP_RTP_TRANSMISSION, SCCP_RTP_STATUS_PROGRESS);
 
 	d->protocol->sendStartMultiMediaTransmission(d, channel, payloadType, bitRate);                                        // extra mediatransmission channel retension
 

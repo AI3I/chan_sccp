@@ -272,13 +272,11 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - **Open reviewed defect:** R8, TLS accept/handshake and SSL read/write retry
   handling, including connection and `SSL_CTX` ownership. This is the only
   unimplemented R1–R12 finding; see the review for the precise failure paths.
-- **Media follow-up:** make RTP payload lookup return signed failure instead of
-  wrapping -1 to `uint8_t`; validate dynamic audio/video payload mappings,
-  bidirectional transcoding, early media, paging, hold/resume, and transfer.
-  The static audio payload fix covers only six standard mappings.
-- **High-value cleanup:** remove or test-gate `testhtml`/`testxml` HTTP handlers
-  and the hazardous `sccp test` CLI branches; fold away the no-behavior
-  `libpbximpl.la` build unit. These remain present in source.
+- **Media follow-up:** validate dynamic audio/video mappings, bidirectional
+  transcoding, early media, paging, hold/resume, and transfer on a handset.
+  The signed RX/TX lookup and conservative mappings below are compile-only.
+- **High-value cleanup:** HTTP/CLI test handlers and `libpbximpl.la` were
+  removed in the batch below.
 - **Structural cleanup:** rename the shared `ast116` adapter for its actual
   20–24 role, consolidate small per-version wrappers, assess C++ scaffolding,
   and remove unreachable `#if 0` implementations in reviewable batches.
@@ -289,3 +287,33 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - **Standing quality pass:** CLI/phone/log messages and misleading comments,
   as described in `HEALTH_AUDIT.md`. The older health audit includes historic
   plans and should not override this current status section.
+
+## Media payload and test-surface cleanup (2026-09-23)
+
+- Changed RTP payload lookup through the PBX interface and SCCP helper to
+  return signed `int`, with `-1` for absent mappings. Lookups now distinguish
+  Asterisk transmit payloads (phone receive) from Asterisk receive payloads
+  (phone transmit). A video channel rejects absent/out-of-range payloads
+  before sending Skinny instructions or marking RTP progress.
+- On RTP instance creation, retained the six proven static audio transmit
+  mappings and registered the existing codec table's fixed dynamic values:
+  iLBC 97, G.722.1 102/115 when compiled in, H.263+ 98, and H.264 103.
+  Added static video H.261 31 and H.263 34 and corrected the H.261 metadata
+  from 34 to 31. TX and RX maps are assigned separately. G.726, Opus, H.265,
+  and other codecs with absent or ambiguous SCCP payload values were not
+  assigned a guessed number; runtime video/codec behavior is still untested.
+- Removed the always-registered `testhtml` and `testxml` web handlers, including
+  the HTML echo of request fields. Removed the experimental `sccp test` CLI
+  playground, which contained unchecked arguments, shell command execution,
+  and direct reference-count manipulation. Real web handlers and the
+  experimental feature flag remain.
+- Removed the metadata-only `src/pbx_impl/pbx_impl.c` compilation unit and its
+  `libpbximpl.la` link dependency. The build still distributes `pbx_impl.h`.
+  Regenerated the affected Makefile.in files.
+- On wadsworth, one private Asterisk 22 compile of the media batch passed.
+  After the test/build cleanup, bootstrap, configure, compile, and `make dist`
+  passed. No module was installed and no handset test was run. All lab actions
+  and log paths are in `/root/asterisk.txt`; production remains unchanged.
+- Remaining: Asterisk 20–24 CI for this exact batch; real calls for dynamic
+  RTP, video, codec changes, paging/early media, and bidirectional transcoding.
+  Structural adapter naming/wrappers and dead code are the next cleanup items.

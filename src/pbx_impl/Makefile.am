@@ -6,10 +6,4 @@
 # NOTE:			Process this file with automake to produce a makefile.in script.
 
 include 		$(top_srcdir)/src/Makefile.inc.am
-#CC = G++
-noinst_LTLIBRARIES	= libpbximpl.la
 noinst_HEADERS	 	= pbx_impl.h
-libpbximpl_la_SOURCES	= pbx_impl.c
-
-libpbximpl_la_CXXFLAGS	= $(AM_CXXFLAGS) #-Wc++-compat
-libpbximpl_la_LDFLAGS	= $(AM_LDFLAGS)

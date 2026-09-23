@@ -531,12 +531,12 @@ boolean_t sccp_rtp_getAudioPeer(constChannelPtr c, struct sockaddr_storage ** ne
 /*!
  * \brief Get Payload Type
  */
-uint8_t sccp_rtp_get_payloadType(constRtpPtr rtp, skinny_codec_t codec)
+int sccp_rtp_get_payloadType(constRtpPtr rtp, skinny_codec_t codec, boolean_t pbx_transmit)
 {
-	if (iPbx.rtp_get_payloadType) {
-		return iPbx.rtp_get_payloadType(rtp, codec);
+	if (rtp && rtp->instance && iPbx.rtp_get_payloadType) {
+		return iPbx.rtp_get_payloadType(rtp, codec, pbx_transmit);
 	}
-	return 97;
+	return -1;
 }
 
 /*!

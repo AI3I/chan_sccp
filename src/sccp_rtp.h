@@ -63,7 +63,8 @@ SCCP_API void SCCP_CALL sccp_rtp_setState(rtpPtr rtp, sccp_rtp_dir_t dir, sccp_r
 SCCP_API void SCCP_CALL sccp_rtp_setCallback(rtpPtr rtp, sccp_rtp_dir_t dir, scpp_rtp_direction_cb_t cb);
 SCCP_API boolean_t SCCP_CALL sccp_rtp_runCallback(rtpPtr rtp, sccp_rtp_dir_t dir, constChannelPtr c);
 
-SCCP_API uint8_t SCCP_CALL sccp_rtp_get_payloadType(constRtpPtr rtp, skinny_codec_t codec);
+/* Direction is from Asterisk's perspective; -1 means no usable mapping. */
+SCCP_API int SCCP_CALL sccp_rtp_get_payloadType(constRtpPtr rtp, skinny_codec_t codec, boolean_t pbx_transmit);
 SCCP_API boolean_t SCCP_CALL sccp_rtp_getUs(constRtpPtr rtp, struct sockaddr_storage * us);
 SCCP_API boolean_t SCCP_CALL sccp_rtp_getPeer(constRtpPtr rtp, struct sockaddr_storage * them);
 SCCP_API uint16_t SCCP_CALL sccp_rtp_getServerPort(constRtpPtr rtp);

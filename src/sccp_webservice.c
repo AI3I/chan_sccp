@@ -625,33 +625,6 @@ static struct ast_http_uri sccp_webservice_xslt_uri = {
 	.key         = __FILE__,
 };
 
-/* begin test */
-static boolean_t sccp_webservice_htmltest(const char * const uri, PBX_VARIABLE_TYPE * params, PBX_VARIABLE_TYPE * headers, pbx_str_t ** result)
-{
-	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (sccp_webservice_test) Test Webservice\n");
-	PBX_VARIABLE_TYPE * header = NULL;
-	PBX_VARIABLE_TYPE * param  = NULL;
-	pbx_str_append(result, 0, "<html>\n");
-	pbx_str_append(result, 0, "<body>\n");
-	pbx_str_append(result, 0, "<h3>TEST RESULT</h3>\n");
-	pbx_str_append(result, 0, "<p>headers:</p>\n");
-	pbx_str_append(result, 0, "<p><ul>\n");
-	for (header = headers; header; header = header->next) {
-		pbx_str_append(result, 0, "<li>%s: %s</li>\n", header->name, header->value);
-	}
-	pbx_str_append(result, 0, "</ul></p>\n");
-
-	pbx_str_append(result, 0, "<p>params:</p>");
-	pbx_str_append(result, 0, "<p><ul>\n");
-	for (param = params; param; param = param->next) {
-		pbx_str_append(result, 0, "<li>%s: %s</li>\n", param->name, param->value);
-	}
-	pbx_str_append(result, 0, "</ul></p>\n");
-	pbx_str_append(result, 0, "</body>\n");
-	pbx_str_append(result, 0, "</html>\n");
-	return TRUE;
-}
-
 static boolean_t xmlPostProcess(xmlDoc * const doc, const char * const uri, PBX_VARIABLE_TYPE * params, PBX_VARIABLE_TYPE * headers, char ** resultstr)
 {
 	boolean_t            res          = TRUE;
@@ -687,58 +660,6 @@ static boolean_t xmlPostProcess(xmlDoc * const doc, const char * const uri, PBX_
 	}
 	return res;
 }
-
-static boolean_t sccp_webservice_xmltest(const char * const uri, PBX_VARIABLE_TYPE * params, PBX_VARIABLE_TYPE * headers, pbx_str_t ** result)
-{
-	boolean_t res = FALSE;
-	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (sccp_webservice_test) Test Webservice\n");
-
-	/*
-		Process_XSLT_t process_side = parse_useragent(headers);
-		sccp_xml_outputfmt_t outputfmt = SCCP_XML_OUTPUTFMT_XHTML;
-		parse_outputfmt(params, headers, &outputfmt);
-		const char *locale = NULL;
-		parse_request_headers(headers, locale);
-	*/
-	PBX_VARIABLE_TYPE * v = NULL;
-
-	xmlDoc *  doc  = iXML.createDoc();
-	xmlNode * root = iXML.createNode("root");
-	iXML.setRootElement(doc, root);
-	xmlNode * group = iXML.addElement(root, "group", NULL);
-	xmlNode * val   = iXML.addElement(group, "val", "val1");
-	iXML.addProperty(val, "type", "%s", "value");
-	val = iXML.addElement(group, "val", "val2");
-	iXML.addProperty(val, "type", "%s", "value");
-	val = iXML.addElement(group, "val", "val3");
-	iXML.addProperty(val, "type", "%s", "value");
-
-	xmlNode * group1 = iXML.addElement(root, "headers", NULL);
-	for (v = headers; v; v = v->next) {
-		xmlNode * val1 = iXML.addElement(group1, "header", v->value);
-		iXML.addProperty(val1, "name", "%s", v->name);
-		iXML.addProperty(val1, "url", "%s", v->name);
-	}
-
-	xmlNode * group2 = iXML.addElement(root, "params", NULL);
-	for (v = params; v; v = v->next) {
-		xmlNode * val1 = iXML.addElement(group2, "param", v->value);
-		iXML.addProperty(val1, "name", "%s", v->name);
-		iXML.addProperty(val1, "type", "%s", "param");
-	}
-
-	char * resultstr = NULL;
-	if (xmlPostProcess(doc, uri, params, headers, &resultstr) && resultstr) {
-		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "resultstr: %s\n", resultstr);
-		pbx_str_append(result, 0, "%s", resultstr);
-		sccp_free(resultstr);
-		res = TRUE;
-	}
-	iXML.destroyDoc(&doc);
-
-	return res;
-}
-/* end test */
 
 /*!
  * \brief Webservice handler for the "parkedcalls" URI.
@@ -797,11 +718,6 @@ static void __attribute__((constructor)) init_webservice(void)
 {
 	if (!running && parse_manager_conf() && parse_http_conf(baseURL)) {
 		SCCP_VECTOR_RW_INIT(&handlers, 1);
-
-		/* begin test */
-		iWebService.addHandler("testhtml", sccp_webservice_htmltest, SCCP_XML_OUTPUTFMT_HTML);
-		iWebService.addHandler("testxml", sccp_webservice_xmltest, SCCP_XML_OUTPUTFMT_XML);
-		/* end test */
 
 		iWebService.addHandler("parkedcalls", sccp_webservice_parkedcalls, SCCP_XML_OUTPUTFMT_CXML);
 

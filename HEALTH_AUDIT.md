@@ -1,5 +1,33 @@
 # chan_sccp-modern Health Audit
 
+## Fixed — "internal" ACL range, netmask display, load crash (2026-09-23)
+
+- **`permit = internal` / `localnet = internal` allowed 172.0.0.0/11.** The
+  expansion used 172.16.0.0 with mask 255.224.0.0, which masks to
+  172.0.0.0–172.31.255.255 and so also permitted the public 172.0–172.15
+  block. Now 172.16.0.0/255.240.0.0 (RFC 1918). The sample `conf/sccp.conf`
+  documented the wrong range too.
+- **Every deny/permit/localnet entry displayed its address as its netmask**
+  (`sccp show globals`, `sccp show device`, the refused-connection log, and
+  config-change detection). `sccp_netsock_stringify*()` return one shared
+  per-thread buffer and `sccp_print_ha()` called it twice in one `printf`.
+  Same bug in the `sccp_rtp_print()` output used by `sccp show channel`
+  debugging. Both now copy each result; the ACL list reads
+  "permit 10.0.0.0/255.0.0.0, …". Found only because the display was wrong:
+  the netmask bug hid the 172 range bug.
+- **Crash on module load introduced by the message pass:** a debug log added at
+  the start of `sccp_prePBXLoad()` read `sccp_globals->debug` before the
+  globals were allocated. Found by loading the build into the wadsworth lab
+  Asterisk (segfault at address 0x4 in `sccp_prePBXLoad`); fixed before any
+  deployment. Other startup/shutdown paths checked; none log that early.
+- Missing TLS `certfile` is logged once at NOTICE (the TLS listener is always
+  attempted when built with OpenSSL, so a WARNING would fire on every normal
+  load).
+
+Validation: wadsworth build clean with `-Wall -Wformat=2`, `make check`
+passes, module loads in the lab Asterisk and `sccp show globals` shows
+correct netmasks.
+
 ## In progress — message-quality pass (started 2026-09-23)
 
 Every always-visible message (`pbx_log` ERROR/WARNING/NOTICE) is being

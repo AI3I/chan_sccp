@@ -86,7 +86,7 @@ int load_config(void)
  */
 boolean_t sccp_prePBXLoad(void)
 {
-	sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "SCCP: initializing globals\n");
+	/* no sccp_log() before this point: it reads sccp_globals->debug */
 	/* make globals */
 	sccp_globals = (struct sccp_global_vars *) sccp_calloc(sizeof *sccp_globals, 1);
 	if (!sccp_globals) {

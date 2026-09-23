@@ -138,7 +138,7 @@ static boolean_t configure_context(SSL_CTX * ctx)
 	}
 
 	if (access(cert_file, F_OK) != 0) {
-		pbx_log(LOG_WARNING, "SCCP: TLS listener not started: certfile %s does not exist\n", cert_file);
+		pbx_log(LOG_NOTICE, "SCCP: TLS (secure SCCP) listener not started: certfile %s does not exist; phones can only use plain SCCP\n", cert_file);
 		return FALSE;
 	} else {
 		if (SSL_CTX_use_certificate_file(ctx, cert_file, SSL_FILETYPE_PEM) <= 0) {

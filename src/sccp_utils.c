@@ -1108,8 +1108,15 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 
 void sccp_print_ha(struct ast_str *buf, int buflen, struct sccp_ha *path)
 {
+	/* sccp_netsock_stringify_addr() returns one shared per-thread buffer, so copy each result before the next call */
+	const char *separator = "";
 	while (path) {
-		pbx_str_append (&buf, buflen, "%s:%s/%s,", AST_SENSE_DENY == path->sense ? "deny" : "permit", sccp_netsock_stringify_addr (&path->netaddr), sccp_netsock_stringify_addr (&path->netmask));
+		char netaddr[INET6_ADDRSTRLEN] = "";
+		char netmask[INET6_ADDRSTRLEN] = "";
+		sccp_copy_string(netaddr, sccp_netsock_stringify_addr(&path->netaddr), sizeof(netaddr));
+		sccp_copy_string(netmask, sccp_netsock_stringify_addr(&path->netmask), sizeof(netmask));
+		pbx_str_append(&buf, buflen, "%s%s %s/%s", separator, AST_SENSE_DENY == path->sense ? "deny" : "permit", netaddr, netmask);
+		separator = ", ";
 		path = path->next;
 	}
 }

@@ -1671,7 +1671,7 @@ sccp_value_changed_t sccp_config_parse_deny_permit(void * const dest, const size
 				errors |= error;
 				ha = sccp_append_ha("permit", "10.0.0.0/255.0.0.0", ha, &error);
 				errors |= error;
-				ha = sccp_append_ha("permit", "172.16.0.0/255.224.0.0", ha, &error);
+				ha = sccp_append_ha("permit", "172.16.0.0/255.240.0.0", ha, &error);
 				errors |= error;
 				ha = sccp_append_ha("permit", "192.168.0.0/255.255.0.0", ha, &error);
 			} else {

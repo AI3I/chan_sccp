@@ -452,12 +452,15 @@ void sccp_rtp_print(constChannelPtr c, sccp_rtp_type_t type, struct ast_str * bu
 	boolean_t                             isDirectRTP = d->directrtp;
 	const struct sockaddr_storage * const ip          = isIPv4 ? &d->ipv4 : &d->ipv6;
 
+	/* sccp_netsock_stringify() returns one shared per-thread buffer, so copy each result before the next call */
+	char *phone_local = pbx_strdupa(sccp_netsock_stringify(ip));
+	char *phone_rtp = pbx_strdupa(sccp_netsock_stringify(&rtp->phone));
+	char *remote_rtp = pbx_strdupa(sccp_netsock_stringify(&rtp->phone_remote));
 	pbx_str_reset(buf);
 	if (isNatted) {
-		pbx_str_append(&buf, 0, "PH1:%s -> FW:%s ----> FW:%s --> %s:%s\n", sccp_netsock_stringify(ip), sccp_netsock_stringify(&rtp->phone), "", isDirectRTP ? sccp_netsock_stringify(&rtp->phone_remote) : "",
-			       isDirectRTP ? "AST" : "PH");
+		pbx_str_append(&buf, 0, "phone %s, NAT %s, remote %s (%s)\n", phone_local, phone_rtp, isDirectRTP ? remote_rtp : "via Asterisk", isDirectRTP ? "direct RTP" : "Asterisk relays media");
 	} else {
-		pbx_str_append(&buf, 0, "PH1:%s ----> %s:%s\n", sccp_netsock_stringify(&rtp->phone), isDirectRTP ? sccp_netsock_stringify(&rtp->phone_remote) : "", isDirectRTP ? "AST" : "PH");
+		pbx_str_append(&buf, 0, "phone %s, remote %s (%s)\n", phone_rtp, isDirectRTP ? remote_rtp : "via Asterisk", isDirectRTP ? "direct RTP" : "Asterisk relays media");
 	}
 }
 

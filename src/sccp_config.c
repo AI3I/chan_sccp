@@ -368,7 +368,7 @@ static const SCCPConfigOption * sccp_find_config(const sccp_config_segment_t seg
 {
 	const SCCPConfigSegment * sccpConfigSegment = sccp_find_segment(segment);
 	if (!sccpConfigSegment) {
-		pbx_log(LOG_ERROR, "Could not find segement:%d\n", segment);
+		pbx_log(LOG_ERROR, "SCCP: config segment %d does not exist (caller bug)\n", segment);
 		return NULL;
 	}
 	const SCCPConfigOption * config = sccpConfigSegment->config;
@@ -419,14 +419,14 @@ static PBX_VARIABLE_TYPE *createVariableSetForMultiEntryParameters(PBX_VARIABLE_
 				if (!tmp) {
 					sccp_log_and((DEBUGCAT_CONFIG + DEBUGCAT_HIGH)) (VERBOSE_PREFIX_4 "Create new variable set (%s=%s)\n", v->name, v->value);
 					if (!(out = pbx_variable_new(v->name, v->value, ""))) {
-						pbx_log(LOG_ERROR, "SCCP: (sccp_config) Error while creating new var structure\n");
+						pbx_log(LOG_ERROR, "SCCP: could not copy config variable %s (out of memory); option not applied\n", v->name);
 						goto EXIT;
 					}
 					tmp = out;
 				} else {
 					sccp_log_and((DEBUGCAT_CONFIG + DEBUGCAT_HIGH)) (VERBOSE_PREFIX_4 "Add to variable set (%s=%s)\n", v->name, v->value);
 					if (!(tmp->next = pbx_variable_new(v->name, v->value, ""))) {
-						pbx_log(LOG_ERROR, "SCCP: (sccp_config) Error while creating new var structure\n");
+						pbx_log(LOG_ERROR, "SCCP: could not copy config variable %s (out of memory); option not applied\n", v->name);
 						pbx_variables_destroy(out);
 						goto EXIT;
 					}
@@ -457,14 +457,14 @@ static PBX_VARIABLE_TYPE * createVariableSetForMultiEntryParameters(PBX_VARIABLE
 				if (!tmp) {
 					sccp_log_and((DEBUGCAT_CONFIG + DEBUGCAT_HIGH))(VERBOSE_PREFIX_4 "Create new variable set (%s=%s)\n", v->name, v->value);
 					if (!(out = pbx_variable_new(v->name, v->value, ""))) {
-						pbx_log(LOG_ERROR, "SCCP: (sccp_config) Error while creating new var structure\n");
+						pbx_log(LOG_ERROR, "SCCP: could not copy config variable %s (out of memory); option not applied\n", v->name);
 						goto EXIT;
 					}
 					tmp = out;
 				} else {
 					sccp_log_and((DEBUGCAT_CONFIG + DEBUGCAT_HIGH))(VERBOSE_PREFIX_4 "Add to variable set (%s=%s)\n", v->name, v->value);
 					if (!(tmp->next = pbx_variable_new(v->name, v->value, ""))) {
-						pbx_log(LOG_ERROR, "SCCP: (sccp_config) Error while creating new var structure\n");
+						pbx_log(LOG_ERROR, "SCCP: could not copy config variable %s (out of memory); option not applied\n", v->name);
 						pbx_variables_destroy(out);
 						goto EXIT;
 					}
@@ -495,14 +495,14 @@ static PBX_VARIABLE_TYPE * createVariableSetForTokenizedDefault(const char * con
 		if (!tmp) {
 			sccp_log_and((DEBUGCAT_CONFIG + DEBUGCAT_HIGH))(VERBOSE_PREFIX_4 "Create new variable set (%s=%s)\n", option_name, option_value);
 			if (!(out = pbx_variable_new(option_name, option_value, ""))) {
-				pbx_log(LOG_ERROR, "SCCP: (sccp_config) Error while creating new var structure\n");
+				pbx_log(LOG_ERROR, "SCCP: could not copy config variable %s (out of memory); option not applied\n", option_name);
 				goto EXIT;
 			}
 			tmp = out;
 		} else {
 			sccp_log_and((DEBUGCAT_CONFIG + DEBUGCAT_HIGH))(VERBOSE_PREFIX_4 "Add to variable set (%s=%s)\n", option_name, option_value);
 			if (!(tmp->next = pbx_variable_new(option_name, option_value, ""))) {
-				pbx_log(LOG_ERROR, "SCCP: (sccp_config) Error while creating new var structure\n");
+				pbx_log(LOG_ERROR, "SCCP: could not copy config variable %s (out of memory); option not applied\n", option_name);
 				pbx_variables_destroy(out);
 				goto EXIT;
 			}
@@ -525,14 +525,13 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 {
 	const SCCPConfigSegment * sccpConfigSegment = sccp_find_segment(segment);
 	if (!sccpConfigSegment) {
-		pbx_log(LOG_ERROR, "Could not find segement:%d\n", segment);
+		pbx_log(LOG_ERROR, "SCCP: config segment %d does not exist (caller bug)\n", segment);
 		return SCCP_CONFIG_ERROR;
 	}
 	const SCCPConfigOption *  sccpConfigOption        = sccp_find_config(segment, name);
 	void *                    dst                     = NULL;
 	enum SCCPConfigOptionType type                    = 0; /* enum wrapper */
 	enum SCCPConfigOptionFlag flags                   = 0; /* enum wrapper */
-	const char *              deprecated_obsolete_url = "https://github.com/chan-sccp/chan-sccp/wiki/Deprecated---Obsoleted-Parameters";
 
 	sccp_value_changed_t       changed = SCCP_CONFIG_CHANGE_NOCHANGE; /* indicates config value is changed or not */
 	sccp_configurationchange_t changes = SCCP_CONFIG_NOUPDATENEEDED;
@@ -554,7 +553,7 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 
 	if (!sccpConfigOption) {
 		if (strlen(name) == 0 || name[0] != '_') { /* skip generating error, when column name starts with '_' */
-			pbx_log(LOG_WARNING, "SCCP: Unknown param at %s:%d:%s='%s'\n", sccpConfigSegment->name, lineno, name, value);
+			pbx_log(LOG_WARNING, "SCCP: sccp.conf line %d: '%s' is not a %s option; ignored\n", lineno, name, sccpConfigSegment->name);
 		}
 		return SCCP_CONFIG_NOUPDATENEEDED;
 	}
@@ -581,15 +580,15 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 		return SCCP_CONFIG_NOUPDATENEEDED;
 	}
 	if ((flags & SCCP_CONFIG_FLAG_CHANGED) == SCCP_CONFIG_FLAG_CHANGED && !default_run) {
-		pbx_log(LOG_NOTICE, "SCCP: changed config param at %s='%s' in line %d\n - %s -> please check sccp.conf file\n", name, value, lineno, sccpConfigOption->description);
+		pbx_log(LOG_NOTICE, "SCCP: sccp.conf line %d: the meaning of '%s' has changed: %s", lineno, name, sccpConfigOption->description);
 	} else if ((flags & SCCP_CONFIG_FLAG_DEPRECATED) == SCCP_CONFIG_FLAG_DEPRECATED && lineno > 0 && !default_run) {
-		pbx_log(LOG_WARNING, "SCCP: deprecated config param at %s='%s' in line %d\n - %s -> using old implementation.\nSee:%s\n", name, value, lineno, sccpConfigOption->description, deprecated_obsolete_url);
+		pbx_log(LOG_WARNING, "SCCP: sccp.conf line %d: '%s' is deprecated but still applied: %s", lineno, name, sccpConfigOption->description);
 	} else if ((flags & SCCP_CONFIG_FLAG_OBSOLETE) == SCCP_CONFIG_FLAG_OBSOLETE && lineno > 0 && !default_run) {
-		pbx_log(LOG_ERROR, "SCCP: obsolete config param at %s='%s' in line %d\n - %s -> param skipped\nSee: %s\n", name, value, lineno, sccpConfigOption->description, deprecated_obsolete_url);
+		pbx_log(LOG_WARNING, "SCCP: sccp.conf line %d: '%s' is obsolete and ignored: %s", lineno, name, sccpConfigOption->description);
 		return SCCP_CONFIG_NOUPDATENEEDED;
 	} else if ((flags & SCCP_CONFIG_FLAG_REQUIRED) == SCCP_CONFIG_FLAG_REQUIRED) {
 		if (NULL == value) {
-			pbx_log(LOG_WARNING, "SCCP: required config param at %s='<NULL>' - %s\n", name, sccpConfigOption->description);
+			pbx_log(LOG_WARNING, "SCCP: required %s option '%s' has no value: %s", sccpConfigSegment->name, name, sccpConfigOption->description);
 			return SCCP_CONFIG_WARNING;
 		}
 	}
@@ -617,7 +616,7 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 
 			if (!sccp_strlen_zero(value)) {
 				if (sccp_strlen(value) > sccpConfigOption->size - 1) {
-					pbx_log(LOG_NOTICE, "SCCP: config parameter %s:%s value '%s' is too long, only using the first %d characters\n", sccpConfigSegment->name, name, value, (int)sccpConfigOption->size - 1);
+					pbx_log(LOG_WARNING, "SCCP: %s option '%s' value '%s' is longer than %d characters; truncated\n", sccpConfigSegment->name, name, value, (int)sccpConfigOption->size - 1);
 				}
 				if (strncasecmp(str, value, sccpConfigOption->size - 1) != 0) {
 					if (GLOB(reload_in_progress)) {
@@ -742,10 +741,10 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 			} else {
 				if (sccp_true(value)) {
 					boolean = TRUE;
-				} else if (!sccp_true(value)) {
+				} else if (sccp_false(value)) {
 					boolean = FALSE;
 				} else {
-					pbx_log(LOG_NOTICE, "SCCP: Invalid value '%s' for [%s]->%s. Allowed: [TRUE/ON/YES or FALSE/OFF/NO]\n", value, sccpConfigSegment->name, name);
+					pbx_log(LOG_WARNING, "SCCP: %s option '%s' value '%s' is not yes/no, on/off or true/false; ignored\n", sccpConfigSegment->name, name, value);
 					changed = SCCP_CONFIG_CHANGE_INVALIDVALUE;
 					break;
 				}
@@ -831,12 +830,12 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 								break;
 						}
 					} else {
-						pbx_log(LOG_NOTICE, "SCCP: Invalid value '%s' for [%s]->%s. Allowed: [%s]\n", value, sccpConfigSegment->name, name, sccpConfigOption->all_entries());
+						pbx_log(LOG_WARNING, "SCCP: %s option '%s' value '%s' is not one of: %s; ignored\n", sccpConfigSegment->name, name, value, sccpConfigOption->all_entries());
 						changed = SCCP_CONFIG_CHANGE_INVALIDVALUE;
 					}
 					break;
 				}
-				pbx_log(LOG_WARNING, "SCCP: [%s]=>%s cannot be ''. Allowed: [%s]\n", sccpConfigSegment->name, name, sccpConfigOption->all_entries());
+				pbx_log(LOG_WARNING, "SCCP: %s option '%s' cannot be empty; expected one of: %s\n", sccpConfigSegment->name, name, sccpConfigOption->all_entries());
 				changed = SCCP_CONFIG_CHANGE_INVALIDVALUE;
 			}
 			break;
@@ -864,10 +863,10 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 		}
 	}
 	if (SCCP_CONFIG_CHANGE_INVALIDVALUE == changed && !default_run) {
-		pbx_log(LOG_NOTICE, "SCCP: Option Description: %s\n", sccpConfigOption->description);
+		pbx_log(LOG_NOTICE, "SCCP: %s option '%s': %s", sccpConfigSegment->name, name, sccpConfigOption->description);
 	}
 	if (SCCP_CONFIG_CHANGE_ERROR == changed) {
-		pbx_log(LOG_NOTICE, "SCCP: Exception/Error during parsing of: %s\n", sccpConfigOption->description);
+		pbx_log(LOG_WARNING, "SCCP: %s option '%s' could not be parsed; ignored\n", sccpConfigSegment->name, name);
 	}
 	return changes;
 }
@@ -881,13 +880,13 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 static void sccp_config_set_defaults(void * const obj, const sccp_config_segment_t segment, boolean_t * SetEntries)
 {
 	if (!GLOB(cfg)) {
-		pbx_log(LOG_NOTICE, "GLOB(cfg) not available. Skip loading default setting.\n");
+		pbx_log(LOG_WARNING, "SCCP: defaults not applied because sccp.conf is not loaded\n");
 		return;
 	}
 	/* destination segment */
 	const SCCPConfigSegment * sccpConfigSegment = sccp_find_segment(segment);
 	if (!sccpConfigSegment) {
-		pbx_log(LOG_ERROR, "Could not find segement:%d\n", segment);
+		pbx_log(LOG_ERROR, "SCCP: config segment %d does not exist (caller bug)\n", segment);
 		return;
 	}
 
@@ -1006,7 +1005,7 @@ void sccp_config_cleanup_dynamically_allocated_memory(void * const obj, const sc
 {
 	const SCCPConfigSegment * sccpConfigSegment = sccp_find_segment(segment);
 	if (!sccpConfigSegment) {
-		pbx_log(LOG_ERROR, "Could not find segement:%d\n", segment);
+		pbx_log(LOG_ERROR, "SCCP: config segment %d does not exist (caller bug)\n", segment);
 		return;
 	}
 
@@ -1046,7 +1045,7 @@ sccp_value_changed_t sccp_config_parse_ipaddress(void * const dest, const size_t
 	};
 
 	if (!sccp_sockaddr_storage_parse(&bindaddr_new, value, PARSE_PORT_FORBID)) {
-		pbx_log(LOG_WARNING, "Invalid IP address: %s\n", value);
+		pbx_log(LOG_WARNING, "SCCP: bindaddr '%s' is not a valid IP address (a port is not allowed here); ignored\n", value);
 		changed = SCCP_CONFIG_CHANGE_INVALIDVALUE;
 	} else {
 		if (sccp_netsock_cmp_addr(&bindaddr_prev, &bindaddr_new)) {                                        // 0 = equal
@@ -1096,11 +1095,11 @@ sccp_value_changed_t sccp_config_parse_port(void * const dest, const size_t size
 				changed                                  = SCCP_CONFIG_CHANGE_CHANGED;
 			}
 		} else {
-			pbx_log(LOG_WARNING, "Invalid address in bindaddr to set port to '%s'\n", value);
+			pbx_log(LOG_WARNING, "SCCP: port=%s ignored because bindaddr is neither IPv4 nor IPv6\n", value);
 			changed = SCCP_CONFIG_CHANGE_INVALIDVALUE;
 		}
 	} else {
-		pbx_log(LOG_WARNING, "Invalid port number '%s'\n", value);
+		pbx_log(LOG_WARNING, "SCCP: port '%s' is not a valid port number; ignored\n", value);
 		changed = SCCP_CONFIG_CHANGE_INVALIDVALUE;
 	}
 
@@ -1123,11 +1122,11 @@ sccp_value_changed_t sccp_config_parse_privacyFeature(void * const dest, const s
 	if (sccp_strcaseequals(value, "full")) {
 		privacyFeature.status  = ~0;
 		privacyFeature.enabled = TRUE;
-	} else if (sccp_true(value) || !sccp_true(value)) {
+	} else if (sccp_true(value) || sccp_false(value)) {
 		privacyFeature.status  = 0;
 		privacyFeature.enabled = sccp_true(value);
 	} else {
-		pbx_log(LOG_WARNING, "Invalid privacy value, should be 'full', 'on' or 'off'\n");
+		pbx_log(LOG_WARNING, "SCCP: privacy value '%s' is not full, on or off; ignored\n", value);
 		return SCCP_CONFIG_CHANGE_INVALIDVALUE;
 	}
 
@@ -1162,7 +1161,7 @@ sccp_value_changed_t sccp_config_parse_privacyFeature(void * const dest, const s
    } else if (sccp_true(value)) {
    mwilamp = SKINNY_LAMP_ON;
    } else {
-   pbx_log(LOG_WARNING, "Invalid mwilamp value, should be one of 'off', 'on', 'wink', 'flash' or 'blink'\n");
+   pbx_log(LOG_WARNING, "SCCP: mwilamp value '%s' is not off, on, wink, flash or blink; ignored\n", value);
    changed = SCCP_CONFIG_CHANGE_INVALIDVALUE;
    }
 
@@ -1233,7 +1232,7 @@ sccp_value_changed_t sccp_config_parse_cos(void * const dest, const size_t size,
 		/* value is tos */
 	} else if (sscanf(value, "%" SCNu8, &cos) == 1) {
 		if (cos > 7) {
-			pbx_log(LOG_WARNING, "Invalid cos %d value, refer to QoS documentation\n", cos);
+			pbx_log(LOG_WARNING, "SCCP: CoS value %d is outside the 802.1p range 0-7; ignored\n", cos);
 			return SCCP_CONFIG_CHANGE_INVALIDVALUE;
 		}
 	}
@@ -1321,12 +1320,12 @@ sccp_value_changed_t sccp_config_parse_group(void * const dest, const size_t siz
 				/* Just one */
 				finish = start;
 			} else {
-				pbx_log(LOG_ERROR, "Syntax error parsing group configuration '%s' at '%s'. Ignoring.\n", value, piece);
+				pbx_log(LOG_WARNING, "SCCP: group list '%s': '%s' is not a number or a range like 1-5; that entry ignored\n", value, piece);
 				continue;
 			}
 			for (x = start; x <= finish; x++) {
 				if ((x > 63) || (x < 0)) {
-					pbx_log(LOG_WARNING, "Ignoring invalid group %d (maximum group is 63)\n", x);
+					pbx_log(LOG_WARNING, "SCCP: group %d is outside the range 0-63; ignored\n", x);
 				} else {
 					group |= ((ast_group_t)1 << x);
 				}
@@ -1539,7 +1538,7 @@ sccp_value_changed_t sccp_config_parse_webdir(void * const dest, const size_t si
 			changed = SCCP_CONFIG_CHANGE_CHANGED;
 			pbx_copy_string(webdir, new_webdir, size);
 		} else {
-			pbx_log(LOG_WARNING, "The webdir '%s' specified could not be found.\n", new_webdir);
+			pbx_log(LOG_WARNING, "SCCP: webdir '%s' does not exist; webdir left empty\n", new_webdir);
 			pbx_copy_string(webdir, "", size);
 			changed = SCCP_CONFIG_CHANGE_INVALIDVALUE;
 		}
@@ -1628,7 +1627,7 @@ sccp_value_changed_t sccp_config_parse_codec_preferences(void * const dest, cons
 	sccp_get_codecs_bytype(new_codecs, video_prefs, SKINNY_CODEC_TYPE_VIDEO);
 #endif
 	if (errors) {
-		pbx_log(LOG_NOTICE, "SCCP: (parse_codec preference) Error occurred during parsing of the disallowed / allowed codecs\n");
+		pbx_log(LOG_WARNING, "SCCP: allow/disallow list contains a codec name Asterisk does not recognize; codec preferences not changed\n");
 		changed = SCCP_CONFIG_CHANGE_INVALIDVALUE;
 	} else {
 		if (memcmp(prefs->audio, audio_prefs, sizeof prefs->audio) != 0) {
@@ -1813,7 +1812,7 @@ sccp_value_changed_t sccp_config_parse_addons(void * const dest, const size_t si
 						changed |= SCCP_CONFIG_CHANGE_CHANGED;
 					}
 				} else {
-					pbx_log(LOG_ERROR, "unknown addon type: %s, skipped\n", v->value);
+					pbx_log(LOG_WARNING, "SCCP: addon type '%s' is not a known expansion module; ignored\n", v->value);
 					changed |= SCCP_CONFIG_CHANGE_INVALIDVALUE;
 				}
 			}
@@ -1843,12 +1842,12 @@ sccp_value_changed_t sccp_config_parse_addons(void * const dest, const size_t si
 					SCCP_LIST_INSERT_TAIL(addonList, addon, list);
 					changed |= SCCP_CONFIG_CHANGE_CHANGED;
 				} else {
-					pbx_log(LOG_ERROR, "unknown addon type: %s, skipped\n", v->value);
+					pbx_log(LOG_WARNING, "SCCP: addon type '%s' is not a known expansion module; ignored\n", v->value);
 					changed |= SCCP_CONFIG_CHANGE_INVALIDVALUE;
 				}
 			}
 		} else {
-			pbx_log(LOG_ERROR, "SCCP: maximum number(2) of addon's has been reached\n");
+			pbx_log(LOG_WARNING, "SCCP: addon '%s' ignored: a device supports at most 2 expansion modules\n", v->value);
 			changed |= SCCP_CONFIG_CHANGE_INVALIDVALUE;
 		}
 	}
@@ -2022,7 +2021,7 @@ sccp_value_changed_t sccp_config_parse_button(void * const dest, const size_t si
 
 			type = sccp_config_buttontype_str2val(buttonType);
 			if (type == SCCP_CONFIG_BUTTONTYPE_SENTINEL) {
-				pbx_log(LOG_WARNING, "Unknown button type '%s'.\n", buttonType);
+				pbx_log(LOG_WARNING, "SCCP: button type '%s' is not line, speeddial, service, feature or empty; an empty button was used\n", buttonType);
 				changed = SCCP_CONFIG_CHANGE_INVALIDVALUE;
 				type    = EMPTY;
 			}
@@ -2076,7 +2075,7 @@ sccp_value_changed_t sccp_config_parse_button(void * const dest, const size_t si
 
 			type = sccp_config_buttontype_str2val(buttonType);
 			if (type == SCCP_CONFIG_BUTTONTYPE_SENTINEL) {
-				pbx_log(LOG_WARNING, "Unknown button type '%s'. Will insert an Empty button instead.\n", buttonType);
+				pbx_log(LOG_WARNING, "SCCP: button type '%s' is not line, speeddial, service, feature or empty; an empty button was used\n", buttonType);
 				changed = SCCP_CONFIG_CHANGE_INVALIDVALUE;
 				type    = EMPTY;
 			}
@@ -2171,7 +2170,7 @@ sccp_value_changed_t sccp_config_checkButton(sccp_buttonconfig_list_t * buttonco
 							}
 						}
 					} else {
-						pbx_log(LOG_WARNING, "SCCP: button definition:'%s' could not be parsed\n", name);
+						pbx_log(LOG_WARNING, "SCCP: line button '%s' could not be parsed (expected line[@subscriber]); button skipped\n", name);
 					}
 					break;
 				}
@@ -2315,7 +2314,7 @@ sccp_value_changed_t sccp_config_addButton(sccp_buttonconfig_list_t * buttonconf
 						sccp_free(subscriptionId);
 					}
 				} else {
-					pbx_log(LOG_WARNING, "SCCP: button definition:'%s' could not be parsed\n", name);
+					pbx_log(LOG_WARNING, "SCCP: line button '%s' could not be parsed (expected line[@subscriber]); button skipped\n", name);
 					sccp_free(subscriptionId);
 					return SCCP_CONFIG_CHANGE_INVALIDVALUE;
 				}
@@ -2428,7 +2427,7 @@ static void sccp_config_buildLine(sccp_line_t * l, PBX_VARIABLE_TYPE * v, boolea
 {
 	sccp_configurationchange_t res = sccp_config_applyLineConfiguration(l, v);
 	if (!l) {
-		pbx_log(LOG_ERROR, "SCCP: (sccp_config_buildLine) called without valid line ptr\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_config_buildLine() was called without a line (caller bug)\n");
 		return;
 	}
 
@@ -2461,7 +2460,7 @@ static void sccp_config_buildDevice(sccp_device_t * d, PBX_VARIABLE_TYPE * varia
 {
 	PBX_VARIABLE_TYPE * v = variable;
 	if (!d) {
-		pbx_log(LOG_ERROR, "SCCP: (sccp_config_buildDevice) called without valid device ptr\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_config_buildDevice() was called without a device (caller bug)\n");
 		return;
 	}
 
@@ -2550,14 +2549,14 @@ boolean_t sccp_config_general(sccp_readingtype_t readingtype)
 
 	/* Cleanup for reload */
 	if (!GLOB(cfg)) {
-		pbx_log(LOG_WARNING, "Unable to load config file sccp.conf, SCCP disabled\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp.conf is not loaded; no global settings applied and SCCP stays disabled\n");
 		return FALSE;
 	}
 
 	/* read the general section */
 	v = ast_variable_browse(GLOB(cfg), "general");
 	if (!v) {
-		pbx_log(LOG_WARNING, "Missing [general] section, SCCP disabled\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp.conf has no [general] section; SCCP stays disabled\n");
 		return FALSE;
 	}
 	// sccp_config_set_defaults(sccp_globals, SCCP_CONFIG_GLOBAL_SEGMENT);
@@ -2694,7 +2693,7 @@ boolean_t sccp_config_readDevicesLines(sccp_readingtype_t readingtype)
 	}
 
 	if (!GLOB(cfg)) {
-		pbx_log(LOG_NOTICE, "SCCP: (sccp_config_readDevicesLines) Unable to load config file sccp.conf, SCCP disabled\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp.conf is not loaded; no devices or lines configured\n");
 		return FALSE;
 	}
 
@@ -2708,7 +2707,7 @@ boolean_t sccp_config_readDevicesLines(sccp_readingtype_t readingtype)
 		sccp_log_and((DEBUGCAT_CONFIG + DEBUGCAT_HIGH))(VERBOSE_PREFIX_2 "SCCP: (sccp_config_readDevicesLines) Reading Section Of Type %s\n", utype);
 
 		if (!utype) {
-			pbx_log(LOG_WARNING, "Section '%s' is missing a type parameter\n", cat);
+			pbx_log(LOG_WARNING, "SCCP: sccp.conf section [%s] has no type= (device, line or softkeyset); section skipped\n", cat);
 			continue;
 		} else if (!strcasecmp(utype, "device")) {
 			// check minimum requirements for a device
@@ -2754,7 +2753,7 @@ boolean_t sccp_config_readDevicesLines(sccp_readingtype_t readingtype)
 
 			if ((!(!sccp_strlen_zero(pbx_variable_retrieve(GLOB(cfg), cat, "label"))) && (!sccp_strlen_zero(pbx_variable_retrieve(GLOB(cfg), cat, "cid_name")))
 			     && (!sccp_strlen_zero(pbx_variable_retrieve(GLOB(cfg), cat, "cid_num"))))) {
-				pbx_log(LOG_WARNING, "Unknown type '%s' for '%s' in %s\n", utype, cat, "sccp.conf");
+				pbx_log(LOG_WARNING, "SCCP: line [%s] skipped: it sets cid_name and cid_num but has no label\n", cat);
 				continue;
 			}
 			line_count++;
@@ -2775,13 +2774,13 @@ boolean_t sccp_config_readDevicesLines(sccp_readingtype_t readingtype)
 		} else if (!strcasecmp(utype, "softkeyset")) {
 			sccp_log((DEBUGCAT_CONFIG))(VERBOSE_PREFIX_2 "parsing softkey [%s]\n", cat);
 			if (sccp_strcaseequals(cat, "default")) {
-				pbx_log(LOG_WARNING, "SCCP: (sccp_config_readDevicesLines) The 'default' softkeyset cannot be overriden, please use another name\n");
+				pbx_log(LOG_WARNING, "SCCP: softkeyset [default] is built in and cannot be redefined; section skipped\n");
 			} else {
 				v = ast_variable_browse(GLOB(cfg), cat);
 				sccp_config_softKeySet(v, cat);
 			}
 		} else {
-			pbx_log(LOG_WARNING, "SCCP: (sccp_config_readDevicesLines) UNKNOWN SECTION / UTYPE, type: %s\n", utype);
+			pbx_log(LOG_WARNING, "SCCP: sccp.conf section [%s] has type=%s, which is not device, line or softkeyset; section skipped\n", cat, utype);
 		}
 	}
 	sccp_config_add_default_softkeyset();
@@ -2985,12 +2984,12 @@ sccp_config_file_status_t sccp_config_getConfig(boolean_t force, const char * co
 
 	GLOB(cfg) = pbx_config_load(newfilename, "chan_sccp", config_flags);
 	if (GLOB(cfg) == CONFIG_STATUS_FILEMISSING) {
-		pbx_log(LOG_ERROR, "Config file '%s' not found, aborting (re)load.\n", newfilename);
+		pbx_log(LOG_ERROR, "SCCP: config file '%s' not found; (re)load aborted\n", newfilename);
 		GLOB(cfg) = NULL;
 		res       = CONFIG_STATUS_FILE_NOT_FOUND;
 		goto FUNC_EXIT;
 	} else if (GLOB(cfg) == CONFIG_STATUS_FILEINVALID) {
-		pbx_log(LOG_ERROR, "Config file '%s' specified is not a valid config file, aborting (re)load.\n", newfilename);
+		pbx_log(LOG_ERROR, "SCCP: config file '%s' could not be parsed; (re)load aborted\n", newfilename);
 		GLOB(cfg) = NULL;
 		res       = CONFIG_STATUS_FILE_INVALID;
 		goto FUNC_EXIT;
@@ -3008,23 +3007,20 @@ sccp_config_file_status_t sccp_config_getConfig(boolean_t force, const char * co
 	}
 	if (GLOB(cfg)) {
 		if (ast_variable_browse(GLOB(cfg), "devices")) { /* Warn user when old entries exist in sccp.conf */
-			pbx_log(LOG_ERROR,
-				"\n\n --> You are using an old configuration format, please update '%s'!!\n --> Loading of module chan_sccp with current sccp.conf has terminated\n --> Check "
-				"https://github.com/chan-sccp/chan-sccp/wiki/How-to-setup-the-chan_sccp-Module for more information.\n\n",
-				newfilename);
+			pbx_log(LOG_ERROR, "SCCP: '%s' uses the old format with a [devices] section, which is no longer supported; (re)load aborted\n", newfilename);
 			pbx_config_destroy(GLOB(cfg));
 			GLOB(cfg) = NULL;
 			res       = CONFIG_STATUS_FILE_OLD;
 			goto FUNC_EXIT;
 		} else if (!ast_variable_browse(GLOB(cfg), "general")) {
-			pbx_log(LOG_ERROR, "Missing [general] section, SCCP disabled\n");
+			pbx_log(LOG_ERROR, "SCCP: sccp.conf has no [general] section; (re)load aborted\n");
 			pbx_config_destroy(GLOB(cfg));
 			GLOB(cfg) = NULL;
 			res       = CONFIG_STATUS_FILE_NOT_SCCP;
 			goto FUNC_EXIT;
 		}
 	} else {
-		pbx_log(LOG_ERROR, "Missing Glob(cfg)\n");
+		pbx_log(LOG_ERROR, "SCCP: loading sccp.conf failed without a reason from Asterisk; (re)load aborted\n");
 		GLOB(cfg) = NULL;
 		res       = CONFIG_STATUS_FILE_NOT_FOUND;
 		goto FUNC_EXIT;
@@ -3588,16 +3584,16 @@ static int _config_generate_wiki(char * filename)
 	char                      fn[PATH_MAX];
 
 	snprintf(fn, sizeof(fn), "%s/%s", ast_config_AST_CONFIG_DIR, filename);
-	pbx_log(LOG_NOTICE, "Creating new wiki file '%s'\n", fn);
+	pbx_log(LOG_NOTICE, "SCCP: writing option reference to '%s'\n", fn);
 
 	int fd = open(fn, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 	if (fd == -1) {
-		pbx_log(LOG_WARNING, "Error creating new config file: %s\n", strerror(errno));
+		pbx_log(LOG_WARNING, "SCCP: could not create '%s' (it must not already exist): %s\n", fn, strerror(errno));
 		return -1;
 	}
 	FILE * f = fdopen(fd, "w+");
 	if (!f) {
-		pbx_log(LOG_WARNING, "Error opening new wiki file: %s\n", strerror(errno));
+		pbx_log(LOG_WARNING, "SCCP: could not open '%s' for writing: %s\n", fn, strerror(errno));
 		close(fd);
 		return -2;
 	}
@@ -3611,9 +3607,8 @@ static int _config_generate_wiki(char * filename)
 	for (segment = SCCP_CONFIG_GLOBAL_SEGMENT; segment <= SCCP_CONFIG_SOFTKEY_SEGMENT; segment++) {
 		sccpConfigSegment = sccp_find_segment((sccp_config_segment_t)segment);
 		if (!sccpConfigSegment) {
-			pbx_log(LOG_ERROR, "Could not find segment:%d\n", (int)segment);
-			fclose(f);
-			close(fd);
+			pbx_log(LOG_ERROR, "SCCP: config segment %d does not exist (caller bug)\n", (int)segment);
+			fclose(f); /* also closes fd */
 			return -3;
 		}
 
@@ -3692,17 +3687,15 @@ static int _config_generate_wiki(char * filename)
 				sccp_free(option_name_tokens);
 				sccp_free(option_value_tokens);
 			} else {
-				pbx_log(LOG_ERROR, "Error creating new variable structure for %s='%s'\n", config[sccp_option].name, config[sccp_option].defaultValue);
-				fclose(f);
-				close(fd);
+				pbx_log(LOG_ERROR, "SCCP: out of memory while writing option %s; '%s' is incomplete\n", config[sccp_option].name, fn);
+				fclose(f); /* also closes fd */
 				return 2;
 			}
 		}
 		fprintf(f, "</table><br>\n");
 	}
-	fclose(f);
-	close(fd);
-	pbx_log(LOG_NOTICE, "Created new wiki file '%s'\n", fn);
+	fclose(f); /* also closes fd */
+	pbx_log(LOG_NOTICE, "SCCP: wrote option reference to '%s'\n", fn);
 
 	return 0;
 };
@@ -3735,16 +3728,16 @@ int sccp_config_generate(char * filename, int configType)
 	char fn[PATH_MAX];
 
 	snprintf(fn, sizeof(fn), "%s/%s", ast_config_AST_CONFIG_DIR, filename);
-	pbx_log(LOG_NOTICE, "Creating new config file '%s'\n", fn);
+	pbx_log(LOG_NOTICE, "SCCP: writing example configuration to '%s'\n", fn);
 
 	int fd = open(fn, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 	if (fd == -1) {
-		pbx_log(LOG_WARNING, "Error creating new config file: %s\n", strerror(errno));
+		pbx_log(LOG_WARNING, "SCCP: could not create '%s' (it must not already exist): %s\n", fn, strerror(errno));
 		return -1;
 	}
 	FILE * f = fdopen(fd, "w+");
 	if (!f) {
-		pbx_log(LOG_WARNING, "Error opening new config file: %s\n", strerror(errno));
+		pbx_log(LOG_WARNING, "SCCP: could not open '%s' for writing: %s\n", fn, strerror(errno));
 		close(fd);
 		return -2;
 	}
@@ -3771,9 +3764,8 @@ int sccp_config_generate(char * filename, int configType)
 	for (segment = SCCP_CONFIG_GLOBAL_SEGMENT; segment <= SCCP_CONFIG_SOFTKEY_SEGMENT; segment++) {
 		sccpConfigSegment = sccp_find_segment((sccp_config_segment_t)segment);
 		if (!sccpConfigSegment) {
-			pbx_log(LOG_ERROR, "Could not find segment:%d\n", (int)segment);
-			fclose(f);
-			close(fd);
+			pbx_log(LOG_ERROR, "SCCP: config segment %d does not exist (caller bug)\n", (int)segment);
+			fclose(f); /* also closes fd */
 			return -3;
 		}
 		if (configType == 0 && (segment == SCCP_CONFIG_DEVICE_SEGMENT || segment == SCCP_CONFIG_LINE_SEGMENT)) {
@@ -3882,18 +3874,16 @@ int sccp_config_generate(char * filename, int configType)
 						}
 					}
 				} else {
-					pbx_log(LOG_ERROR, "Error creating new variable structure for %s='%s'\n", config[sccp_option].name, config[sccp_option].defaultValue);
-					fclose(f);
-					close(fd);
+					pbx_log(LOG_ERROR, "SCCP: out of memory while writing option %s; '%s' is incomplete\n", config[sccp_option].name, fn);
+					fclose(f); /* also closes fd */
 					return 2;
 				}
 			}
 		}
 		sccp_log((DEBUGCAT_CONFIG))("\n");
 	}
-	fclose(f);
-	close(fd);
-	pbx_log(LOG_NOTICE, "Created new config file '%s'\n", fn);
+	fclose(f); /* also closes fd */
+	pbx_log(LOG_NOTICE, "SCCP: wrote example configuration to '%s'\n", fn);
 
 	return 0;
 };

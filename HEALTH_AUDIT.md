@@ -1,5 +1,47 @@
 # chan_sccp-modern Health Audit
 
+## In progress — message-quality pass (started 2026-09-23)
+
+Every always-visible message (`pbx_log` ERROR/WARNING/NOTICE) is being
+rewritten file by file, after reading the code around it, to the approved
+style: `<device or session>: <what happened>; <what the system did>`, naming
+the real `sccp.conf` option, labelling internal misuse "(caller bug)", and no
+instructions or links to the dead upstream project. Routine or default events
+move to debug `sccp_log`. Order: `sccp_actions.c`, `sccp_config.c`,
+`sccp_channel.c` (done), then `ast120.c`, `sccp_device.c`, `sccp_feature.c`,
+`sccp_conference.c`, `sccp_pbx.c`, `sccp_cli.c`, `sccp_session.c`, the rest;
+then CLI/AMI output and phone prompts; debug `sccp_log` last.
+
+Messages that described the wrong outcome (now corrected): token fallback
+failures said nothing about the token being refused; "Unable to schedule
+dialing" was a hangup; "Call has already been hungup" was the code ending the
+call itself; "active channel from a different device, skipping" did not skip;
+the answer-failure log passed NULL to `%s`.
+
+Behavior bugs found and fixed along the way:
+- Transfer and Conference buttons had no `return` after acting, so every
+  press with an active call also logged "no call" and played the reject tone.
+- Boolean options and `privacy`: the invalid-value branch was unreachable
+  (`sccp_true(v) … else if (!sccp_true(v))`), so typos silently meant "off".
+  Now uses `sccp_false()`; invalid values are reported and ignored.
+- `sccp_channel_allocate()` leaked a line reference on its two early returns.
+- Config/wiki generators closed the file descriptor twice (`fclose` then
+  `close(fd)`) on every run.
+
+Found, not changed (need a decision):
+- Token backoff: `registrationTime < time(0) + backoff` is always true, so a
+  device whose token was refused once keeps being refused; likely meant
+  `time(0) < registrationTime + backoff`.
+- Hotline registration path uses `GLOB(hotline)->line->name` without the NULL
+  check the token path has.
+- Line sections with cid_name and cid_num but no label are skipped (same
+  condition upstream); intent unclear.
+- `sccp_channel_resume()` calls `pbx_channel_unref()` before
+  `pbx_channel_unlock()` on the same channel.
+
+Validation so far: wadsworth build with `-Wall -Wformat=2` clean, `make
+check` passes. Not deployed.
+
 ## Fixed — findings from strict-warning and `-fanalyzer` builds (2026-09-23)
 
 Found by building with `-O2 -Wall -Wextra` plus extra checks and with GCC 14

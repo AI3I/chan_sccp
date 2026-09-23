@@ -102,7 +102,7 @@ static void setToneWithoutLineDevice(constChannelPtr c, skinny_tone_t tone, skin
 	pbx_assert(c);
 	AUTO_RELEASE(sccp_device_t, d, sccp_channel_getDevice(c));
 	if(!d) {
-		pbx_log(LOG_NOTICE, "%s: (%s) No device attached to this channel\n", c->designator, __func__);
+		sccp_log((DEBUGCAT_CHANNEL))(VERBOSE_PREFIX_3 "%s: tone not changed: the call has no device attached\n", c->designator);
 		return;
 	}
 	sccp_dev_stoptone(d, 0, c->callid);
@@ -158,7 +158,7 @@ static void makeProgress(channelPtr c)
 
 			AUTO_RELEASE(sccp_device_t, d, sccp_channel_getDevice(c));
 			if(!d) {
-				pbx_log(LOG_ERROR, "%s: (%s) Could not retrieve device from channel\n", c->designator, __func__);
+				pbx_log(LOG_WARNING, "%s: receive channel not opened after NAT hole punch: the call has no device attached\n", c->designator);
 				return;
 			}
 
@@ -202,15 +202,17 @@ channelPtr sccp_channel_allocate(constLinePtr l, constDevicePtr device)
 	sccp_line_t *refLine = sccp_line_retain(l);
 
 	if (!refLine) {
-		pbx_log(LOG_ERROR, "SCCP: Could not retain line to create a channel on it, giving up!\n");
+		pbx_log(LOG_ERROR, "SCCP: call not created: its line is being removed\n");
 		return NULL;
 	}
 	if (sccp_strlen_zero(refLine->name) || sccp_strlen_zero(refLine->context) || !pbx_context_find(refLine->context)) {
-		pbx_log(LOG_ERROR, "SCCP: line with empty name, empty context or non-existent context provided, aborting creation of new channel\n");
+		pbx_log(LOG_ERROR, "SCCP: call not created on line '%s': context '%s' is empty or does not exist in the dialplan\n", refLine->name, refLine->context ? refLine->context : "");
+		sccp_line_release(&refLine);								// explicit release
 		return NULL;
 	}
 	if (device && !device->session) {
-		pbx_log(LOG_ERROR, "SCCP: Tried to open channel on device %s without a session\n", device->id);
+		pbx_log(LOG_WARNING, "%s: call not created on line %s: the device has no connection\n", device->id, refLine->name);
+		sccp_line_release(&refLine);								// explicit release
 		return NULL;
 	}
 
@@ -220,7 +222,7 @@ channelPtr sccp_channel_allocate(constLinePtr l, constDevicePtr device)
 	if (callCount < 0xFFFFFFFF) {						/* callcount limit should be reset at his upper limit :) */
 		callid = callCount++;
 	} else {
-		pbx_log(LOG_NOTICE, "%s: CallId re-starting at 00000001\n", device->id);
+		pbx_log(LOG_NOTICE, "%s: call ID counter wrapped around; restarting at 1\n", DEV_ID_LOG(device));
 		callCount = 1;
 		callid = callCount;
 	}
@@ -231,7 +233,7 @@ channelPtr sccp_channel_allocate(constLinePtr l, constDevicePtr device)
 		/* allocate new channel */
 		channel = (sccp_channel_t *) sccp_refcount_object_alloc(sizeof(sccp_channel_t), SCCP_REF_CHANNEL, designator, __sccp_channel_destroy);
 		if (!channel) {
-			pbx_log(LOG_ERROR, "%s: No memory to allocate channel on line %s\n", l->id, l->name);
+			pbx_log(LOG_ERROR, "%s: call not created on line %s: out of memory\n", l->id, l->name);
 			break;
 		}
 		pbx_mutex_init(&channel->lock);
@@ -241,7 +243,7 @@ channelPtr sccp_channel_allocate(constLinePtr l, constDevicePtr device)
 		/* allocate resources */
 		private_data = (struct sccp_private_channel_data *)sccp_calloc(sizeof *private_data, 1);
 		if (!private_data) {
-			pbx_log(LOG_ERROR, "%s: No memory to allocate channel private data on line %s\n", l->id, l->name);
+			pbx_log(LOG_ERROR, "%s: call not created on line %s: out of memory\n", l->id, l->name);
 			break;
 		}
 		
@@ -875,7 +877,7 @@ void sccp_channel_openReceiveChannel(constChannelPtr channel)
 	sccp_rtp_t * audio = (sccp_rtp_t *)&(channel->rtp.audio);
 
 	if(channel->isHangingUp || !channel->owner || pbx_check_hangup_locked(channel->owner)) {
-		pbx_log(LOG_ERROR, "%s: (%s) Channel already hanging up\n", channel->designator, __func__);
+		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: not opening the receive channel: the call is already hanging up\n", channel->designator);
 		return;
 	}
 
@@ -886,7 +888,7 @@ void sccp_channel_openReceiveChannel(constChannelPtr channel)
 
 	AUTO_RELEASE(sccp_device_t, d , sccp_channel_getDevice(channel));
 	if (!d) {
-		pbx_log(LOG_ERROR, "%s: (%s) Could not retrieve device from channel\n", channel->designator, __func__);
+		pbx_log(LOG_WARNING, "%s: opening the receive channel skipped: the call has no device attached\n", channel->designator);
 		return;
 	}
 
@@ -898,7 +900,7 @@ void sccp_channel_openReceiveChannel(constChannelPtr channel)
 
 	/* create the rtp stuff. It must be create before setting the channel AST_STATE_UP. otherwise no audio will be played */
 	if (!channel->rtp.audio.instance && !sccp_rtp_createServer(d, (channelPtr)channel, SCCP_RTP_AUDIO)) {			// discard const
-		pbx_log(LOG_WARNING, "%s: Error opening RTP for channel %s\n", d->id, channel->designator);
+		pbx_log(LOG_WARNING, "%s: could not create the audio RTP instance for call %s; reorder tone played, call has no audio\n", d->id, channel->designator);
 		channel->setTone(channel, SKINNY_TONE_REORDERTONE, SKINNY_TONEDIRECTION_USER);
 		return;
 	}
@@ -928,7 +930,7 @@ int sccp_channel_receiveChannelOpen(sccp_device_t *d, sccp_channel_t *c)
 
 	// check channel state
 	if (!audio->instance) {
-		pbx_log(LOG_ERROR, "%s: Channel has no rtp instance!\n", d->id);
+		pbx_log(LOG_ERROR, "%s: phone opened the receive channel for call %s, which has no audio RTP instance; call ended\n", d->id, c->designator);
 		sccp_channel_endcall(c);											// FS - 350
 		return SCCP_RTP_STATUS_INACTIVE;
 	}
@@ -983,7 +985,7 @@ void sccp_channel_closeReceiveChannel(constChannelPtr channel, boolean_t KeepPor
 	AUTO_RELEASE(sccp_device_t, d , sccp_channel_getDevice(channel));
 
 	if (!d) {
-		pbx_log(LOG_ERROR, "%s: (closeReceiveChannel) Could not retrieve device from channel\n", channel->designator);
+		pbx_log(LOG_WARNING, "%s: receive channel not closed on the phone: the call has no device attached\n", channel->designator);
 		return;
 	}
 	// stop transmitting before closing receivechannel (\note maybe we should not be doing this here)
@@ -1021,7 +1023,7 @@ void sccp_channel_startMediaTransmission(constChannelPtr channel)
 	sccp_rtp_t *audio = (sccp_rtp_t *) &(channel->rtp.audio);
 
 	if(channel->isHangingUp || !channel->owner || pbx_check_hangup_locked(channel->owner)) {
-		pbx_log(LOG_ERROR, "%s: (%s) Channel already hanging up\n", channel->designator, __func__);
+		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: not starting media transmission: the call is already hanging up\n", channel->designator);
 		return;
 	}
 
@@ -1032,7 +1034,7 @@ void sccp_channel_startMediaTransmission(constChannelPtr channel)
 
 	AUTO_RELEASE(sccp_device_t, d , sccp_channel_getDevice(channel));
 	if (!d) {
-		pbx_log(LOG_ERROR, "%s: (%s) Could not retrieve device from channel\n", channel->designator, __func__);
+		pbx_log(LOG_WARNING, "%s: starting media transmission skipped: the call has no device attached\n", channel->designator);
 		sccp_channel_closeReceiveChannel(channel, FALSE);
 		return;
 	}
@@ -1078,7 +1080,7 @@ int sccp_channel_mediaTransmissionStarted(devicePtr d, channelPtr c)
 	sccp_rtp_t * audio = &(c->rtp.audio);
 	// check channel state
 	if (!audio->instance) {
-		pbx_log(LOG_ERROR, "%s: Channel has no rtp instance!\n", d->id);
+		pbx_log(LOG_ERROR, "%s: phone started transmitting on call %s, which has no audio RTP instance; call ended\n", d->id, c->designator);
 		sccp_channel_endcall(c);											// FS - 350
 		return SCCP_RTP_STATUS_INACTIVE;
 	}
@@ -1114,7 +1116,7 @@ void sccp_channel_stopMediaTransmission(constChannelPtr channel, boolean_t KeepP
 
 	AUTO_RELEASE(sccp_device_t, d , sccp_channel_getDevice(channel));
 	if (!d) {
-		pbx_log(LOG_ERROR, "%s: (stopMediaTransmission) Could not retrieve device from channel\n", channel->designator);
+		pbx_log(LOG_WARNING, "%s: media transmission not stopped on the phone: the call has no device attached\n", channel->designator);
 		return;
 	}
 	// stopping phone rtp
@@ -1170,7 +1172,7 @@ void sccp_channel_openMultiMediaReceiveChannel(constChannelPtr channel)
 	sccp_rtp_t *video = (sccp_rtp_t *) &(channel->rtp.video);
 
 	if(channel->isHangingUp || !channel->owner || pbx_check_hangup_locked(channel->owner)) {
-		pbx_log(LOG_ERROR, "%s: (%s) Channel already hanging up\n", channel->designator, __func__);
+		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: not opening the video receive channel: the call is already hanging up\n", channel->designator);
 		return;
 	}
 
@@ -1181,17 +1183,17 @@ void sccp_channel_openMultiMediaReceiveChannel(constChannelPtr channel)
 
 	AUTO_RELEASE(sccp_device_t, d, sccp_channel_getDevice(channel));
 	if(!d) {
-		pbx_log(LOG_ERROR, "%s: (%s) Could not retrieve device from channel\n", channel->designator, __func__);
+		pbx_log(LOG_WARNING, "%s: opening the video receive channel skipped: the call has no device attached\n", channel->designator);
 		return;
 	}
 
 	if (sccp_channel_getVideoMode(channel) == SCCP_VIDEO_MODE_OFF || !sccp_device_isVideoSupported(d)) {
-		pbx_log(LOG_WARNING, "%s: (openMultiMediaReceiveChannel) No video supported on device:%s or turning off. returning.\n", channel->designator, d->id);
+		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: video receive channel not opened: video is off for this call or %s does not support video\n", channel->designator, d->id);
 		return;
 	}
 
 	if (!video->instance && !sccp_rtp_createServer(d, (channelPtr)channel, SCCP_RTP_VIDEO)) {				// discard const
-		pbx_log(LOG_WARNING, "%s: (openMultiMediaReceiveChannel) Could not start vrtp on device:%s. returning\n", channel->designator, d->id);
+		pbx_log(LOG_WARNING, "%s: could not create the video RTP instance for %s; video turned off for this call\n", channel->designator, d->id);
 		sccp_channel_setVideoMode((channelPtr)channel, "off");								// discard const
 		return;
 	}
@@ -1225,7 +1227,7 @@ int sccp_channel_receiveMultiMediaChannelOpen(constDevicePtr d, channelPtr c)
 	sccp_rtp_t * video = &(c->rtp.video);
 	// check channel state
 	if (!video->instance) {
-		pbx_log(LOG_ERROR, "%s: Channel has no rtp instance!\n", d->id);
+		pbx_log(LOG_ERROR, "%s: phone opened the video receive channel for call %s, which has no video RTP instance\n", d->id, c->designator);
 		sccp_channel_endcall(c);											// FS - 350
 		return SCCP_RTP_STATUS_INACTIVE;
 	}
@@ -1273,7 +1275,7 @@ void sccp_channel_closeMultiMediaReceiveChannel(constChannelPtr channel, boolean
 
 	AUTO_RELEASE(sccp_device_t, d , sccp_channel_getDevice(channel));
 	if (!d) {
-		pbx_log(LOG_ERROR, "%s: (closeMultiMediaReceiveChannel) Could not retrieve device from channel\n", channel->designator);
+		pbx_log(LOG_WARNING, "%s: video receive channel not closed on the phone: the call has no device attached\n", channel->designator);
 		return;
 	}
 	// stop transmitting before closing receivechannel (\note maybe we should not be doing this here)
@@ -1315,7 +1317,7 @@ void sccp_channel_startMultiMediaTransmission(constChannelPtr channel)
 	sccp_rtp_t *video = (sccp_rtp_t *) &(channel->rtp.video);
 
 	if(channel->isHangingUp || !channel->owner || pbx_check_hangup_locked(channel->owner)) {
-		pbx_log(LOG_ERROR, "%s: (%s) Channel already hanging up\n", channel->designator, __func__);
+		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: not starting video transmission: the call is already hanging up\n", channel->designator);
 		return;
 	}
 
@@ -1326,13 +1328,13 @@ void sccp_channel_startMultiMediaTransmission(constChannelPtr channel)
 
 	AUTO_RELEASE(sccp_device_t, d, sccp_channel_getDevice(channel));
 	if(!d) {
-		pbx_log(LOG_ERROR, "%s: (%s) Could not retrieve device from channel\n", channel->designator, __func__);
+		pbx_log(LOG_WARNING, "%s: starting video transmission skipped: the call has no device attached\n", channel->designator);
 		sccp_channel_closeMultiMediaReceiveChannel(channel, FALSE);
 		return;
 	}
 
 	if (sccp_channel_getVideoMode(channel) == SCCP_VIDEO_MODE_OFF || !sccp_device_isVideoSupported(d)) {
-		pbx_log(LOG_WARNING, "%s: (openMultiMediaTransmission) No video supported on device:%s or turning off. returning.\n", channel->designator, d->id);
+		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: video transmission not started: video is off for this call or %s does not support video\n", channel->designator, d->id);
 		return;
 	}
 	
@@ -1377,7 +1379,7 @@ int sccp_channel_multiMediaTransmissionStarted(constDevicePtr d, channelPtr c)
 	sccp_rtp_t * video = &(c->rtp.video);
 	// check channel state
 	if (!video->instance) {
-		pbx_log(LOG_ERROR, "%s: Channel has no vrtp instance!\n", d->id);
+		pbx_log(LOG_ERROR, "%s: phone started video transmission on call %s, which has no video RTP instance\n", d->id, c->designator);
 		sccp_channel_endcall(c);											// FS - 350
 		return SCCP_RTP_STATUS_INACTIVE;
 	}
@@ -1415,7 +1417,7 @@ void sccp_channel_stopMultiMediaTransmission(constChannelPtr channel, boolean_t 
 
 	AUTO_RELEASE(sccp_device_t, d , sccp_channel_getDevice(channel));
 	if (!d) {
-		pbx_log(LOG_ERROR, "%s: (stopMultiMediaReceiveChannel) Could not retrieve device from channel\n", channel->designator);
+		pbx_log(LOG_WARNING, "%s: video transmission not stopped on the phone: the call has no device attached\n", channel->designator);
 		return;
 	}
 	// stopping phone vrtp
@@ -1565,7 +1567,7 @@ gcc_inline void sccp_channel_schedule_hangup(constChannelPtr channel, int timeou
 	if (c && c->scheduler.hangup_id == -1 && !ATOMIC_FETCH(&c->scheduler.deny, &c->scheduler.lock)) {	
 		res = iPbx.sched_add_ref(&c->scheduler.hangup_id, timeout, _sccp_channel_sched_endcall, c);
 		if (res < 0) {
-			pbx_log(LOG_NOTICE, "%s: Unable to schedule dialing in '%d' ms\n", c->designator, timeout);
+			pbx_log(LOG_WARNING, "%s: could not schedule the hangup in %d ms; the call will not be ended automatically\n", c->designator, timeout);
 		}
 	}
 }
@@ -1642,7 +1644,7 @@ gcc_inline void sccp_channel_stop_schedule_cfwd_noanswer(constChannelPtr channel
 void sccp_channel_endcall(channelPtr channel)
 {
 	if (!channel || !channel->line) {
-		pbx_log(LOG_WARNING, "No channel or line or device to hangup\n");
+		pbx_log(LOG_WARNING, "SCCP: sccp_channel_endcall() was called without a call or its line (caller bug)\n");
 		return;
 	}
 	channel->isHangingUp = TRUE;
@@ -1690,13 +1692,13 @@ channelPtr sccp_channel_getEmptyChannel(constLinePtr l, constDevicePtr d, channe
 				channel->calltype = calltype;
 				return channel;
 			} else if (call_associated_device && call_associated_device == d && !sccp_channel_hold(c)) {
-				pbx_log(LOG_ERROR, "%s: Putting Active Channel %s OnHold failed -> Cancelling new CaLL\n", d->id, c->designator);
+				pbx_log(LOG_WARNING, "%s: new call not started: could not put active call %s on hold\n", d->id, c->designator);
 				return NULL;
 			}
 		}
 	}
 	if (!channel && !(channel = sccp_channel_allocate(l, d))) {
-		pbx_log(LOG_ERROR, "%s: Can't allocate SCCP channel for line %s\n", d->id, l->name);
+		pbx_log(LOG_WARNING, "%s: new call on line %s not started: the call could not be created (see the previous message)\n", d->id, l->name);
 		return NULL;
 	}
 	channel->calltype = calltype;
@@ -1725,13 +1727,13 @@ channelPtr sccp_channel_newcall(constLinePtr l, constDevicePtr device, const cha
 {
 	/* handle outgoing calls */
 	if (!l || !device) {
-		pbx_log(LOG_ERROR, "SCCP: Can't allocate SCCP channel if device or line is not defined!\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_channel_newcall() was called without a line or device (caller bug)\n");
 		return NULL;
 	}
 
 	sccp_channel_t * const channel = sccp_channel_getEmptyChannel(l, device, NULL, calltype, parentChannel, ids);
 	if (!channel) {
-		pbx_log(LOG_ERROR, "%s: Can't allocate SCCP channel for line %s\n", device->id, l->name);
+		pbx_log(LOG_WARNING, "%s: new call on line %s not started: the call could not be created (see the previous message)\n", device->id, l->name);
 		return NULL;
 	}
 
@@ -1872,7 +1874,7 @@ static void channel_answer_completion(constChannelPtr channel)
 				*/
 				/** check for monitor request */
 				if((d->monitorFeature.status & SCCP_FEATURE_MONITOR_STATE_REQUESTED) && !(d->monitorFeature.status & SCCP_FEATURE_MONITOR_STATE_ACTIVE)) {
-					pbx_log(LOG_NOTICE, "%s: request monitor\n", d->id);
+					pbx_log(LOG_NOTICE, "%s: starting the recording requested with the monitor feature on call %s\n", d->id, c->designator);
 					sccp_feat_monitor(d, NULL, 0, c);
 				}
 				c->subscribers = 1;
@@ -1899,7 +1901,7 @@ static void channel_answer_completion(constChannelPtr channel)
 #endif
 				sccp_log((DEBUGCAT_CHANNEL + DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: (%s) Answered channel %s\n", d->id, __func__, c->designator);
 			} else {
-				pbx_log(LOG_WARNING, "%s: (%s) Attempted to answer channel '%s' but someone else beat us to it (actual state:%s)\n", DEV_ID_LOG(d), __func__, c->designator,
+				pbx_log(LOG_NOTICE, "%s: call %s was not answered here: it was already answered elsewhere (Asterisk state %s)\n", DEV_ID_LOG(d), c->designator,
 					pbx_state2str(ast_channel_state(pbx_channel)));
 			}
 			pbx_channel_unref(pbx_channel);                                         // reffed by sccp_channel_lock_full
@@ -1934,7 +1936,7 @@ static void channel_answer_completion(constChannelPtr channel)
 void sccp_channel_answer(constDevicePtr device, channelPtr channel)
 {
 	if(!channel || !channel->line || !channel->owner || !device) {
-		pbx_log(LOG_ERROR, "%s: (%s) Answering on unknown channel/device\n", (channel ? channel->designator : 0), __func__);
+		pbx_log(LOG_WARNING, "%s: answer ignored: the call, its line, its Asterisk channel or the device is missing\n", channel ? channel->designator : "SCCP");
 		return;
 	}
 	sccp_log(DEBUGCAT_CHANNEL)(VERBOSE_PREFIX_1 "%s (sccp_channel_answer) processing answer.\n", channel->designator);
@@ -1944,7 +1946,7 @@ void sccp_channel_answer(constDevicePtr device, channelPtr channel)
 
 	AUTO_RELEASE(sccp_channel_t, previous_channel, sccp_device_getActiveChannel(device));
 	if(previous_channel && previous_channel != channel && !sccp_channel_hold(previous_channel)) {
-		pbx_log(LOG_ERROR, "%s: Putting Active Channel:%s OnHold failed -> While trying to answer incoming call:%s. Skipping answer!\n", device->id, previous_channel->designator, channel->designator);
+		pbx_log(LOG_WARNING, "%s: incoming call %s not answered: could not put active call %s on hold\n", device->id, channel->designator, previous_channel->designator);
 		return;
 	}
 
@@ -1981,7 +1983,7 @@ void sccp_channel_answer(constDevicePtr device, channelPtr channel)
 				SCCP_LIST_UNLOCK(&l->devices);
 			}
 		} else {
-			pbx_log(LOG_WARNING, "%s: (%s) Attempted to answer channel '%s' but someone else beat us to it (actual state:%s)\n", DEV_ID_LOG(device), __func__, channel->designator,
+			pbx_log(LOG_NOTICE, "%s: call %s was not answered here: it was already answered elsewhere (Asterisk state %s)\n", DEV_ID_LOG(device), channel->designator,
 				pbx_state2str(ast_channel_state(pbx_channel)));
 		}
 		pbx_channel_unref(pbx_channel);                                         // reffed by sccp_channel_lock_full
@@ -2004,24 +2006,24 @@ int sccp_channel_hold(channelPtr channel)
 	uint16_t instance = 0;
 
 	if (!channel || !channel->line) {
-		pbx_log(LOG_WARNING, "SCCP: weird error. No channel provided to put on hold\n");
+		pbx_log(LOG_WARNING, "SCCP: sccp_channel_hold() was called without a call or its line (caller bug)\n");
 		return FALSE;
 	}
 
 	AUTO_RELEASE(sccp_line_t, l , sccp_line_retain(channel->line));
 	if (!l) {
-		pbx_log(LOG_WARNING, "SCCP: weird error. The channel %s has no line attached to it\n", channel->designator);
+		pbx_log(LOG_WARNING, "%s: hold failed: the call has no line\n", channel->designator);
 		return FALSE;
 	}
 
 	AUTO_RELEASE(sccp_device_t, d , sccp_channel_getDevice(channel));
 	if (!d) {
-		pbx_log(LOG_WARNING, "SCCP: weird error. The channel %s has no device attached to it\n", channel->designator);
+		pbx_log(LOG_WARNING, "%s: hold failed: the call has no device attached\n", channel->designator);
 		return FALSE;
 	}
 
 	if (channel->state == SCCP_CHANNELSTATE_HOLD) {
-		pbx_log(LOG_WARNING, "SCCP: Channel already on hold\n");
+		pbx_log(LOG_NOTICE, "%s: hold ignored: the call is already on hold\n", channel->designator);
 		return FALSE;
 	}
 
@@ -2100,7 +2102,7 @@ static int channel_resume_locked(devicePtr d, linePtr l, channelPtr channel, boo
 				sccp_log(DEBUGCAT_CHANNEL)(VERBOSE_PREFIX_3 "%s: active channel is brand new and unused, hanging it up before resuming another\n", sccp_active_channel->designator);
 				sccp_channel_endcall(sccp_active_channel);
 			} else if (!(sccp_channel_hold(sccp_active_channel))) {				// hold failed, give up
-				pbx_log(LOG_WARNING, "%s: swap_channels failed to put channel on hold. exiting\n", sccp_active_channel->designator);
+				pbx_log(LOG_WARNING, "%s: resume of %s not done: could not put this active call on hold first\n", sccp_active_channel->designator, channel->designator);
 				return FALSE;
 			}
 		}
@@ -2108,7 +2110,7 @@ static int channel_resume_locked(devicePtr d, linePtr l, channelPtr channel, boo
 
 	if (channel->state == SCCP_CHANNELSTATE_CONNECTED || channel->state == SCCP_CHANNELSTATE_CONNECTEDCONFERENCE || channel->state == SCCP_CHANNELSTATE_PROCEED) {
 		if (!(sccp_channel_hold(channel))) {
-			pbx_log(LOG_WARNING, "%s: channel still connected before resuming, put on hold failed. exiting\n", channel->designator);
+			pbx_log(LOG_WARNING, "%s: resume not done: the call is still connected and could not be put on hold first\n", channel->designator);
 			return FALSE;
 		}
 	}
@@ -2117,7 +2119,7 @@ static int channel_resume_locked(devicePtr d, linePtr l, channelPtr channel, boo
 	/* resume an active call */
 	if (channel->state != SCCP_CHANNELSTATE_HOLD && channel->state != SCCP_CHANNELSTATE_CALLTRANSFER && channel->state != SCCP_CHANNELSTATE_CALLCONFERENCE) {
 		/* something wrong in the code let's notify it for a fix */
-		pbx_log(LOG_ERROR, "%s can't resume the channel %s. Not on hold\n", d->id, channel->designator);
+		pbx_log(LOG_WARNING, "%s: resume of %s refused: the call is in state %s, not on hold or in a transfer/conference setup\n", d->id, channel->designator, sccp_channelstate2str(channel->state));
 		sccp_dev_displayprompt(d, instance, channel->callid, SKINNY_DISP_NO_ACTIVE_CALL_TO_PUT_ON_HOLD, SCCP_DISPLAYSTATUS_TIMEOUT);
 		return FALSE;
 	}
@@ -2235,18 +2237,18 @@ int sccp_channel_resume(constDevicePtr device, channelPtr channel, boolean_t swa
 	uint16_t instance = 0;
 	PBX_CHANNEL_TYPE * pbx_channel = NULL;
 	if(!channel || !channel->owner || !channel->line) {
-		pbx_log(LOG_WARNING, "SCCP: weird error. No channel provided to resume\n");
+		pbx_log(LOG_WARNING, "SCCP: sccp_channel_resume() was called without a call (caller bug)\n");
 		return FALSE;
 	}
 	AUTO_RELEASE(sccp_channel_t, c, sccp_channel_retain(channel));
 	if(!c) {
-		pbx_log(LOG_WARNING, "SCCP: weird error. The channel could not be retained.\n");
+		pbx_log(LOG_WARNING, "%s: resume not done: the call is being released\n", channel->designator);
 		return FALSE;
 	}
 	AUTO_RELEASE(sccp_device_t, d, sccp_device_retain(device));
 	AUTO_RELEASE(sccp_line_t, l, sccp_line_retain(c->line));
 	if(!d || !l) {
-		pbx_log(LOG_WARNING, "%s: weird error. The channel has no line or device\n", c->designator);
+		pbx_log(LOG_WARNING, "%s: resume not done: the call has no line or device\n", c->designator);
 		return FALSE;
 	}
 
@@ -2255,7 +2257,7 @@ int sccp_channel_resume(constDevicePtr device, channelPtr channel, boolean_t swa
 		pbx_channel_unref(pbx_channel);                                         // reffed by sccp_channel_lock_full
 		pbx_channel_unlock(pbx_channel);                                        // locked by sccp_channel_lock_full
 	} else {
-		pbx_log(LOG_WARNING, "%s: weird error. We could not get a reference to the pbx_channel, skipping resume.\n", c->designator);
+		pbx_log(LOG_WARNING, "%s: resume not done: the call's Asterisk channel is gone\n", c->designator);
 	}
 	sccp_channel_unlock(channel);                                        // locked by sccp_channel_lock_full
 	return instance;
@@ -2295,7 +2297,7 @@ void sccp_channel_clean(channelPtr channel)
 	sccp_selectedchannel_t * sccp_selected_channel = NULL;
 
 	if (!channel) {
-		pbx_log(LOG_ERROR, "SCCP:No channel provided to clean\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_channel_clean() was called without a call (caller bug)\n");
 		return;
 	}
 
@@ -2393,7 +2395,7 @@ int __sccp_channel_destroy(const void * data)
 {
 	sccp_channel_t * channel = (sccp_channel_t *) data;
 	if (!channel) {
-		pbx_log(LOG_NOTICE, "SCCP: channel destructor called with NULL pointer\n");
+		pbx_log(LOG_ERROR, "SCCP: call destructor was called without a call (refcount bug)\n");
 		return -1;
 	}
 	sccp_log((DEBUGCAT_CHANNEL)) (VERBOSE_PREFIX_3 "Destroying channel %s\n", channel->designator);
@@ -2458,7 +2460,7 @@ void sccp_channel_transfer(channelPtr channel, constDevicePtr device)
 	}
 
 	if (!(channel->line)) {
-		pbx_log(LOG_WARNING, "SCCP: weird error. The channel has no line on channel %d\n", channel->callid);
+		pbx_log(LOG_WARNING, "%s: transfer not started: call %d has no line\n", DEV_ID_LOG(device), channel->callid);
 		sccp_dev_displayprompt(device, 0, channel->callid, SKINNY_DISP_NO_LINE_TO_TRANSFER, GLOB(digittimeout));
 		return;
 	}
@@ -2473,13 +2475,13 @@ void sccp_channel_transfer(channelPtr channel, constDevicePtr device)
 			if (SCCP_LIST_GETSIZE(&channel->line->devices) == 1) {
 				d = sccp_device_retain(device) /*ref_replace*/;
 			} else {
-				pbx_log(LOG_WARNING, "%s: The channel %s is not attached to a particular device (hold on shared line, resume first)\n", DEV_ID_LOG(device), channel->designator);
+				pbx_log(LOG_NOTICE, "%s: transfer not started: held call %s is on a shared line and belongs to no device until it is resumed\n", DEV_ID_LOG(device), channel->designator);
 				instance = sccp_device_find_index_for_line(device, channel->line->name);
 				sccp_dev_displayprompt(device, instance, channel->callid, SKINNY_DISP_NO_LINE_TO_TRANSFER, GLOB(digittimeout));
 				return;
 			}
 		} else {
-			pbx_log(LOG_WARNING, "%s: The channel %s state is unclear. giving up\n", DEV_ID_LOG(device), channel->designator);
+			pbx_log(LOG_NOTICE, "%s: transfer not started: call %s is in state %s, which cannot be transferred\n", DEV_ID_LOG(device), channel->designator, sccp_channelstate2str(channel->state));
 			instance = sccp_device_find_index_for_line(device, channel->line->name);
 			sccp_dev_displayprompt(device, instance, channel->callid, SKINNY_DISP_NO_LINE_TO_TRANSFER, GLOB(digittimeout));
 			return;
@@ -2627,7 +2629,7 @@ void sccp_channel_transfer_cancel(devicePtr d, channelPtr c)
 		iPbx.queue_control_data(c->owner, AST_CONTROL_TRANSFER, &control_transfer_message, sizeof(control_transfer_message));
 		sccp_channel_transfer_release(d, transferee);			/* explicit release */
 	} else {
-		pbx_log(LOG_WARNING, "%s: (sccp_channel_transfer_cancel) Could not retain the transferee channel, giving up.\n", d->id);
+		pbx_log(LOG_WARNING, "%s: transfer cancel: the call being transferred is already gone\n", d->id);
 	}
 }
 
@@ -2656,11 +2658,11 @@ void sccp_channel_transfer_complete(channelPtr sccp_destination_local_channel)
 	AUTO_RELEASE(sccp_device_t, d , sccp_channel_getDevice(sccp_destination_local_channel));
 
 	if (!d) {
-		pbx_log(LOG_WARNING, "SCCP: weird error. The channel has no device on channel %d\n", sccp_destination_local_channel->callid);
+		pbx_log(LOG_WARNING, "SCCP: transfer not completed: call %d has no device attached\n", sccp_destination_local_channel->callid);
 		return;
 	}
 	if (!sccp_destination_local_channel->line) {
-		pbx_log(LOG_WARNING, "SCCP: weird error. The channel has no line on channel %d\n", sccp_destination_local_channel->callid);
+		pbx_log(LOG_WARNING, "SCCP: transfer not completed: call %d has no line\n", sccp_destination_local_channel->callid);
 		sccp_dev_displayprompt(d, instance, sccp_destination_local_channel->callid, SKINNY_DISP_NO_LINE_TO_TRANSFER, GLOB(digittimeout));
 		return;
 	}
@@ -2671,7 +2673,7 @@ void sccp_channel_transfer_complete(channelPtr sccp_destination_local_channel)
 	instance = sccp_device_find_index_for_line(d, sccp_destination_local_channel->line->name);
 
 	if (sccp_destination_local_channel->state != SCCP_CHANNELSTATE_RINGOUT && sccp_destination_local_channel->state != SCCP_CHANNELSTATE_CONNECTED && sccp_destination_local_channel->state != SCCP_CHANNELSTATE_PROGRESS) {
-		pbx_log(LOG_WARNING, "SCCP: Failed to complete transfer. The channel is not ringing or connected. ChannelState: %s (%d)\n", sccp_channelstate2str(sccp_destination_local_channel->state), sccp_destination_local_channel->state);
+		pbx_log(LOG_NOTICE, "%s: transfer not completed: the transfer target %s is in state %s, not ringing or connected\n", d->id, sccp_destination_local_channel->designator, sccp_channelstate2str(sccp_destination_local_channel->state));
 		goto EXIT;
 	}
 
@@ -2698,7 +2700,7 @@ void sccp_channel_transfer_complete(channelPtr sccp_destination_local_channel)
 	sccp_source_local_channel->channelStateReason = SCCP_CHANNELSTATEREASON_NORMAL;
 
 	if (!(pbx_source_remote_channel && pbx_destination_local_channel)) {
-		pbx_log(LOG_WARNING, "SCCP: Failed to complete transfer. Missing asterisk transferred or transferee channel\n");
+		pbx_log(LOG_WARNING, "%s: transfer not completed: the Asterisk channel of the transferred party or the transfer target is gone\n", d->id);
 		goto EXIT;
 	}
 
@@ -2777,7 +2779,7 @@ void sccp_channel_transfer_complete(channelPtr sccp_destination_local_channel)
 
 	sccp_channel_transfer_release(d, d->transferChannels.transferee);					/* explicit release */
 	if (!iPbx.attended_transfer(sccp_destination_local_channel, sccp_source_local_channel)) {
-		pbx_log(LOG_WARNING, "SCCP: Failed to masquerade %s into %s\n", pbx_channel_name(pbx_destination_local_channel), pbx_channel_name(pbx_source_remote_channel));
+		pbx_log(LOG_WARNING, "%s: transfer not completed: Asterisk could not bridge %s to %s\n", d->id, pbx_channel_name(pbx_source_remote_channel), pbx_channel_name(pbx_destination_local_channel));
 		goto EXIT;
 	}
 
@@ -2834,7 +2836,7 @@ int sccp_channel_forward(constChannelPtr sccp_channel_parent, constLineDevicePtr
 {
 	char dialedNumber[256];
 	if (!sccp_channel_parent) {
-		pbx_log(LOG_ERROR, "We can not forward a call without parent channel\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_channel_forward() was called without the call to forward (caller bug)\n");
 		return -1;
 	}
 
@@ -2842,7 +2844,7 @@ int sccp_channel_forward(constChannelPtr sccp_channel_parent, constLineDevicePtr
 	AUTO_RELEASE(sccp_channel_t, sccp_forwarding_channel , sccp_channel_allocate(sccp_channel_parent->line, NULL));
 
 	if (!sccp_forwarding_channel) {
-		pbx_log(LOG_ERROR, "%s: Can't allocate SCCP channel\n", ld->device->id);
+		pbx_log(LOG_WARNING, "%s: call %s not forwarded to %s: the forwarding call could not be created (see the previous message)\n", ld->device->id, sccp_channel_parent->designator, fwdNumber);
 		return -1;
 	}
 	sccp_forwarding_channel->parentChannel = sccp_channel_retain(sccp_channel_parent);
@@ -2933,7 +2935,7 @@ int sccp_channel_forward(constChannelPtr sccp_channel_parent, constLineDevicePtr
 	    && iPbx.checkhangup(sccp_forwarding_channel)
 	    && pbx_exists_extension(sccp_forwarding_channel->owner, sccp_forwarding_channel->line->context ? sccp_forwarding_channel->line->context : "", dialedNumber, 1, sccp_forwarding_channel->line->cid_num)) {
 		/* found an extension, let's dial it */
-		pbx_log(LOG_NOTICE, "%s: (sccp_channel_forward) channel %s is dialing number %s\n", sccp_forwarding_channel->currentDeviceId, sccp_forwarding_channel->designator, dialedNumber);
+		sccp_log((DEBUGCAT_CHANNEL))(VERBOSE_PREFIX_3 "%s: forwarding call %s to %s\n", sccp_forwarding_channel->currentDeviceId, sccp_forwarding_channel->designator, dialedNumber);
 		/* Answer dialplan command works only when in RINGING OR RING ast_state */
 		iPbx.set_callstate(sccp_forwarding_channel, AST_STATE_RING);
 
@@ -2942,11 +2944,11 @@ int sccp_channel_forward(constChannelPtr sccp_channel_parent, constLineDevicePtr
 		iPbx.queue_control(sccp_forwarding_channel->owner, AST_CONTROL_REDIRECTING);
 #endif
 		if (pbx_pbx_start(sccp_forwarding_channel->owner)) {
-			pbx_log(LOG_WARNING, "%s: invalid number\n", "SCCP");
+			pbx_log(LOG_WARNING, "%s: forward to %s failed: Asterisk could not start the dialplan for the forwarding call\n", sccp_forwarding_channel->designator, dialedNumber);
 		}
 		return 0;
 	} 
-	pbx_log(LOG_NOTICE, "%s: (sccp_channel_forward) channel %s cannot dial this number %s\n", sccp_forwarding_channel->currentDeviceId, sccp_forwarding_channel->designator, dialedNumber);
+	pbx_log(LOG_NOTICE, "%s: call not forwarded to '%s': the number is empty, does not exist in context %s, or the call is hanging up\n", sccp_forwarding_channel->currentDeviceId, dialedNumber, sccp_forwarding_channel->line->context ? sccp_forwarding_channel->line->context : "");
 	sccp_channel_release(&sccp_forwarding_channel->parentChannel);						/* explicit release */
 	sccp_channel_endcall(sccp_forwarding_channel);
 	return -1;
@@ -2962,7 +2964,7 @@ void sccp_channel_park(constChannelPtr channel)
 	sccp_parkresult_t result = 0;
 
 	if (!iPbx.feature_park) {
-		pbx_log(LOG_WARNING, "SCCP, parking feature not implemented\n");
+		pbx_log(LOG_WARNING, "%s: park not done: this Asterisk build provides no parking interface\n", channel->designator);
 		return;
 	}
 

@@ -246,12 +246,12 @@ gcc_inline static devicePtr check_session_message_device(constSessionPtr s, cons
 {
 	int errors = 0;
 	if (!msg) {
-		pbx_log(LOG_ERROR, "(%s) No Message Provided\n", msgtypestr);
+		pbx_log(LOG_ERROR, "SCCP: %s handler was called without a message (caller bug); not processed\n", msgtypestr);
 		errors++;
 	}
 
  	if (!sccp_session_isValid(s)) {
-		pbx_log(LOG_ERROR, "(%s) Session no longer valid\n", msgtypestr);
+		pbx_log(LOG_ERROR, "SCCP: %s arrived on a session that is closed or being torn down; not processed\n", msgtypestr);
 		errors++;
 	}
 
@@ -265,12 +265,12 @@ gcc_inline static devicePtr check_session_message_device(constSessionPtr s, cons
 		if (deviceIsNecessary) {
 			devicePtr device = sccp_session_getDevice(s, deviceIsNecessary);
 			if (!device) {
-				pbx_log(LOG_WARNING, "Session Device could not be retained, to handle %s for, but device is needed\n", msgtypestr);
+				pbx_log(LOG_WARNING, "%s: %s needs a registered device, but this connection has none (never registered, or already released); ignored\n", sccp_session_getDesignator(s), msgtypestr);
 				return NULL;
 			}
 			skinny_registrationstate_t registrationState = sccp_device_getRegistrationState(device);
 			if (registrationState != SKINNY_DEVICE_RS_PROGRESS && registrationState != SKINNY_DEVICE_RS_OK) {
-				pbx_log(LOG_WARNING, "%s: Device was found to handle:%s but the device is in an invalid registration state:%s to handle the request\n", device->id, msgtypestr,
+				pbx_log(LOG_WARNING, "%s: %s ignored: it is only valid while registering or registered, but the device is in registration state %s\n", device->id, msgtypestr,
 				        skinny_registrationstate2str(registrationState));
 				return NULL;
 			}
@@ -359,12 +359,12 @@ int sccp_handle_message(constMessagePtr msg, constSessionPtr s)
 	sccp_mid_t mid = KeepAliveMessage;
 
 	if (!s) {
-		pbx_log(LOG_ERROR, "SCCP: (sccp_handle_message) Client does not have a session which is required. Exiting sccp_handle_message !\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_handle_message() was called without a session (caller bug); message not processed\n");
 		return -1;
 	}
 
 	if (!msg) {
-		pbx_log(LOG_ERROR, "%s: (sccp_handle_message) No Message Specified.\n which is required, Exiting sccp_handle_message !\n", sccp_session_getDesignator(s));
+		pbx_log(LOG_ERROR, "%s: sccp_handle_message() was called without a message (caller bug)\n", sccp_session_getDesignator(s));
 		return -2;
 	}
 
@@ -377,7 +377,7 @@ int sccp_handle_message(constMessagePtr msg, constSessionPtr s)
 	} else if ((mid >= SPCP_MESSAGE_LOW_BOUNDARY && mid <= SPCP_MESSAGE_HIGH_BOUNDARY)) {
 		messageMap_cb = &spcpMessagesCbMap[mid - SPCP_MESSAGE_OFFSET]; 
 	} else {
-		pbx_log(LOG_WARNING, "SCCP: Unknown Message %x. Don't know how to handle it. Skipping.\n", mid);
+		pbx_log(LOG_WARNING, "%s: received message ID 0x%04X, outside the known SCCP and SPCP ranges; ignored\n", sccp_session_getDesignator(s), mid);
 		handle_unknown_message(s, NULL, msg);
 		return 0;
 	}
@@ -385,7 +385,7 @@ int sccp_handle_message(constMessagePtr msg, constSessionPtr s)
 
 	AUTO_RELEASE(sccp_device_t, device, check_session_message_device(s, msg, msginfo2str(mid), messageMap_cb->deviceIsNecessary));
 	if (messageMap_cb->messageHandler_cb && messageMap_cb->deviceIsNecessary == TRUE && !device) {
-		pbx_log(LOG_ERROR, "SCCP: Device is required to handle this message %s(%x), but none is provided. Exiting sccp_handle_message\n", msginfo2str(mid), mid);
+		sccp_log((DEBUGCAT_MESSAGE))(VERBOSE_PREFIX_3 "%s: %s(0x%04X) not handled without a device\n", sccp_session_getDesignator(s), msginfo2str(mid), mid);
 		return -3;
 	}
 	if (messageMap_cb->messageHandler_cb) {
@@ -451,6 +451,14 @@ void sccp_handle_dialtone(constDevicePtr d, constLinePtr l, constChannelPtr chan
 	}
 }
 
+
+/*!
+ * \brief Log a registering device whose type is missing from the device table
+ */
+static void log_unknown_devicetype(const char *deviceName, uint32_t deviceType)
+{
+	pbx_log(LOG_WARNING, "%s: device type %u is not in chan_sccp's device table; continuing, but button layout, softkeys and features may not match this phone\n", deviceName, deviceType);
+}
 
 /* ============================================================================================================================ Local Handlers */
 
@@ -640,12 +648,12 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 	int token_backoff_time = GLOB(token_backoff_time) >= 30 ? GLOB(token_backoff_time) : 60;
 
 	if (GLOB(reload_in_progress)) {
-		pbx_log(LOG_NOTICE, "SCCP: Reload in progress. Come back later.\n");
+		pbx_log(LOG_NOTICE, "%s: token request refused because a configuration reload is in progress; phone told to retry in 10 seconds\n", deviceName);
 		sccp_session_tokenReject(s, 10);
 		return;
 	}
 	if (!skinny_devicetype_exists(deviceType)) {
-		pbx_log(LOG_NOTICE, "%s: We currently do not (fully) support this device type (%d).\n" "Please send this device type number plus the information about the phone model you are using to one of our developers.\n" "Be Warned you should Expect Trouble Ahead\nWe will try to go ahead (Without any guarantees)\n", deviceName, deviceType);
+		log_unknown_devicetype(deviceName, deviceType);
 	}
 
 	sccp_log((DEBUGCAT_MESSAGE | DEBUGCAT_ACTION | DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_2 "%s: is requesting a Token, Device Instance: %d, Type: %s (%d)\n", deviceName, deviceInstance, skinny_devicetype2str(deviceType), deviceType);
@@ -655,14 +663,14 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 		if (tmpdevice) {
 			skinny_registrationstate_t state = sccp_device_getRegistrationState(tmpdevice);
 			if (state == SKINNY_DEVICE_RS_TOKEN && tmpdevice->registrationTime < time(0) + token_backoff_time) {
-				pbx_log(LOG_NOTICE, "%s: Token already sent, giving up (regState: %s, tokenState:%s, registrationTime:%d)\n", deviceName, skinny_registrationstate2str(state),
-					sccp_tokenstate2str(tmpdevice->status.token), (int)(tmpdevice->registrationTime));
+				pbx_log(LOG_NOTICE, "%s: token request refused: the device already has a token request in progress (token %s, last attempt %d s ago); retry in %d seconds\n", deviceName,
+					sccp_tokenstate2str(tmpdevice->status.token), (int)(time(0) - tmpdevice->registrationTime), token_backoff_time);
 				tmpdevice->registrationTime = time(0);
 				sccp_session_tokenReject(s, token_backoff_time);
 				return;
 			}
 			if (sccp_session_check_crossdevice(s, tmpdevice) || (state != SKINNY_DEVICE_RS_FAILED && state != SKINNY_DEVICE_RS_NONE)) {
-				pbx_log(LOG_NOTICE, "%s: Cleaning previous session, come back later (tokenState:%s)\n", deviceName, skinny_registrationstate2str(state));
+				pbx_log(LOG_NOTICE, "%s: token request refused: the device still has another connection (registration state %s); closing it, retry in 10 seconds\n", deviceName, skinny_registrationstate2str(state));
 				tmpdevice->registrationTime = time(0);
 				sccp_session_crossdevice_cleanup(s, tmpdevice->session);
 				sccp_session_tokenReject(s, 10);
@@ -686,14 +694,14 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 
 	/* no configuation for this device and no anonymous devices allowed */
 	if (!device) {
-		pbx_log(LOG_NOTICE, "%s: Rejecting device: not found\n", deviceName);
+		pbx_log(LOG_NOTICE, "%s: token request refused: no such device in sccp.conf or realtime, and hotline_enabled is off\n", deviceName);
 		sccp_session_tokenReject(s, token_backoff_time);
 		return;
 	}
 
 	sccp_session_setProtocol(s, SCCP_PROTOCOL);
 	if (sccp_session_retainDevice(s, device) < 0) {
-		pbx_log(LOG_WARNING, "%s: Signing over the session to new device failed. Giving up.\n", DEV_ID_LOG(device));
+		pbx_log(LOG_WARNING, "%s: could not attach the device to this connection because the device is being removed (for example by a reload); refused\n", DEV_ID_LOG(device));
 		sccp_session_tokenReject(s, token_backoff_time);
 		goto EXIT;
 	}
@@ -703,7 +711,7 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 	if (device->checkACL(device) == FALSE) {
 		struct sockaddr_storage sas = { 0 };
 		sccp_session_getSas(s, &sas);
-		pbx_log(LOG_NOTICE, "%s: Rejecting device: Ip address '%s' denied (deny + permit/permithosts).\n", deviceName, sccp_netsock_stringify_addr(&sas));
+		pbx_log(LOG_NOTICE, "%s: refused: address %s is not allowed by the device's deny/permit/permithost settings\n", deviceName, sccp_netsock_stringify_addr(&sas));
 		sccp_device_setRegistrationState(device, SKINNY_DEVICE_RS_FAILED);
 		sccp_session_tokenReject(s, token_backoff_time);
 		goto EXIT;
@@ -729,7 +737,7 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 			}
 			sendAck = digit >= 0 && (digit % 2 == 1) == !strcasecmp("odd", GLOB(token_fallback));
 			if (digit < 0)
-				pbx_log(LOG_WARNING, "%s: Invalid device ID for fallback parity\n", deviceName);
+				pbx_log(LOG_WARNING, "%s: fallback=%s needs a device name ending in a hex digit; token refused\n", deviceName, GLOB(token_fallback));
 		} else if (strstr(GLOB(token_fallback), "/") != NULL) {
 			struct sockaddr_storage sas = { 0 };
 			sccp_session_getSas(s, &sas);
@@ -737,12 +745,12 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 				sccp_netsock_stringify_host(&sas), skinny_devicetype2str(deviceType), &token_backoff_time);
 			sendAck = script_result == 1;
 			if (script_result < 0)
-				pbx_log(LOG_WARNING, "%s: Fallback script '%s' failed, timed out, or returned an invalid response\n", deviceName, GLOB(token_fallback));
+				pbx_log(LOG_WARNING, "%s: fallback script '%s' failed, timed out, or did not print ACK or a retry time in seconds; token refused\n", deviceName, GLOB(token_fallback));
 		} else {
-			pbx_log(LOG_WARNING, "%s: did not understand global fallback value: '%s'... sending default value 'ACK'\n", deviceName, GLOB(token_fallback));
+			pbx_log(LOG_WARNING, "%s: fallback=%s is not a boolean, odd, even or a script path; token granted\n", deviceName, GLOB(token_fallback));
 		}
 	} else {
-		pbx_log(LOG_WARNING, "%s: global fallback value is empty... sending default value 'ACK'\n", deviceName);
+		sccp_log((DEBUGCAT_DEVICE))(VERBOSE_PREFIX_3 "%s: fallback is not set; token granted\n", deviceName);
 	}
 
 	/* some test to detect active calls */
@@ -794,13 +802,13 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 	int token_backoff_time = GLOB(token_backoff_time) >= 30 ? GLOB(token_backoff_time) : 60;
 
 	if (GLOB(reload_in_progress)) {
-		pbx_log(LOG_NOTICE, "SCCP: Reload in progress. Come back later.\n");
+		pbx_log(LOG_NOTICE, "%s: token request refused because a configuration reload is in progress; phone told to retry in 10 seconds\n", deviceName);
 		sccp_session_tokenReject(s, 10);
 		return;
 	}
 
 	if (!skinny_devicetype_exists(deviceType)) {
-		pbx_log(LOG_NOTICE, "%s: We currently do not (fully) support this device type (%d).\n" "Please send this device type number plus the information about the phone model you are using to one of our developers.\n" "Be Warned you should Expect Trouble Ahead\nWe will try to go ahead (Without any guarantees)\n", deviceName, deviceType);
+		log_unknown_devicetype(deviceName, deviceType);
 	}
 	sccp_log((DEBUGCAT_DEVICE))(VERBOSE_PREFIX_2 "%s: is requesting a token, Instance: %d, Type: %s (%d)\n", deviceName, deviceInstance, skinny_devicetype2str(deviceType), deviceType);
 
@@ -808,7 +816,7 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 	struct sockaddr_storage sas = { 0 };
 	sccp_session_getSas(s, &sas);
 	if (GLOB(ha) && !sccp_apply_ha(GLOB(ha), &sas)) {
-		pbx_log(LOG_NOTICE, "%s: Rejecting device: Ip address denied\n", msg_in->data.SPCPRegisterTokenRequest.sId.deviceName);
+		pbx_log(LOG_NOTICE, "%s: token request refused: address %s is not allowed by the global deny/permit settings\n", deviceName, sccp_netsock_stringify_addr(&sas));
 		sccp_session_reject(s, "IP not authorized");
 		return;
 	}
@@ -819,14 +827,14 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 		if (tmpdevice) {
 			skinny_registrationstate_t state = sccp_device_getRegistrationState(tmpdevice);
 			if (state == SKINNY_DEVICE_RS_TOKEN && tmpdevice->registrationTime < time(0) + token_backoff_time) {
-				pbx_log(LOG_NOTICE, "%s: Token already sent, giving up (regState: %s, tokenState:%s, registrationTime:%d)\n", deviceName, skinny_registrationstate2str(state),
-					sccp_tokenstate2str(tmpdevice->status.token), (int)(tmpdevice->registrationTime - time(0)));
+				pbx_log(LOG_NOTICE, "%s: token request refused: the device already has a token request in progress (token %s, last attempt %d s ago); retry in %d seconds\n", deviceName,
+					sccp_tokenstate2str(tmpdevice->status.token), (int)(time(0) - tmpdevice->registrationTime), token_backoff_time);
 				tmpdevice->registrationTime = time(0);
 				sccp_session_tokenReject(s, token_backoff_time);
 				return;
 			}
 			if (sccp_session_check_crossdevice(s, tmpdevice) || (state != SKINNY_DEVICE_RS_FAILED && state != SKINNY_DEVICE_RS_NONE)) {
-				pbx_log(LOG_NOTICE, "%s: Cleaning previous session, come back later (tokenState:%s)\n", deviceName, skinny_registrationstate2str(state));
+				pbx_log(LOG_NOTICE, "%s: token request refused: the device still has another connection (registration state %s); closing it, retry in 10 seconds\n", deviceName, skinny_registrationstate2str(state));
 				sccp_session_crossdevice_cleanup(s, tmpdevice->session);
 				tmpdevice->registrationTime = time(0);
 				sccp_session_tokenRejectSPCP(s, 10);
@@ -850,14 +858,14 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 
 	/* no configuation for this device and no anonymous devices allowed */
 	if (!device) {
-		pbx_log(LOG_NOTICE, "%s: Rejecting device: not found\n", msg_in->data.SPCPRegisterTokenRequest.sId.deviceName);
+		pbx_log(LOG_NOTICE, "%s: token request refused: no such device in sccp.conf or realtime, and hotline_enabled is off\n", deviceName);
 		sccp_session_tokenRejectSPCP(s, 60);
 		return;
 	}
 
 	sccp_session_setProtocol(s, SPCP_PROTOCOL);
 	if (sccp_session_retainDevice(s, device) < 0) {
-		pbx_log(LOG_WARNING, "%s: Signing over the session to new device failed. Giving up.\n", DEV_ID_LOG(device));
+		pbx_log(LOG_WARNING, "%s: could not attach the device to this connection because the device is being removed (for example by a reload); refused\n", DEV_ID_LOG(device));
 		sccp_session_tokenRejectSPCP(s, token_backoff_time);
 		goto EXIT;
 	}
@@ -865,7 +873,7 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 	device->skinny_type = deviceType;
 
 	if (device->checkACL(device) == FALSE) {
-		pbx_log(LOG_NOTICE, "%s: Rejecting device: Ip address '%s' denied (deny + permit/permithosts).\n", msg_in->data.SPCPRegisterTokenRequest.sId.deviceName, sccp_netsock_stringify_addr(&sas));
+		pbx_log(LOG_NOTICE, "%s: refused: address %s is not allowed by the device's deny/permit/permithost settings\n", deviceName, sccp_netsock_stringify_addr(&sas));
 		sccp_device_setRegistrationState(device, SKINNY_DEVICE_RS_FAILED);
 		sccp_session_tokenRejectSPCP(s, token_backoff_time);
 		goto EXIT;
@@ -873,7 +881,7 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 
 	/* obsolete, see above */
 	if (device->session && device->session != s) {
-		pbx_log(LOG_NOTICE, "%s: Crossover device registration!\n", device->id);
+		pbx_log(LOG_NOTICE, "%s: token request refused: the device is already registered on another connection; both connections are closed\n", device->id);
 		sccp_device_setRegistrationState(device, SKINNY_DEVICE_RS_FAILED);
 		sccp_session_tokenRejectSPCP(s, token_backoff_time);
 		device->session = sccp_session_reject(device->session, "Crossover session not allowed");
@@ -927,13 +935,13 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 	//uint32_t ipV6AddressScope = letohl(msg_in->data.RegisterMessage.lel_ipV6AddressScope);
 
 	if (GLOB(reload_in_progress)) {
-		pbx_log(LOG_NOTICE, "SCCP: Reload in progress. Come back later.\n");
+		pbx_log(LOG_NOTICE, "%s: registration refused because a configuration reload is in progress\n", deviceName);
 		sccp_session_reject(s, "Reload in progress");
 		return;
 	}
 
 	if (!skinny_devicetype_exists(deviceType)) {
-		pbx_log(LOG_NOTICE, "%s: We currently do not (fully) support this device type (%d).\n" "Please send this device type number plus the information about the phone model you are using to one of our developers.\n" "Be Warned you should Expect Trouble Ahead\nWe will try to go ahead (Without any guarantees)\n", deviceName, deviceType);
+		log_unknown_devicetype(deviceName, deviceType);
 	}
 	sccp_log((DEBUGCAT_MESSAGE | DEBUGCAT_ACTION | DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_1 "%s: is registering, Instance: %d, UserId: %d, Type: %s (%d), Version: %d (loadinfo '%s')\n", deviceName, deviceInstance, userid, skinny_devicetype2str(deviceType), deviceType, protocolVer, msg_in->data.RegisterMessage.loadInfo);
 
@@ -946,7 +954,7 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 			state == SKINNY_DEVICE_RS_PROGRESS || state == SKINNY_DEVICE_RS_OK || 
 			(state == SKINNY_DEVICE_RS_TOKEN && time(0) - device->registrationTime > 60)
 		) {
-			pbx_log(LOG_WARNING, "%s: Cleaning previous session, come back later, state:%s\n", DEV_ID_LOG(device), skinny_registrationstate2str(state));
+			pbx_log(LOG_NOTICE, "%s: registration refused: the device still has another connection (registration state %s); closing it so the phone can retry\n", DEV_ID_LOG(device), skinny_registrationstate2str(state));
 			sccp_session_crossdevice_cleanup(s, device->session);
 			sccp_session_reject(s, "Crossover session");
 			sccp_device_setRegistrationState(device, SKINNY_DEVICE_RS_FAILED);
@@ -967,7 +975,7 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 			device->defaultLineInstance = SCCP_FIRST_LINEINSTANCE;
 			sccp_device_addToGlobals(device);
 		} else {
-			pbx_log(LOG_ERROR, "%s: hotline device could not be created: %s\n", deviceName, GLOB(hotline)->line->name);
+			pbx_log(LOG_ERROR, "%s: registration refused: could not create an anonymous (hotline) device, out of memory\n", deviceName);
 			sccp_session_reject(s, "hotline failed");
 			goto FUNC_EXIT;
 		}
@@ -975,7 +983,7 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 
 	if (device) {
 		if (sccp_session_retainDevice(s, device) < 0) {
-			pbx_log(LOG_WARNING, "%s: Signing over the session to new device failed. Giving up.\n", DEV_ID_LOG(device));
+			pbx_log(LOG_WARNING, "%s: could not attach the device to this connection because the device is being removed (for example by a reload); refused\n", DEV_ID_LOG(device));
 			sccp_session_reject(s, "register failed");
 			goto FUNC_EXIT;
 		}
@@ -984,14 +992,14 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 		if (device->checkACL(device) == FALSE) {
 			struct sockaddr_storage sas = { 0 };
 			sccp_session_getSas(s, &sas);
-			pbx_log(LOG_NOTICE, "%s: Rejecting device: Ip address '%s' denied (deny + permit/permithosts).\n", deviceName, sccp_netsock_stringify_addr(&sas));
+			pbx_log(LOG_NOTICE, "%s: refused: address %s is not allowed by the device's deny/permit/permithost settings\n", deviceName, sccp_netsock_stringify_addr(&sas));
 			sccp_device_setRegistrationState(device, SKINNY_DEVICE_RS_FAILED);
 			sccp_session_reject(s, "IP Not Authorized");
 			goto FUNC_EXIT;
 		}
 
 	} else {
-		pbx_log(LOG_NOTICE, "%s: Rejecting device: Device Unknown \n", deviceName);
+		pbx_log(LOG_NOTICE, "%s: registration refused: no such device in sccp.conf or realtime, and hotline_enabled is off\n", deviceName);
 		sccp_session_reject(s, "Device Unknown");
 		return;
 	}
@@ -1177,7 +1185,7 @@ static btnlist *sccp_make_button_template(devicePtr d)
 						} else {
 							btn[i].type = SKINNY_BUTTONTYPE_UNUSED;
 							buttonconfig->instance = btn[i].instance = 0;
-							pbx_log(LOG_WARNING, "%s: line %s does not exists\n", DEV_ID_LOG(d), buttonconfig->button.line.name);
+							pbx_log(LOG_WARNING, "%s: button %d refers to line '%s', which is not defined; button left unused\n", DEV_ID_LOG(d), i + 1, buttonconfig->button.line.name);
 						}
 
 						//sccp_log((DEBUGCAT_BUTTONTEMPLATE)) (VERBOSE_PREFIX_3 "%s: Add line %s on position %d\n", DEV_ID_LOG(d), buttonconfig->button.line.name, buttonconfig->instance);
@@ -1432,7 +1440,7 @@ void sccp_handle_AvailableLines(constSessionPtr s, devicePtr d, constMessagePtr 
 	btn = d->buttonTemplate;
 
 	if (!btn) {
-		pbx_log(LOG_WARNING, "%s: no buttontemplate, reset device\n", DEV_ID_LOG(d));
+		pbx_log(LOG_WARNING, "%s: line status requested before a button template was built; phone told to restart\n", DEV_ID_LOG(d));
 		sccp_device_sendReset(d, SKINNY_RESETTYPE_RESTART);
 		return;
 	}
@@ -1492,7 +1500,7 @@ void handle_unregister(constSessionPtr s, devicePtr device, constMessagePtr msg_
 	if (d && d->active_channel) {
 		msg_out->data.UnregisterAckMessage.lel_status = SKINNY_UNREGISTERSTATUS_NAK;
 		sccp_session_send2(s, msg_out);							// send directly to session, skipping device check
-		pbx_log(LOG_NOTICE, "%s: unregister request denied (active channel:%s)\n", DEV_ID_LOG(d), d->active_channel->designator);
+		pbx_log(LOG_NOTICE, "%s: unregister refused: call %s is still active\n", DEV_ID_LOG(d), d->active_channel->designator);
 		return;
 	}
 
@@ -1529,7 +1537,7 @@ void sccp_handle_button_template_req(constSessionPtr s, devicePtr d, constMessag
 
 	skinny_registrationstate_t registrationState=sccp_device_getRegistrationState(d);
 	if (registrationState != SKINNY_DEVICE_RS_PROGRESS && registrationState != SKINNY_DEVICE_RS_OK) {
-		pbx_log(LOG_WARNING, "%s: Received a button template request from unregistered device\n", d->id);
+		pbx_log(LOG_WARNING, "%s: button template requested while not registering or registered (state %s); connection closed\n", d->id, skinny_registrationstate2str(registrationState));
 		sccp_session_stopthread(s, SKINNY_DEVICE_RS_FAILED);
 		return;
 	}
@@ -1544,7 +1552,7 @@ void sccp_handle_button_template_req(constSessionPtr s, devicePtr d, constMessag
 	sccp_linedevice_createButtonsArray(d);
 
 	if (!btn) {
-		pbx_log(LOG_ERROR, "%s: No memory allocated for button template\n", d->id);
+		pbx_log(LOG_ERROR, "%s: could not allocate the button template (out of memory); connection closed\n", d->id);
 		sccp_session_stopthread(s, SKINNY_DEVICE_RS_FAILED);
 		return;
 	}
@@ -1642,7 +1650,7 @@ void handle_line_number(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 		/* if we find no regular line - it can be a speeddial with hint */
 		sccp_dev_speed_find_byindex(d, lineNumber, TRUE, &k);
 		if(!k.valid) {
-			pbx_log(LOG_ERROR, "%s: requested a line configuration for unknown line/speeddial %d\n", sccp_session_getDesignator(s), lineNumber);
+			pbx_log(LOG_WARNING, "%s: phone asked for button %d, which is neither a line nor a speeddial with a hint; sent an empty line status\n", sccp_session_getDesignator(s), lineNumber);
 			if (d->protocol) {
 				d->protocol->sendLineStatResp(d, lineNumber, "", "", "");
 			}
@@ -1721,7 +1729,7 @@ static void handle_stimulus_lastnumberredial(constDevicePtr d, constLinePtr l, c
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: Handle LastNumber Redial Stimulus\n", d->id);
 
 	if (sccp_strlen_zero(d->redialInformation.number)) {
-		pbx_log(LOG_NOTICE, "%s: (lastnumberredial) No last number stored to dial\n", d->id);
+		sccp_log((DEBUGCAT_ACTION))(VERBOSE_PREFIX_3 "%s: redial pressed, but no number has been dialed yet; ignored\n", d->id);
 		return;
 	}
 	AUTO_RELEASE(sccp_channel_t, channel , sccp_device_getActiveChannel(d));
@@ -1767,14 +1775,14 @@ static void handle_speeddial(constDevicePtr d, const sccp_speed_t * k)
 		if (channel->state >= SCCP_CHANNELSTATE_DIALING && channel->state <= SCCP_CHANNELSTATE_CONNECTEDCONFERENCE) {
 			//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: put call %d on hold %d\n", DEV_ID_LOG(d), channel->callid, channel->state);
 			if (!sccp_channel_hold(channel)) {
-				pbx_log(LOG_ERROR, "%s: Putting Active Channel %s OnHold failed -> Cancelling new CaLL\n", d->id, channel->designator);
+				pbx_log(LOG_WARNING, "%s: speeddial not dialed: could not put active call %s on hold\n", d->id, channel->designator);
 				return;
 			}
 			/* fall through to start new call */
 		} else if (channel->state == SCCP_CHANNELSTATE_HOLD || channel->state == SCCP_CHANNELSTATE_ONHOOK || channel->state == SCCP_CHANNELSTATE_DOWN) {
 			/* fall through to start new call */
 		} else {
-			pbx_log(LOG_WARNING, "%s: Received speedial while in a channel->state '%s', where that did not make sense, skipping!\n", d->id, sccp_channelstate2str(channel->state)); 
+			pbx_log(LOG_NOTICE, "%s: speeddial ignored: the active call is in state %s, which cannot be put on hold for a new call\n", d->id, sccp_channelstate2str(channel->state));
 			return;
 		}
 	}
@@ -1809,7 +1817,7 @@ static void handle_stimulus_speeddial(constDevicePtr d, constLinePtr l, const ui
 		handle_speeddial(d, &k);
 		return;
 	}
-	pbx_log(LOG_WARNING, "%s: No number assigned to speeddial %d\n", d->id, instance);
+	pbx_log(LOG_NOTICE, "%s: speeddial button %d has no number configured; reject tone played\n", d->id, instance);
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
@@ -1863,7 +1871,7 @@ static void handle_stimulus_line(constDevicePtr d, constLinePtr l, const uint16_
 			handle_speeddial(d, &k);
 			return;
 		}
-		pbx_log(LOG_WARNING, "%s: No number assigned to speeddial %d\n", d->id, instance);
+		pbx_log(LOG_NOTICE, "%s: speeddial button %d has no number configured; reject tone played\n", d->id, instance);
 		sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 
 		return;
@@ -1888,7 +1896,7 @@ static void handle_stimulus_line(constDevicePtr d, constLinePtr l, const uint16_
 			if (check_device == d) {							// check to see if we own the channel (otherwise it would be a shared line owned by another device)
 				if (SCCP_CHANNELSTATE_IsConnected(channel->state)) {				/* incoming call on other line */
 					if (!sccp_channel_hold(channel)) {
-						pbx_log(LOG_WARNING, "%s: Hold failed for call:%s\n", d->id, channel->designator);
+						pbx_log(LOG_WARNING, "%s: line button ignored: could not put active call %s on hold\n", d->id, channel->designator);
 						return;
 					}
 					//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: call:%s put on hold\n", d->id, channel->designator);
@@ -1899,14 +1907,14 @@ static void handle_stimulus_line(constDevicePtr d, constLinePtr l, const uint16_
 					sccp_channel_endcall(channel);
 					sccp_dev_deactivate_cplane(d);
 					if (l == channel->line) {						/* active channel and stimulated line are different -> close the active channel and continue */
-						pbx_log(LOG_WARNING, "%s: Call:%s has already been hungup\n", d->id, channel->designator);
+						sccp_log((DEBUGCAT_ACTION))(VERBOSE_PREFIX_3 "%s: line button pressed on the same line as unconnected call %s; call ended\n", d->id, channel->designator);
 						return;
 					}
 					//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Active Call:%s and line:%s pressed are different => shared line handling\n", d->id, channel->designator, l->name);
 					/* continue to handle the inactive line and/or shared line (below) */
 				}
 			} else {
-				pbx_log(LOG_WARNING, "%s: active channel %s from a different device: %s, skipping.\n", d->id, channel->designator, check_device->id);
+				sccp_log((DEBUGCAT_ACTION))(VERBOSE_PREFIX_3 "%s: active call %s belongs to %s (shared line); handling the line button for this device only\n", d->id, channel->designator, check_device->id);
 			}
 		}
 	}
@@ -1999,7 +2007,7 @@ static void handle_stimulus_hold(constDevicePtr d, constLinePtr l, const uint16_
 		sccp_channel_resume(d, channel1, TRUE);
 		return;
 	}
-	pbx_log(LOG_WARNING, "%s: No call to resume/hold found on line %d\n", d->id, instance);
+	pbx_log(LOG_NOTICE, "%s: hold/resume pressed on line instance %d, which has no call to hold or resume; reject tone played\n", d->id, instance);
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
@@ -2022,8 +2030,9 @@ static void handle_stimulus_transfer(constDevicePtr d, constLinePtr l, const uin
 
 	if (channel) {
 		sccp_channel_transfer(channel, d);
+		return;
 	}
-	pbx_log(LOG_WARNING, "%s: No call to transfer found on line %d\n", d->id, instance);
+	pbx_log(LOG_NOTICE, "%s: transfer pressed on line instance %d with no active call; reject tone played\n", d->id, instance);
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
@@ -2056,8 +2065,9 @@ static void handle_stimulus_conference(constDevicePtr d, constLinePtr l, const u
 
 	if (channel) {
 		sccp_feat_handle_conference(d, l, instance, channel);
+		return;
 	}
-	pbx_log(LOG_WARNING, "%s: No call to handle conference for on line %d\n", d->id, instance);
+	pbx_log(LOG_NOTICE, "%s: conference pressed on line instance %d with no active call; reject tone played\n", d->id, instance);
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
@@ -2077,7 +2087,7 @@ static void handle_stimulus_forwardAll(constDevicePtr d, constLinePtr l, const u
 		sccp_feat_handle_callforward(l, d, SCCP_CFWD_ALL, maybe_c, instance);
 		return;
 	}
-	pbx_log(LOG_WARNING, "%s: CFWDALL disabled on device\n", d->id);
+	pbx_log(LOG_NOTICE, "%s: forward-all pressed, but cfwdall is off for this device; reject tone played\n", d->id);
 	sccp_dev_displayprompt(d, 0, 0, SKINNY_DISP_CFWDALL " " SKINNY_DISP_SERVICE_IS_NOT_ACTIVE, SCCP_DISPLAYSTATUS_TIMEOUT);
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
@@ -2098,7 +2108,7 @@ static void handle_stimulus_forwardBusy(constDevicePtr d, constLinePtr l, const 
 		sccp_feat_handle_callforward(l, d, SCCP_CFWD_BUSY, maybe_c, instance);
 		return;
 	}
-	pbx_log(LOG_WARNING, "%s: CFWDBUSY disabled on device\n", d->id);
+	pbx_log(LOG_NOTICE, "%s: forward-busy pressed, but cfwdbusy is off for this device; reject tone played\n", d->id);
 	sccp_dev_displayprompt(d, 0, 0, SKINNY_DISP_CFWDBUSY " " SKINNY_DISP_SERVICE_IS_NOT_ACTIVE, SCCP_DISPLAYSTATUS_TIMEOUT);
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
@@ -2119,7 +2129,7 @@ static void handle_stimulus_forwardNoAnswer(constDevicePtr d, constLinePtr l, co
 		sccp_feat_handle_callforward(l, d, SCCP_CFWD_NOANSWER, maybe_c, instance);
 		return;
 	}
-	pbx_log(LOG_WARNING, "%s: CFWDNoAnswer disabled on device\n", d->id);
+	pbx_log(LOG_NOTICE, "%s: forward-no-answer pressed, but cfwdnoanswer is off for this device; reject tone played\n", d->id);
 	sccp_dev_displayprompt(d, 0, 0, SKINNY_DISP_CFWDNOANSWER " " SKINNY_DISP_SERVICE_IS_NOT_ACTIVE, SCCP_DISPLAYSTATUS_TIMEOUT);
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
@@ -2142,7 +2152,7 @@ static void handle_stimulus_callpark(constDevicePtr d, constLinePtr l, const uin
 		sccp_channel_park(channel);
 		return;
 	}
-	pbx_log(LOG_WARNING, "%s: Cannot park while no calls in progress\n", d->id);
+	pbx_log(LOG_NOTICE, "%s: park pressed with no active call; ignored\n", d->id);
 #else
 	sccp_log((DEBUGCAT_BUTTONTEMPLATE + DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "### Native park was not compiled in\n");
 #endif
@@ -2213,7 +2223,7 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 	}
 
 	if (!config || !config->type || config->type != FEATURE) {
-		pbx_log(LOG_WARNING, "%s: Couldn find feature with ID = %d \n", d->id, instance);
+		pbx_log(LOG_WARNING, "%s: phone reported a press on button instance %d, which is not a feature button; ignored\n", d->id, instance);
 		return;
 	}
 
@@ -2250,7 +2260,7 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 					}
 					//sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: device->privacyFeature.status=%d\n", d->id, d->privacyFeature.status);
 				} else {
-					pbx_log(LOG_WARNING, "%s: do not know how to handle %s\n", d->id, config->button.feature.options ? config->button.feature.options : "");
+					pbx_log(LOG_WARNING, "%s: privacy button option '%s' is not supported (only 'callpresent'); button press ignored\n", d->id, config->button.feature.options ? config->button.feature.options : "");
 				}
 			}
 			break;
@@ -2369,7 +2379,7 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 			break;
 
 		default:
-			pbx_log(LOG_WARNING, "%s: unknown feature:%d\n", d->id, config->button.feature.id);
+			pbx_log(LOG_WARNING, "%s: feature button %d has feature id %d, which has no handler; button press ignored\n", d->id, config->instance, config->button.feature.id);
 			break;
 
 	}
@@ -2516,11 +2526,11 @@ void handle_stimulus(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 		if (!skinny_stimulusMap_cb[stimulus].lineRequired || (skinny_stimulusMap_cb[stimulus].lineRequired && l)) {
 			skinny_stimulusMap_cb[stimulus].handler_cb(d, l, instance, callId, stimulusStatus);
 		} else {
-			pbx_log(LOG_WARNING, "%s: No line found to handle stimulus\n", d->id);
+			pbx_log(LOG_WARNING, "%s: %s (stimulus %d) needs a line, but button instance %d has none; ignored\n", d->id, skinny_stimulus2str(stimulus), stimulus, instance);
 			return;
 		}
 	} else {
-		pbx_log(LOG_WARNING, "%s: Got stimulus=%s (%d), which does not have a handling function. Not Handled\n", d->id, skinny_stimulus2str(stimulus), stimulus);
+		pbx_log(LOG_NOTICE, "%s: %s (stimulus %d) is not implemented; ignored\n", d->id, skinny_stimulus2str(stimulus), stimulus);
 	}
 }
 
@@ -2549,7 +2559,7 @@ void handle_offhook(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 
 	/* checking for registered lines */
 	if (!d->configurationStatistic.numberOfLines) {
-		pbx_log(LOG_NOTICE, "No lines registered on %s to take OffHook\n", sccp_session_getDesignator(s));
+		pbx_log(LOG_NOTICE, "%s: phone went off-hook, but it has no lines registered; reject tone played\n", sccp_session_getDesignator(s));
 		sccp_dev_displayprompt(d, 0, 0, SKINNY_DISP_NO_LINES_REGISTERED, SCCP_DISPLAYSTATUS_TIMEOUT);
 		sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 		return;
@@ -2600,7 +2610,7 @@ void handle_onhook(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 	uint32_t callid = letohl(msg_in->data.OnHookMessage.lel_callReference);
 
 	if (!(d->lineButtons.size > SCCP_FIRST_LINEINSTANCE)) {
-		pbx_log(LOG_NOTICE, "No lines registered on %s to put OnHook\n", DEV_ID_LOG(d));
+		pbx_log(LOG_NOTICE, "%s: phone went on-hook, but it has no lines registered; reject tone played\n", DEV_ID_LOG(d));
 		sccp_dev_displayprompt(d, 0, 0, SKINNY_DISP_NO_LINES_REGISTERED, SCCP_DISPLAYSTATUS_TIMEOUT);
 		sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 		return;
@@ -2638,10 +2648,10 @@ void handle_hookflash(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 		if (l) {
 			handle_stimulus_transfer(d, l, lineInstance, callid, 0);
 		} else {
-			pbx_log(LOG_WARNING, "%s: (HookFlash) Line could not be found for lineInstance:%d\n", d->id, lineInstance);
+			pbx_log(LOG_WARNING, "%s: hook flash on line instance %d, which has no line; ignored\n", d->id, lineInstance);
 		}
 	} else {
-		pbx_log(LOG_WARNING, "%s: (HookFlash) Either lineInstance:%d or CallId:%d not provided\n", d->id, lineInstance, callid);
+		pbx_log(LOG_WARNING, "%s: hook flash without a line instance or call reference (line %d, call %d); ignored\n", d->id, lineInstance, callid);
 		sccp_dump_msg(msg_in);
 	}
 }
@@ -2820,7 +2830,7 @@ void handle_soft_key_set_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 	}
 	
 	if (!d->softkeyset) {
-		pbx_log(LOG_WARNING, "SCCP: Defined softkeyset: '%s' could not be found. Falling back to 'default' instead !\n", d->softkeyDefinition);
+		pbx_log(LOG_WARNING, "%s: softkeyset=%s is not defined in sccp.conf; using the 'default' softkey set\n", d->id, d->softkeyDefinition);
 		SCCP_LIST_LOCK(&softKeySetConfig);
 		SCCP_LIST_TRAVERSE(&softKeySetConfig, softkeyset, list) {
 			if (sccp_strcaseequals("default", softkeyset->name)) {
@@ -3145,7 +3155,7 @@ void handle_keypad_button(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 			resp = '+';
 			break;
 		default:
-			pbx_log(LOG_ERROR, "%s: (handle_keypad) received unsupported digit:%d\n", DEV_ID_LOG(d), digit);
+			pbx_log(LOG_WARNING, "%s: keypad sent code %d, which is not a dialable key; ignored\n", DEV_ID_LOG(d), digit);
 			return;
 	}
 
@@ -3212,16 +3222,16 @@ void handle_keypad_button(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 	{ /* check if we have all required structures and states for error conditions */
 		if (!channel) {
 			/*! When a call is already being ended, sometimes users misdial, should lower the ERROR to NOTICE status */
-			pbx_log(LOG_NOTICE, "%s: Device sent a Keypress, but there is no (active) channel! Exiting\n", DEV_ID_LOG(d));
+			sccp_log((DEBUGCAT_ACTION))(VERBOSE_PREFIX_3 "%s: key pressed with no active call (often while a call is ending); ignored\n", DEV_ID_LOG(d));
 			return;
 		}
 		if (!channel->owner) {
-			pbx_log(LOG_ERROR, "%s: Device sent a Keypress, but there is no (active) pbx channel! Exiting\n", DEV_ID_LOG(d));
+			pbx_log(LOG_ERROR, "%s: key pressed on call %s, which has no Asterisk channel; call ended\n", DEV_ID_LOG(d), channel->designator);
 			sccp_channel_endcall(channel);
 			return;
 		}
 		if (!l) {
-			pbx_log(LOG_ERROR, "%s: Device sent a Keypress, but there is no line specified! Exiting\n", DEV_ID_LOG(d));
+			pbx_log(LOG_ERROR, "%s: key pressed on call %s, which has no line; ignored\n", DEV_ID_LOG(d), channel->designator);
 			return;
 		}
 		if (channel->scheduler.hangup_id > -1) {
@@ -3330,7 +3340,7 @@ void handle_keypad_button(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 			iPbx.send_digit(channel, resp);
 		}
 	} else {
-		pbx_log(LOG_WARNING, "%s: keypad_button could not be handled correctly because of invalid state on line %s, channel: %d, state: %d\n", DEV_ID_LOG(d), l->name, channel->callid, channel->state);
+		pbx_log(LOG_WARNING, "%s: key '%c' ignored: call %d on line %s is in state %s, which accepts no digits\n", DEV_ID_LOG(d), resp, channel->callid, l->name, sccp_channelstate2str(channel->state));
 	}
 }
 
@@ -3349,7 +3359,7 @@ void handle_soft_key_event(constSessionPtr s, devicePtr d, constMessagePtr msg_i
 	uint32_t callid = letohl(msg_in->data.SoftKeyEventMessage.lel_callReference);
 
 	if ((int)event - 1 < 0 || (int)event - 1 > (int)ARRAY_LEN(softkeysmap) - 1) {
-		pbx_log(LOG_ERROR, "SCCP: Received Softkey Event is out of bounds of softkeysmap (0 < %ld < %ld). Exiting\n", (long)(letohl(msg_in->data.SoftKeyEventMessage.lel_softKeyEvent) - 1), (long)ARRAY_LEN(softkeysmap));
+		pbx_log(LOG_WARNING, "%s: softkey event %u is outside the known range 1-%ld; ignored\n", DEV_ID_LOG(d), event, (long)ARRAY_LEN(softkeysmap));
 		return;
 	}
 	event = softkeysmap[event - 1];
@@ -3420,7 +3430,7 @@ void handle_soft_key_event(constSessionPtr s, devicePtr d, constMessagePtr msg_i
 			snprintf(buf, sizeof(buf), SKINNY_DISP_NO_CHANNEL_TO_PERFORM_ACTION_ON " " SKINNY_GIVING_UP, label2str(event));
 			sccp_dev_displayprinotify(d, buf, SCCP_MESSAGE_PRIORITY_TIMEOUT, 5);
 			sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, lineInstance, callid, SKINNY_TONEDIRECTION_USER);
-			pbx_log(LOG_WARNING, "%s: Skip handling of Softkey %s (%d) line=%d callid=%d, because a channel is required, but not provided. Exiting\n", d->id, label2str(event), event, lineInstance, callid);
+			pbx_log(LOG_NOTICE, "%s: softkey %s pressed with no call (line %d, call %d); reject tone played\n", d->id, label2str(event), lineInstance, callid);
 		}
 
 		/* disable callplane for this device */
@@ -3453,7 +3463,7 @@ static channelPtr __get_channel_from_callReference_or_passThruParty(devicePtr d,
 	}
 
 	if (!channel) {
-		pbx_log(LOG_NOTICE, "%s: Could not find a valid channel using callReference:%d. callReference1:%d, passThruPartyId:%d\n", DEV_ID_LOG(d), callReference, callReference1, passThruPartyId);
+		pbx_log(LOG_NOTICE, "%s: media response for a call that no longer exists (call %d/%d, party %d); ignored\n", DEV_ID_LOG(d), callReference, callReference1, passThruPartyId);
 	}
 
 	return channel;
@@ -3480,7 +3490,7 @@ void handle_port_response(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 	d->protocol->parsePortResponse(msg_in, &conferenceId, &callReference, &passThruPartyId, &sas, &RTCPPortNumber, &mediaType);
 
 	if (sccp_netsock_is_any_addr(&sas)) {
-		pbx_log(LOG_NOTICE, "%s: (port_response) returned ip-address:0.0.0.0:0 signalling that the phone has run out of RTP ports. Expect trouble.\n", d->id);
+		pbx_log(LOG_WARNING, "%s: phone returned RTP address 0.0.0.0:0, meaning it has no free RTP ports; this call will have no audio\n", d->id);
 		return;
 	}
 	sccp_log(DEBUGCAT_RTP) (VERBOSE_PREFIX_3 "%s: (PortResponse) Got PortResponse Remote RTP/UDP '%s', ConferenceId:%d, PassThruPartyId:%u, CallID:%u, RTCPPortNumber:%d, mediaType:%s\n", d->id, 
@@ -3497,10 +3507,10 @@ void handle_port_response(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 				rtp = &(channel->rtp.video);
 				break;
 			case SKINNY_MEDIA_TYPE_INVALID:
-				pbx_log(LOG_ERROR, "%s: PortResponse is Invalid. Skipping Request\n", d->id);
+				pbx_log(LOG_WARNING, "%s: port response carries an invalid media type; ignored\n", d->id);
 				return;
 			default:
-				pbx_log(LOG_ERROR, "%s: Cannot handling incoming PortResponse MediaType:%s (yet)!\n", d->id, skinny_mediaType2str(mediaType));
+				pbx_log(LOG_WARNING, "%s: port response for media type %s, which is not supported; ignored\n", d->id, skinny_mediaType2str(mediaType));
 				return;
 		}
 		
@@ -3546,12 +3556,12 @@ void handle_openReceiveChannelAck(constSessionPtr s, devicePtr d, constMessagePt
 				break;
 			case SKINNY_MEDIASTATUS_OutOfChannels:
 			case SKINNY_MEDIASTATUS_OutOfSockets:
-				pbx_log(LOG_NOTICE, "%s: Please Reset this Device. It ran out of Channels and/or Sockets\n", d->id);
+				pbx_log(LOG_WARNING, "%s: phone refused a media channel because it is out of %s; call ended (the phone usually needs a restart to recover)\n", d->id, mediastatus == SKINNY_MEDIASTATUS_OutOfSockets ? "sockets" : "media channels");
 				resultingChannelState = sccp_channel_closeAllMediaTransmitAndReceive(channel) | SCCP_RTP_STATUS_ERROR;
 				sccp_channel_endcall(channel);
 				break;
 			default:
-				pbx_log(LOG_ERROR, "%s: Device returned: '%s' (%d) !. Giving up.\n", d->id, skinny_mediastatus2str(mediastatus), mediastatus);
+				pbx_log(LOG_ERROR, "%s: phone refused a media channel with status '%s' (%d); call ended\n", d->id, skinny_mediastatus2str(mediastatus), mediastatus);
 				resultingChannelState = sccp_channel_closeAllMediaTransmitAndReceive(channel) | SCCP_RTP_STATUS_ERROR;
 				sccp_channel_endcall(channel);
 				break;
@@ -3609,12 +3619,12 @@ void handle_startMediaTransmissionAck(constSessionPtr s, devicePtr d, constMessa
 				break;
 			case SKINNY_MEDIASTATUS_OutOfChannels:
 			case SKINNY_MEDIASTATUS_OutOfSockets:
-				pbx_log(LOG_NOTICE, "%s: Please Reset this Device. It ran out of Channels and/or Sockets\n", d->id);
+				pbx_log(LOG_WARNING, "%s: phone refused a media channel because it is out of %s; call ended (the phone usually needs a restart to recover)\n", d->id, mediastatus == SKINNY_MEDIASTATUS_OutOfSockets ? "sockets" : "media channels");
 				resultingChannelState = sccp_channel_closeAllMediaTransmitAndReceive(channel) | SCCP_RTP_STATUS_ERROR;
 				sccp_channel_endcall(channel);
 				break;
 			default:
-				pbx_log(LOG_ERROR, "%s: Device returned: '%s' (%d) !. Giving up.\n", d->id, skinny_mediastatus2str(mediastatus), mediastatus);
+				pbx_log(LOG_ERROR, "%s: phone refused a media channel with status '%s' (%d); call ended\n", d->id, skinny_mediastatus2str(mediastatus), mediastatus);
 				resultingChannelState = sccp_channel_closeAllMediaTransmitAndReceive(channel) | SCCP_RTP_STATUS_ERROR;
 				sccp_channel_endcall(channel);
 				break;
@@ -3681,13 +3691,13 @@ void handle_OpenMultiMediaReceiveAck(constSessionPtr s, devicePtr d, constMessag
 				break;
 			case SKINNY_MEDIASTATUS_OutOfChannels:
 			case SKINNY_MEDIASTATUS_OutOfSockets:
-				pbx_log(LOG_NOTICE, "%s: Please Reset this Device. It ran out of Channels and/or Sockets\n", d->id);
+				pbx_log(LOG_WARNING, "%s: phone refused a media channel because it is out of %s; call ended (the phone usually needs a restart to recover)\n", d->id, mediastatus == SKINNY_MEDIASTATUS_OutOfSockets ? "sockets" : "media channels");
 				sccp_channel_closeMultiMediaReceiveChannel(channel, FALSE);
 				sccp_channel_stopMultiMediaTransmission(channel, FALSE);
 				sccp_channel_endcall(channel);
 				break;
 			default:
-				pbx_log(LOG_ERROR, "%s: Device returned: '%s' (%d) !. Giving up.\n", d->id, skinny_mediastatus2str(mediastatus), mediastatus);
+				pbx_log(LOG_ERROR, "%s: phone refused a media channel with status '%s' (%d); call ended\n", d->id, skinny_mediastatus2str(mediastatus), mediastatus);
 				sccp_channel_closeMultiMediaReceiveChannel(channel, FALSE);
 				sccp_channel_stopMultiMediaTransmission(channel, FALSE);
 				sccp_channel_endcall(channel);
@@ -3749,13 +3759,13 @@ void handle_startMultiMediaTransmissionAck(constSessionPtr s, devicePtr d, const
 				break;
 			case SKINNY_MEDIASTATUS_OutOfChannels:
 			case SKINNY_MEDIASTATUS_OutOfSockets:
-				pbx_log(LOG_NOTICE, "%s: Please Reset this Device. It ran out of Channels and/or Sockets\n", d->id);
+				pbx_log(LOG_WARNING, "%s: phone refused a media channel because it is out of %s; call ended (the phone usually needs a restart to recover)\n", d->id, mediastatus == SKINNY_MEDIASTATUS_OutOfSockets ? "sockets" : "media channels");
 				sccp_channel_closeMultiMediaReceiveChannel(channel, FALSE);
 				sccp_channel_stopMultiMediaTransmission(channel, FALSE);
 				sccp_channel_endcall(channel);
 				break;
 			default:
-				pbx_log(LOG_ERROR, "%s: Device returned: '%s' (%d) !. Giving up.\n", d->id, skinny_mediastatus2str(mediastatus), mediastatus);
+				pbx_log(LOG_ERROR, "%s: phone refused a media channel with status '%s' (%d); call ended\n", d->id, skinny_mediastatus2str(mediastatus), mediastatus);
 				sccp_channel_closeMultiMediaReceiveChannel(channel, FALSE);
 				sccp_channel_stopMultiMediaTransmission(channel, FALSE);
 				sccp_channel_endcall(channel);
@@ -3807,7 +3817,7 @@ void handle_mediaTransmissionFailure(constSessionPtr s, devicePtr d, constMessag
 	AUTO_RELEASE(sccp_channel_t, c , sccp_channel_find_bypassthrupartyid(partyID));
 
 	if (c) {
-		pbx_log(LOG_ERROR, "%s: MediaFailure on Channel '%s'!. Ending Call.\n", d->id, c->designator);
+		pbx_log(LOG_ERROR, "%s: phone reported a media transmission failure on call %s; call ended\n", d->id, c->designator);
 		// if directrtp: switch back to indirect rtp
 		// else
 		// 	hangup
@@ -4017,7 +4027,7 @@ void handle_ServerResMessage(constSessionPtr s, devicePtr d, constMessagePtr msg
 	sccp_msg_t *msg_out = NULL;
 
 	if (!sccp_session_isValid(s) || sccp_session_check_crossdevice(s, d)) {
-		pbx_log(LOG_ERROR, "%s: Wrong Session or Session Changed mid flight (%s)\n", DEV_ID_LOG(d), sccp_session_getDesignator(s));
+		pbx_log(LOG_WARNING, "%s: server list request on connection %s, which is closed or belongs to another device; ignored\n", DEV_ID_LOG(d), sccp_session_getDesignator(s));
 		return;
 	}
 	sccp_log(DEBUGCAT_CORE) (VERBOSE_PREFIX_3 "%s: Sending servers message (%s)\n", DEV_ID_LOG(d), sccp_session_getDesignator(s));
@@ -4272,7 +4282,7 @@ void handle_services_stat_req(constSessionPtr s, devicePtr d, constMessagePtr ms
 		}
 		sccp_dev_send(d, msg_out);
 	} else {
-		pbx_log(LOG_WARNING, "%s: serviceURL %d not assigned\n", sccp_session_getDesignator(s), urlIndex);
+		pbx_log(LOG_NOTICE, "%s: phone asked for service URL %d, which is not configured; ignored\n", sccp_session_getDesignator(s), urlIndex);
 	}
 }
 
@@ -4290,7 +4300,7 @@ static void handle_updatecapabilities_dissect_customPictureFormat(constDevicePtr
 			sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %7s %-5s customPictureFormat %d: width=%d, height=%d, pixelAspectRatio=%d, pixelClockConversion=%d, pixelClockDivisor=%d\n", DEV_ID_LOG(d), "", "", video_customPictureFormat, width, height, pixelAspectRatio, pixelClockConversion, pixelClockDivisor);
 		}
 	} else {
-		pbx_log(LOG_ERROR, "%s: Received customPictureFormatCount: %d out of bounds (%d)\n", DEV_ID_LOG(d), customPictureFormatCount, MAX_CUSTOM_PICTURES);
+		pbx_log(LOG_WARNING, "%s: phone reported %d custom video picture formats, more than the %d supported; video capabilities ignored\n", DEV_ID_LOG(d), customPictureFormatCount, MAX_CUSTOM_PICTURES);
 	}
 }
 
@@ -4315,7 +4325,7 @@ static void handle_updatecapabilities_dissect_levelPreference(constDevicePtr d, 
 			sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %14s serviceNumber: %d\n", DEV_ID_LOG(d), "", serviceNumber);
 		}
 	} else {
-		pbx_log(LOG_ERROR, "%s: Received levelPreferenceCount: %d out of bounds (%d)\n", DEV_ID_LOG(d), levelPreferenceCount, MAX_LEVEL_PREFERENCE);
+		pbx_log(LOG_WARNING, "%s: phone reported %d video level preferences, more than the %d supported; video capabilities ignored\n", DEV_ID_LOG(d), levelPreferenceCount, MAX_LEVEL_PREFERENCE);
 	}
 }
 
@@ -4726,7 +4736,7 @@ void handle_extension_devicecaps(constSessionPtr s, devicePtr d, constMessagePtr
 	sccp_log(DEBUGCAT_ACTION + DEBUGCAT_DEVICE)(VERBOSE_PREFIX_3 "%s: extension/addon. text='%s'\n", d->id, text);
 	SCCP_LIST_LOCK(&d->addons);
 	if (SCCP_LIST_GETSIZE(&d->addons) < instance) {
-		pbx_log(LOG_NOTICE, "%s: sccp.conf device section is missing addon entry for extension module %d. Please add one.", d->id, instance);
+		pbx_log(LOG_NOTICE, "%s: phone reports expansion module %d, which has no addon= entry in its sccp.conf device section; added from the phone's report for this registration\n", d->id, instance);
 		sccp_addon_t *addon = (sccp_addon_t *)sccp_calloc(1, sizeof(sccp_addon_t));
 		if (!addon) {
 			pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
@@ -4796,7 +4806,7 @@ void handle_device_to_user(constSessionPtr s, devicePtr d, constMessagePtr msg_i
 				d->dtu_softkey.action = pbx_strdup(str_action);
 				d->dtu_softkey.transactionID = sccp_atoi(str_transactionID, sizeof(str_transactionID));
 			} else {
-				pbx_log(LOG_NOTICE, "%s: Failure parsing DTU Softkey Button: %s\n", d->id, data);
+				pbx_log(LOG_NOTICE, "%s: could not parse softkey application data '%s' (expected action/transactionID); ignored\n", d->id, data);
 			}
 		}
 	} else {
@@ -4834,7 +4844,7 @@ void handle_device_to_user(constSessionPtr s, devicePtr d, constMessagePtr msg_i
 			case APPID_PROVISION:
 				break;
 			case APPID_INPUT:
-				pbx_log(LOG_NOTICE, "%s: APPID_INPUT: appid:%d,call:%d,line:%d,trans:%d,len:%d\ndata:%s\n", d->id, appID, callReference, lineInstance, transactionID, dataLength, data);
+				sccp_log((DEBUGCAT_ACTION))(VERBOSE_PREFIX_3 "%s: input application data ignored (appid %d, call %d, line %d, transaction %d, %d bytes)\n", d->id, appID, callReference, lineInstance, transactionID, dataLength);
 				break;
 		}
 	}

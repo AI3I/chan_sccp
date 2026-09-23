@@ -67,10 +67,9 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - Asterisk 20 header preparation: `/tmp/sccp-headers-20.log`, private prefix
   `/tmp/sccp-headers-20/prefix`.
 - Keep this document current with results, limitations, commits and deployment.
-- GitHub Actions is disabled for AI3I/chan_sccp (`enabled: false` from the
-  repository Actions permissions API); no run was created by the push. The
-  workflow definitions are committed, but the GitHub matrix and CodeQL remain
-  unverified until repository Actions is enabled.
+- GitHub Actions was disabled when the first push landed, so no run was
+  created. Actions was enabled on 2026-09-23 and a follow-up push triggered
+  the build matrix and CodeQL. Hosted results are pending.
 - Next: run the GitHub matrix, validate live SCCP behavior on a genuine test
   PBX, and retire older adapters in a separate reviewable change.
 

@@ -492,8 +492,10 @@ passed for the source commit. No live handset test was run.
 - Removed pre-11 monitor fields/initialization, the pre-12 distributed device
   state event path, and pre-16 forwarding state adjustments. The supported
   connected-line indication paths now compile directly.
-- This batch removes roughly 160 lines of unreachable code. `git diff --check`
-  passed. Hosted build/static results are pending; no live call was run.
+- This batch removes roughly 160 lines of unreachable code. `git diff --check`,
+  the hosted [Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35895520802),
+  and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35895520780)
+  passed. No live call was run.
 - Other pre-20 version branches remain, notably in `sccp_hint.c` and the PBX
   compatibility headers. They should be removed in focused batches so the
   Asterisk 20–24 build matrix can catch dependency mistakes.

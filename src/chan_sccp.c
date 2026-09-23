@@ -118,6 +118,19 @@ boolean_t sccp_prePBXLoad(void)
 	SCCP_RWLIST_HEAD_INIT(&GLOB(lines));
 
 	GLOB(general_threadpool) = sccp_threadpool_init(THREADPOOL_MIN_SIZE);
+	if (!GLOB(general_threadpool)) {
+		SCCP_RWLIST_HEAD_DESTROY(&GLOB(lines));
+		SCCP_RWLIST_HEAD_DESTROY(&GLOB(devices));
+		SCCP_RWLIST_HEAD_DESTROY(&GLOB(sessions));
+		sccp_refcount_destroy();
+#ifndef SCCP_ATOMIC
+		pbx_mutex_destroy(&GLOB(usecnt_lock));
+#endif
+		pbx_rwlock_destroy(&GLOB(lock));
+		sccp_free(sccp_globals);
+		sccp_globals = NULL;
+		return FALSE;
+	}
 
 	sccp_event_module_start();
 	iVoicemail.startModule();
@@ -251,6 +264,7 @@ int sccp_preUnload(void)
 	pbx_rwlock_wrlock(&GLOB(lock));
 	GLOB(module_running) = FALSE;
 	pbx_rwlock_unlock(&GLOB(lock));
+	sccp_threadpool_stop(GLOB(general_threadpool));
 
 	/* unsubscribe from services */
 	sccp_event_unsubscribe(SCCP_EVENT_FEATURE_CHANGED, sccp_device_featureChangedDisplay);
@@ -274,9 +288,6 @@ int sccp_preUnload(void)
 		sccp_dev_clean_restart(d, TRUE);								// performs a device reset if it has a session
 	}
 	SCCP_RWLIST_TRAVERSE_SAFE_END;
-	if (SCCP_RWLIST_EMPTY(&GLOB(devices))) {
-		SCCP_RWLIST_HEAD_DESTROY(&GLOB(devices));
-	}
 
 	/* hotline will be removed by line removing function */
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: Removing Lines\n");
@@ -297,9 +308,6 @@ int sccp_preUnload(void)
 		sccp_line_clean(l, TRUE);
 	}
 	SCCP_RWLIST_TRAVERSE_SAFE_END;
-	if (SCCP_RWLIST_EMPTY(&GLOB(lines))) {
-		SCCP_RWLIST_HEAD_DESTROY(&GLOB(lines));
-	}
 	iVoicemail.stopModule();
 	usleep(100);												// wait for events to finalize
 
@@ -307,6 +315,18 @@ int sccp_preUnload(void)
 
 	/* stop services */
 	sccp_session_terminateAll();
+	/* Producers are stopped; callbacks must finish before their services go away. */
+	if (!sccp_threadpool_destroy(GLOB(general_threadpool))) {
+		pbx_log(LOG_ERROR, "SCCP: failed to join thread-pool workers\n");
+		return -1;
+	}
+	GLOB(general_threadpool) = NULL;
+	if (SCCP_RWLIST_EMPTY(&GLOB(devices))) {
+		SCCP_RWLIST_HEAD_DESTROY(&GLOB(devices));
+	}
+	if (SCCP_RWLIST_EMPTY(&GLOB(lines))) {
+		SCCP_RWLIST_HEAD_DESTROY(&GLOB(lines));
+	}
 	sccp_manager_module_stop();
 #ifdef CS_DEVSTATE_FEATURE	
 	sccp_devstate_module_stop();
@@ -315,7 +335,6 @@ int sccp_preUnload(void)
 	sccp_conference_module_stop();
 #endif
 	sccp_softkey_clear();
-	sccp_threadpool_destroy(GLOB(general_threadpool));
 	sccp_refcount_destroy();
 
 	/* free resources */

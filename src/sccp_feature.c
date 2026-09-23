@@ -932,7 +932,7 @@ static void *sccp_feat_meetme_thread(void *data)
 #endif
 
 	unsigned int eid = sccp_random();
-	AUTO_RELEASE(sccp_channel_t, c , sccp_channel_retain(data));
+	AUTO_RELEASE(sccp_channel_t, c, (sccp_channel_t *)data);
 
 	if (!c) {
 		pbx_log(LOG_NOTICE, "SCCP: no channel provided for meetme feature. exiting\n");
@@ -1020,7 +1020,10 @@ static void *sccp_feat_meetme_thread(void *data)
  */
 void sccp_feat_meetme_start(channelPtr c)
 {
-	sccp_threadpool_add_work(GLOB(general_threadpool), sccp_feat_meetme_thread, (void *) c);
+	sccp_channel_t *owned = sccp_channel_retain(c);
+	if (owned && !sccp_threadpool_add_work(GLOB(general_threadpool), sccp_feat_meetme_thread, owned)) {
+		sccp_channel_release(&owned);
+	}
 }
 
 #define BASE_REGISTRAR "chan_sccp"

@@ -3870,7 +3870,9 @@ static void unregister_channel_tech(struct ast_channel_tech *tech)
 static int unload_module(void)
 {
 	pbx_log(LOG_NOTICE, "SCCP: Module Unload\n");
-	sccp_preUnload();
+	if (sccp_preUnload()) {
+		return -1;
+	}
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "SCCP: Unregister SCCP RTP protocol\n");
 	ast_rtp_glue_unregister(&sccp_rtp);
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "SCCP: Unregister SCCP Channel Tech\n");

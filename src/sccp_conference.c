@@ -1457,7 +1457,10 @@ void sccp_conference_handle_device_to_user(devicePtr d, uint32_t callReference, 
 				sccp_log((DEBUGCAT_CONFERENCE)) (VERBOSE_PREFIX_3 "SCCPCONF/%04d: Moderators cannot be kicked (%s)\n", conference->id, DEV_ID_LOG(d));
 				sccp_dev_set_message(d, "cannot kick a moderator", 5, FALSE, FALSE);
 			} else {
-				sccp_threadpool_add_work(GLOB(general_threadpool), sccp_participant_kicker, participant);
+				sccp_participant_t *owned = sccp_participant_retain(participant);
+				if (owned && !sccp_threadpool_add_work(GLOB(general_threadpool), sccp_participant_kicker, owned)) {
+					sccp_participant_release(&owned);
+				}
 			}
 		} else if (!strcmp(d->dtu_softkey.action, "EXIT")) {
 			d->conferencelist_active = FALSE;
@@ -1510,7 +1513,7 @@ void sccp_conference_kick_participant(constConferencePtr conference, participant
 
 void *sccp_participant_kicker(void *data) 
 {
-	AUTO_RELEASE(sccp_participant_t, participant , sccp_participant_retain(data));
+	AUTO_RELEASE(sccp_participant_t, participant, (sccp_participant_t *)data);
 	if (participant) {
 		sccp_conference_kick_participant(participant->conference, participant);
 	}
@@ -1758,7 +1761,7 @@ char *sccp_complete_conference(OLDCONST char *line, OLDCONST char *word, int pos
 	uint i = 0;
 	char *ret = NULL;
 	char tmpname[21];
-	char *actions[5] = { "EndConf", "Kick", "Mute", "Invite", "Moderate" };
+	char *actions[5] = { "endconf", "kick", "mute", "invite", "moderate" };
 
 	switch (pos) {
 		case 2:											// action
@@ -1962,7 +1965,10 @@ int sccp_cli_conference_command(int fd, sccp_cli_totals_t *totals, struct manses
 
 					if (participant) {
 						if (!strncasecmp(argv[2], "Kick", 4)) {				// Kick Command
-							sccp_threadpool_add_work(GLOB(general_threadpool), sccp_participant_kicker, participant);
+							sccp_participant_t *owned = sccp_participant_retain(participant);
+							if (owned && !sccp_threadpool_add_work(GLOB(general_threadpool), sccp_participant_kicker, owned)) {
+								sccp_participant_release(&owned);
+							}
 						} else if (!strncasecmp(argv[2], "Mute", 4)) {			// Mute Command
 							sccp_conference_toggle_mute_participant(conference, participant);
 						} else if (!strncasecmp(argv[2], "Invite", 5)) {		// Invite Command

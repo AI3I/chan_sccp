@@ -14,7 +14,7 @@
 
 __BEGIN_C_EXTERN__
 /* Description:         Library providing a threading pool where you can add work on the fly. The number
- *                      of threads in the pool is adjustable when creating the pool. In most cases
+ *                      of threads is fixed when creating the pool. In most cases
  *                      this should equal the number of threads supported by your cpu.
  *          
  *                      In this header file a detailed overview of the functions and the threadpool logical
@@ -85,15 +85,17 @@ SCCP_API sccp_threadpool_t * SCCP_CALL sccp_threadpool_init(int threadsN);
  * \param tp_p threadpool to which the work will be added to
  * \param function_p callback function to add as work
  * \param arg_p argument to the above function
- * \return int
+ * \return 1 if accepted; 0 if rejected (caller still owns arg_p).
  */
 SCCP_API int sccp_threadpool_add_work(sccp_threadpool_t * SCCP_CALL  tp_p, void *(*function_p) (void *), void *arg_p);
 
 /*!
  * \brief Destroy the threadpool
  * 
- * This will 'kill' the threadpool and free up memory. If threads are active when this
- * is called, they will finish what they are doing and then they will get destroyied.
+ * Stop admission, drain all accepted jobs, join workers, then free the pool.
+ * Call only after external producers have stopped, never from a pool callback.
+ * Callbacks must return normally; callbacks must not cancel or exit workers.
+ * A blocked callback delays destruction rather than permitting unsafe unload.
  * 
  * \param tp_p threadpool a pointer to the threadpool structure you want to destroy
  */
@@ -103,17 +105,12 @@ SCCP_API boolean_t SCCP_CALL sccp_threadpool_destroy(sccp_threadpool_t * tp_p);
  * \brief Return number of currently allocate threads in the threadpool
  * \param tp_p threadpool a pointer to the threadpool structure for which we would like to know the number of workers
  */
-SCCP_API int __PURE__ SCCP_CALL sccp_threadpool_thread_count(sccp_threadpool_t * tp_p);
+SCCP_API int SCCP_CALL sccp_threadpool_thread_count(sccp_threadpool_t * tp_p);
 
 /* ------------------------- Queue specific ------------------------------ */
 
-/*!
- * \brief Initialize queue
- * \param tp_p pointer to threadpool
- * \return 0 on success,
- *        -1 on memory allocation error
- */
-SCCP_API int SCCP_CALL sccp_threadpool_jobqueue_init(sccp_threadpool_t * tp_p);
+/* Close admission; pool storage remains valid until destroy. */
+SCCP_API void SCCP_CALL sccp_threadpool_stop(sccp_threadpool_t *tp_p);
 
 /*!
  * \brief Add job to queue
@@ -124,9 +121,10 @@ SCCP_API int SCCP_CALL sccp_threadpool_jobqueue_init(sccp_threadpool_t * tp_p);
  * 
  * \param tp_p pointer to threadpool
  * \param newjob_p pointer to the new job(MUST BE ALLOCATED)
- * \return nothing 
+ * \return 1 on acceptance (pool owns job and argument); 0 on rejection
+ *         (caller retains both job and argument).
  */
-SCCP_API void SCCP_CALL sccp_threadpool_jobqueue_add(sccp_threadpool_t * tp_p, sccp_threadpool_job_t * newjob_p);
+SCCP_API int SCCP_CALL sccp_threadpool_jobqueue_add(sccp_threadpool_t * tp_p, sccp_threadpool_job_t * newjob_p);
 
 /*!
  * \brief Return Number of Jobs in the Queue

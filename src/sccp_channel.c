@@ -2406,7 +2406,11 @@ void sccp_channel_clean(channelPtr channel)
 		SCCP_LIST_LOCK(&channel->privateData->cleanup_jobs);
 		while ((job = SCCP_LIST_REMOVE_HEAD(&channel->privateData->cleanup_jobs, list))) {
 			SCCP_LIST_UNLOCK(&channel->privateData->cleanup_jobs);
-			sccp_threadpool_jobqueue_add(GLOB(general_threadpool), job);
+			if (!sccp_threadpool_jobqueue_add(GLOB(general_threadpool), job)) {
+				/* Cleanup cannot be dropped when the pool closes admission. */
+				job->function(job->arg);
+				sccp_free(job);
+			}
 			SCCP_LIST_LOCK(&channel->privateData->cleanup_jobs);
 		}
 		SCCP_LIST_UNLOCK(&channel->privateData->cleanup_jobs);

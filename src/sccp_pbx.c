@@ -386,7 +386,10 @@ int sccp_pbx_call(channelPtr c, const char * dest, int timeout)
 					conveyor->callid = c->callid;
 					conveyor->ld = sccp_linedevice_retain(ld);
 
-					sccp_threadpool_add_work(GLOB(general_threadpool), sccp_pbx_call_autoanswer_thread, (void *) conveyor);
+					if (!sccp_threadpool_add_work(GLOB(general_threadpool), sccp_pbx_call_autoanswer_thread, conveyor)) {
+						sccp_linedevice_release(&conveyor->ld);
+						sccp_free(conveyor);
+					}
 				} else {
 					pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, c->designator);
 				}

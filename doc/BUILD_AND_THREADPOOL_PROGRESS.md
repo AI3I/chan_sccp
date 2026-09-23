@@ -288,6 +288,35 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   as described in `HEALTH_AUDIT.md`. The older health audit includes historic
   plans and should not override this current status section.
 
+### Additional source-audit findings (2026-09-23)
+
+These are code-review findings, not runtime-validated repairs. No build or live
+test was run for this read-only audit.
+
+- **High — conference playback mutex:** In `src/sccp_conference.c`,
+  `playback_to_conference()` returns after a missing-file check without
+  unlocking `conference->playback.lock` (both the current Asterisk branch and
+  the legacy branch). A bad announcement filename can leave later conference
+  playback blocked. Fix the current branch; remove the unreachable pre-20
+  branch as part of the already planned version cleanup.
+- **High — phone text messages:** `sccp_device_pushTextMessage()` in
+  `src/sccp_device.c` rejects messages *shorter* than 1024 bytes for protocol
+  versions below 17, the reverse of its documented limit. An empty or NULL
+  sender leaves the `title` buffer uninitialized, then passes it to `%s` in
+  `snprintf()`. The Asterisk message callback passes its `from` argument
+  directly, so this needs a safe empty-sender path and a corrected size check.
+- **Medium — conference announcement format:**
+  `sccp_astwrap_requestAnnouncementChannel()` in `src/pbx_impl/ast120/ast120.c`
+  ignores `format_type` and always requests A-law. The conference caller
+  currently asks for A-law on the supported branch, so no current mismatch is
+  proven; remove the unused argument or honor it when simplifying the adapter.
+- **Low — connection statistics byte order:** `handle_ConnectionStatistics()`
+  in `src/sccp_actions.c` applies `letohl()` to the result of a comparison
+  instead of decoding `lel_protocolVer` before comparing it. This works by
+  accident on little-endian hosts but can select the wrong statistics layout
+  on big-endian hosts. The repeated version checks should share one decoded
+  value. Review the v22 quality-statistics length handling in the same pass.
+
 ## Media payload and test-surface cleanup (2026-09-23)
 
 - Changed RTP payload lookup through the PBX interface and SCCP helper to

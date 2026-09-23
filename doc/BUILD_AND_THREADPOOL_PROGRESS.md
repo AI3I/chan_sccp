@@ -417,3 +417,7 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   prohibit that type. The change has not been exercised with a live TLS client.
   Runtime handshake/closure/reconnect and teardown races remain for focused
   validation before claiming safe live TLS behavior.
+- The final source commit `0799a6d8` passed the hosted
+  [Asterisk 20–24 Build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35865377426)
+  and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35865377415).
+  These are build/static checks, not live TLS or handset validation.

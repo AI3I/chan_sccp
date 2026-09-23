@@ -321,7 +321,8 @@ feature repairs. Keep that progress document updated as implementation proceeds.
 
 - R4/R10: generated build files, archive packaging, and real test/CI steps were
   repaired. Asterisk 22 build and clean archive builds with 20/24 headers pass.
-  Full GitHub matrix remains to run after push.
+  GitHub Actions is disabled for the repository, so the full matrix did not run
+  after push.
 - R1/R9: joinable pool workers, admission stop, ownership handling, and failure
   returns are implemented. Sanitizer/standalone tests and ten isolated module
   unload/load cycles pass. Live SCCP call workload remains unverified.

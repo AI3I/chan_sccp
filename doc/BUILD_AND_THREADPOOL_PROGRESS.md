@@ -6,11 +6,12 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 
 ## Checkpoint and production
 
-- CLI/tone changes committed locally as `28aceacd`; not pushed.
+- CLI/tone checkpoint `28aceacd` and follow-up commits `7ff0436d`,
+  `b6036b24`, `f4737956` were pushed to `main` on 2026-09-23.
 - Production still runs the validated CLI/tone module, SHA-256
   `a191cad78c4905dd2f9972a0708bcf5bb87345e01feb05c64f0486797645bb73`.
-- Current work is isolated in `/usr/src/chan-sccp-build-review` on the PBX.
-  Do not confuse a successful isolated build with deployment.
+- Build work ran in `/usr/src/chan-sccp-build-review` on the PBX. The new
+  module was loaded only in the private isolated Asterisk process.
 
 ## Build work (R4/R10) — implemented, validation recorded below
 
@@ -66,8 +67,12 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - Asterisk 20 header preparation: `/tmp/sccp-headers-20.log`, private prefix
   `/tmp/sccp-headers-20/prefix`.
 - Keep this document current with results, limitations, commits and deployment.
-- Next: run the GitHub matrix after pushing, validate live SCCP behavior on a
-  genuine test PBX, and retire older adapters in a separate reviewable change.
+- GitHub Actions is disabled for AI3I/chan_sccp (`enabled: false` from the
+  repository Actions permissions API); no run was created by the push. The
+  workflow definitions are committed, but the GitHub matrix and CodeQL remain
+  unverified until repository Actions is enabled.
+- Next: run the GitHub matrix, validate live SCCP behavior on a genuine test
+  PBX, and retire older adapters in a separate reviewable change.
 
 ## Additional user decisions during this work
 

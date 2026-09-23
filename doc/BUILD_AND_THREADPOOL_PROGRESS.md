@@ -569,4 +569,7 @@ passed for the source commit. No live handset test was run.
   feature probe remains because it can differ by build configuration.
 - Removed a commented-out redirected-update call exposed by this cleanup.
   Other older-version guards remain in management, feature, and utility code.
-  Build and static validation are pending; no live call was run.
+  Source commit `869ccb65` passed `git diff --check`, the hosted
+  [Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35899186502),
+  and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35899186290).
+  No live call was run.

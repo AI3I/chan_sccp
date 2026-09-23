@@ -177,7 +177,7 @@ locations, evidence, limits, and proposed validation.
 | ID | Severity | Finding | Status |
 |---|---|---|---|
 | R1 | High | Thread-pool teardown can free live-worker storage | Implemented; live call workload deferred |
-| R2 | High, conditional | Fallback-script output stack overflow | Open |
+| R2 | High, conditional | Fallback-script output stack overflow | Implemented; compile-only validation, runtime deferred |
 | R3 | High, conditional | XML request/unload cleanup destroys global library state | Open |
 | R4 | High | Generated build files and distribution lists contradict sources | Implemented; hosted 20–24 CI passed before legacy retirement |
 | R5 | Medium | Partial writes can interleave SCCP frames | Open |
@@ -186,7 +186,7 @@ locations, evidence, limits, and proposed validation.
 | R8 | Medium, conditional | TLS handshake/accept and retry contracts are broken | Open |
 | R9 | Medium | Queue allocation exits Asterisk; rejected jobs report success | Implemented with R1 |
 | R10 | Medium | Fake-success test target and stale CI configuration | Implemented; hosted CI passed before legacy retirement |
-| R11 | Medium, conditional | Odd/even fallback policy does not enforce parity | Open |
+| R11 | Medium, conditional | Odd/even fallback policy does not enforce parity | Implemented; compile-only validation, runtime deferred |
 | R12 | Low | Send error paths leak owned messages | Open; include with session/ownership fixes |
 
 Additional recommendations remain tracked in the review's **What can reasonably

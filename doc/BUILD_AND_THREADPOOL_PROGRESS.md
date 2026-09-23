@@ -171,3 +171,20 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - Build templates were regenerated after removing the obsolete RPM configure
   probe. Per user request, no new compile or live call test is planned for
   this metadata-only cleanup; hosted CI can check the pushed commit.
+
+## Token fallback repair
+
+- Replaced the shell-based fallback script invocation with direct argument
+  execution. Device ID, host address, and phone type are passed as three argv
+  values. Script output is limited to one short line, the process must exit
+  successfully within two seconds, and invalid/long/multiple-line output
+  rejects the token using the configured backoff. `ACK` acknowledges; an
+  integer greater than 30 seconds sets the rejection backoff.
+- `odd` and `even` now use the numeric value of the final hexadecimal device-ID
+  digit and reject malformed IDs. `true` acknowledges only on server priority
+  1. Removed the duplicate early rejection for `fallback=no` and bounded the
+  wire device ID before using it as a C string.
+- One compile-only build of this batch passed against wadsworth's private
+  Asterisk 22 headers. No module was installed and no phone/client test was
+  run. The configured-script, parity, and live registration paths remain to be
+  exercised later in the dedicated lab; the running module is unchanged.

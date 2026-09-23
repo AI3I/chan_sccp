@@ -161,7 +161,7 @@ struct sccp_global_vars {
 	struct ast_config *cfg;
 	sccp_hotline_t *hotline;										/*!< HotLine */
 
-	char *token_fallback;											/*!< Fall back immediatly on TokenReq (true/false/odd/even) */
+	char *token_fallback;											/*!< TokenReq fallback policy: true/false/odd/even/script */
 	int token_backoff_time;											/*!< Backoff time on TokenReject */
 	int server_priority;											/*!< Server Priority to fallback to */
 

@@ -44,12 +44,149 @@ SCCP_FILE_VERSION(__FILE__, "");
 #if defined(HAVE_UNALIGNED_BUSERROR)
 #include <asterisk/unaligned.h>
 #endif
-#include <sys/stat.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <poll.h>
+#include <spawn.h>
+#include <sys/wait.h>
+#include <time.h>
 #ifdef HAVE_PBX_ACL_H				// AST_SENSE_ALLOW
 #  include <asterisk/acl.h>
 #endif
 #include <math.h>
 #include <asterisk/localtime.h>
+
+extern char **environ;
+
+#define TOKEN_SCRIPT_TIMEOUT_MS 2000
+
+/* The helper may return only one short line: ACK or a backoff in seconds. */
+static int token_script_result(const char *path, const char *device_name, const char *host,
+	const char *device_type, int *backoff)
+{
+	int fds[2] = { -1, -1 };
+	posix_spawn_file_actions_t actions;
+	pid_t child = -1;
+	struct timespec start, now;
+	char output[32] = "";
+	size_t used = 0;
+	int status = 0;
+	int result = -1;
+	int reaped = 0;
+	char *const args[] = { (char *)path, (char *)device_name, (char *)host, (char *)device_type, NULL };
+
+	if (pipe(fds) != 0)
+		return -1;
+	if (fds[1] <= STDERR_FILENO) {
+		int moved = fcntl(fds[1], F_DUPFD, STDERR_FILENO + 1);
+		if (moved < 0)
+			goto done;
+		close(fds[1]);
+		fds[1] = moved;
+	}
+	if (fcntl(fds[0], F_SETFD, FD_CLOEXEC) < 0 || fcntl(fds[1], F_SETFD, FD_CLOEXEC) < 0)
+		goto done;
+	if (posix_spawn_file_actions_init(&actions) != 0)
+		goto done;
+	int setup = posix_spawn_file_actions_addclose(&actions, fds[0]);
+	if (setup == 0)
+		setup = posix_spawn_file_actions_adddup2(&actions, fds[1], STDOUT_FILENO);
+	if (setup == 0)
+		setup = posix_spawn_file_actions_addclose(&actions, fds[1]);
+	if (setup == 0)
+		setup = posix_spawn(&child, path, &actions, NULL, args, environ);
+	posix_spawn_file_actions_destroy(&actions);
+	if (setup != 0)
+		goto done;
+	close(fds[1]);
+	fds[1] = -1;
+	if (clock_gettime(CLOCK_MONOTONIC, &start) != 0)
+		goto done;
+
+	for (;;) {
+		if (clock_gettime(CLOCK_MONOTONIC, &now) != 0)
+			goto done;
+		long long elapsed = (now.tv_sec - start.tv_sec) * 1000LL + (now.tv_nsec - start.tv_nsec) / 1000000;
+		if (elapsed >= TOKEN_SCRIPT_TIMEOUT_MS)
+			goto done;
+		int remaining = TOKEN_SCRIPT_TIMEOUT_MS - (int)elapsed;
+		struct pollfd pfd = { .fd = fds[0], .events = POLLIN };
+		int ready = poll(&pfd, 1, remaining);
+		if (ready < 0) {
+			if (errno == EINTR)
+				continue;
+			goto done;
+		}
+		if (ready == 0 || (pfd.revents & (POLLERR | POLLNVAL)))
+			goto done;
+		char chunk[64];
+		ssize_t count = read(fds[0], chunk, sizeof(chunk));
+		if (count < 0) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+			goto done;
+		}
+		if (count == 0)
+			break;
+		if ((size_t)count >= sizeof(output) - used)
+			goto done;
+		memcpy(output + used, chunk, (size_t)count);
+		used += (size_t)count;
+	}
+	close(fds[0]);
+	fds[0] = -1;
+
+	for (;;) {
+		pid_t waited = waitpid(child, &status, WNOHANG);
+		if (waited == child) {
+			reaped = 1;
+			break;
+		}
+		if (waited < 0) {
+			if (errno == ECHILD)
+				reaped = 1;
+			if (errno != EINTR)
+				goto done;
+		}
+		if (clock_gettime(CLOCK_MONOTONIC, &now) != 0)
+			goto done;
+		long long elapsed = (now.tv_sec - start.tv_sec) * 1000LL + (now.tv_nsec - start.tv_nsec) / 1000000;
+		if (elapsed >= TOKEN_SCRIPT_TIMEOUT_MS)
+			goto done;
+		usleep(10000);
+	}
+	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+		goto done;
+	if (memchr(output, '\0', used) != NULL)
+		goto done;
+	output[used] = '\0';
+	if (used && output[used - 1] == '\n')
+		output[--used] = '\0';
+	if (used && output[used - 1] == '\r')
+		output[--used] = '\0';
+	if (strcasecmp(output, "ACK") == 0) {
+		result = 1;
+	} else if (used && isdigit((unsigned char)output[0])) {
+		char *end;
+		errno = 0;
+		long seconds = strtol(output, &end, 10);
+		if (errno == 0 && *end == '\0' && seconds > 30 && seconds <= INT_MAX) {
+			*backoff = (int)seconds;
+			result = 0;
+		}
+	}
+
+done:
+	if (fds[0] >= 0)
+		close(fds[0]);
+	if (fds[1] >= 0)
+		close(fds[1]);
+	if (child > 0 && !reaped) {
+		kill(child, SIGKILL);
+		while (waitpid(child, &status, 0) < 0 && errno == EINTR) {}
+	}
+	return result;
+}
 
 /* prototypes */
 void handle_unknown_message(constSessionPtr s, devicePtr d, constMessagePtr msg_in)			__NONNULL(1,2,3);
@@ -491,12 +628,13 @@ void handle_LocationInfoMessage(constSessionPtr s, devicePtr d, constMessagePtr 
  */
 void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg_in)
 {
-	char *deviceName = "";
+	char deviceName[sizeof(msg_in->data.RegisterTokenRequest.sId.deviceName) + 1];
 	uint32_t serverPriority = GLOB(server_priority);
 	uint32_t deviceInstance = 0;
 	skinny_devicetype_t deviceType = SKINNY_DEVICETYPE_UNDEFINED;
 
-	deviceName = pbx_strdupa(msg_in->data.RegisterTokenRequest.sId.deviceName);
+	memcpy(deviceName, msg_in->data.RegisterTokenRequest.sId.deviceName, sizeof(deviceName) - 1);
+	deviceName[sizeof(deviceName) - 1] = '\0';
 	deviceInstance = letohl(msg_in->data.RegisterTokenRequest.sId.lel_instance);
 	deviceType = letohl(msg_in->data.RegisterTokenRequest.lel_deviceType);
 	int token_backoff_time = GLOB(token_backoff_time) >= 30 ? GLOB(token_backoff_time) : 60;
@@ -505,12 +643,6 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 		pbx_log(LOG_NOTICE, "SCCP: Reload in progress. Come back later.\n");
 		sccp_session_tokenReject(s, 10);
 		return;
-	}
-	if (!sccp_strlen_zero(GLOB(token_fallback))) {
-		if (sccp_false(GLOB(token_fallback))) {
-			sccp_log_and((DEBUGCAT_ACTION + DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "%s: Sending phone a token rejection (sccp.conf:fallback=%s)\n", deviceName, GLOB(token_fallback));
-			sccp_session_tokenReject(s, token_backoff_time);
-		}
 	}
 	if (!skinny_devicetype_exists(deviceType)) {
 		pbx_log(LOG_NOTICE, "%s: We currently do not (fully) support this device type (%d).\n" "Please send this device type number plus the information about the phone model you are using to one of our developers.\n" "Be Warned you should Expect Trouble Ahead\nWe will try to go ahead (Without any guarantees)\n", deviceName, deviceType);
@@ -544,7 +676,7 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 	// Search for the device (including realtime), if does not exist and hotline is requested create one.
 	AUTO_RELEASE(sccp_device_t, device, sccp_device_find_byid(deviceName, TRUE));
 	if (!device && GLOB(allowAnonymous)) {
-		device = sccp_device_createAnonymous(msg_in->data.RegisterTokenRequest.sId.deviceName) /*ref_replace*/;
+		device = sccp_device_createAnonymous(deviceName) /*ref_replace*/;
 		sccp_config_applyDeviceConfiguration(device, NULL);
 		sccp_config_addButton(&device->buttonconfig, 1, LINE, GLOB(hotline)->line ? GLOB(hotline)->line->name : "hotline", NULL, NULL);
 		//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: hotline name: %s\n", deviceName, GLOB(hotline)->line->name);
@@ -571,7 +703,7 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 	if (device->checkACL(device) == FALSE) {
 		struct sockaddr_storage sas = { 0 };
 		sccp_session_getSas(s, &sas);
-		pbx_log(LOG_NOTICE, "%s: Rejecting device: Ip address '%s' denied (deny + permit/permithosts).\n", msg_in->data.RegisterTokenRequest.sId.deviceName, sccp_netsock_stringify_addr(&sas));
+		pbx_log(LOG_NOTICE, "%s: Rejecting device: Ip address '%s' denied (deny + permit/permithosts).\n", deviceName, sccp_netsock_stringify_addr(&sas));
 		sccp_device_setRegistrationState(device, SKINNY_DEVICE_RS_FAILED);
 		sccp_session_tokenReject(s, token_backoff_time);
 		goto EXIT;
@@ -579,57 +711,33 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 
 	/* accepting token by default */
 	boolean_t sendAck = TRUE;
-	int last_digit = deviceName[strlen(deviceName)];
 	if (!sccp_strlen_zero(GLOB(token_fallback))) {
 		if (sccp_false(GLOB(token_fallback))) {
 			sendAck = FALSE;
 		} else if (sccp_true(GLOB(token_fallback))) {
-			/* we are the primary server */
-			if (serverPriority == 1) {
-				sendAck = TRUE;
+			sendAck = serverPriority == 1;
+		} else if (!strcasecmp("odd", GLOB(token_fallback)) || !strcasecmp("even", GLOB(token_fallback))) {
+			size_t len = strlen(deviceName);
+			int digit = -1;
+			if (len) {
+				unsigned char last = (unsigned char)deviceName[len - 1];
+				int upper = toupper(last);
+				if (last >= '0' && last <= '9')
+					digit = last - '0';
+				else if (upper >= 'A' && upper <= 'F')
+					digit = upper - 'A' + 10;
 			}
-		} else if (!strcasecmp("odd", GLOB(token_fallback))) {
-			if (last_digit % 2 != 0) {
-				sendAck = TRUE;
-			}
-		} else if (!strcasecmp("even", GLOB(token_fallback))) {
-			if (last_digit % 2 == 0) {
-				sendAck = TRUE;
-			}
+			sendAck = digit >= 0 && (digit % 2 == 1) == !strcasecmp("odd", GLOB(token_fallback));
+			if (digit < 0)
+				pbx_log(LOG_WARNING, "%s: Invalid device ID for fallback parity\n", deviceName);
 		} else if (strstr(GLOB(token_fallback), "/") != NULL) {
-			struct stat sb = { 0 };
-			if (stat(GLOB(token_fallback), &sb) == 0 && sb.st_mode & S_IXUSR) {
-				char command[SCCP_PATH_MAX];
-				char buff[20] = "";
-				char output[21] = "";
-
-				struct sockaddr_storage sas = { 0 };
-				sccp_session_getSas(s, &sas);
-				snprintf(command, SCCP_PATH_MAX, "%s %s %s %s", GLOB(token_fallback), deviceName, sccp_netsock_stringify_host(&sas), skinny_devicetype2str(deviceType));
-				FILE * pp = NULL;
-
-				//sccp_log(DEBUGCAT_CORE) (VERBOSE_PREFIX_3 "%s: (token_request), executing '%s'\n", deviceName, (char *) command);
-				pp = popen(command, "r");
-				if (pp != NULL) {
-					while (fgets(buff, sizeof(buff) - 1, pp)) {
-						snprintf(output + strlen(output), sizeof(output) - 1, "%s", buff);
-					}
-					pclose(pp);
-					sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: (token_request), script result='%s'\n", deviceName, (char *) output);
-					if (sccp_strcaseequals(output, "ACK\n")) {
-						sendAck = TRUE;
-					} else if (sscanf(output, "%d\n", &token_backoff_time) == 1 && token_backoff_time > 30) {
-						//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: (token_request), sets new token_backoff_time=%d\n", deviceName, token_backoff_time);
-						sendAck = FALSE;
-					} else {
-						pbx_log(LOG_WARNING, "%s: (token_request) script '%s' return unknown result: '%s'\n", deviceName, GLOB(token_fallback), (char *) output);
-					}
-				} else {
-					pbx_log(LOG_WARNING, "%s: (token_request) Unable to execute '%s'\n", deviceName, (char *) command);
-				}
-			} else {
-				pbx_log(LOG_WARNING, "Script %s, either not found or not executable by this user\n", GLOB(token_fallback));
-			}
+			struct sockaddr_storage sas = { 0 };
+			sccp_session_getSas(s, &sas);
+			int script_result = token_script_result(GLOB(token_fallback), deviceName,
+				sccp_netsock_stringify_host(&sas), skinny_devicetype2str(deviceType), &token_backoff_time);
+			sendAck = script_result == 1;
+			if (script_result < 0)
+				pbx_log(LOG_WARNING, "%s: Fallback script '%s' failed, timed out, or returned an invalid response\n", deviceName, GLOB(token_fallback));
 		} else {
 			pbx_log(LOG_WARNING, "%s: did not understand global fallback value: '%s'... sending default value 'ACK'\n", deviceName, GLOB(token_fallback));
 		}
@@ -646,7 +754,7 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 		sccp_log_and((DEBUGCAT_ACTION + DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "%s: Acknowledging phone token request\n", deviceName);
 		sccp_session_tokenAck(s);
 	} else {
-		sccp_log_and((DEBUGCAT_ACTION + DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "%s: Sending phone a token rejection (sccp.conf:fallback=%s, serverPriority=%d), ask again in '%d' seconds\n", deviceName, GLOB(token_fallback), serverPriority, GLOB(token_backoff_time));
+		sccp_log_and((DEBUGCAT_ACTION + DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "%s: Sending phone a token rejection (sccp.conf:fallback=%s, serverPriority=%d), ask again in '%d' seconds\n", deviceName, GLOB(token_fallback), serverPriority, token_backoff_time);
 		sccp_session_tokenReject(s, token_backoff_time);
 	}
 

@@ -168,11 +168,11 @@ static const SCCPConfigOption sccpGlobalConfigOptions[]={
 	{"hotline_context",		offsize(sccp_line_t,context),offsetof(struct sccp_global_vars,hotline),			TYPE_PARSER(sccp_config_parse_hotline_context),	SCCP_CONFIG_FLAG_NONE,				SCCP_CONFIG_NEEDDEVICERESET,		"default",			"Context used when dialing the hotline_extension"},
 	{"hotline_label", 		offsize(sccp_line_t,label),offsetof(struct sccp_global_vars,hotline),			TYPE_PARSER(sccp_config_parse_hotline_label),	SCCP_CONFIG_FLAG_NONE,				SCCP_CONFIG_NEEDDEVICERESET,		"hotline",			"Label on the display for this hotline"},
 	{"fallback",			G_OBJ_REF(token_fallback),		TYPE_STRINGPTR,									SCCP_CONFIG_FLAG_NONE,						SCCP_CONFIG_NOUPDATENEEDED,		"no",				"Immediately fallback to primary/master server when it becomes available (master/slave asterisk cluster) (TokenRequest)\n"
-																																					"Possible values are: true/false/odd/even/script.\n" 
+																												"Possible values are: true/false/odd/even/script. Odd/even use the final hexadecimal device-ID digit.\n"
 																																					"active/passive cluster: true on active/false on passive\n" 
-																																					"active/active cluster: even on active1/off on active2\n"
+																																					"active/active cluster: even on active1/odd on active2\n"
 																																					"more complex cluster: use script. It will be called with three arguments, namely mac-address, ip-address, devicetype.\n"
-																																					"                      and it should return 'ACK' (without the quotes) to acknowledge the token, or a value for the number of seconds to backoff and try again.\n" 
+																												"                      and it should print one line: ACK to acknowledge, or a backoff greater than 30 seconds. The script must exit successfully within 2 seconds; failures reject the token.\n"
 																																					"Value can be changed online via CLI/AMI command 'sccp set fallback true/false/odd/even/script'\n"},
 	{"backoff_time", 		G_OBJ_REF(token_backoff_time),		TYPE_INT,									SCCP_CONFIG_FLAG_NONE,						SCCP_CONFIG_NOUPDATENEEDED,		"60",				"Time to wait before re-asking to fallback to primary server (Token Reject Backoff Time)\n"},
 	{"server_priority", 		G_OBJ_REF(server_priority),		TYPE_INT,									SCCP_CONFIG_FLAG_NONE,						SCCP_CONFIG_NOUPDATENEEDED,		"1",				"Server Priority for fallback: 1=Primary, 2=Secondary, 3=Tertiary etc\n"

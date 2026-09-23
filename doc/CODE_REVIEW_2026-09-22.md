@@ -335,11 +335,12 @@ feature repairs. Keep that progress document updated as implementation proceeds.
 
 ## Remaining findings after `126ede59`
 
-R1/R4/R9/R10 and the pre-20 adapter removal are implemented. R2/R3/R5/R6/R7/
-R8/R11/R12 remain. R2 (fallback-script output bounds) and R3 (XML global
-cleanup) are the conditional high-severity items. R5/R6 (session writes and
-reads) are the next core transport repair; R12 can share that ownership pass.
-R7 (read-format setter), R8 (TLS), and R11 (fallback parity) follow. The
+R1/R2/R4/R9/R10/R11 and the pre-20 adapter removal are implemented. R3/R5/R6/
+R7/R8/R12 remain. R2 and R11 have compile-only validation; configured-script
+and phone behavior remain untested. R3 (XML global cleanup) is the remaining
+conditional high-severity item. R5/R6 (session writes and reads) are the next
+core transport repair; R12 can share that ownership pass. R7 (read-format
+setter) and R8 (TLS) follow. The
 discard/consolidation candidates in the table above remain proposals unless
 explicitly called out as retired; obsolete packaging, upstream service
 metadata, and old Asterisk patches were also removed in the later repository

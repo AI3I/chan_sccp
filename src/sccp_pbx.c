@@ -125,11 +125,11 @@ static void *sccp_pbx_call_autoanswer_thread(void *data)
 	pthread_testcancel();
 
 	if (!conveyor) {
-		pbx_log(LOG_ERROR, "SCCP: (autoanswer_thread) No conveyor\n");
+		pbx_log(LOG_ERROR, "SCCP: auto-answer thread started without its call data (caller bug)\n");
 		return NULL;
 	}
 	if(!conveyor->ld) {
-		pbx_log(LOG_ERROR, "SCCP: (autoanswer_thread) No linedevice\n");
+		pbx_log(LOG_WARNING, "SCCP: auto-answer of call %d skipped: its line is no longer on the device\n", conveyor->callid);
 		goto FINAL;
 	}
 
@@ -137,14 +137,14 @@ static void *sccp_pbx_call_autoanswer_thread(void *data)
 		AUTO_RELEASE(sccp_device_t, device, sccp_device_retain(conveyor->ld->device));
 
 		if (!device) {
-			pbx_log(LOG_ERROR, "SCCP: (autoanswer_thread) no device\n");
+			pbx_log(LOG_NOTICE, "SCCP: auto-answer of call %d skipped: the device is gone\n", conveyor->callid);
 			goto FINAL;
 		}
 
 		AUTO_RELEASE(sccp_channel_t, c , sccp_channel_find_byid(conveyor->callid));
 
 		if (!c || c->state != SCCP_CHANNELSTATE_RINGING) {
-			pbx_log(LOG_WARNING, "%s: (autoanswer_thread) %s\n", device->id, c ? "not ringing" : "no channel");
+			sccp_log((DEBUGCAT_PBX))(VERBOSE_PREFIX_3 "%s: auto-answer of call %d skipped: %s\n", device->id, conveyor->callid, c ? "it is no longer ringing" : "it ended during the auto-answer delay");
 			goto FINAL;
 		}
 		if (c->pbx_callid) {
@@ -202,7 +202,7 @@ int sccp_pbx_call(channelPtr c, const char * dest, int timeout)
 
 	AUTO_RELEASE(sccp_line_t, l , sccp_line_retain(c->line));
 	if (!l) {
-		pbx_log(LOG_WARNING, "SCCP: The channel %08X has no line. giving up.\n", (c->callid));
+		pbx_log(LOG_WARNING, "SCCP: incoming call %08X not delivered: it has no line\n", c->callid);
 		return -1;
 	}
 
@@ -299,7 +299,7 @@ int sccp_pbx_call(channelPtr c, const char * dest, int timeout)
 				ForwardingLineDevice = ld;
 			} else {
 				/* shared line -> create a temp channel to call forward destination and tie them together */
-				pbx_log(LOG_NOTICE, "%s: handle cfwd to %s for line %s\n", ld->device->id, ld->cfwd[SCCP_CFWD_ALL].enabled ? ld->cfwd[SCCP_CFWD_ALL].number : ld->cfwd[SCCP_CFWD_BUSY].number, l->name);
+				pbx_log(LOG_NOTICE, "%s: forwarding call on shared line %s to %s\n", ld->device->id, l->name, ld->cfwd[SCCP_CFWD_ALL].enabled ? ld->cfwd[SCCP_CFWD_ALL].number : ld->cfwd[SCCP_CFWD_BUSY].number);
 				if(sccp_channel_forward(c, ld, ld->cfwd[SCCP_CFWD_ALL].enabled ? ld->cfwd[SCCP_CFWD_ALL].number : ld->cfwd[SCCP_CFWD_BUSY].number) == 0) {
 					sccp_device_sendcallstate(ld->device, ld->lineInstance, c->callid, SKINNY_CALLSTATE_INTERCOMONEWAY, SKINNY_CALLPRIORITY_NORMAL, SKINNY_CALLINFO_VISIBILITY_DEFAULT);
 					sccp_channel_send_callinfo(ld->device, c);
@@ -414,8 +414,8 @@ int sccp_pbx_call(channelPtr c, const char * dest, int timeout)
 		iPbx.queue_control(c->owner, AST_CONTROL_RINGING);
 	} else if (ForwardingLineDevice) {
 		/* when single line -> use asterisk functionality directly, without creating new channel + masquerade */
-		pbx_log(LOG_NOTICE, "%s: handle cfwd to %s for line %s\n", ForwardingLineDevice->device->id,
-			ForwardingLineDevice->cfwd[SCCP_CFWD_ALL].enabled ? ForwardingLineDevice->cfwd[SCCP_CFWD_ALL].number : ForwardingLineDevice->cfwd[SCCP_CFWD_BUSY].number, l->name);
+		pbx_log(LOG_NOTICE, "%s: forwarding call on line %s to %s\n", ForwardingLineDevice->device->id, l->name,
+			ForwardingLineDevice->cfwd[SCCP_CFWD_ALL].enabled ? ForwardingLineDevice->cfwd[SCCP_CFWD_ALL].number : ForwardingLineDevice->cfwd[SCCP_CFWD_BUSY].number);
 #if CS_AST_CONTROL_REDIRECTING
 		iPbx.queue_control(c->owner, AST_CONTROL_REDIRECTING);
 #endif
@@ -453,7 +453,7 @@ int sccp_pbx_cfwdnoanswer_cb(const void * data)
 {
 	AUTO_RELEASE(sccp_channel_t, c, (channelPtr)data);			// explicitly taken in sccp_channel_schedule_cfwd_noanswer, releasing on exit
 	if(!c || !c->owner) {
-		pbx_log(LOG_WARNING, "SCCP: No channel provided.\n");
+		pbx_log(LOG_NOTICE, "SCCP: forward on no answer skipped: the call or its Asterisk channel is gone\n");
 		return -1;
 	}
 
@@ -463,7 +463,7 @@ int sccp_pbx_cfwdnoanswer_cb(const void * data)
 
 	AUTO_RELEASE(sccp_line_t, l, sccp_line_retain(c->line));
 	if(!l) {
-		pbx_log(LOG_WARNING, "%s: The channel has no line. giving up.\n", c->designator);
+		pbx_log(LOG_WARNING, "%s: forward on no answer skipped: the call has no line\n", c->designator);
 		return -2;
 	}
 
@@ -477,7 +477,7 @@ int sccp_pbx_cfwdnoanswer_cb(const void * data)
 	pbx_channel_unlock(c->owner);
 
 	if(!forwarder || c->isHangingUp || pbx_check_hangup_locked(forwarder)) {
-		pbx_log(LOG_WARNING, "%s: The channel was already hungup. giving up.\n", c->designator);
+		sccp_log((DEBUGCAT_PBX))(VERBOSE_PREFIX_3 "%s: forward on no answer skipped: the call was already hung up\n", c->designator);
 		pbx_channel_unref(forwarder);
 		return -4;
 	}
@@ -503,7 +503,7 @@ int sccp_pbx_cfwdnoanswer_cb(const void * data)
 				break;                                        //! \todo currently using only the first match.
 			} else {
 				/* shared line -> create a temp channel to call forward destination and tie them together */
-				pbx_log(LOG_NOTICE, "%s: handle cfwd to %s for line %s\n", ld->device->id, ld->cfwd[SCCP_CFWD_NOANSWER].number, l->name);
+				pbx_log(LOG_NOTICE, "%s: call on line %s not answered in time; forwarding to %s\n", ld->device->id, l->name, ld->cfwd[SCCP_CFWD_NOANSWER].number);
 				sccp_channel_forward(c, ld, ld->cfwd[SCCP_CFWD_NOANSWER].number);
 			}
 		}
@@ -665,7 +665,7 @@ int sccp_pbx_remote_answer(constChannelPtr channel)
 
 		PBX_CHANNEL_TYPE * destination = NULL;
 		if(sccp_strlen_zero(destinationChannelName) || !iPbx.getChannelByName(destinationChannelName, &destination)) {
-			pbx_log(LOG_NOTICE, "%s: (%s) Could not retrieve channel for destination: %s", c->designator, __func__, destinationChannelName);
+			pbx_log(LOG_NOTICE, "%s: forwarded call not connected: its destination channel '%s' is gone\n", c->designator, destinationChannelName ? destinationChannelName : "");
 			return -2;
 		}
 		/*
@@ -687,7 +687,7 @@ int sccp_pbx_remote_answer(constChannelPtr channel)
 			if(destination) {
 				sccp_log((DEBUGCAT_PBX))(VERBOSE_PREFIX_3 "%s: (%s) handling forwarded call. Replace %s with %s.\n", c->designator, __func__, pbx_channel_name(forwarder), pbx_channel_name(destination));
 				if(!iPbx.masqueradeHelper(destination, forwarder)) {
-					pbx_log(LOG_ERROR, "%s: (%s) Failed to masquerade bridge into forwarded channel\n", c->designator, __func__);
+					pbx_log(LOG_ERROR, "%s: forwarded call not connected: Asterisk could not move %s into the place of %s\n", c->designator, pbx_channel_name(destination), pbx_channel_name(forwarder));
 					if(destination) {
 						pbx_channel_unref(destination);
 					}
@@ -699,12 +699,12 @@ int sccp_pbx_remote_answer(constChannelPtr channel)
 				sccp_log((DEBUGCAT_PBX))(VERBOSE_PREFIX_4 "%s: (%s) Masqueraded into %s\n", c->designator, __func__, pbx_channel_name(forwarder));
 				res = 0;
 			} else {
-				pbx_log(LOG_ERROR, "%s: (%s) Could not retrieve forwarding channel by name:%s: -> Hangup\n", c->designator, __func__, destinationChannelName);
+				pbx_log(LOG_WARNING, "%s: forwarded call not connected: its destination channel '%s' is gone; hanging up\n", c->designator, destinationChannelName);
 				if(pbx_channel_state(tmp_channel) == AST_STATE_RING && pbx_channel_state(forwarder) == AST_STATE_DOWN && iPbx.getChannelPbx(c)) {
 					sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_4 "SCCP: Receiver Hungup: (hasPBX: %s)\n", iPbx.getChannelPbx(c) ? "yes" : "no");
 					pbx_channel_set_hangupcause(forwarder, AST_CAUSE_CALL_REJECTED);
 				} else {
-					pbx_log(LOG_ERROR, "%s: (%s) We did not find bridge channel for call forwarding call. Hangup\n", c->currentDeviceId, __func__);
+					pbx_log(LOG_WARNING, "%s: forwarded call %s not connected: the forward destination did not answer or is gone; hanging up\n", c->currentDeviceId, c->designator);
 					pbx_channel_set_hangupcause(forwarder, AST_CAUSE_REQUESTED_CHAN_UNAVAIL);
 					sccp_channel_endcall(c);
 				}
@@ -736,7 +736,7 @@ int sccp_pbx_remote_answer(constChannelPtr channel)
 #endif
 			/** check for monitor request */
 			if((d->monitorFeature.status & SCCP_FEATURE_MONITOR_STATE_REQUESTED) && !(d->monitorFeature.status & SCCP_FEATURE_MONITOR_STATE_ACTIVE)) {
-				pbx_log(LOG_NOTICE, "%s: (%s) request monitor/record\n", d->id, __func__);
+				pbx_log(LOG_NOTICE, "%s: starting the recording requested with the monitor feature on call %s\n", d->id, c->designator);
 				sccp_feat_monitor(d, NULL, 0, c);
 			}
 
@@ -785,7 +785,7 @@ boolean_t sccp_pbx_channel_allocate(constChannelPtr channel, const void * ids, c
 	AUTO_RELEASE(sccp_line_t, l , sccp_line_retain(c->line));
 	if (!l) {
 		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: (sccp_pbx_channel_allocate) Unable to find line for channel %s\n", c->designator);
-		pbx_log(LOG_ERROR, "SCCP: Unable to allocate asterisk channel... returning 0\n");
+		pbx_log(LOG_ERROR, "%s: Asterisk channel not created: the call has no line\n", c->designator);
 		return FALSE;
 	}
 
@@ -819,7 +819,7 @@ boolean_t sccp_pbx_channel_allocate(constChannelPtr channel, const void * ids, c
 		}
 
 		if(!ld) {
-			pbx_log(LOG_NOTICE, "%s: Could not find an appropriate ld to assign this channel to. Line:%s exists, but was not assigned to any device (yet). We should give up here.\n", c->designator, l->name);
+			pbx_log(LOG_NOTICE, "%s: Asterisk channel not created: line %s is not on any registered device\n", c->designator, l->name);
 			goto error_exit;
 		}
 
@@ -871,13 +871,10 @@ boolean_t sccp_pbx_channel_allocate(constChannelPtr channel, const void * ids, c
 		}
 
 		if (c->preferences.audio[0] == SKINNY_CODEC_NONE || c->capabilities.audio[0] == SKINNY_CODEC_NONE) {
-			pbx_log(LOG_ERROR, "%s: Expect trouble ahead.\n"
-				"The audio preferences:%s of this channel have been reduced to nothing.\n"
-				"Because they are not compatible with this %s capabilities:%s.\n"
-				"Please fix your config. Ending Call !.\n",
+			pbx_log(LOG_ERROR, "%s: call ended: no audio codec is both allowed by the configuration (%s) and supported by the %s (%s)\n",
 				c->designator, 
 				sccp_codec_multiple2str(s1, sizeof(s1) - 1, c->preferences.audio, SKINNY_MAX_CAPABILITIES),
-				l->preferences_set_on_line_level ? "line's" : "device's",
+				l->preferences_set_on_line_level ? "line's devices" : "phone",
 				sccp_codec_multiple2str(s2, sizeof(s2) - 1, c->capabilities.audio, SKINNY_MAX_CAPABILITIES));
 			goto error_exit;
 		}
@@ -922,7 +919,7 @@ boolean_t sccp_pbx_channel_allocate(constChannelPtr channel, const void * ids, c
 	iPbx.alloc_pbxChannel(c, ids, parentChannel, &tmp);
 
 	if (!tmp || !c->owner) {
-		pbx_log(LOG_ERROR, "%s: Unable to allocate asterisk channel on line %s\n", c->designator, l->name);
+		pbx_log(LOG_ERROR, "%s: Asterisk could not create a channel for line %s\n", c->designator, l->name);
 		goto error_exit;
 	}
 	iPbx.setChannelName(c, c->designator);
@@ -978,13 +975,13 @@ boolean_t sccp_pbx_channel_allocate(constChannelPtr channel, const void * ids, c
 	if (d) {
 		if (c->calltype == SKINNY_CALLTYPE_OUTBOUND) {
 			if (!c->rtp.audio.instance && !sccp_rtp_createServer(d, c, SCCP_RTP_AUDIO)) {
-				pbx_log(LOG_WARNING, "%s: Error opening RTP instance for channel %s\n", d->id, c->designator);
+				pbx_log(LOG_WARNING, "%s: could not create the audio RTP instance for call %s\n", d->id, c->designator);
 				goto error_exit;
 			}
 			/*
 			#if CS_SCCP_VIDEO
 						if (sccp_channel_getVideoMode(c) != SCCP_VIDEO_MODE_OFF && sccp_device_isVideoSupported(d) && c->preferences.video[0] != SKINNY_CODEC_NONE && !c->rtp.video.instance &&
-			!sccp_rtp_createServer(d, c, SCCP_RTP_VIDEO)) { pbx_log(LOG_WARNING, "%s: Error opening VRTP instance for channel %s\n", d->id, c->designator); sccp_channel_setVideoMode(c, "off");
+			!sccp_rtp_createServer(d, c, SCCP_RTP_VIDEO)) { pbx_log(LOG_WARNING, "%s: could not create the video RTP instance for call %s; video turned off\n", d->id, c->designator); sccp_channel_setVideoMode(c, "off");
 						}
 			#endif
 			*/
@@ -1002,7 +999,7 @@ boolean_t sccp_pbx_channel_allocate(constChannelPtr channel, const void * ids, c
 
 error_exit:
 	if(c) {
-		pbx_log(LOG_WARNING, "%s: (pbx_channel_allocate) Unable to allocate a new channel for line %s\n -> Hanging up call.", DEV_ID_LOG(d), l->name);
+		pbx_log(LOG_WARNING, "%s: call %s on line %s not set up; hanging it up\n", DEV_ID_LOG(d), c->designator, l->name);
 		if(c->owner) {
 			if(d) {
 				sccp_indicate(d, c, SCCP_CHANNELSTATE_CONGESTION);
@@ -1105,7 +1102,7 @@ void * sccp_pbx_softswitch(constChannelPtr channel)
 		AUTO_RELEASE(sccp_channel_t, c , sccp_channel_retain(channel));
 
 		if (!c) {
-			pbx_log(LOG_ERROR, "SCCP: (sccp_pbx_softswitch) No <channel> available. Returning from dial thread.\n");
+			pbx_log(LOG_ERROR, "SCCP: dial thread started without a call (caller bug)\n");
 			goto EXIT_FUNC;
 		}
 		sccp_channel_stop_schedule_digittimout(c);
@@ -1130,14 +1127,14 @@ void * sccp_pbx_softswitch(constChannelPtr channel)
 		}
 
 		if (!c->owner) {
-			pbx_log(LOG_ERROR, "SCCP: (sccp_pbx_softswitch) No PBX <channel> available. Returning from dial thread.\n");
+			pbx_log(LOG_WARNING, "%s: not dialed: the call has no Asterisk channel\n", c->designator);
 			goto EXIT_FUNC;
 		}
 		pbx_channel = pbx_channel_ref(c->owner);
 
 		/* we should just process outbound calls, let's check calltype */
 		if (c->calltype != SKINNY_CALLTYPE_OUTBOUND && c->softswitch_action == SCCP_SOFTSWITCH_DIAL) {
-			pbx_log(LOG_ERROR, "SCCP: (sccp_pbx_softswitch) This function is for outbound calls only. Exiting\n");
+			pbx_log(LOG_ERROR, "%s: not dialed: the dial thread was started for an incoming call (caller bug)\n", c->designator);
 			goto EXIT_FUNC;
 		}
 
@@ -1146,26 +1143,26 @@ void * sccp_pbx_softswitch(constChannelPtr channel)
 		AUTO_RELEASE(sccp_device_t, d , sccp_channel_getDevice(c));
 
 		if (!d) {
-			pbx_log(LOG_ERROR, "SCCP: (sccp_pbx_softswitch) No <device> available. Returning from dial thread. Exiting\n");
+			pbx_log(LOG_WARNING, "%s: not dialed: the call has no device attached\n", c->designator);
 			goto EXIT_FUNC;
 		}
 
 		if (pbx_check_hangup(pbx_channel)) {
-			pbx_log(LOG_ERROR, "SCCP: (sccp_pbx_softswitch) Channel already hungup, no need to go any further. Exiting\n");
+			sccp_log((DEBUGCAT_PBX))(VERBOSE_PREFIX_3 "%s: not dialed: the call was hung up before dialing\n", c->designator);
 			sccp_indicate(d, c, SCCP_CHANNELSTATE_ONHOOK);
 			goto EXIT_FUNC;
 		}
 
 		/* we don't need to check for a device type but just if the device has an id, otherwise back home  -FS */
 		if (sccp_strlen_zero(d->id)) {
-			pbx_log(LOG_ERROR, "SCCP: (sccp_pbx_softswitch) No <device> identifier available. Returning from dial thread. Exiting\n");
+			pbx_log(LOG_ERROR, "%s: not dialed: the device has no name\n", c->designator);
 			goto EXIT_FUNC;
 		}
 
 		AUTO_RELEASE(sccp_line_t, l , sccp_line_retain(c->line));
 
 		if (!l) {
-			pbx_log(LOG_ERROR, "SCCP: (sccp_pbx_softswitch) No <line> available. Returning from dial thread. Exiting\n");
+			pbx_log(LOG_WARNING, "%s: not dialed: the call has no line\n", c->designator);
 			c->hangupRequest(c);
 			goto EXIT_FUNC;
 		}
@@ -1229,7 +1226,7 @@ void * sccp_pbx_softswitch(constChannelPtr channel)
 					case SCCP_CFWD_NONE:
 					case SCCP_CFWD_SENTINEL:
 					default:
-						pbx_log(LOG_ERROR, "%s: (sccp_pbx_softswitch) EndCallForward unknown CFWD_TYPE\n", d->id);
+						pbx_log(LOG_ERROR, "%s: forward not cleared: the call carries forward type %d, which is not all, busy or no-answer\n", d->id, (int)type);
 				}
 					sccp_channel_endcall(c);
 					goto EXIT_FUNC;								// leave simple switch without dial
@@ -1264,7 +1261,7 @@ void * sccp_pbx_softswitch(constChannelPtr channel)
 							goto EXIT_FUNC;
 						}
 					} else {
-						pbx_log(LOG_NOTICE, "%s: There is already a conference running on this device.\n", DEV_ID_LOG(d));
+						pbx_log(LOG_NOTICE, "%s: new conference not started: this device already runs a conference\n", DEV_ID_LOG(d));
 						sccp_channel_endcall(c);
 						goto EXIT_FUNC;
 					}
@@ -1389,12 +1386,12 @@ void * sccp_pbx_softswitch(constChannelPtr channel)
 				/* \todo replace AST_PBX enum using pbx_impl wrapper enum */
 				switch (pbxStartResult) {
 					case AST_PBX_FAILED:
-						pbx_log(LOG_ERROR, "%s: (sccp_pbx_softswitch) channel %s failed to start new thread to dial %s\n", DEV_ID_LOG(d), c->designator, shortenedNumber);
+						pbx_log(LOG_ERROR, "%s: call %s to %s failed: Asterisk could not start the dialplan for it; congestion signalled\n", DEV_ID_LOG(d), c->designator, shortenedNumber);
 						/* \todo change indicate to something more suitable */
 						sccp_indicate(d, c, SCCP_CHANNELSTATE_CONGESTION);		/* will auto hangup after SCCP_HANGUP_TIMEOUT */
 						break;
 					case AST_PBX_CALL_LIMIT:
-						pbx_log(LOG_WARNING, "%s: (sccp_pbx_softswitch) call limit reached for channel %s-%08x failed to start new thread to dial %s\n", DEV_ID_LOG(d), l->name, c->callid, shortenedNumber);
+						pbx_log(LOG_WARNING, "%s: call %s to %s refused: Asterisk's maxcalls limit is reached; congestion signalled\n", DEV_ID_LOG(d), c->designator, shortenedNumber);
 						sccp_indicate(d, c, SCCP_CHANNELSTATE_CONGESTION);		/* will auto hangup after SCCP_HANGUP_TIMEOUT */
 						break;
 					case AST_PBX_SUCCESS:
@@ -1428,7 +1425,7 @@ void * sccp_pbx_softswitch(constChannelPtr channel)
 			pbx_log(LOG_NOTICE, "%s: Call from '%s' to extension '%s', rejected because the extension could not be found in context '%s'\n", DEV_ID_LOG(d), l->name, shortenedNumber, pbx_channel ? pbx_channel_context(pbx_channel) : "pbx_channel==NULL");
 			/* timeout and no extension match */
 			if (pbx_channel && !pbx_check_hangup(pbx_channel)) {
-				pbx_log(LOG_NOTICE, "%s: Scheduling Hangup of Call: %s\n", DEV_ID_LOG(d), c->designator);
+				sccp_log((DEBUGCAT_PBX))(VERBOSE_PREFIX_3 "%s: invalid-number indication sent; call %s will be hung up\n", DEV_ID_LOG(d), c->designator);
 				sccp_indicate(d, c, SCCP_CHANNELSTATE_INVALIDNUMBER);				/* will auto hangup after SCCP_HANGUP_TIMEOUT */
 			}
 		}

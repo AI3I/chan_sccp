@@ -8,15 +8,19 @@ style: `<device or session>: <what happened>; <what the system did>`, naming
 the real `sccp.conf` option, labelling internal misuse "(caller bug)", and no
 instructions or links to the dead upstream project. Routine or default events
 move to debug `sccp_log`. Order: `sccp_actions.c`, `sccp_config.c`,
-`sccp_channel.c` (done), then `ast120.c`, `sccp_device.c`, `sccp_feature.c`,
-`sccp_conference.c`, `sccp_pbx.c`, `sccp_cli.c`, `sccp_session.c`, the rest;
+`sccp_channel.c`, `ast120.c`, `sccp_device.c`, `sccp_feature.c`,
+`sccp_conference.c`, `sccp_pbx.c` (done), then `sccp_cli.c`, `sccp_session.c`, the rest;
 then CLI/AMI output and phone prompts; debug `sccp_log` last.
 
 Messages that described the wrong outcome (now corrected): token fallback
 failures said nothing about the token being refused; "Unable to schedule
 dialing" was a hangup; "Call has already been hungup" was the code ending the
 call itself; "active channel from a different device, skipping" did not skip;
-the answer-failure log passed NULL to `%s`.
+the answer-failure log passed NULL to `%s`; "Could not match audio codec,
+Falling back to ULAW" actually falls back to G.722; the auto-answer "no
+channel" warning seen while paging (the call simply ended during the
+auto-answer delay) is now debug-level. Conference CLI commands no longer log
+user typos as Asterisk warnings; their CLI errors now show usage/values.
 
 Behavior bugs found and fixed along the way:
 - Transfer and Conference buttons had no `return` after acting, so every
@@ -27,6 +31,11 @@ Behavior bugs found and fixed along the way:
 - `sccp_channel_allocate()` leaked a line reference on its two early returns.
 - Config/wiki generators closed the file descriptor twice (`fclose` then
   `close(fd)`) on every run.
+- Group pickup turned the GROUPCALLPICKUP lamp on but switched CALLPICKUP
+  off, leaving the group pickup lamp flashing.
+- `sccp_feat_conflist()` read `c->callid` before checking `c` for NULL.
+- Four pickup-unsupported logs had a `%s` with no argument (undefined
+  behavior; only compiled without Asterisk pickup support).
 
 Found, not changed (need a decision):
 - Token backoff: `registrationTime < time(0) + backoff` is always true, so a

@@ -271,7 +271,7 @@ sccp_conference_t *sccp_conference_create(devicePtr device, channelPtr channel)
 	snprintf(conferenceIdentifier, REFCOUNT_INDENTIFIER_SIZE, "SCCPCONF/%04d", conferenceID);
 	conference = (conferencePtr) sccp_refcount_object_alloc(sizeof(sccp_conference_t), SCCP_REF_CONFERENCE, conferenceIdentifier, __sccp_conference_destroy);
 	if (!conference) {
-		pbx_log(LOG_ERROR, "SCCPCONF/%04d: cannot alloc memory for new conference.\n", conferenceID);
+		pbx_log(LOG_ERROR, "SCCPCONF/%04d: conference not created: out of memory\n", conferenceID);
 		return NULL;
 	}
 	/** initialize new conference */
@@ -298,7 +298,7 @@ sccp_conference_t *sccp_conference_create(devicePtr device, channelPtr channel)
 	conference->bridge = pbx_bridge_new(bridgeCapabilities, AST_BRIDGE_FLAG_DISSOLVE_EMPTY | AST_BRIDGE_FLAG_MASQUERADE_ONLY | AST_BRIDGE_FLAG_TRANSFER_PROHIBITED, channel->designator, conferenceIdentifier, NULL);
 
 	if (!conference->bridge) {
-		pbx_log(LOG_WARNING, "%s: Creating conference bridge failed, cancelling conference\n", channel->designator);
+		pbx_log(LOG_WARNING, "%s: conference not created: Asterisk could not create the bridge\n", channel->designator);
 		sccp_conference_release(&conference);								/* explicit release */
 		return NULL;
 	}
@@ -379,7 +379,7 @@ sccp_conference_t *sccp_conference_create(devicePtr device, channelPtr channel)
 static sccp_participant_t *sccp_conference_createParticipant(constConferencePtr conference)
 {
 	if (!conference) {
-		pbx_log(LOG_ERROR, "SCCPCONF: no conference / participantChannel provided.\n");
+		pbx_log(LOG_ERROR, "SCCPCONF: participant requested without a conference (caller bug)\n");
 		return NULL;
 	}
 
@@ -392,7 +392,7 @@ static sccp_participant_t *sccp_conference_createParticipant(constConferencePtr 
 	snprintf(participantIdentifier, REFCOUNT_INDENTIFIER_SIZE, "SCCPCONF/%04d/PART/%04d", conference->id, participantID);
 	participant = (sccp_participant_t *) sccp_refcount_object_alloc(sizeof(sccp_participant_t), SCCP_REF_PARTICIPANT, participantIdentifier, __sccp_participant_destroy);
 	if (!participant) {
-		pbx_log(LOG_ERROR, "SCCPCONF/%04d: cannot alloc memory for new conference participant.\n", conference->id);
+		pbx_log(LOG_ERROR, "SCCPCONF/%04d: participant not added: out of memory\n", conference->id);
 		return NULL;
 	}
 #if CS_REFCOUNT_DEBUG
@@ -455,13 +455,13 @@ static boolean_t sccp_conference_masqueradeChannel(PBX_CHANNEL_TYPE * participan
 {
 	if (participant && participant_ast_channel) {
 		if (!(iPbx.allocTempPBXChannel(participant_ast_channel, &participant->conferenceBridgePeer))) {
-			pbx_log(LOG_ERROR, "SCCPCONF/%04d: Creation of Temp Channel Failed. Exiting.\n", conference->id);
+			pbx_log(LOG_ERROR, "SCCPCONF/%04d: participant %s not added: the helper channel could not be created\n", conference->id, pbx_channel_name(participant_ast_channel));
 			pbx_hangup(participant->conferenceBridgePeer);
 			pbx_channel_unref(participant_ast_channel);
 			return FALSE;
 		}
 		if (!iPbx.masqueradeHelper(participant_ast_channel, participant->conferenceBridgePeer)) {
-			pbx_log(LOG_ERROR, "SCCPCONF/%04d: Failed to Masquerade TempChannel.\n", conference->id);
+			pbx_log(LOG_ERROR, "SCCPCONF/%04d: participant %s not added: Asterisk could not move the call into the conference\n", conference->id, pbx_channel_name(participant_ast_channel));
 			pbx_hangup(participant->conferenceBridgePeer);
 			pbx_channel_unref(participant_ast_channel);
 			return FALSE;
@@ -773,7 +773,7 @@ void sccp_conference_end(sccp_conference_t * conference)
 		SCCP_RWLIST_TRAVERSE_SAFE_BEGIN(&conference->participants, participant, list) {
 			if (!participant->isModerator && !participant->pendingRemoval) {				// remove the participants first
 				if (pbx_bridge_remove(participant->conference->bridge, participant->conferenceBridgePeer)) {
-					pbx_log(LOG_ERROR, "SCCPCONF/%04d: Failed to remove channel from conference\n", conference->id);
+					pbx_log(LOG_WARNING, "SCCPCONF/%04d: Asterisk could not remove %s from the conference bridge while ending the conference\n", conference->id, pbx_channel_name(participant->conferenceBridgePeer));
 				}
 			}
 		}
@@ -859,7 +859,7 @@ void sccp_conference_resume(conferencePtr conference)
 static int stream_and_wait(PBX_CHANNEL_TYPE * playback_channel, const char *filename, int say_number)
 {
 	if (!sccp_strlen_zero(filename) && !pbx_fileexists(filename, NULL, NULL)) {
-		pbx_log(LOG_WARNING, "File %s does not exists in any format\n", !sccp_strlen_zero(filename) ? filename : "<unknown>");
+		pbx_log(LOG_WARNING, "SCCPCONF: announcement '%s' not played: no sound file with that name exists in any format\n", filename);
 		return 0;
 	}
 	if (playback_channel) {
@@ -896,7 +896,7 @@ int playback_to_channel(participantPtr participant, const char *filename, int sa
 			if (stream_and_wait(participant->bridge_channel->chan, filename, say_number)) {
 				res = 1;
 			} else {
-				pbx_log(LOG_WARNING, "Failed to play %s or '%d'!\n", filename, say_number);
+				pbx_log(LOG_WARNING, "SCCPCONF/%04d: announcement %s%s not played to a participant\n", participant->conference->id, filename ? filename : "", say_number >= 0 ? " (number)" : "");
 			}
 			pbx_bridge_lock(participant->conference->bridge);
 			pbx_bridge_unsuspend(participant->conference->bridge, participant->conferenceBridgePeer);
@@ -925,7 +925,7 @@ int playback_to_conference(conferencePtr conference, const char *filename, int s
 	pbx_mutex_lock(&conference->playback.lock);
 
 	if (filename && !sccp_strlen_zero(filename) && !pbx_fileexists(filename, NULL, NULL)) {
-		pbx_log(LOG_WARNING, "File %s does not exists in any format\n", !sccp_strlen_zero(filename) ? filename : "<unknown>");
+		pbx_log(LOG_WARNING, "SCCPCONF/%04d: announcement '%s' not played: no sound file with that name exists in any format\n", conference->id, filename);
 		pbx_mutex_unlock(&conference->playback.lock);
 		return 1;
 	}
@@ -1087,25 +1087,25 @@ void sccp_conference_show_list(constConferencePtr conference, constChannelPtr ch
 	int use_icon = 0;
 
 	if (!conference) {
-		pbx_log(LOG_WARNING, "SCCPCONF: No conference available to display list for\n");
+		pbx_log(LOG_WARNING, "SCCPCONF: conference list requested without a conference (caller bug)\n");
 		return;
 	}
 
 	//AUTO_RELEASE(sccp_channel_t, channel , sccp_channel_retain(c));
 
 	if (!channel) {												// only send this list to sccp phones
-		pbx_log(LOG_WARNING, "SCCPCONF/%04d: No channel available to display conferencelist for\n", conference->id);
+		pbx_log(LOG_WARNING, "SCCPCONF/%04d: conference list not shown: the call is missing\n", conference->id);
 		return;
 	}
 
 	AUTO_RELEASE(sccp_participant_t, participant , sccp_participant_findByChannel(conference, channel));
 
 	if (!participant) {
-		pbx_log(LOG_WARNING, "SCCPCONF/%04d: Channel %s is not a participant in this conference\n", conference->id, pbx_channel_name(channel->owner));
+		pbx_log(LOG_NOTICE, "SCCPCONF/%04d: conference list not shown: %s is not a participant\n", conference->id, pbx_channel_name(channel->owner));
 		return;
 	}
 	if (SCCP_RWLIST_GETSIZE(&conference->participants) < 1) {
-		pbx_log(LOG_WARNING, "SCCPCONF/%04d: Conference does not have enough participants\n", conference->id);
+		sccp_log((DEBUGCAT_CONFERENCE))(VERBOSE_PREFIX_3 "SCCPCONF/%04d: conference list not shown: the conference has no participants\n", conference->id);
 		return;
 	}
 	if (participant->device) {
@@ -1309,19 +1309,19 @@ void sccp_conference_handle_device_to_user(devicePtr d, uint32_t callReference, 
 		AUTO_RELEASE(sccp_conference_t, conference , sccp_conference_findByID(conferenceID));
 
 		if (!conference) {
-			pbx_log(LOG_WARNING, "%s: Conference not found\n", DEV_ID_LOG(d));
+			pbx_log(LOG_NOTICE, "%s: conference list action ignored: conference %d no longer exists\n", DEV_ID_LOG(d), conferenceID);
 			goto EXIT;
 		}
 		AUTO_RELEASE(sccp_participant_t, participant , sccp_participant_findByID(conference, participantID));
 
 		if (!participant) {
-			pbx_log(LOG_WARNING, "SCCPCONF/%04d: %s: Participant not found\n", conference->id, DEV_ID_LOG(d));
+			pbx_log(LOG_NOTICE, "SCCPCONF/%04d: %s: conference list action ignored: participant %d is no longer in the conference\n", conference->id, DEV_ID_LOG(d), participantID);
 			goto EXIT;
 		}
 		AUTO_RELEASE(sccp_participant_t, moderator , sccp_participant_findByDevice(conference, d));
 
 		if (!moderator) {
-			pbx_log(LOG_WARNING, "SCCPCONF/%04d: %s: Moderator not found\n", conference->id, DEV_ID_LOG(d));
+			pbx_log(LOG_NOTICE, "SCCPCONF/%04d: %s: conference list action ignored: this device is not a moderator of the conference\n", conference->id, DEV_ID_LOG(d));
 			goto EXIT;
 		}
 		sccp_log((DEBUGCAT_CONFERENCE)) (VERBOSE_PREFIX_3 "SCCPCONF/%04d: DTU Softkey Executing Action %s (%s)\n", conference->id, d->dtu_softkey.action, DEV_ID_LOG(d));
@@ -1345,7 +1345,7 @@ void sccp_conference_handle_device_to_user(devicePtr d, uint32_t callReference, 
 			sccp_conference_promote_demote_participant(conference, participant, moderator);
 		}
 	} else {
-		pbx_log(LOG_WARNING, "%s: DTU TransactionID does not match or device not found (%d)\n", DEV_ID_LOG(d), transactionID);
+		pbx_log(LOG_NOTICE, "%s: conference list action ignored: transaction %d does not match the list currently shown\n", DEV_ID_LOG(d), transactionID);
 	}
 EXIT:
 	/* reset softkey state for next button press */
@@ -1373,7 +1373,7 @@ void sccp_conference_kick_participant(constConferencePtr conference, participant
 	//pbx_stream_and_wait(participant->conferenceBridgePeer, "conf-kicked", "");
 	//ast_streamfile(participant->conferenceBridgePeer, "conf-kicked", conference->playback.language);
 	if (pbx_bridge_remove(participant->conference->bridge, participant->conferenceBridgePeer)) {
-		pbx_log(LOG_ERROR, "SCCPCONF/%04d: Failed to remove channel from conference\n", conference->id);
+		pbx_log(LOG_WARNING, "SCCPCONF/%04d: Asterisk could not remove %s from the conference bridge\n", conference->id, pbx_channel_name(participant->conferenceBridgePeer));
 		participant->pendingRemoval = FALSE;
 		return;
 	}
@@ -1542,15 +1542,15 @@ void sccp_conference_invite_participant(constConferencePtr conference, constPart
 {
 	//sccp_channel_t *channel = NULL;
 	if (!conference) {
-		pbx_log(LOG_WARNING, "SCCPCONF: No conference\n");
+		pbx_log(LOG_WARNING, "SCCPCONF: invite requested without a conference (caller bug)\n");
 		return;
 	}
 	if (!moderator) {
-		pbx_log(LOG_WARNING, "SCCPCONF/%04d: No moderator\n", conference->id);
+		pbx_log(LOG_WARNING, "SCCPCONF/%04d: invite requested without a moderator (caller bug)\n", conference->id);
 		return;
 	}
 	if (conference->isLocked) {
-		pbx_log(LOG_WARNING, "SCCPCONF/%04d: Conference is currently locked\n", conference->id);
+		pbx_log(LOG_NOTICE, "SCCPCONF/%04d: invite refused: the conference is locked\n", conference->id);
 		if (moderator->device) {
 			sccp_dev_set_message(moderator->device, "Conference is locked", 5, FALSE, FALSE);
 		}
@@ -1729,12 +1729,10 @@ int sccp_cli_show_conference(int fd, sccp_cli_totals_t *totals, struct mansessio
 	int confid = 0;
 
 	if (argc < 4 || argc > 5 || sccp_strlen_zero(argv[3])) {
-		pbx_log(LOG_WARNING, "At least ConferenceId needs to be supplied\n");
-		CLI_AMI_RETURN_ERROR(fd, s, m, "At least ConferenceId needs to be supplied\n %s", "");
+		CLI_AMI_RETURN_ERROR(fd, s, m, "Usage: sccp show conference <conference id>\n%s", "");
 	}
 	if (!sccp_strIsNumeric(argv[3]) || (confid = sccp_atoi(argv[3], strlen(argv[3]))) <= 0) {
-		pbx_log(LOG_WARNING, "At least a valid ConferenceId needs to be supplied\n");
-		CLI_AMI_RETURN_ERROR(fd, s, m, "At least valid ConferenceId needs to be supplied\n %s", "");
+		CLI_AMI_RETURN_ERROR(fd, s, m, "'%s' is not a conference id (a positive number)\n", argv[3]);
 	}
 
 	AUTO_RELEASE(sccp_conference_t, conference , sccp_conference_findByID(confid));
@@ -1766,8 +1764,7 @@ int sccp_cli_show_conference(int fd, sccp_cli_totals_t *totals, struct mansessio
 
 #include "sccp_cli_table.h"
 	} else {
-		pbx_log(LOG_WARNING, "At least a valid ConferenceId needs to be supplied\n");
-		CLI_AMI_RETURN_ERROR(fd, s, m, "At least valid ConferenceId needs to be supplied\n %s", "");
+		CLI_AMI_RETURN_ERROR(fd, s, m, "Conference %d does not exist\n", confid);
 	}
 	if (s) {
 		totals->lines = local_line_total;
@@ -1830,36 +1827,30 @@ int sccp_cli_conference_command(int fd, sccp_cli_totals_t *totals, struct manses
 						} else if (!strncasecmp(argv[2], "Moderate", 8)) {		// Moderate Command
 							sccp_conference_promote_demote_participant(conference, participant, NULL);
 						} else {
-							pbx_log(LOG_WARNING, "Unknown Command %s\n", argv[2]);
-							snprintf(error, sizeof(error), "Unknown Command\n %s", argv[2]);
+							snprintf(error, sizeof(error), "Unknown conference action '%s'\n", argv[2]);
 							res = RESULT_FAILURE;
 						}
 					} else {
-						pbx_log(LOG_WARNING, "Participant %s not found in conference %s\n", argv[4], argv[3]);
-						snprintf(error, sizeof(error), "Participant %s not found in conference\n", argv[4]);
+						snprintf(error, sizeof(error), "Participant %s is not in conference %s\n", argv[4], argv[3]);
 						res = RESULT_FAILURE;
 					}
 				} else {
-					pbx_log(LOG_WARNING, "At least a valid ParticipantId needs to be supplied\n");
-					snprintf(error, sizeof(error), "At least valid ParticipantId needs to be supplied\n %s", "");
+					snprintf(error, sizeof(error), "'%s' is not a participant id (a positive number)\n", argv[4]);
 					res = RESULT_FAILURE;
 				}
 			} else {
-				pbx_log(LOG_WARNING, "Not enough parameters provided for action %s\n", argv[2]);
-				snprintf(error, sizeof(error), "Not enough parameters provided for action %s\n", argv[2]);
+				snprintf(error, sizeof(error), "Action %s needs a participant id\n", argv[2]);
 				res = RESULT_FAILURE;
 			}
 			if (res == RESULT_SUCCESS) {
 				sccp_conference_update_conflist(conference);
 			}
 		} else {
-			pbx_log(LOG_WARNING, "Conference %s not found\n", argv[3]);
-			snprintf(error, sizeof(error), "Conference %s not found\n", argv[3]);
+			snprintf(error, sizeof(error), "Conference %s does not exist\n", argv[3]);
 			res = RESULT_FAILURE;
 		}
 	} else {
-		pbx_log(LOG_WARNING, "At least a valid ConferenceId needs to be supplied\n");
-		snprintf(error, sizeof(error), "At least valid ConferenceId needs to be supplied\n %s", "");
+		snprintf(error, sizeof(error), "'%s' is not a conference id (a positive number)\n", argc > 3 ? argv[3] : "");
 		res = RESULT_FAILURE;
 	}
 

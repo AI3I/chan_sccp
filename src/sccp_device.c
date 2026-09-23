@@ -148,7 +148,7 @@ static void sccp_device_setBackgroundImageNotSupported(constDevicePtr device, co
 static void sccp_device_setBackgroundImage(constDevicePtr device, const char *url, const char *tn)
 {
 	if (!url || strncasecmp("http://", url, strlen("http://")) != 0) {
-		pbx_log(LOG_WARNING, "SCCP: '%s' needs to be a valid http url\n", url ? url : "--");
+		pbx_log(LOG_WARNING, "%s: background image not set: '%s' is not an http:// URL\n", device->id, url ? url : "");
 		return;
 	}
 
@@ -169,7 +169,7 @@ static void sccp_device_displayBackgroundImagePreviewNotSupported(constDevicePtr
 static void sccp_device_displayBackgroundImagePreview(constDevicePtr device, const char *url)
 {
 	if (!url || strncmp("http://", url, strlen("http://")) != 0) {
-		pbx_log(LOG_WARNING, "SCCP: '%s' needs to be a valid http url\n", url ? url : "--");
+		pbx_log(LOG_WARNING, "%s: background image preview not shown: '%s' is not an http:// URL\n", device->id, url ? url : "");
 		return;
 	}
 	char xmlStr[StationMaxXMLMessage] = {0};
@@ -198,7 +198,7 @@ static void sccp_device_setRingtoneNotSupported(constDevicePtr device, const cha
 static void sccp_device_setRingtone(constDevicePtr device, const char *url)
 {
 	if (!url || strncmp("http://", url, strlen("http://")) != 0) {
-		pbx_log(LOG_WARNING, "SCCP: '%s' needs to be a valid http url\n", url ? url : "--");
+		pbx_log(LOG_WARNING, "%s: ringtone not set: '%s' is not an http:// URL\n", device->id, url ? url : "");
 		return;
 	}
 
@@ -238,7 +238,7 @@ int sccp_device_createiconv(devicePtr d)
 {
 	d->privateData->iconv = iconv_open(d->iconvcodepage, "UTF-8");
 	if (d->privateData->iconv == (iconv_t) -1) {
-		pbx_log(LOG_ERROR, "SCCP:conversion from 'UTF-8' to '%s' not available.\n", d->iconvcodepage);
+		pbx_log(LOG_WARNING, "%s: phonecodepage=%s is not supported by iconv; text is sent to the phone unconverted (UTF-8)\n", d->id, d->iconvcodepage);
 		return 0;
 	}
 	pbx_mutex_init(&d->privateData->iconv_lock);
@@ -268,13 +268,13 @@ static boolean_t sccp_device_convUtf8toLatin1(constDevicePtr d, ICONV_CONST char
 		pbx_mutex_lock(&d->privateData->iconv_lock);
 		if (iconv(d->privateData->iconv, &utf8str, &incount, &buf, &outcount) == (size_t) -1) {
 			if (errno == E2BIG) {
-				pbx_log(LOG_WARNING, "SCCP: Iconv: output buffer too small.\n");
+				pbx_log(LOG_WARNING, "%s: text converted to %s was longer than its %d-byte field; truncated\n", d->id, d->iconvcodepage, (int)len);
 			} else if (errno == EILSEQ) {
-				pbx_log(LOG_WARNING, "SCCP: Iconv: illegal character.\n");
+				pbx_log(LOG_WARNING, "%s: text contains a character with no %s equivalent (or invalid UTF-8); converted only up to that character\n", d->id, d->iconvcodepage);
 			} else if (errno == EINVAL) {
-				pbx_log(LOG_WARNING, "SCCP: Iconv: incomplete character sequence.\n");
+				pbx_log(LOG_WARNING, "%s: text ends in an incomplete UTF-8 character; converted only up to that character\n", d->id);
 			} else {
-				pbx_log(LOG_WARNING, "SCCP: Iconv: error %d: %s.\n", errno, strerror(errno));
+				pbx_log(LOG_WARNING, "%s: conversion to %s failed (errno %d: %s); text partially converted\n", d->id, d->iconvcodepage, errno, strerror(errno));
 			}
 		}
 		pbx_mutex_unlock(&d->privateData->iconv_lock);
@@ -626,14 +626,14 @@ devicePtr sccp_device_create(const char * id)
 	sccp_device_t *d = (sccp_device_t *) sccp_refcount_object_alloc(sizeof(sccp_device_t), SCCP_REF_DEVICE, id, __sccp_device_destroy);
 
 	if (!d) {
-		pbx_log(LOG_ERROR, "Unable to allocate memory for a device\n");
+		pbx_log(LOG_ERROR, "%s: device not created: out of memory\n", id);
 		return NULL;
 	}
 
 	//memset(d, 0, sizeof(sccp_device_t));
 	private_data = (sccp_private_device_data_t *)sccp_calloc(sizeof *private_data, 1);
 	if (!private_data) {
-		pbx_log(LOG_ERROR, "%s: No memory to allocate device private data\n", id);
+		pbx_log(LOG_ERROR, "%s: device not created: out of memory\n", id);
 		sccp_device_release(&d);	/* explicit release */
 		return NULL;
 	}
@@ -722,7 +722,7 @@ devicePtr sccp_device_createAnonymous(const char * name)
 	sccp_device_t *d = sccp_device_create(name);
 
 	if (!d) {
-		pbx_log(LOG_ERROR, "SCCP: sccp_device_create(%s) failed", name);
+		pbx_log(LOG_ERROR, "%s: anonymous device not created: out of memory\n", name);
 		return NULL;
 	}
 
@@ -867,7 +867,7 @@ void sccp_device_preregistration(devicePtr device)
 void sccp_device_addToGlobals(constDevicePtr device)
 {
 	if (!device) {
-		pbx_log(LOG_ERROR, "Adding null to the global device list is not allowed!\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_device_addToGlobals() was called without a device (caller bug)\n");
 		return;
 	}
 	sccp_device_t *d = sccp_device_retain(device);
@@ -890,7 +890,7 @@ void sccp_device_addToGlobals(constDevicePtr device)
 void sccp_device_removeFromGlobals(devicePtr device)
 {
 	if (!device) {
-		pbx_log(LOG_ERROR, "Removing null from the global device list is not allowed!\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_device_removeFromGlobals() was called without a device (caller bug)\n");
 		return;
 	}
 	sccp_device_t * d = NULL;
@@ -939,7 +939,7 @@ static uint8_t sccp_addon_build_buttontemplate(constDevicePtr d, sccp_addon_t *a
 			}
 			break;
 		default:
-			pbx_log(LOG_WARNING, "%s: Unknown addon device type '%d' found.\n", d->id, type);
+			pbx_log(LOG_WARNING, "%s: expansion module type %d has no button layout; its buttons are not added\n", d->id, type);
 			break;
 	}
 	for (i = start_point; i < btn_index; i++) {
@@ -1302,7 +1302,7 @@ uint8_t sccp_dev_build_buttontemplate(devicePtr d, btnlist * btn)
 			//d->dndmode = SCCP_DNDMODE_REJECT;
 			break;
 		default:
-			pbx_log(LOG_WARNING, "Unknown device type '%d' found.\n", d->skinny_type);
+			pbx_log(LOG_WARNING, "%s: device type %d has no button layout; using a single line button\n", d->id, d->skinny_type);
 			/* at least one line */
 			btn[btn_index++].type = SCCP_BUTTONTYPE_LINE;
 			break;
@@ -2161,7 +2161,7 @@ void sccp_dev_forward_status(constLinePtr l, uint8_t lineInstance, constDevicePt
 		sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_LINE))(VERBOSE_PREFIX_3 "%s: Sent Forward Status (%s). Line: %s (%d)\n", device->id, sccp_linedevice_get_cfwd_string(ld, buffer, sizeof(buffer)), l->name,
 							    ld->lineInstance);
 	} else {
-		pbx_log(LOG_NOTICE, "%s: Device does not have line configured (no ld found)\n", DEV_ID_LOG(device));
+		pbx_log(LOG_NOTICE, "%s: forward status not sent: line %s is not on this device\n", DEV_ID_LOG(device), l->name);
 	}
 }
 
@@ -2264,7 +2264,7 @@ void sccp_dev_postregistration(devicePtr d)
 	}
 
 	if (d->useRedialMenu && (!d->hasDisplayPrompt() && !d->hasLabelLimitedDisplayPrompt())) {
-		pbx_log(LOG_NOTICE, "%s: useRedialMenu is currently not supported on this devicetype. Reverting to old style redial\n", d->id);
+		pbx_log(LOG_NOTICE, "%s: useRedialMenu is on, but this phone has no display for it; using direct redial\n", d->id);
 		d->useRedialMenu = FALSE;
 	}
 
@@ -2410,7 +2410,7 @@ void _sccp_dev_clean(devicePtr device, boolean_t remove_from_global, boolean_t r
 					if (channel) {
 						AUTO_RELEASE(sccp_device_t, tmpDevice, sccp_channel_getDevice(channel));
 						if (tmpDevice && tmpDevice == d) {
-							pbx_log(LOG_WARNING, "SCCP: Hangup open channel on line %s device %s\n", line->name, d->id);
+							pbx_log(LOG_NOTICE, "%s: device is being cleaned up; ending its open call on line %s\n", d->id, line->name);
 							sccp_channel_endcall(channel);
 						}
 					}
@@ -2530,7 +2530,7 @@ int __sccp_device_destroy(const void *ptr)
 	sccp_device_t *d = (sccp_device_t *) ptr;
 
 	if (!d) {
-		pbx_log(LOG_ERROR, "SCCP: Trying to destroy non-existend device\n");
+		pbx_log(LOG_ERROR, "SCCP: device destructor was called without a device (refcount bug)\n");
 		return -1;
 	}
 
@@ -2548,7 +2548,7 @@ int __sccp_device_destroy(const void *ptr)
 		}
 		SCCP_LIST_UNLOCK(&d->buttonconfig);
 		if (!SCCP_LIST_EMPTY(&d->buttonconfig)) {
-			pbx_log(LOG_WARNING, "%s: (device_destroy) there are connected buttonconfigs left during device destroy\n", d->id);
+			pbx_log(LOG_WARNING, "%s: button configurations were still listed after the device was destroyed (list bug); they leak\n", d->id);
 		}
 		SCCP_LIST_HEAD_DESTROY(&d->buttonconfig);
 	}
@@ -2564,7 +2564,7 @@ int __sccp_device_destroy(const void *ptr)
 		}
 		SCCP_LIST_UNLOCK(&d->permithosts);
 		if (!SCCP_LIST_EMPTY(&d->permithosts)) {
-			pbx_log(LOG_WARNING, "%s: (device_destroy) there are connected permithosts left during device destroy\n", d->id);
+			pbx_log(LOG_WARNING, "%s: permithost entries were still listed after the device was destroyed (list bug); they leak\n", d->id);
 		}
 		SCCP_LIST_HEAD_DESTROY(&d->permithosts);
 	}
@@ -2579,7 +2579,7 @@ int __sccp_device_destroy(const void *ptr)
 		}
 		SCCP_LIST_UNLOCK(&d->selectedChannels);
 		if (!SCCP_LIST_EMPTY(&d->selectedChannels)) {
-			pbx_log(LOG_WARNING, "%s: (device_destroy) there are connected selectedChannels left during device destroy\n", d->id);
+			pbx_log(LOG_WARNING, "%s: selected calls were still listed after the device was destroyed (list bug); they leak\n", d->id);
 		}
 		SCCP_LIST_HEAD_DESTROY(&d->selectedChannels);
 	}
@@ -3326,7 +3326,7 @@ gcc_inline int16_t sccp_device_buttonIndex2lineInstance(constDevicePtr d, uint16
 	if (buttonIndex > 0 && buttonIndex < StationMaxButtonTemplateSize && d->buttonTemplate[buttonIndex - 1].instance) {
 		return d->buttonTemplate[buttonIndex - 1].instance;
 	}
-	pbx_log(LOG_ERROR, "%s: buttonIndex2lineInstance for buttonIndex:%d failed!\n", d->id, buttonIndex);
+	pbx_log(LOG_WARNING, "%s: button %d is not a line button; request ignored\n", d->id, buttonIndex);
 	return -1;
 }
 
@@ -3398,7 +3398,7 @@ devicePtr sccp_device_find_realtime(const char * name)
 
 		d = sccp_device_create(name);		/** create new device */
 		if (!d) {
-			pbx_log(LOG_ERROR, "SCCP: Unable to build realtime device '%s'\n", name);
+			pbx_log(LOG_ERROR, "%s: realtime device not created: out of memory\n", name);
 			return NULL;
 		}
 		// sccp_copy_string(d->id, name, sizeof(d->id));

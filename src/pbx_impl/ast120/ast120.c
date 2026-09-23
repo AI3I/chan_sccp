@@ -785,7 +785,7 @@ static int sccp_astwrap_indicate(PBX_CHANNEL_TYPE * ast, int ind, const void *da
 			break;
 
 		case AST_CONTROL_TRANSFER:
-			pbx_log(LOG_NOTICE, "%s: AST_CONTROL_TRANSFER: %d", c->designator, *(int *)data);
+			sccp_log((DEBUGCAT_CHANNEL))(VERBOSE_PREFIX_3 "%s: Asterisk reported transfer result %d\n", c->designator, *(int *)data);
 			//sccp_astwrap_connectedline(c, data, datalen);
 			break;
 
@@ -884,12 +884,12 @@ static PBX_FRAME_TYPE * sccp_astwrap_rtp_read(PBX_CHANNEL_TYPE * ast)
 	PBX_FRAME_TYPE * frame = &ast_null_frame;
 
 	if(!(c = CS_AST_CHANNEL_PVT(ast))) {                                        // not following the refcount rules... channel is already retained
-		pbx_log(LOG_ERROR, "SCCP: (rtp_read) no channel pvt\n");
+		pbx_log(LOG_ERROR, "SCCP: RTP read on %s, which has no SCCP call attached; returned an empty frame\n", ast_channel_name(ast));
 		goto EXIT_FUNC;
 	}
 
 	if(!c->rtp.audio.instance) {
-		pbx_log(LOG_NOTICE, "SCCP: (rtp_read) no rtp stream yet. skip\n");
+		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: RTP read before the audio RTP instance exists; returned an empty frame\n", c->designator);
 		goto EXIT_FUNC;
 	}
 
@@ -904,14 +904,14 @@ static PBX_FRAME_TYPE * sccp_astwrap_rtp_read(PBX_CHANNEL_TYPE * ast)
 #ifdef CS_SCCP_VIDEO
 			frame = ast_rtp_instance_read(c->rtp.video.instance, 0); /* RTP Video */
 #else
-			pbx_log(LOG_NOTICE, "SCCP: (rtp_read) Cannot handle video rtp stream.\n");
+			sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: video RTP read ignored: this build has no video support\n", c->designator);
 #endif
 			break;
 		case 3:
 #ifdef CS_SCCP_VIDEO
 			frame = ast_rtp_instance_read(c->rtp.video.instance, 1); /* RTCP Control Channel for video */
 #else
-			pbx_log(LOG_NOTICE, "SCCP: (rtp_read) Cannot handle video rtcp stream.\n");
+			sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: video RTCP read ignored: this build has no video support\n", c->designator);
 #endif
 			break;
 		default:
@@ -1030,7 +1030,7 @@ static int sccp_astwrap_rtp_write(PBX_CHANNEL_TYPE * ast, PBX_FRAME_TYPE * frame
 		case AST_FRAME_TEXT:
 		case AST_FRAME_MODEM:
 		default:
-			pbx_log(LOG_WARNING, "%s: Can't send %d type frames with SCCP write on channel %s\n", c->currentDeviceId, frame->frametype, pbx_channel_name(ast));
+			pbx_log(LOG_WARNING, "%s: Asterisk frame type %d cannot be sent to an SCCP phone; dropped (channel %s)\n", c->currentDeviceId, frame->frametype, pbx_channel_name(ast));
 			break;
 	}
 	return res;
@@ -1151,7 +1151,7 @@ static boolean_t sccp_astwrap_allocPBXChannel(sccp_channel_t * channel, const vo
 	sccp_log(DEBUGCAT_CHANNEL)(VERBOSE_PREFIX_3 "SCCP: (allocPBXChannel) Create New Channel with name: SCCP/%s-%08X\n", line->name, channel->callid);
 	pbxDstChannel = ast_channel_alloc(0, AST_STATE_DOWN, line->cid_num, line->cid_name, line->accountcode, line->name, line->context, assignedids, pbxSrcChannel, line->amaflags, "%s", channel->designator);
 	if (pbxDstChannel == NULL) {
-		pbx_log(LOG_ERROR, "SCCP: (allocPBXChannel) ast_channel_alloc failed\n");
+		pbx_log(LOG_ERROR, "SCCP: Asterisk could not allocate a channel for call SCCP/%s-%08X; call not created\n", line->name, channel->callid);
 		ao2_cleanup(caps);
 		return FALSE;
 	}
@@ -1286,16 +1286,16 @@ static boolean_t sccp_astwrap_allocPBXChannel(sccp_channel_t * channel, const vo
 static boolean_t sccp_astwrap_masqueradeHelper(PBX_CHANNEL_TYPE * pbxChannel, PBX_CHANNEL_TYPE * pbxTmpChannel)
 {
 	boolean_t res = FALSE;
-	pbx_log(LOG_NOTICE, "SCCP: (masqueradeHelper) answer temp: %s\n", ast_channel_name(pbxTmpChannel));
+	sccp_log((DEBUGCAT_CHANNEL))(VERBOSE_PREFIX_3 "SCCP: answering %s before moving it in place of %s\n", ast_channel_name(pbxChannel), ast_channel_name(pbxTmpChannel));
 
 	ast_channel_ref(pbxChannel);
 	if(ast_answer(pbxChannel) == 0) {
-		pbx_log(LOG_NOTICE, "SCCP: (masqueradeHelper) replace pbxTmpChannel: %s with %s (move)\n", ast_channel_name(pbxTmpChannel), ast_channel_name(pbxChannel));
+		sccp_log((DEBUGCAT_CHANNEL))(VERBOSE_PREFIX_3 "SCCP: moving %s into the place of %s\n", ast_channel_name(pbxChannel), ast_channel_name(pbxTmpChannel));
 		if(ast_channel_move(pbxTmpChannel, pbxChannel)) {
-			pbx_log(LOG_ERROR, "SCCP: (masqueradeHelper) move failed. Hanging up tmp channel: %s\n", ast_channel_name(pbxTmpChannel));
+			pbx_log(LOG_ERROR, "SCCP: Asterisk could not move %s into the place of %s; hung up %s\n", ast_channel_name(pbxChannel), ast_channel_name(pbxTmpChannel), ast_channel_name(pbxTmpChannel));
 			ast_hangup(pbxTmpChannel);
 		} else {
-			pbx_log(LOG_NOTICE, "SCCP: (masqueradeHelper) move succeeded. Hanging up orphan: %s\n", ast_channel_name(pbxChannel));
+			sccp_log((DEBUGCAT_CHANNEL))(VERBOSE_PREFIX_3 "SCCP: moved %s; hanging up the leftover channel\n", ast_channel_name(pbxChannel));
 			ast_hangup(pbxChannel);
 			pbx_channel_set_hangupcause(pbxTmpChannel, AST_CAUSE_REDIRECTED_TO_NEW_DESTINATION);
 			res = TRUE;
@@ -1315,7 +1315,7 @@ static boolean_t sccp_astwrap_allocTempPBXChannel(PBX_CHANNEL_TYPE * pbxSrcChann
 	unsigned int framing;
 
 	if (!pbxSrcChannel) {
-		pbx_log(LOG_ERROR, "SCCP: (alloc_conferenceTempPBXChannel) no pbx channel provided\n");
+		pbx_log(LOG_ERROR, "SCCP: conference helper channel requested without a source channel (caller bug)\n");
 		return FALSE;
 	}
 /*
@@ -1336,7 +1336,7 @@ static boolean_t sccp_astwrap_allocTempPBXChannel(PBX_CHANNEL_TYPE * pbxSrcChann
 	ast_channel_lock(pbxSrcChannel);
 	pbxDstChannel = ast_channel_alloc(0, AST_STATE_DOWN, 0, 0, ast_channel_accountcode(pbxSrcChannel), pbx_channel_exten(pbxSrcChannel), pbx_channel_context(pbxSrcChannel), &assignedids, pbxSrcChannel, ast_channel_amaflags(pbxSrcChannel), "%s-TMP", ast_channel_name(pbxSrcChannel));
 	if (pbxDstChannel == NULL) {
-		pbx_log(LOG_ERROR, "SCCP: (alloc_conferenceTempPBXChannel) ast_channel_alloc failed\n");
+		pbx_log(LOG_ERROR, "SCCP: Asterisk could not allocate the conference helper channel for %s\n", ast_channel_name(pbxSrcChannel));
 		ast_channel_unlock(pbxSrcChannel);
 		ao2_cleanup(caps);
 		return FALSE;
@@ -1388,7 +1388,7 @@ static PBX_CHANNEL_TYPE *sccp_astwrap_requestAnnouncementChannel(pbx_format_type
 	/* The supported conference playback path requests A-law. Do not silently
 	 * create an A-law channel if a caller requests another format. */
 	if (format_type != AST_FORMAT_ALAW) {
-		pbx_log(LOG_WARNING, "SCCP: Unsupported announcement channel format\n");
+		pbx_log(LOG_WARNING, "SCCP: conference announcement channel requested with format bitmask 0x%llx; only A-law is supported, so no announcement is played\n", (unsigned long long)format_type);
 		return NULL;
 	}
 
@@ -1404,7 +1404,7 @@ static PBX_CHANNEL_TYPE *sccp_astwrap_requestAnnouncementChannel(pbx_format_type
 	ao2_ref(cap, -1);
 
 	if (!chan) {
-		pbx_log(LOG_ERROR, "SCCP: Requested Unreal channel could not be created, cause: %d\n", cause);
+		pbx_log(LOG_ERROR, "SCCP: Asterisk could not create the conference announcement channel (cause %d: %s)\n", cause, ast_cause2str(cause));
 		return NULL;
 	}
 	/* To make sure playback_chan has the same language of that profile */
@@ -1448,13 +1448,13 @@ static void parking_event_cb (void * data, struct stasis_subscription * sub, str
 	struct ast_parked_call_payload * parked_payload = stasis_message_data (message);
 	AUTO_RELEASE (sccp_channel_t, parker, sccp_channel_retain ((sccp_channel_t *)data));
 	if (!parker) {
-		pbx_log (LOG_ERROR, "No Parker provided\n");
+		pbx_log (LOG_ERROR, "SCCP: park event received for a call that no longer exists; ignored\n");
 		return;
 	}
 
 	RAII (struct ast_channel *, parker_chan, ast_channel_ref (parker->owner), ao2_cleanup);
 	if (!parker_chan) {
-		pbx_log (LOG_ERROR, "%s: No Park Owner set\n", parker->designator);
+		pbx_log (LOG_WARNING, "%s: park event ignored: the call has no Asterisk channel\n", parker->designator);
 		return;
 	}
 
@@ -1489,7 +1489,7 @@ static void parking_event_cb (void * data, struct stasis_subscription * sub, str
 			sccp_astgenwrap_requestHangup (parker);
 		} break;
 		case PARKED_CALL_FAILED: {
-			pbx_log (LOG_ERROR, "%s Parked failed\n", ast_channel_name (parker_chan));
+			pbx_log (LOG_WARNING, "%s: Asterisk reported that parking the call failed\n", ast_channel_name (parker_chan));
 			AUTO_RELEASE (sccp_device_t, d, sccp_channel_getDevice (parker));
 			if (d) {
 				sccp_dev_displayprinotify (d, SKINNY_DISP_TEMP_FAIL, SCCP_MESSAGE_PRIORITY_TIMEOUT, GLOB (digittimeout));
@@ -1543,7 +1543,7 @@ static sccp_parkresult_t sccp_astwrap_park(constChannelPtr hostChannel)
 			bridge_channel = ast_channel_get_bridge_channel (parker_chan);
 			ast_channel_unlock (parker_chan);
 			if (!bridge_channel) {
-				pbx_log (LOG_ERROR, "Park action failed\n");
+				pbx_log (LOG_WARNING, "%s: park not done: the call is not in a bridge\n", hostChannel->designator);
 				break;
 			}
 			if (!hostChannel->parking_sub) {
@@ -1568,7 +1568,7 @@ static sccp_parkresult_t sccp_astwrap_park(constChannelPtr hostChannel)
 				}
 				ast_bridge_unlock (bridge_channel->bridge);
 				if (!other_chan) {
-					pbx_log (LOG_WARNING, "%s: Remote channel is missing, giving up (connected to application?)\n", hostChannel->designator);
+					pbx_log (LOG_NOTICE, "%s: park not done: there is no other party in the bridge (the call may be connected to a dialplan application)\n", hostChannel->designator);
 					break;
 				}
 				pbx_builtin_setvar_helper (other_chan, "_PARKED_BY_CHANNEL", ast_channel_name (parker_chan));
@@ -1579,7 +1579,7 @@ static sccp_parkresult_t sccp_astwrap_park(constChannelPtr hostChannel)
 				char app_data[256];
 				snprintf (app_data, 256, "%s,%s", parkinglot, "s");
 				if (ast_bridge_channel_write_park (bridge_channel, ast_channel_uniqueid (other_chan), ast_channel_uniqueid (bridge_channel->chan), app_data) != 0) {
-					pbx_log (LOG_ERROR, "%s: Parking bridge_channel failed\n", hostChannel->designator);
+					pbx_log (LOG_WARNING, "%s: park not done: Asterisk refused to park %s in parking lot %s\n", hostChannel->designator, ast_channel_name (other_chan), parkinglot);
 					break;
 				}
 
@@ -1651,7 +1651,7 @@ static sccp_extension_status_t sccp_astwrap_extensionStatus(constChannelPtr chan
 	PBX_CHANNEL_TYPE *pbx_channel = channel->owner;
 
 	if (!pbx_channel || !pbx_channel_context(pbx_channel)) {
-		pbx_log(LOG_ERROR, "%s: (extension_status) Either no pbx_channel or no valid context provided to lookup number\n", channel->designator);
+		pbx_log(LOG_WARNING, "%s: dialed number not checked: the call has no Asterisk channel or context; treated as nonexistent\n", channel->designator);
 		return SCCP_EXTENSION_NOTEXISTS;
 	}
 	int ignore_pat = ast_ignore_pattern(pbx_channel_context(pbx_channel), channel->dialedNumber);
@@ -1733,13 +1733,13 @@ static PBX_CHANNEL_TYPE *sccp_astwrap_request(const char *type, struct ast_forma
 
 	*cause = AST_CAUSE_NOTDEFINED;
 	if (!type) {
-		pbx_log(LOG_NOTICE, "Attempt to call with unspecified type of channel\n");
+		pbx_log(LOG_WARNING, "SCCP: Asterisk requested a channel without a channel type (caller bug); refused\n");
 		*cause = AST_CAUSE_REQUESTED_CHAN_UNAVAIL;
 		return NULL;
 	}
 
 	if (!dest) {
-		pbx_log(LOG_NOTICE, "Attempt to call SCCP/ failed\n");
+		pbx_log(LOG_NOTICE, "SCCP: dial to SCCP/ without a line name refused\n");
 		*cause = AST_CAUSE_REQUESTED_CHAN_UNAVAIL;
 		return NULL;
 	}
@@ -1766,13 +1766,13 @@ static PBX_CHANNEL_TYPE *sccp_astwrap_request(const char *type, struct ast_forma
 
 	/** get requested format */
 	if ( (audio_codec = pbx_codec2skinny_codec(ast_format_compatibility_format2bitfield(ast_format_cap_get_best_by_type(cap, AST_MEDIA_TYPE_AUDIO)))) == SKINNY_CODEC_NONE) {
-		pbx_log(LOG_NOTICE, "Could not match audio codec, Falling back to ULAW\n");
+		pbx_log(LOG_NOTICE, "SCCP: none of the requested audio formats maps to an SCCP codec; requesting G.722\n");
 		audio_codec = SKINNY_CODEC_G722_64K;
 	}
 	sccp_log(DEBUGCAT_CODEC) (VERBOSE_PREFIX_4 "SCCP: requested Audio Codec in Skinny Format: %s\n", codec2str(audio_codec));
 #ifdef CS_SCCP_VIDEO
 	if ( (video_codec = pbx_codec2skinny_codec(ast_format_compatibility_format2bitfield(ast_format_cap_get_best_by_type(cap, AST_MEDIA_TYPE_VIDEO)))) == SKINNY_CODEC_NONE) {
-		pbx_log(LOG_NOTICE, "Could not match video codec. No Video\n");
+		sccp_log((DEBUGCAT_CODEC))(VERBOSE_PREFIX_3 "SCCP: none of the requested video formats maps to an SCCP codec; call has no video\n");
 		video_codec = SKINNY_CODEC_NONE;
 	}
 	sccp_log(DEBUGCAT_CODEC) (VERBOSE_PREFIX_4 "SCCP: requested Video Codec in Skinny Format: %s\n", codec2str(video_codec));
@@ -1788,7 +1788,7 @@ static PBX_CHANNEL_TYPE *sccp_astwrap_request(const char *type, struct ast_forma
 				ast_format_cap_append_from_cap(acaps, ast_channel_nativeformats(requestor), AST_MEDIA_TYPE_AUDIO);				// Add rest
 				sccp_astwrap_getSkinnyFormatMultiple(acaps, audioCapabilities, ARRAY_LEN(audioCapabilities));
 				if (audio_codec == SKINNY_CODEC_NONE && (audio_codec = audioCapabilities[0]) == SKINNY_CODEC_NONE) {
-					pbx_log(LOG_NOTICE, "SCCP: remote native audio formats are not compatible with any skinny format. Transcoding required\n");
+					pbx_log(LOG_NOTICE, "SCCP: the calling channel's audio formats have no SCCP equivalent; Asterisk will transcode\n");
 					audioCapabilities[0] = SKINNY_CODEC_WIDEBAND_256K;
 					audio_codec  =SKINNY_CODEC_WIDEBAND_256K;
 				}
@@ -1804,7 +1804,7 @@ static PBX_CHANNEL_TYPE *sccp_astwrap_request(const char *type, struct ast_forma
 				ast_format_cap_append_from_cap(vcaps, ast_channel_nativeformats(requestor), AST_MEDIA_TYPE_VIDEO);			// Add rest
 				sccp_astwrap_getSkinnyFormatMultiple(vcaps, videoCapabilities, ARRAY_LEN(videoCapabilities));
 				if (video_codec == SKINNY_CODEC_NONE && (video_codec = videoCapabilities[0]) == SKINNY_CODEC_NONE) {
-					pbx_log(LOG_NOTICE, "SCCP: remote native video formats are not compatible with any skinny format. Deny video\n");
+					sccp_log((DEBUGCAT_CODEC))(VERBOSE_PREFIX_3 "SCCP: the calling channel's video formats have no SCCP equivalent; call has no video\n");
 					videoCapabilities[0] = SKINNY_CODEC_NONE;
 					video_codec = SKINNY_CODEC_NONE;
 				}
@@ -1842,11 +1842,11 @@ static PBX_CHANNEL_TYPE *sccp_astwrap_request(const char *type, struct ast_forma
 			*cause = AST_CAUSE_REQUESTED_CHAN_UNAVAIL;
 			goto EXITFUNC;
 		case SCCP_REQUEST_STATUS_ERROR:
-			pbx_log(LOG_ERROR, "SCCP: sccp_requestChannel returned Status Error for lineName: %s\n", lineName);
+			pbx_log(LOG_WARNING, "SCCP: call to line '%s' not placed: the line name is missing or the call could not be created\n", lineName ? lineName : "");
 			*cause = AST_CAUSE_UNALLOCATED;
 			goto EXITFUNC;
 		default:
-			pbx_log(LOG_ERROR, "SCCP: sccp_requestChannel returned Status Error for lineName: %s\n", lineName);
+			pbx_log(LOG_WARNING, "SCCP: call to line '%s' not placed: the line name is missing or the call could not be created\n", lineName ? lineName : "");
 			*cause = AST_CAUSE_UNALLOCATED;
 			goto EXITFUNC;
 	}
@@ -1917,7 +1917,7 @@ static int sccp_astwrap_call(PBX_CHANNEL_TYPE * ast, const char *dest, int timeo
 
 	AUTO_RELEASE(sccp_channel_t, c , get_sccp_channel_from_pbx_channel(ast));
 	if (!c) {
-		pbx_log(LOG_WARNING, "SCCP: Asterisk request to call %s on channel: %s, but we don't have this channel!\n", dest, pbx_channel_name(ast));
+		pbx_log(LOG_WARNING, "SCCP: Asterisk asked to call %s on %s, which has no SCCP call attached; refused\n", dest, pbx_channel_name(ast));
 		return -1;
 	}
 
@@ -1942,7 +1942,7 @@ static int sccp_astwrap_answer(PBX_CHANNEL_TYPE * pbxchan)
 	int res = -1;
 	int timedout = 0;
 	if(pbx_channel_state(pbxchan) == AST_STATE_UP) {
-		pbx_log(LOG_NOTICE, "%s: Channel has already been answered remotely, skipping\n", pbx_channel_name(pbxchan));
+		sccp_log((DEBUGCAT_CHANNEL))(VERBOSE_PREFIX_3 "%s: answer skipped: the channel is already up\n", pbx_channel_name(pbxchan));
 		return 0;
 	}
 
@@ -2037,7 +2037,7 @@ static int sccp_astwrap_fixup(PBX_CHANNEL_TYPE * oldchan, PBX_CHANNEL_TYPE * new
 			sccp_astwrap_setOwner(c, newchan);
 		}
 	} else {
-		pbx_log(LOG_WARNING, "sccp_pbx_fixup(old: %s(%p), new: %s(%p)). no SCCP channel to fix\n", pbx_channel_name(oldchan), (void *) oldchan, pbx_channel_name(newchan), (void *) newchan);
+		pbx_log(LOG_WARNING, "SCCP: Asterisk moved %s to %s, but no SCCP call is attached; not updated\n", pbx_channel_name(oldchan), pbx_channel_name(newchan));
 		res = -1;
 	}
 	return res;
@@ -2422,13 +2422,13 @@ static void sccp_astwrap_registerDynamicPayload(PBX_RTP_TYPE *instance, int payl
 	}
 	if (ast_rtp_codecs_payloads_set_rtpmap_type_rate(codecs, instance, payload,
 			media, subtype, (enum ast_rtp_options)0, sample_rate) != 0) {
-		pbx_log(LOG_WARNING, "SCCP: RTP payload %d (%s/%s) is not supported by Asterisk\n",
+		pbx_log(LOG_WARNING, "SCCP: Asterisk has no RTP mapping for payload %d (%s/%s); calls cannot use this codec\n",
 			payload, media, subtype);
 		return;
 	}
 	if (ast_rtp_codecs_payload_set_rx(codecs, payload, format) < 0) {
 		ast_rtp_codecs_payloads_unset(codecs, instance, payload);
-		pbx_log(LOG_WARNING, "SCCP: Could not assign receive RTP payload %d (%s/%s)\n",
+		pbx_log(LOG_WARNING, "SCCP: could not register receive RTP payload %d (%s/%s); incoming media with this payload will be dropped\n",
 			payload, media, subtype);
 	}
 }
@@ -2478,7 +2478,7 @@ static boolean_t sccp_astwrap_createRtpInstance(constDevicePtr d, constChannelPt
 			break;
 #endif
 		default:
-			pbx_log(LOG_ERROR, "%s: (wrapper_create_rtp) unknown/unhandled rtp type, returning instance for now\n", c->designator);
+			pbx_log(LOG_ERROR, "%s: RTP instance of type %d is neither audio nor video; not configured\n", c->designator, rtp->type);
 			return TRUE;
 	}
 
@@ -2532,7 +2532,7 @@ static boolean_t sccp_astwrap_createRtpInstance(constDevicePtr d, constChannelPt
 		ast_rtp_codecs_payloads_set_m_type(codecs, instance, 34); /* H.263 */
 		if (ast_rtp_codecs_payload_set_rx(codecs, 31, ast_format_h261) < 0 ||
 		    ast_rtp_codecs_payload_set_rx(codecs, 34, ast_format_h263) < 0) {
-			pbx_log(LOG_WARNING, "%s: Could not assign a static video RTP receive payload\n", c->designator);
+			pbx_log(LOG_WARNING, "%s: could not register H.261/H.263 receive payloads 31/34; incoming video in those formats will be dropped\n", c->designator);
 		}
 		sccp_astwrap_registerDynamicPayload(instance, 98, "video", "h263-1998", 90000, ast_format_h263p);
 		sccp_astwrap_registerDynamicPayload(instance, 103, "video", "H264", 90000, ast_format_h264);
@@ -2635,7 +2635,7 @@ static int sccp_astwrap_setPhoneRTPAddress(const struct sccp_rtp *rtp, const str
 static int sccp_astwrap_setNativeAudioFormats(constChannelPtr channel, skinny_codec_t codecs[])
 {
 	if (!channel || !channel->owner || !ast_channel_nativeformats(channel->owner)) {
-		pbx_log(LOG_ERROR, "SCCP: (setNativeAudioFormats) no channel provided!\n");
+		pbx_log(LOG_ERROR, "SCCP: audio formats not set: the call, its Asterisk channel or its format list is missing\n");
 		return 0;
 	}
 	struct ast_format_cap *caps = ao2_t_bump((struct ast_format_cap *)channel->caps, "sccp_channel_caps");
@@ -2659,7 +2659,7 @@ static int sccp_astwrap_setNativeAudioFormats(constChannelPtr channel, skinny_co
 static int sccp_astwrap_setNativeVideoFormats(constChannelPtr channel, skinny_codec_t codecs[])
 {
 	if (!channel || !channel->owner || !ast_channel_nativeformats(channel->owner)) {
-		pbx_log(LOG_ERROR, "SCCP: (setNativeVideoFormats) no channel provided!\n");
+		pbx_log(LOG_ERROR, "SCCP: video formats not set: the call, its Asterisk channel or its format list is missing\n");
 		return 0;
 	}
 	struct ast_format_cap *caps = ao2_t_bump((struct ast_format_cap *)channel->caps, "sccp_channel_caps");
@@ -3073,7 +3073,7 @@ static int sccp_pbx_sendHTML(PBX_CHANNEL_TYPE * ast, int subclass, const char *d
 {
 	int res = -1;
 	if (!datalen || sccp_strlen_zero(data) || !(!strncmp(data, "http://", 7) || !strncmp(data, "file://", 7) || !strncmp(data, "ftp://", 6))) {
-		pbx_log(LOG_NOTICE, "SCCP: Received a non valid URL\n");
+		pbx_log(LOG_NOTICE, "SCCP: SendURL ignored: '%s' does not start with http://, file:// or ftp://\n", data ? data : "");
 		return res;
 	}
 	struct ast_frame fr;
@@ -3134,7 +3134,7 @@ static skinny_busylampfield_state_t sccp_astwrap_getExtensionState(const char *e
 	skinny_busylampfield_state_t result = SKINNY_BLF_STATUS_UNKNOWN;
 
 	if (sccp_strlen_zero(extension) || sccp_strlen_zero(context)) {
-		pbx_log(LOG_ERROR, "SCCP: iPbx.getExtensionState: Either extension:'%s' or context:;%s' provided is empty\n", extension, context);
+		pbx_log(LOG_WARNING, "SCCP: hint state not looked up: extension '%s' or context '%s' is empty; shown as unknown\n", extension ? extension : "", context ? context : "");
 		return result;
 	}
 
@@ -3338,7 +3338,7 @@ static boolean_t sccp_astwrap_attended_transfer(sccp_channel_t * destination_cha
 
 	res = ast_bridge_transfer_attended(pbx_destination_local_channel, pbx_source_local_channel);
 	if (res != AST_BRIDGE_TRANSFER_SUCCESS) {
-		pbx_log(LOG_ERROR, "%s: Failed to transfer %s to %s (%u)\n", source_channel->designator, source_channel->designator, destination_channel->designator, res);
+		pbx_log(LOG_WARNING, "%s: attended transfer to %s failed (Asterisk result %u); the call was put back on hold\n", source_channel->designator, destination_channel->designator, res);
 		ast_queue_control(pbx_destination_local_channel, AST_CONTROL_HOLD);
 		return FALSE;
 	}
@@ -3389,13 +3389,13 @@ static int sccp_astwrap_message_send(const struct ast_msg *msg, const char *to, 
 		strsep(&lineName, ":");
 	}
 	if (sccp_strlen_zero(lineName)) {
-		pbx_log(LOG_WARNING, "MESSAGE(to) is invalid for SCCP - '%s'\n", to);
+		pbx_log(LOG_WARNING, "SCCP: text message not sent: MESSAGE(to) '%s' has no line name (expected sccp:line or line@host)\n", to);
 		return -1;
 	}
 
 	AUTO_RELEASE(sccp_line_t, line , sccp_line_find_byname(lineName, FALSE));
 	if (!line) {
-		pbx_log(LOG_WARNING, "line '%s' not found\n", lineName);
+		pbx_log(LOG_WARNING, "SCCP: text message not sent: line '%s' does not exist\n", lineName);
 		return -1;
 	}
 
@@ -3818,7 +3818,7 @@ static void unregister_channel_tech(struct ast_channel_tech *tech)
 
 static int unload_module(void)
 {
-	pbx_log(LOG_NOTICE, "SCCP: Module Unload\n");
+	pbx_log(LOG_NOTICE, "SCCP: unloading chan_sccp\n");
 	if (sccp_preUnload()) {
 		return -1;
 	}
@@ -3849,21 +3849,21 @@ static int unload_module(void)
 	}
 
 	if (sched) {
-		pbx_log(LOG_NOTICE, "Cleaning up scheduled items:\n");
+		sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "SCCP: stopping the scheduler\n");
 		int scheduled_items = 0;
 
 		ast_sched_dump(sched);
 		while ((scheduled_items = ast_sched_runq(sched))) {
-			pbx_log(LOG_NOTICE, "Cleaning up %d scheduled items... please wait\n", scheduled_items);
+			pbx_log(LOG_NOTICE, "SCCP: waiting for %d scheduled tasks to finish before unloading\n", scheduled_items);
 			usleep(ast_sched_wait(sched));
 		}
 		ast_sched_context_destroy(sched);
 		sched = NULL;
 	}
 
-	pbx_log(LOG_NOTICE, "Running Cleanup\n");
+	sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "SCCP: releasing global resources\n");
 	sccp_free(sccp_globals);
-	pbx_log(LOG_NOTICE, "Module chan_sccp unloaded\n");
+	pbx_log(LOG_NOTICE, "SCCP: chan_sccp unloaded\n");
 	pbx_module_unref(pbx_module_info->self);
 	return 0;
 }
@@ -3871,81 +3871,81 @@ static int unload_module(void)
 static enum ast_module_load_result load_module(void)
 {
 	if (ast_module_check("chan_skinny.so")) {
-		pbx_log(LOG_ERROR, "Chan_skinny is loaded. Please check modules.conf and remove chan_skinny before loading chan_sccp.\n");
+		pbx_log(LOG_ERROR, "SCCP: chan_sccp not started: chan_skinny.so is loaded and serves the same phones and port (add 'noload => chan_skinny.so' to modules.conf)\n");
 		return AST_MODULE_LOAD_SUCCESS;
 	}
 
 	enum ast_module_load_result res = AST_MODULE_LOAD_DECLINE;
 	do {
 		if (ast_module_check("chan_skinny.so")) {
-			pbx_log(LOG_ERROR, "Chan_skinny is loaded. Please check modules.conf and remove chan_skinny before loading chan_sccp.\n");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not started: chan_skinny.so is loaded and serves the same phones and port (add 'noload => chan_skinny.so' to modules.conf)\n");
 			break;
 		}
 		if (!(sched = ast_sched_context_create())) {
-			pbx_log(LOG_WARNING, "Unable to create schedule context. SCCP channel type disabled\n");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: could not create a scheduler context\n");
 			break;
 		}
 		if (ast_sched_start_thread(sched)) {
-			pbx_log(LOG_ERROR, "Unable to start scheduler\n");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: could not start the scheduler thread\n");
 			ast_sched_context_destroy(sched);
 			sched = NULL;
 			break;
 		}
 		if (!sccp_prePBXLoad()) {
-			pbx_log(LOG_ERROR, "SCCP: prePBXLoad Failed\n");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: global initialization failed (see the previous message)\n");
 			break;
 		}
 		if (!(io = io_context_create())) {
-			pbx_log(LOG_ERROR, "Unable to create I/O context. SCCP channel type disabled\n");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: could not create an I/O context\n");
 			break;
 		}
 		if (!load_config()) {
-			pbx_log(LOG_ERROR, "SCCP: config file could not be parsed\n");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: sccp.conf could not be loaded (see the previous message)\n");
 			res = AST_MODULE_LOAD_DECLINE;
 			break;
 		}
 		if (register_channel_tech(&sccp_tech)) {
-			pbx_log(LOG_ERROR, "Unable to register channel class SCCP\n");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: Asterisk refused to register the SCCP channel type (is another module using it?)\n");
 			break;
 		}
 #ifdef HAVE_PBX_MESSAGE_H
 		if (ast_msg_tech_register(&sccp_msg_tech)) {
-			pbx_log(LOG_ERROR, "Unable to register message interface\n");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: could not register the SCCP text message technology\n");
 			break;
 		}
 #endif
 
 #ifdef CS_SCCP_CONFERENCE
 		if (register_channel_tech(sccpconf_announce_get_tech())) {
-			pbx_log(LOG_ERROR, "Unable to register channel class ANNOUNCE (conference)\n");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: could not register the conference announcement channel type\n");
 			break;
 		}
 #endif
 		if (ast_rtp_glue_register(&sccp_rtp)) {
-			pbx_log(LOG_ERROR, "Unable to register RTP Glue\n");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: could not register the RTP glue\n");
 			break;
 		}
 		if (sccp_register_management()) {
-			pbx_log(LOG_ERROR, "Unable to register management functions");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: could not register the AMI actions\n");
 			break;
 		}
 		if (sccp_register_cli()) {
-			pbx_log(LOG_ERROR, "Unable to register CLI functions");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: could not register the CLI commands\n");
 			break;
 		}
 		if (sccp_register_dialplan_functions()) {
-			pbx_log(LOG_ERROR, "Unable to register dialplan functions");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: could not register the dialplan functions\n");
 			break;
 		}
 		if (!sccp_postPBX_load()) {
-			pbx_log(LOG_ERROR, "SCCP: postPBXLoad Failed\n");
+			pbx_log(LOG_ERROR, "SCCP: chan_sccp not loaded: starting the SCCP listeners failed (see the previous message)\n");
 			break;
 		}
 		res = AST_MODULE_LOAD_SUCCESS;
 	} while (0);
 
 	if (res != AST_MODULE_LOAD_SUCCESS) {
-		pbx_log(LOG_ERROR, "SCCP: Module Load Failed, unloading...\n");
+		pbx_log(LOG_ERROR, "SCCP: chan_sccp load failed; releasing what was set up\n");
 		unload_module();
 	}
 	return res;

@@ -739,13 +739,13 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 AC_DEFUN([CS_ENABLE_LINK_TIME_OPTIMIZATION], [
 	AC_ARG_ENABLE(
 		[lto],
-		AC_HELP_STRING([--enable-lto],[Enables or Disables Linktime Code Optimization (LTO is enabled by default)]),
+		AC_HELP_STRING([--enable-lto],[Enable link-time optimization (disabled by default)]),
 	    	[
 			enable_lto="$enableval"
 			case $enableval in
 			    "no");;
 			    "yes");;
-			    *) AC_MSG_ERROR([[invalid argument --enable-lto=$disableval... stopping]]);;
+			    *) AC_MSG_ERROR([[invalid argument --enable-lto=$enableval... stopping]]);;
 			esac
 	    	],
 		[enable_lto="no"]
@@ -755,14 +755,12 @@ AC_DEFUN([CS_ENABLE_LINK_TIME_OPTIMIZATION], [
 	# LTO Support test
 	#
 	if test "$enable_lto" != "no" ; then
-		OLD_CXXFLAGS="$CFLAGS"
-		CXXFLAGS="$CXXFLAGS -flto"
 		OLD_CFLAGS="$CFLAGS"
 		CFLAGS="$CFLAGS -flto"
 		OLD_LDFLAGS="$LDFLAGS"
 		LDFLAGS="$LDFLAGS -flto"
-		AC_MSG_CHECKING([whether $CXX supports -flto])
-		AC_RUN_IFELSE(
+		AC_MSG_CHECKING([whether $CC supports -flto])
+		AC_LINK_IFELSE(
 		[ AC_LANG_SOURCE([[
 			int main(int argc, char **argv){
 				return 0;
@@ -771,16 +769,14 @@ AC_DEFUN([CS_ENABLE_LINK_TIME_OPTIMIZATION], [
 		],
 		[
 			AC_MSG_RESULT([yes])
+			SUPPORTED_CFLAGS="$SUPPORTED_CFLAGS -flto"
+			SUPPORTED_LDFLAGS="$SUPPORTED_LDFLAGS -flto"
 		],
 		[
 			AC_MSG_RESULT([no])
-			CXXFLAGS="$OLD_CXXFLAGS"
-			CFLAGS="$OLD_CXXFLAGS"
-			LDFLAGS="$OLD_LDFLAGS"
-		],
-		[
-			AC_MSG_RESULT([guessing no])
 		])
+		CFLAGS="$OLD_CFLAGS"
+		LDFLAGS="$OLD_LDFLAGS"
 	fi
 ])
 

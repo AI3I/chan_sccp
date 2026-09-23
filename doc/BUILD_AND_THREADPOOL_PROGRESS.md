@@ -277,9 +277,9 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   The signed RX/TX lookup and conservative mappings below are compile-only.
 - **High-value cleanup:** HTTP/CLI test handlers and `libpbximpl.la` were
   removed in the batch below.
-- **Structural cleanup:** the shared adapter was moved into `ast120` below.
-  Consolidate small per-version wrappers, assess C++ scaffolding, and remove
-  unreachable `#if 0` implementations in reviewable batches.
+- **Structural cleanup:** the shared adapter was moved into `ast120` below,
+  and unused C++ build scaffolding was removed. Consolidate small per-version
+  wrappers and remove unreachable `#if 0` implementations in reviewable batches.
 - **Deferred validation:** physical Cisco call behavior and the compile-only
   R2/R3/R5/R6/R7/R11/R12 paths. The user requested code progress now and no
   test cycle after every change. Keep all lab actions recorded in wadsworth's
@@ -331,5 +331,22 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   `make dist` passed. The generated `configure` and `src/Makefile.in` were
   copied back and staged. Log paths and all lab actions are recorded in
   `/root/asterisk.txt`. No module installation or live phone test was done.
-- Next: assess and remove unused C++ build scaffolding, then review disabled
-  code in small batches. Asterisk 20–24 CI is still needed for this relocation.
+- Next: consolidate wrappers and review disabled code in small batches.
+  Asterisk 20–24 CI is still needed for this relocation.
+
+## C-only build configuration (2026-09-23)
+
+- All compiled targets are C. Removed the unused C++ compiler probe and
+  per-target C++ flags, including `-fpermissive`. The `.hh` configuration
+  entries file is included by C source and does not require a C++ compiler.
+- `--enable-lto` previously tested `-flto` but restored CFLAGS later, so the
+  option did not affect the build. It now checks a C link and adds the flag to
+  the C compile and link flags when supported. Its help text now matches the
+  disabled-by-default behavior; invalid values report the supplied value.
+- Regenerated the checked-in Autotools files. On wadsworth, private Asterisk 22
+  bootstrap, normal configure/build, and `make dist` passed; an LTO configure
+  and clean LTO build passed as well. Logs and lab actions are recorded in
+  `/root/asterisk.txt`. No module installation or runtime phone test was done.
+- Local `autoreconf` is unavailable, so generation was done in the private lab.
+  The large generated `configure` diff is primarily removal of the Autoconf
+  C++ compiler probe and libtool C++ tag. CI across 20–24 remains pending.

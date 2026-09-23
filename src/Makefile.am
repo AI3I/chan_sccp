@@ -67,14 +67,12 @@ chan_sccp_la_SOURCES	= chan_sccp.c
 libsccp_la_DEPENDENCIES = revision.h sccp_enum.h sccp_enum.c
 libsccp_la_CFLAGS       = $(AM_CFLAGS)
 libsccp_la_LDFLAGS	= $(AM_LDFLAGS)
-libsccp_la_CXXFLAGS	= $(AM_CXXFLAGS)
 
 chan_sccp_la_LIBADD	=  libsccp.la $(PBX_COND_LIBADD) $(PBXVER_COND_LIBADD) $(PBXVER_COND_ANNOUNCE_LIBADD)
 chan_sccp_la_DEPENDENCIES = $(chan_sccp_la_LIBADD)
 chan_sccp_la_CFLAGS     = $(AM_CFLAGS)
 chan_sccp_la_LDFLAGS	= $(LIBS) $(AM_LDFLAGS) $(PBX_LDFLAGS) $(PTHREAD_LIBS) $(EVENT_LIBS) $(LIBEXSLT_LIBS) $(LIBCURL_LIBS) $(EVENT_LIBS) $(LIBBFD) $(LIBEXECINFO) $(LTLIBICONV)
 chan_sccp_la_LDFLAGS	+= -avoid-version -module -lm -s -rdynamic
-chan_sccp_la_CXXFLAGS	= $(AM_CXXFLAGS)
 install-csmodLTLIBRARIES:
 	@$(NORMAL_INSTALL)
 	@test -d "$(DESTDIR)$(csmoddir)" || $(MKDIR_P) "$(DESTDIR)$(csmoddir)"

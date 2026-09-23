@@ -11,7 +11,6 @@ AC_CONFIG_AUX_DIR([autoconf])
 CFLAGS_saved="${CFLAGS}"
 CPPFLAGS_saved="${CPPFLAGS}"
 LDFLAGS_saved="${LDFLAGS}"
-CXXFLAGS_saved="${CXXFLAGS}"
 
 dnl AC_USE_SYSTEM_EXTENSIONS must be called before any macros that run
 dnl the compiler (like AC_PROG_LIBTOOL) to avoid autoconf errors.
@@ -64,7 +63,6 @@ CS_ENABLE_LINK_TIME_OPTIMIZATION
 AX_CHECK_ALIGNED_ACCESS_REQUIRED	dnl sparc64 alignment required
 AX_CHECK_UNALIGNED_BUSERROR		dnl sparc64 unaligned access
 CS_GET_VERSION([.])
-AC_PROG_CXX([clang++ llvm-g++ g++ c++])
 
 CONFIGURE_PART([Checking host platform:])
 CS_SETUP_HOST_PLATFORM

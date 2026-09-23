@@ -88,11 +88,7 @@ PBX_CHANNEL_TYPE *sccp_search_remotepeer_locked(int (*const found_cb) (PBX_CHANN
 
 #define ast_format_type int
 #define pbx_format_type uint64_t
-#if ASTERISK_VERSION_GROUP >= 110 && ASTERISK_VERSION_GROUP < 113
-#define pbx_format_enum_type enum ast_format_id
-#else
 #define pbx_format_enum_type uint64_t
-#endif
 skinny_codec_t __CONST__ pbx_codec2skinny_codec(ast_format_type fmt);
 
 //ast_format_type skinny_codec2pbx_codec(skinny_codec_t codec);
@@ -138,14 +134,12 @@ int sccp_parse_auto_answer(PBX_CHANNEL_TYPE * pbx_channel, sccp_autoanswer_t * a
 int sccp_parse_dial_options(char *options, sccp_autoanswer_t *autoanswer_type, uint8_t *autoanswer_cause, skinny_ringtype_t *ringermode);
 boolean_t sccp_astgenwrap_featureMonitor(const sccp_channel_t * channel);
 
-#if ASTERISK_VERSION_GROUP > 106
 int sccp_wrapper_sendDigits(const sccp_channel_t * channel, const char *digits);
 int sccp_wrapper_sendDigit(const sccp_channel_t * channel, const char digit);
-#endif
 
 void sccp_astgenwrap_set_callgroup(sccp_channel_t *channel, ast_group_t value);
 void sccp_astgenwrap_set_pickupgroup(sccp_channel_t *channel, ast_group_t value);
-#if CS_AST_HAS_NAMEDGROUP && ASTERISK_VERSION_GROUP >= 111
+#if CS_AST_HAS_NAMEDGROUP
 void sccp_astgenwrap_set_named_callgroups(sccp_channel_t *channel, struct ast_namedgroups *value);
 void sccp_astgenwrap_set_named_pickupgroups(sccp_channel_t *channel, struct ast_namedgroups *value);
 #endif

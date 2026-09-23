@@ -519,3 +519,15 @@ passed for the source commit. No live handset test was run.
   [Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35896589547)
   and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35896589504)
   passed. No module installation or live handset test was run.
+
+### Shared Asterisk wrapper cleanup
+
+- Removed pre-20 API branches from the shared wrapper headers and active
+  adapter functions: bridge and AMA type mappings, codec constants, call group
+  setters, redirecting/connected-line handling, configuration, networking,
+  and RTP quality reads. Feature probes that can still differ across Asterisk
+  20–24 remain. The selected supported-version code paths are unchanged.
+- This removes about 200 lines of retired compatibility code. Build and static
+  validation are pending; no module installation or live handset test was run.
+- Dead `UNUSEDCODE` blocks and other PBX adapter files still contain retired
+  branches and can be cleaned in later focused batches.

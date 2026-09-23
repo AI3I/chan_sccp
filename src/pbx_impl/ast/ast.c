@@ -37,10 +37,8 @@ SCCP_FILE_VERSION(__FILE__, "");
 #ifdef HAVE_PBX_FEATURES_H
 #  include <asterisk/features.h>
 #endif
-#if ASTERISK_VERSION_GROUP >= 112
 #include <asterisk/features_config.h>
 #include <asterisk/pickup.h>
-#endif
 
 /*!
  * \brief Skinny Codec Mapping
@@ -59,20 +57,11 @@ static const struct pbx2skinny_codec_map {
        {AST_FORMAT_H261,       SKINNY_CODEC_H261},
        {AST_FORMAT_H263,       SKINNY_CODEC_H263},
        {AST_FORMAT_T140,       SKINNY_CODEC_T120},
-#    if ASTERISK_VERSION_GROUP >= 113
        {AST_FORMAT_G723,       SKINNY_CODEC_G723_1},
        {AST_FORMAT_SLIN16,     SKINNY_CODEC_WIDEBAND_256K},
        {AST_FORMAT_G729,       SKINNY_CODEC_G729},
        {AST_FORMAT_G729,       SKINNY_CODEC_G729_A},
        {AST_FORMAT_H263P,      SKINNY_CODEC_H263P},
-#    else
-       {AST_FORMAT_G723_1,     SKINNY_CODEC_G723_1},
-       {AST_FORMAT_SLINEAR16,  SKINNY_CODEC_WIDEBAND_256K},
-       {AST_FORMAT_G729A,      SKINNY_CODEC_G729},
-       {AST_FORMAT_G729A,      SKINNY_CODEC_G729_A},
-       {AST_FORMAT_H263_PLUS,  SKINNY_CODEC_H263P},
-#    endif
-#    if ASTERISK_VERSION_NUMBER >= 10400
        {AST_FORMAT_G726_AAL2,  SKINNY_CODEC_G726_32K},
        {AST_FORMAT_G726,       SKINNY_CODEC_G726_32K},
        {AST_FORMAT_ILBC,       SKINNY_CODEC_G729_B_LOW},
@@ -80,7 +69,6 @@ static const struct pbx2skinny_codec_map {
        {AST_FORMAT_G722,       SKINNY_CODEC_G722_56K},
        {AST_FORMAT_G722,       SKINNY_CODEC_G722_48K},
        {AST_FORMAT_H264,       SKINNY_CODEC_H264},
-#    endif
 #    ifdef AST_FORMAT_SIREN7
        {AST_FORMAT_SIREN7,     SKINNY_CODEC_G722_1_24K},                       // should this not be SKINNY_CODEC_G722_1_32K
 #    endif
@@ -315,11 +303,7 @@ pbx_channel_walk_lockedstruct ast_ha *pbx_append_ha(NEWCONST char *sense, const 
  */
 struct ast_context *pbx_context_find_or_create(struct ast_context **extcontexts, struct ast_hashtab *exttable, const char *name, const char *registrar)
 {
-#if ASTERISK_VERSION_NUMBER < 10600
-	return ast_context_find_or_create(extcontexts, name, registrar);
-#else
 	return ast_context_find_or_create(extcontexts, exttable, name, registrar);
-#endif														// ASTERISK_VERSION_NUMBER
 }
 
 /*!
@@ -341,11 +325,7 @@ struct ast_context *pbx_context_find_or_create(struct ast_context **extcontexts,
  */
 struct ast_config *pbx_config_load(const char *filename, const char *who_asked, struct ast_flags flags)
 {
-#if ASTERISK_VERSION_NUMBER < 10600
-	return ast_config_load(filename);
-#else
 	return ast_config_load2(filename, who_asked, flags);
-#endif														// ASTERISK_VERSION_NUMBER
 }
 
 /******************************************************************************************************** NET / SOCKET **/
@@ -358,68 +338,9 @@ struct ast_config *pbx_config_load(const char *filename, const char *who_asked, 
  */
 const char *pbx_inet_ntoa(struct in_addr ia)
 {
-#if ASTERISK_VERSION_NUMBER < 10400
-	char iabuf[INET_ADDRSTRLEN];
-
-	return ast_inet_ntoa(iabuf, sizeof(iabuf), ia);
-#else
 	return ast_inet_ntoa(ia);
-#endif														// ASTERISK_VERSION_NUMBER
 }
 
-#if ASTERISK_VERSION_NUMBER < 10400
-
-/* BackPort of ast_str2cos & ast_str2cos for asterisk 1.2 */
-struct dscp_codepoint {
-	char *name;
-	unsigned int space;
-};
-
-static const struct dscp_codepoint dscp_pool1[] = {
-	{"CS0", 0x00},
-	{"CS1", 0x08},
-	{"CS2", 0x10},
-	{"CS3", 0x18},
-	{"CS4", 0x20},
-	{"CS5", 0x28},
-	{"CS6", 0x30},
-	{"CS7", 0x38},
-	{"AF11", 0x0A},
-	{"AF12", 0x0C},
-	{"AF13", 0x0E},
-	{"AF21", 0x12},
-	{"AF22", 0x14},
-	{"AF23", 0x16},
-	{"AF31", 0x1A},
-	{"AF32", 0x1C},
-	{"AF33", 0x1E},
-	{"AF41", 0x22},
-	{"AF42", 0x24},
-	{"AF43", 0x26},
-	{"EF", 0x2E},
-};
-
-int pbx_str2tos(const char *value, uint8_t *tos)
-{
-	int fval;
-
-	unsigned int x;
-
-	if (sscanf(value, "%30i", &fval) == 1) {
-		*tos = (uint16_t)fval & 0xFF;
-		return *tos;
-	}
-
-	for (x = 0; x < ARRAY_LEN(dscp_pool1); x++) {
-		if (!strcasecmp(value, dscp_pool1[x].name)) {
-			*tos = (uint8_t)dscp_pool1[x].space << 2;
-			return *tos;
-		}
-	}
-
-	return 0;
-}
-#else
 int pbx_str2tos(const char *value, uint8_t *tos)
 {
 	uint32_t tos_value = 0;
@@ -427,23 +348,7 @@ int pbx_str2tos(const char *value, uint8_t *tos)
 	*tos = (uint8_t) tos_value;
 	return *tos;
 }
-#endif														// ASTERISK_VERSION_NUMBER
 
-#if ASTERISK_VERSION_NUMBER < 10600
-int pbx_str2cos(const char *value, uint8_t *cos)
-{
-	int fval;
-
-	if (sscanf(value, "%30d", &fval) == 1) {
-		if (fval < 8) {
-			*cos = (uint8_t)fval;
-			return *cos;
-		}
-	}
-
-	return 0;
-}
-#else
 int pbx_str2cos(const char *value, uint8_t *cos)
 {
 	uint32_t cos_value = 0;
@@ -451,7 +356,6 @@ int pbx_str2cos(const char *value, uint8_t *cos)
 	*cos = (uint8_t) cos_value;
 	return *cos;
 }
-#endif														// ASTERISK_VERSION_NUMBER
 
 /************************************************************************************************************* GENERAL **/
 
@@ -497,11 +401,7 @@ int pbx_context_remove_extension(const char *context, const char *extension, int
  */
 void pbxman_send_listack(struct mansession *s, const struct message *m, char *msg, char *listflag)
 {
-#if ASTERISK_VERSION_NUMBER < 10600
-	astman_send_ack(s, m, msg);
-#else
 	astman_send_listack(s, m, msg, listflag);
-#endif														// ASTERISK_VERSION_NUMBER
 }
 
 /****************************************************************************************************** CODEC / FORMAT **/
@@ -799,7 +699,6 @@ void sccp_astwrap_redirectedUpdate(sccp_channel_t * channel, const void *data, s
 	iCallInfo.Getter(ci, 
 		SCCP_CALLINFO_LAST_REDIRECT_REASON, &redirectreason,
 		SCCP_CALLINFO_KEY_SENTINEL);
-#if ASTERISK_VERSION_GROUP >106
 	struct ast_party_id redirecting_from = pbx_channel_redirecting_effective_from(ast);
 	struct ast_party_id redirecting_to = pbx_channel_redirecting_effective_to(ast);
 
@@ -818,16 +717,6 @@ void sccp_astwrap_redirectedUpdate(sccp_channel_t * channel, const void *data, s
 		SCCP_CALLINFO_LAST_REDIRECT_REASON, 4,					// need to figure out these codes
 		SCCP_CALLINFO_KEY_SENTINEL);
 
-#else
-	sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_3 "%s: Got redirecting update. From <%s>\n", pbx_channel_name(ast), ast->cid.cid_rdnis);
-	iCallInfo.Setter(ci, 
-		SCCP_CALLINFO_LAST_REDIRECTINGPARTY_NUMBER, ast->cid.cid_rdnis ? ast->cid.cid_rdnis : "",
-		SCCP_CALLINFO_ORIG_CALLEDPARTY_NUMBER, ast->cid.cid_rdnis ? ast->cid.cid_rdnis : NULL,
-		SCCP_CALLINFO_ORIG_CALLEDPARTY_REDIRECT_REASON, redirectreason,
-		SCCP_CALLINFO_LAST_REDIRECT_REASON, 4,					// need to figure out these codes
-		SCCP_CALLINFO_KEY_SENTINEL);
-#endif
-
 	//sccp_channel_display_callInfo(channel);
 	sccp_channel_send_callinfo2(channel);
 }
@@ -840,7 +729,6 @@ void sccp_astwrap_redirectedUpdate(sccp_channel_t * channel, const void *data, s
  */
 void sccp_astwrap_connectedline(sccp_channel_t * channel, const void *data, size_t datalen)
 {
-#if ASTERISK_VERSION_GROUP > 106
 	PBX_CHANNEL_TYPE *ast = channel->owner;
 	int changes = 0;
 	sccp_callinfo_t *const callInfo = sccp_channel_getCallInfo(channel);
@@ -898,7 +786,6 @@ void sccp_astwrap_connectedline(sccp_channel_t * channel, const void *data, size
 
 				SCCP_CALLINFO_KEY_SENTINEL);
 		} else {
-#if ASTERISK_VERSION_GROUP >= 111
 			struct ast_party_id redirecting_orig = pbx_channel_redirecting_effective_orig(ast);
 			if (redirecting_orig.name.valid || redirecting_orig.number.valid) {
 				changes = iCallInfo.Setter(callInfo,
@@ -907,9 +794,7 @@ void sccp_astwrap_connectedline(sccp_channel_t * channel, const void *data, size
 					SCCP_CALLINFO_ORIG_CALLEDPARTY_NAME, redirecting_orig.name.valid ? ast_channel_redirecting(ast)->orig.name.str : "",
 					SCCP_CALLINFO_ORIG_CALLEDPARTY_NUMBER, redirecting_orig.number.valid ? ast_channel_redirecting(ast)->orig.number.str : "",
 					SCCP_CALLINFO_KEY_SENTINEL);
-			} else 
-#endif
-			{
+			} else {
 				changes = iCallInfo.Setter(callInfo,
 					SCCP_CALLINFO_CALLINGPARTY_NUMBER, pbx_channel_connected_id(ast).number.str,
 					SCCP_CALLINFO_CALLINGPARTY_NAME, pbx_channel_connected_id(ast).name.str,
@@ -946,12 +831,10 @@ void sccp_astwrap_connectedline(sccp_channel_t * channel, const void *data, size
 	if (SCCP_CHANNELSTATE_CALLPARK == channel->state || !sccp_strlen_zero (pbx_builtin_getvar_helper (channel->owner, "PARK_RETRIEVER"))) {
 		sccp_indicate_force (NULL, channel, SCCP_CHANNELSTATE_CONNECTED);
 	}
-#endif
 }
 
 void sccp_astwrap_sendRedirectedUpdate(const sccp_channel_t * channel, const char *fromNumber, const char *fromName, const char *toNumber, const char *toName, uint8_t reason)
 {
-#if ASTERISK_VERSION_GROUP >106
 	struct ast_party_redirecting redirecting;
 	struct ast_set_party_redirecting update_redirecting;
 
@@ -984,30 +867,10 @@ void sccp_astwrap_sendRedirectedUpdate(const sccp_channel_t * channel, const cha
 		redirecting.to.name.valid = 1;
 		redirecting.to.name.str = pbx_strdup(toName);
 	}
-#if ASTERISK_VERSION_GROUP >111
 	redirecting.reason.code = reason;
-#else
-	redirecting.reason = reason;
-#endif
 
 	ast_channel_queue_redirecting_update(channel->owner, &redirecting, &update_redirecting);
 	ast_party_redirecting_free(&redirecting);
-#else
-	// set redirecting party (forwarder)
-	if (fromNumber) {
-		if (channel->owner->cid.cid_rdnis) {
-			ast_free(channel->owner->cid.cid_rdnis);
-		}
-		channel->owner->cid.cid_rdnis = pbx_strdup(fromNumber);
-	}
-	// where is the call going to now
-	if (toNumber) {
-		if (channel->owner->cid.cid_dnid) {
-			ast_free(channel->owner->cid.cid_dnid);
-		}
-		channel->owner->cid.cid_dnid = pbx_strdup(toNumber);
-	}
-#endif
 }
 
 
@@ -1192,7 +1055,6 @@ int sccp_astgenwrap_channel_read(PBX_CHANNEL_TYPE * ast, NEWCONST char *funcname
 		sccp_copy_string(buf, skinny_devicetype2str(d->skinny_type), buflen);
 	} else if (!strcasecmp(args.param, "from")) {
 		sccp_copy_string(buf, (char *) d->id, buflen);
-#if ASTERISK_VERSION_GROUP >= 108
 	} else if (!strcasecmp(args.param, "rtpqos")) {
 		PBX_RTP_TYPE *rtp = NULL;
 
@@ -1288,7 +1150,6 @@ int sccp_astgenwrap_channel_read(PBX_CHANNEL_TYPE * ast, NEWCONST char *funcname
 			}
 		} while (0);
 		ast_channel_unlock(ast);
-#endif
 	} else {
 		pbx_log(LOG_WARNING, "SCCP: (channel_read) Unrecognized argument '%s' to %s\n", preparse, funcname);
 	}
@@ -1378,7 +1239,6 @@ int sccp_astgenwrap_channel_write(PBX_CHANNEL_TYPE * ast, const char *funcname, 
  */
 boolean_t sccp_astgenwrap_featureMonitor(const sccp_channel_t * channel)
 {
-#if ASTERISK_VERSION_GROUP >= 112
 	char featexten[SCCP_MAX_EXTENSION] = "";
 
 	if (iPbx.getFeatureExtension(channel, "automon", featexten) && !sccp_strlen_zero(featexten)) {
@@ -1395,30 +1255,11 @@ boolean_t sccp_astgenwrap_featureMonitor(const sccp_channel_t * channel)
 	}
 	pbx_log(LOG_ERROR, "SCCP: Monitor Feature Extension Not available\n");
 	return FALSE;
-#else
-	ast_rdlock_call_features();
-	struct ast_call_feature *feature = ast_find_call_feature("automon");
-	ast_unlock_call_features();
-
-	if (feature) {
-		PBX_CHANNEL_TYPE *bridgePeer = iPbx.get_bridged_channel(channel->owner);
-		if (bridgePeer) {
-			feature->operation(channel->owner, bridgePeer, NULL, "monitor button", FEATURE_SENSE_CHAN | FEATURE_SENSE_PEER, NULL);
-			pbx_channel_unref(bridgePeer);
-		} else {
-			pbx_log(LOG_ERROR, "SCCP: No bridgepeer available\n");
-		}
-		return TRUE;
-	}
-	sccp_log(DEBUGCAT_CORE) (VERBOSE_PREFIX_3 "%s: Automon not available in features.conf\n", channel->designator);
-	return FALSE;
-#endif
 }
 
 #if !defined(AST_DEFAULT_EMULATE_DTMF_DURATION)
 #define AST_DEFAULT_EMULATE_DTMF_DURATION 100
 #endif
-#if ASTERISK_VERSION_GROUP > 106
 int sccp_wrapper_sendDigits(const sccp_channel_t * channel, const char *digits)
 {
 	uint8_t maxdigits = AST_MAX_EXTENSION;
@@ -1457,7 +1298,6 @@ int sccp_wrapper_sendDigit(const sccp_channel_t * channel, const char digit)
 	sccp_log((DEBUGCAT_HIGH)) (VERBOSE_PREFIX_3 "%s: got a single digit '%c' -> '%s'\n", channel->currentDeviceId, digit, digits);
 	return sccp_wrapper_sendDigits(channel, digits);
 }
-#endif
 
 static void *sccp_astwrap_doPickupThread(void *data)
 {
@@ -1493,26 +1333,18 @@ static int sccp_astwrap_doPickup(PBX_CHANNEL_TYPE * pbx_channel)
 void sccp_astgenwrap_set_callgroup(sccp_channel_t *channel, ast_group_t value)
 {
 	if (channel && channel->owner) {
-#if ASTERISK_VERSION_GROUP < 111
-		channel->owner->callgroup = value;
-#else
 		ast_channel_callgroup_set(channel->owner, value);
-#endif
 	}
 }
 
 void sccp_astgenwrap_set_pickupgroup(sccp_channel_t *channel, ast_group_t value)
 {
 	if (channel && channel->owner) {
-#if ASTERISK_VERSION_GROUP < 111
-		channel->owner->pickupgroup = value;
-#else
 		ast_channel_pickupgroup_set(channel->owner, value);
-#endif
 	}
 }
 
-#if CS_AST_HAS_NAMEDGROUP && ASTERISK_VERSION_GROUP >= 111
+#if CS_AST_HAS_NAMEDGROUP
 void sccp_astgenwrap_set_named_callgroups(sccp_channel_t *channel, struct ast_namedgroups *value)
 {
 	if (channel && channel->owner) {

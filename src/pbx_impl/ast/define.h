@@ -66,11 +66,7 @@
 #  if CS_AST_REGISTER_FILE_VERSION
 #    define SCCP_FILE_VERSION(_file, _version) ASTERISK_FILE_VERSION((_file), (_version))
 #  else
-#    if ASTERISK_VERSION_GROUP >= 114
-#      define SCCP_FILE_VERSION(_file, _version)
-#    else
-#      define SCCP_FILE_VERSION(_file, _version) ASTERISK_REGISTER_FILE()
-#    endif
+#    define SCCP_FILE_VERSION(_file, _version)
 #  endif
 #endif
 
@@ -108,14 +104,10 @@
 #define pbx_app_separate_args ast_app_separate_args
 #define pbx_bridge_features_init ast_bridge_features_init
 
-#if ASTERISK_VERSION_NUMBER < 11010
-#define pbx_bridge_join(_bridge, _channel, _replace, _features, _tech_optimizations, _flags) ast_bridge_join((_bridge), (_channel), (_replace), (_features))
-#else
 #ifndef CS_BRIDGE_JOIN_PASSREFERENCE
 #define pbx_bridge_join(_bridge, _channel, _replace, _features, _tech_optimizations, _flags) ast_bridge_join((_bridge), (_channel), (_replace), (_features), (_tech_optimizations))
 #else
 #define pbx_bridge_join(_bridge, _channel, _replace, _features, _tech_optimizations, _flags) ast_bridge_join((_bridge), (_channel), (_replace), (_features), (_tech_optimizations), (_flags))
-#endif
 #endif
 
 #ifndef CS_BRIDGE_BASE_NEW
@@ -127,11 +119,7 @@
 #define pbx_bridge_kick ast_bridge_kick
 #define pbx_bridge_result ast_bridge_result
 
-#if ASTERISK_VERSION_GROUP < 110
-#define pbx_bridge_impart(_bridge, _underlying_channel, _swap_channel, _features, _allow_hangup) ast_bridge_impart((_bridge), (_underlying_channel), (_swap_channel), (_features))
-#else
 #define pbx_bridge_impart(_bridge, _underlying_channel, _swap_channel, _features, _allow_hangup) ast_bridge_impart((_bridge), (_underlying_channel), (_swap_channel), (_features), (_allow_hangup))
-#endif
 #ifndef CS_BRIDGE_DEPART_ONLY_CHANNEL
 #define pbx_bridge_depart(_x, _y) ast_bridge_depart((_x),(_y))
 #else
@@ -153,11 +141,7 @@
 #define pbx_canmatch_extension ast_canmatch_extension
 #define pbx_category_browse ast_category_browse
 #define pbx_cause ast_cause
-#if ASTERISK_VERSION_GROUP < 112
-#define pbx_ama_flags_type long int 
-#else
 #define pbx_ama_flags_type enum ama_flags
-#endif
 #define pbx_cdr_amaflags2int ast_cdr_amaflags2int
 #define pbx_cdr_flags2str ast_cdr_flags2str
 #define pbx_channel_amaflags2string ast_cdr_flags2str
@@ -375,10 +359,6 @@ typedef struct pbx_event_sub pbx_event_subscription_t;
 #define pbx_stream_and_wait ast_stream_and_wait
 #define pbx_say_number ast_say_number
 #define pbx_fileexists ast_fileexists
-#if ASTERISK_VERSION_GROUP < 111 && defined(__clang__)
-#undef AST_STRING_FIELD_ALLOCATION
-#define AST_STRING_FIELD_ALLOCATION(_x) *((ast_string_field_allocation *) ((ast_string_field_allocation)(_x) - __alignof__(ast_string_field_allocation)))
-#endif
 #define pbx_string_field_build ast_string_field_build
 #define pbx_string_field_set ast_string_field_set
 #define pbx_strip ast_strip

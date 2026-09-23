@@ -266,3 +266,26 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   log, and absence of install/runtime testing were recorded in
   `/root/asterisk.txt` there. No physical-phone or bidirectional transcoding
   test was run. Production was untouched.
+
+## Remaining work inventory (2026-09-23)
+
+- **Open reviewed defect:** R8, TLS accept/handshake and SSL read/write retry
+  handling, including connection and `SSL_CTX` ownership. This is the only
+  unimplemented R1–R12 finding; see the review for the precise failure paths.
+- **Media follow-up:** make RTP payload lookup return signed failure instead of
+  wrapping -1 to `uint8_t`; validate dynamic audio/video payload mappings,
+  bidirectional transcoding, early media, paging, hold/resume, and transfer.
+  The static audio payload fix covers only six standard mappings.
+- **High-value cleanup:** remove or test-gate `testhtml`/`testxml` HTTP handlers
+  and the hazardous `sccp test` CLI branches; fold away the no-behavior
+  `libpbximpl.la` build unit. These remain present in source.
+- **Structural cleanup:** rename the shared `ast116` adapter for its actual
+  20–24 role, consolidate small per-version wrappers, assess C++ scaffolding,
+  and remove unreachable `#if 0` implementations in reviewable batches.
+- **Deferred validation:** physical Cisco call behavior and the compile-only
+  R2/R3/R5/R6/R7/R11/R12 paths. The user requested code progress now and no
+  test cycle after every change. Keep all lab actions recorded in wadsworth's
+  `/root/asterisk.txt`; production remains on the previously validated module.
+- **Standing quality pass:** CLI/phone/log messages and misleading comments,
+  as described in `HEALTH_AUDIT.md`. The older health audit includes historic
+  plans and should not override this current status section.

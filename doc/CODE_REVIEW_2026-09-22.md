@@ -333,7 +333,7 @@ feature repairs. Keep that progress document updated as implementation proceeds.
 - See [BUILD_AND_THREADPOOL_PROGRESS.md](BUILD_AND_THREADPOOL_PROGRESS.md) for
   source and test details and for the CLI command audit.
 
-## Remaining findings after `126ede59`
+## Current status after `ec6dd635`
 
 R1/R2/R3/R4/R5/R6/R7/R9/R10/R11/R12 and the pre-20 adapter removal
 are implemented. R8 remains. R2, R3, R5, R6, R7, R11, and R12 have compile-only

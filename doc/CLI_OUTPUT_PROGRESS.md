@@ -171,7 +171,7 @@ four phone registrations, but did not include a new active-call audio test.
 
 ## Complete review finding tracker
 
-This table tracks implementation after `126ede59`; the linked review contains
+This table tracks implementation through `ec6dd635`; the linked review contains
 locations, evidence, limits, and proposed validation.
 
 | ID | Severity | Finding | Status |
@@ -180,14 +180,14 @@ locations, evidence, limits, and proposed validation.
 | R2 | High, conditional | Fallback-script output stack overflow | Implemented; compile-only validation, runtime deferred |
 | R3 | High, conditional | XML request/unload cleanup destroys global library state | Implemented; optional XML compile passed, runtime deferred |
 | R4 | High | Generated build files and distribution lists contradict sources | Implemented; hosted 20–24 CI passed before legacy retirement |
-| R5 | Medium | Partial writes can interleave SCCP frames | Open |
-| R6 | Medium | Recoverable reads/full receive buffers cause disconnects | Open |
-| R7 | Medium | Read-format setter modifies write format; failures ignored | Open |
+| R5 | Medium | Partial writes can interleave SCCP frames | Implemented in `0eb92731`; compile passed, concurrency test deferred |
+| R6 | Medium | Recoverable reads/full receive buffers cause disconnects | Implemented in `0eb92731`; compile passed, frame tests deferred |
+| R7 | Medium | Read-format setter modifies write format; failures ignored | Implemented in `ec6dd635`; compile passed, codec call tests deferred |
 | R8 | Medium, conditional | TLS handshake/accept and retry contracts are broken | Open |
 | R9 | Medium | Queue allocation exits Asterisk; rejected jobs report success | Implemented with R1 |
 | R10 | Medium | Fake-success test target and stale CI configuration | Implemented; hosted CI passed before legacy retirement |
 | R11 | Medium, conditional | Odd/even fallback policy does not enforce parity | Implemented; compile-only validation, runtime deferred |
-| R12 | Low | Send error paths leak owned messages | Open; include with session/ownership fixes |
+| R12 | Low | Send error paths leak owned messages | Implemented in `0eb92731`; compile passed, leak test deferred |
 
 Additional recommendations remain tracked in the review's **What can reasonably
 be discarded** table and **Rework order and acceptance checks** section:
@@ -196,8 +196,8 @@ be discarded** table and **Rework order and acceptance checks** section:
   consolidation remains.
 - Ineffective answer-time RTP fallback; signed RTP lookup failure handling;
   audio/video API separation and dynamic-codec validation.
-- Dead/commented code, legacy XML stylesheet entry, test web handlers, and
-  hazardous experimental CLI branches.
+- Dead/commented code, test web handlers, and hazardous experimental CLI
+  branches remain. The legacy XML stylesheet entry was removed.
 - Empty adapter archive and conditional C++ scaffolding retirement remain.
   Inherited Travis/LGTM metadata, old packaging, and obsolete backport patches
   were removed in the repository cleanup; active GitHub Actions remain.

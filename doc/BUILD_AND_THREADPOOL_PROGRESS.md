@@ -515,5 +515,7 @@ passed for the source commit. No live handset test was run.
   whitespace was discarded. Scratch was removed. All wadsworth actions are
   recorded in `/root/asterisk.txt` there.
 - `bash -n configure` and `git diff --check` passed; the option is absent from
-  `./configure --help`. Hosted matrix and CodeQL results are pending. No
-  module installation or live handset test was run.
+  `./configure --help`. The hosted
+  [Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35896589547)
+  and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35896589504)
+  passed. No module installation or live handset test was run.

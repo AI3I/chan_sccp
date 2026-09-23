@@ -314,7 +314,7 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   After the test/build cleanup, bootstrap, configure, compile, and `make dist`
   passed. No module was installed and no handset test was run. All lab actions
   and log paths are in `/root/asterisk.txt`; production remains unchanged.
-- Remaining: Asterisk 20–24 CI for this exact batch; real calls for dynamic
+- Remaining: real calls for dynamic
   RTP, video, codec changes, paging/early media, and bidirectional transcoding.
   Adapter wrapper consolidation and dead code remain cleanup items.
 
@@ -331,8 +331,8 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   `make dist` passed. The generated `configure` and `src/Makefile.in` were
   copied back and staged. Log paths and all lab actions are recorded in
   `/root/asterisk.txt`. No module installation or live phone test was done.
-- The 21–24 wrappers were later consolidated below. Asterisk 20–24 CI is still
-  needed for the completed adapter simplification.
+- The 21–24 wrappers were later consolidated below. The completed adapter
+  simplification passed the Asterisk 20–24 CI matrix.
 
 ## C-only build configuration (2026-09-23)
 
@@ -349,7 +349,7 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   `/root/asterisk.txt`. No module installation or runtime phone test was done.
 - Local `autoreconf` is unavailable, so generation was done in the private lab.
   The large generated `configure` diff is primarily removal of the Autoconf
-  C++ compiler probe and libtool C++ tag. CI across 20–24 remains pending.
+  C++ compiler probe and libtool C++ tag. The later Asterisk 20–24 matrix passed.
 
 ## Disabled code removal (2026-09-23)
 
@@ -377,7 +377,10 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - Wadsworth private Asterisk 22 bootstrap, configure, compile, and source
   archive passed. The archive contains `ast120` and omits `ast121`–`ast124`.
   No module was installed or live phone test run. Logs and lab activity are
-  recorded in `/root/asterisk.txt`; 20, 21, 23, and 24 builds await hosted CI.
+  recorded in `/root/asterisk.txt`. The hosted
+  [Build and test run 35864571157](https://github.com/AI3I/chan_sccp/actions/runs/35864571157)
+  passed the Asterisk 20–24 default and optional matrix, including sanitizer,
+  archive, and bootstrap jobs.
 
 ## TLS transport repair (2026-09-23)
 
@@ -403,5 +406,6 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   test was run at the user's request. All lab activity and build logs are in
   `/root/asterisk.txt` there.
 - Remaining TLS risk: runtime handshake/closure/reconnect behavior and
-  concurrent SSL read/write access on a session need dedicated review; this
-  compile-only pass does not establish safe live TLS behavior.
+  concurrent SSL read/write access on a session need dedicated review. OpenSSL
+  [requires serial access to each SSL object](https://docs.openssl.org/master/man7/openssl-threads/);
+  this compile-only pass does not establish safe live TLS behavior.

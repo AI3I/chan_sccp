@@ -556,5 +556,7 @@ passed for the source commit. No live handset test was run.
   entry, and display macro are removed too; no active callers were found.
   The commented-out guard around active `CopyByKey` was removed without
   changing that function.
-- This batch removes about 140 lines. Build and static validation are pending;
-  no module installation or live handset test was run.
+- Source commit `f07bd7cd` removes about 140 lines. `git diff --check`, the
+  hosted [Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35898528592),
+  and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35898528632)
+  passed. No module installation or live handset test was run.

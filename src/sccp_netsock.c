@@ -68,20 +68,20 @@ boolean_t sccp_netsock_ouraddrfor(const struct sockaddr_storage * them, struct s
 	sockfd = socket(family, SOCK_DGRAM, 0);
 	if(sockfd < 0) {
 		sock_err = ast_strdupa(strerror(errno));
-		pbx_log(LOG_ERROR, "Cannot create socket to %s: %s\n", sccp_netsock_stringify_addr(them), sock_err);
+		pbx_log(LOG_ERROR, "SCCP: could not create a socket to find the local address for %s: %s\n", sccp_netsock_stringify_addr(them), sock_err);
 		return FALSE;
 	}
 
 	if(connect(sockfd, &themaddr.sa, slen)) {
 		sock_err = ast_strdupa(strerror(errno));
-		pbx_log(LOG_WARNING, "Cannot connect to %s: %s\n", sccp_netsock_stringify_addr(them), sock_err);
+		pbx_log(LOG_WARNING, "SCCP: no route to %s (%s); local address for it unknown\n", sccp_netsock_stringify_addr(them), sock_err);
 		close(sockfd);
 		return FALSE;
 	}
 
 	if(getsockname(sockfd, &usaddr.sa, &slen)) {
 		sock_err = ast_strdupa(strerror(errno));
-		pbx_log(LOG_WARNING, "Cannot get socket name for connection to %s: %s\n", sccp_netsock_stringify_addr(them), sock_err);
+		pbx_log(LOG_WARNING, "SCCP: could not read the local address used for %s: %s\n", sccp_netsock_stringify_addr(them), sock_err);
 		close(sockfd);
 		return FALSE;
 	}
@@ -158,9 +158,9 @@ static boolean_t __netsock_resolve_first_af(struct sockaddr_storage *addr, const
 		result = TRUE;
 	} else {
 		if (e == EAI_NONAME) {
-			pbx_log(LOG_ERROR, "SCCP: name:%s could not be resolved\n", name);
+			pbx_log(LOG_WARNING, "SCCP: host name '%s' could not be resolved\n", name);
 		} else {
-			pbx_log(LOG_ERROR, "getaddrinfo(\"%s\") failed: %s\n", name, gai_strerror(e));
+			pbx_log(LOG_WARNING, "SCCP: resolving '%s' failed: %s\n", name, gai_strerror(e));
 		}
 	}
 	freeaddrinfo(res);
@@ -182,7 +182,7 @@ boolean_t sccp_netsock_getExternalAddr(struct sockaddr_storage *sockAddrStorage,
 		if (GLOB(externhost) && strlen(GLOB(externhost)) != 0 && GLOB(externrefresh) > 0) {
 			if (time(NULL) >= externhost[family].expire) {
 				if (!__netsock_resolve_first_af(&externhost[family].ip, GLOB(externhost), family)) {
-					pbx_log(LOG_NOTICE, "Warning: Resolving '%s' failed!\n", GLOB(externhost));
+					pbx_log(LOG_WARNING, "SCCP: externhost '%s' could not be resolved; the external address is not updated\n", GLOB(externhost));
 					return FALSE;
 				}
 				externhost[family].expire = time(NULL) + GLOB(externrefresh);
@@ -387,13 +387,13 @@ int sccp_netsock_split_hostport(char *str, char **host, char **port, int flags)
 			break;
 		case PARSE_PORT_REQUIRE:
 			if (*port == NULL) {
-				pbx_log(LOG_WARNING, "Port missing in %s\n", orig_str);
+				pbx_log(LOG_WARNING, "SCCP: address '%s' needs a port\n", orig_str);
 				return 0;
 			}
 			break;
 		case PARSE_PORT_FORBID:
 			if (*port != NULL) {
-				pbx_log(LOG_WARNING, "Port disallowed in %s\n", orig_str);
+				pbx_log(LOG_WARNING, "SCCP: address '%s' must not include a port\n", orig_str);
 				return 0;
 			}
 			break;
@@ -458,7 +458,7 @@ char *__netsock_stringify_fmt(const struct sockaddr_storage *sockAddrStorage, in
 			ast_str_set(&str, 0, "%s", port);
 			break;
 		default:
-			pbx_log(LOG_ERROR, "Invalid format\n");
+			pbx_log(LOG_ERROR, "SCCP: address formatting requested with an unknown format (caller bug)\n");
 			return "";
 	}
 
@@ -468,7 +468,7 @@ char *__netsock_stringify_fmt(const struct sockaddr_storage *sockAddrStorage, in
 #define SCCP_NETSOCK_SETOPTION(_SOCKET, _LEVEL,_OPTIONNAME, _OPTIONVAL, _OPTIONLEN) 							\
 	if (setsockopt(_SOCKET, _LEVEL, _OPTIONNAME, (void*)(_OPTIONVAL), _OPTIONLEN) == -1) {						\
 		if (errno != ENOTSUP) {													\
-			pbx_log(LOG_WARNING, "Failed to set SCCP socket: " #_LEVEL ":" #_OPTIONNAME " error: '%s'\n", strerror(errno));	\
+			pbx_log(LOG_WARNING, "SCCP: could not set socket option " #_LEVEL "/" #_OPTIONNAME ": %s\n", strerror(errno));	\
 		}															\
 	}
 

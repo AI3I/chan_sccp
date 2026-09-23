@@ -2337,7 +2337,7 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 									    config->button.feature.options ? config->button.feature.options : "", config->button.feature.status ? "On" : "Off");
 			if (TRUE == toggleState) {
 				if (sccp_strlen_zero(config->button.feature.options)) {
-					pbx_log(LOG_WARNING, "%s: DevState feature button on instance %d has no custom device state name configured; button press ignored\n", DEV_ID_LOG(d), config->instance);
+					pbx_log(LOG_WARNING, "%s: devstate feature button %d has no custom device state name configured; button press ignored\n", DEV_ID_LOG(d), config->instance);
 					return;
 				}
 				enum ast_device_state newDeviceState = sccp_devstate_getNextDeviceState(d, config);
@@ -4806,7 +4806,7 @@ void handle_device_to_user(constSessionPtr s, devicePtr d, constMessagePtr msg_i
 				d->dtu_softkey.action = pbx_strdup(str_action);
 				d->dtu_softkey.transactionID = sccp_atoi(str_transactionID, sizeof(str_transactionID));
 			} else {
-				pbx_log(LOG_NOTICE, "%s: could not parse softkey application data '%s' (expected action/transactionID); ignored\n", d->id, data);
+				pbx_log(LOG_NOTICE, "%s: could not parse softkey application data '%s' (expected action/transaction number); ignored\n", d->id, data);
 			}
 		}
 	} else {

@@ -140,7 +140,7 @@ static void parseButtonArgs(const char * args, feature_state_t * states)
 			// sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "SCCP: parseButtonArgs(%p): added: '%s' -> '%s', %d, %d, %d, '%s'\n", (void *)&states[state], arg, ast_devstate2str(state), states[state].value.strct.rythm,
 			// states[state].value.strct.color, states[state].value.strct.icon, ast_devstate2str(states[state].nextstate));
 		} else {
-			pbx_log(LOG_ERROR, "SCCP: (parseButtonArgs) could not parse '%s', failed segment:'%s'\n", args, args);
+			pbx_log(LOG_WARNING, "SCCP: devstate button options '%s': segment '%s' is not five digits (state, rhythm, color, icon, next state); segment ignored\n", args, arg);
 		}
 	}
 	// printStates(states);
@@ -304,7 +304,7 @@ deviceState_t * createDeviceStateHandler(const char * devstate)
 #elif CS_AST_HAS_EVENT
 	deviceState->sub = pbx_event_subscribe(AST_EVENT_DEVICE_STATE_CHANGE, changed_cb, "sccp_devstate_changed_cb", deviceState, AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, buf, AST_EVENT_IE_END);
 #else
-	pbx_log(LOG_ERROR, "SCCP: distributed devstate not supported\n");
+	pbx_log(LOG_ERROR, "SCCP: devstate buttons do not work: this Asterisk build has no device state events\n");
 #endif
 	deviceState->featureState = ast_device_state(buf);
 

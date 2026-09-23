@@ -37,7 +37,7 @@ SCCP_API void SCCP_CALL sccp_safe_sleep(int ms);
                         return (arrayname)[i].return_var; \
                 } \
         } \
-        pbx_log(LOG_ERROR, "_ARR2STR Lookup Failed for " #arrayname "." #lookup_var "=%i\n", lookup_val); \
+        pbx_log(LOG_ERROR, "SCCP: value %i has no entry in " #arrayname "." #lookup_var "; shown as empty\n", lookup_val); \
         return ""; \
         })
 #define _STRARR2INT(arrayname, lookup_var, lookup_val, return_var) \
@@ -48,7 +48,7 @@ SCCP_API void SCCP_CALL sccp_safe_sleep(int ms);
                         return (uint32_t)(arrayname)[i].return_var; \
                 } \
         } \
-        pbx_log(LOG_ERROR, "_STRARR2INT Lookup Failed for " #arrayname "." #lookup_var "=%s\n", lookup_val); \
+        pbx_log(LOG_ERROR, "SCCP: '%s' has no entry in " #arrayname "." #lookup_var "; treated as 0\n", lookup_val); \
         return 0; \
         })
 #define _ARR2INT(arrayname, lookup_var, lookup_val, return_var) \
@@ -59,7 +59,7 @@ SCCP_API void SCCP_CALL sccp_safe_sleep(int ms);
                         return (arrayname)[i].return_var; \
                 } \
         } \
-        pbx_log(LOG_ERROR, "_ARR2STR Lookup Failed for " #arrayname "." #lookup_var "=%i\n", lookup_val); \
+        pbx_log(LOG_ERROR, "SCCP: value %i has no entry in " #arrayname "." #lookup_var "; treated as -1\n", lookup_val); \
         return -1; \
         })
 

@@ -250,7 +250,7 @@ typedef struct pbx_rwlock_info pbx_rwlock_t;
 #if MAINTAINER_MODE == 1
 #define __snprintf snprintf
 #undef snprintf
-#define snprintf(...) ({int __snprres = __snprintf(__VA_ARGS__); if (__snprres < 0) {pbx_log(LOG_WARNING, "snprintf returned error\n");};__snprres;})
+#define snprintf(...) ({int __snprres = __snprintf(__VA_ARGS__); if (__snprres < 0) {pbx_log(LOG_WARNING, "SCCP: snprintf() failed (encoding error)\n");};__snprres;})
 #endif
 
 #if defined(__clang__) 

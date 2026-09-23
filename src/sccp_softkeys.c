@@ -288,7 +288,7 @@ static void sccp_sk_endcall(const sccp_softkeyMap_cb_t * const softkeyMap_cb, co
 {
 	sccp_log((DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: SoftKey EndCall Pressed\n", DEV_ID_LOG(d));
 	if (!c) {
-		pbx_log(LOG_NOTICE, "%s: Endcall with no call in progress\n", d->id);
+		sccp_log((DEBUGCAT_SOFTKEY))(VERBOSE_PREFIX_3 "%s: EndCall pressed with no call in progress; ignored\n", d->id);
 		return;
 	}
 
@@ -430,7 +430,7 @@ static void sccp_sk_answer(const sccp_softkeyMap_cb_t * const softkeyMap_cb, con
 {
 	if (!c) {
 		char buf[100];
-		ast_log(LOG_WARNING, "%s: (sccp_sk_answer) Pressed the answer key without any channel%s%s\n", d->id, l ? " on line: " : "", l ? l->name : "");
+		pbx_log(LOG_NOTICE, "%s: answer pressed with no call%s%s; reject tone played\n", d->id, l ? " on line " : "", l ? l->name : "");
 		snprintf(buf, 100, SKINNY_DISP_NO_CHANNEL_TO_PERFORM_ACTION_ON " " SKINNY_GIVING_UP, "ANSWER");
 		sccp_dev_displayprinotify(d, buf, SCCP_MESSAGE_PRIORITY_TIMEOUT, 5);
 		sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, lineInstance, 0, SKINNY_TONEDIRECTION_USER);
@@ -1137,17 +1137,17 @@ boolean_t sccp_softkeyMap_replaceCallBackByUriAction(sccp_softkeyMap_cb_t * cons
 boolean_t sccp_SoftkeyMap_execCallbackByEvent(devicePtr d, linePtr l, uint32_t lineInstance, channelPtr c, uint32_t event)
 {
 	if (!d || !event) {
-		pbx_log(LOG_ERROR, "SCCP: (sccp_execSoftkeyMapCb_by_SoftkeyEvent) no device or event provided\n");
+		pbx_log(LOG_ERROR, "SCCP: softkey handler called without a device or event (caller bug)\n");
 		return FALSE;
 	}
 	const sccp_softkeyMap_cb_t *softkeyMap_cb = sccp_getSoftkeyMap_by_SoftkeyEvent(d, event);
 
 	if (!softkeyMap_cb) {
-		pbx_log(LOG_WARNING, "%s: Don't know how to handle keypress %d\n", d->id, event);
+		pbx_log(LOG_WARNING, "%s: softkey %s (%d) has no handler; ignored\n", d->id, label2str(event), event);
 		return FALSE;
 	}
 	if (softkeyMap_cb->channelIsNecessary == TRUE && !c) {
-		pbx_log(LOG_WARNING, "%s: Channel required to handle keypress %d\n", d->id, event);
+		pbx_log(LOG_NOTICE, "%s: softkey %s pressed with no call; ignored\n", d->id, label2str(event));
 		return FALSE;
 	}
 	sccp_log((DEBUGCAT_SOFTKEY))(VERBOSE_PREFIX_3 "%s: Handling Softkey: %s on line: %s and channel: %s\n", d->id, label2str(event), l ? l->name : "UNDEF", c ? c->designator : "UNDEF");

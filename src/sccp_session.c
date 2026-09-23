@@ -86,7 +86,7 @@ sccp_servercontext_t * sccp_servercontext_create(struct sockaddr_storage * binda
 	switch(type) {
 		case SCCP_SERVERCONTEXT_TCP:
 			if((context->transport = tcp_init()) == NULL) {
-				pbx_log(LOG_ERROR, "SCCP: (%s) could not initialize tcp context\n", __func__);
+				pbx_log(LOG_ERROR, "SCCP: TCP listener not created: the TCP transport could not be initialized\n");
 				sccp_free(context);
 				return NULL;
 			}
@@ -286,7 +286,7 @@ int sccp_session_waitForPendingRequests(sccp_session_t * s)
 	while(s->requestsInFlight) {
 		sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_3 "%s: Waiting for %d Pending Requests!\n", s->designator, s->requestsInFlight);
 		if(pbx_cond_timedwait(&s->pendingRequest, &s->lock, &timeout_spec) == ETIMEDOUT) {
-			pbx_log(LOG_WARNING, "%s: waitForPendingRequests timed out!\n", s->designator);
+			pbx_log(LOG_WARNING, "%s: the phone did not answer %d outstanding request(s) in time; continuing without the answers\n", s->designator, s->requestsInFlight);
 			s->requestsInFlight = 0;
 			return s->requestsInFlight;
 		}
@@ -346,18 +346,18 @@ static int session_dissect_header(sccp_session_t * s, sccp_header_t * header, st
 	do {
 		// dissecting header to see if we have a valid sccp message, that we can handle
 		if (packetSize < 4 || packetSize > SCCP_MAX_PACKET - 8) {
-			pbx_log(LOG_ERROR, "%s: (session_dissect_header) Size of the data payload in the packet (messageId: %u, protocolVersion: %u / 0x0%x) is out of bounds: %d < %u > %d, close connection !\n", DEV_ID_LOG(s->device), messageId, protocolVersion, protocolVersion, 4, packetSize, (int) (SCCP_MAX_PACKET - 8));
+			pbx_log(LOG_ERROR, "%s: received a packet with payload length %u (message 0x%04X, protocol %u); valid lengths are %d-%d, so the connection is closed\n", DEV_ID_LOG(s->device), packetSize, messageId, protocolVersion, 4, (int) (SCCP_MAX_PACKET - 8));
 			return -2;
 		}
 
 		if (protocolVersion > 0 && !(sccp_protocol_isProtocolSupported(s->protocolType, protocolVersion))) {
-			pbx_log(LOG_ERROR, "%s: (session_dissect_header) protocolversion %u is unknown, cancelling read.\n", DEV_ID_LOG(s->device), protocolVersion);
+			pbx_log(LOG_WARNING, "%s: received a message with protocol version %u, which this session's protocol does not support; message discarded\n", DEV_ID_LOG(s->device), protocolVersion);
 			break;
 		}
 
 		if((msginfo = lookupMsgInfoStruct(messageId))) {
 			if(msginfo->messageId != messageId) {
-				pbx_log(LOG_ERROR, "%s: (session_dissect_header) messageId %d (0x%x) unknown. matched:0x%x discarding message.\n", DEV_ID_LOG(s->device), messageId, messageId, msginfo->messageId);
+				pbx_log(LOG_WARNING, "%s: received unknown message ID 0x%04X (closest table entry 0x%04X); message discarded\n", DEV_ID_LOG(s->device), messageId, msginfo->messageId);
 				break;
 			}
 			result = msginfo->size + SCCP_PACKET_HEADER;
@@ -384,7 +384,7 @@ static gcc_inline int session_buffer2msg(sccp_session_t * s, const unsigned char
 		lenAccordingToOurProtocolSpec = 0;									// unknown message, read it and discard content completely
 	}
 	if (dont_expect(lenAccordingToPacketHeader > lenAccordingToOurProtocolSpec)) {					// show out discarded bytes
-		pbx_log(LOG_WARNING, "%s: (session_dissect_msg) Incoming message is bigger(%d) than known size(%d). Packet looks like!\n", DEV_ID_LOG(s->device), lenAccordingToPacketHeader, lenAccordingToOurProtocolSpec);
+		pbx_log(LOG_WARNING, "%s: received a %d-byte message where %d bytes are known; the extra bytes are ignored (packet dump follows)\n", DEV_ID_LOG(s->device), lenAccordingToPacketHeader, lenAccordingToOurProtocolSpec);
 		// buffer[lenAccordingToPacketHeader + 1] = '\0';								// terminate buffer
 		sccp_dump_packet(buffer, lenAccordingToPacketHeader);
 	}
@@ -417,7 +417,7 @@ static gcc_inline int process_buffer(sccp_session_t * s, sccp_msg_t * msg, unsig
 		memcpy(&header_len, buffer, 4);
 		uint32_t payload_len = letohl(header_len) + (SCCP_PACKET_HEADER - 4);
 		if (dont_expect(payload_len < SCCP_PACKET_HEADER || payload_len > SCCP_MAX_PACKET)) {
-			pbx_log(LOG_ERROR, "%s: (process_buffer) Size of the data payload in the packet is bigger than max packet, close connection !\n", DEV_ID_LOG(s->device));
+			pbx_log(LOG_ERROR, "%s: received a packet with payload length %u, outside the valid range %d-%d; the connection is closed\n", DEV_ID_LOG(s->device), payload_len, (int)SCCP_PACKET_HEADER, (int)SCCP_MAX_PACKET);
 			res = -1;
 			break;
 		}
@@ -791,7 +791,7 @@ gcc_inline void recalc_wait_time(sccp_session_t *s)
 
 	sccp_log((DEBUGCAT_SOCKET)) (VERBOSE_PREFIX_4 "%s: keepalive:%d, keepaliveinterval:%d\n", s->designator, s->keepAlive, s->keepAliveInterval);
 	if (!s->keepAlive || !s->keepAliveInterval) {	/* temporary */
-		pbx_log(LOG_NOTICE, "SCCP: keepalive interval calculation failed!\n");
+		pbx_log(LOG_WARNING, "%s: keepalive for this device computed as zero; using the global keepalive=%d\n", s->designator, GLOB(keepalive));
 		s->keepAlive = GLOB(keepalive);
 		s->keepAliveInterval = GLOB(keepalive);
 	}
@@ -873,7 +873,7 @@ void *sccp_session_device_thread(void *session)
 		} else if (0 == res) {										/* poll timeout */
 			uintmax_t timediff = (uintmax_t)time(0) - (uintmax_t)s->lastKeepAlive;
 			if (!tokenThread && timediff >= s->keepAlive) {
-				pbx_log(LOG_NOTICE, "%s: Closing session because connection timed out after %ju seconds (ip-address: %s).\n", DEV_ID_LOG(s->device), timediff, s->designator);
+				pbx_log(LOG_NOTICE, "%s: no keepalive from the phone for %ju seconds (limit %d); closing the connection %s\n", DEV_ID_LOG(s->device), timediff, s->keepAlive, s->designator);
 				__sccp_session_stopthread(s, SKINNY_DEVICE_RS_TIMEOUT);
 				break;
 			}
@@ -882,7 +882,7 @@ void *sccp_session_device_thread(void *session)
 				// sccp_log_and((DEBUGCAT_SOCKET + DEBUGCAT_HIGH)) (VERBOSE_PREFIX_2 "%s: Session New Data Arriving at buffer position:%lu\n", DEV_ID_LOG(s->device), recv_len);
 				int result;
 				if (recv_len == sizeof(recv_buffer)) {
-					pbx_log(LOG_ERROR, "%s: Receive buffer is full of an incomplete SCCP message\n", s->designator);
+					pbx_log(LOG_ERROR, "%s: the receive buffer filled up without a complete SCCP message; closing the connection\n", s->designator);
 					__sccp_session_stopthread(s, SKINNY_DEVICE_RS_FAILED);
 					break;
 				}
@@ -902,7 +902,7 @@ void *sccp_session_device_thread(void *session)
 				recv_len += result;
 				s->lastKeepAlive = time(0);
 				if (process_buffer(s, &msg, recv_buffer, &recv_len) != 0 || recv_len == sizeof(recv_buffer)) {
-					pbx_log(LOG_ERROR, "%s: (netsock_device_thread) Received a packet or message (with result:%d) which we could not handle, giving up session: %p!\n", s->designator, result, s);
+					pbx_log(LOG_ERROR, "%s: could not parse the data received from the phone (%d bytes); closing the connection (message dump follows)\n", s->designator, result);
 					sccp_dump_msg(&msg);
 					if (s->device) {
 						sccp_device_sendReset(s->device, SKINNY_RESETTYPE_RESTART);
@@ -911,12 +911,12 @@ void *sccp_session_device_thread(void *session)
 					break;
 				}
 			} else { /* POLLHUP / POLLERR */
-				pbx_log(LOG_NOTICE, "%s: Closing session because we received POLLPRI/POLLHUP/POLLERR\n", s->designator);
+				pbx_log(LOG_NOTICE, "%s: the phone closed the connection or it failed (%s); closing the session\n", s->designator, (fds[0].revents & POLLHUP) ? "hangup" : "socket error");
 				__sccp_session_stopthread(s, SKINNY_DEVICE_RS_FAILED);
 				break;
 			}
 		} else {											/* poll returned invalid res */
-			pbx_log(LOG_NOTICE, "%s: Poll Returned invalid result: %d.\n", DEV_ID_LOG(s->device), res);
+			pbx_log(LOG_WARNING, "%s: poll() returned unexpected value %d; ignored\n", DEV_ID_LOG(s->device), res);
 		}
 		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 		pthread_testcancel();
@@ -932,7 +932,7 @@ void *sccp_session_device_thread(void *session)
 void __sccp_session_stopthread(sessionPtr s, skinny_registrationstate_t newRegistrationState)
 {
 	if(!s) {
-		pbx_log(LOG_NOTICE, "SCCP: session already terminated\n");
+		sccp_log((DEBUGCAT_SOCKET))(VERBOSE_PREFIX_3 "SCCP: session stop requested for a session that is already gone\n");
 		return;
 	}
 	AUTO_RELEASE(sccp_device_t, device, sccp_session_retainSendDevice(s));
@@ -959,14 +959,14 @@ static void __sccp_netsock_end_device_thread(sccp_session_t *session)
 	/* send thread cancellation (will interrupt poll if necessary) */
 	int s = pthread_cancel(session_thread);
 	if (s != 0) {
-		pbx_log(LOG_NOTICE, "SCCP: (sccp_netsock_end_device_thread) pthread_cancel error\n");
+		pbx_log(LOG_WARNING, "SCCP: could not cancel a session thread (%s); waiting for it to exit\n", strerror(s));
 	}
 
 	/* join previous session thread, wait for device cleanup */
 	void * res = NULL;
 	if (pthread_join(session_thread, &res) == 0) {
 		if (res != PTHREAD_CANCELED) {
-			pbx_log(LOG_ERROR, "SCCP: (sccp_netsock_end_device_thread) pthread join failed\n");
+			sccp_log((DEBUGCAT_SOCKET))(VERBOSE_PREFIX_3 "SCCP: session thread had already exited before it was cancelled\n");
 		}
 	}
 }
@@ -993,7 +993,7 @@ static boolean_t sccp_session_new_socket_allowed(struct sockaddr_storage *sin)
 		struct ast_str *buf = pbx_str_alloca(DEFAULT_PBX_STR_BUFFERSIZE);
 		if (buf) {
 			sccp_print_ha(buf, DEFAULT_PBX_STR_BUFFERSIZE, GLOB(ha));
-			pbx_log(LOG_NOTICE, "SCCP: Rejecting Connection: Ip-address '%s' denied. Check general deny/permit settings (%s).\n", addrStr, pbx_str_buffer(buf));
+			pbx_log(LOG_NOTICE, "SCCP: connection from %s refused by the global deny/permit settings (%s)\n", addrStr, pbx_str_buffer(buf));
 		} else {
 			pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		}
@@ -1047,7 +1047,7 @@ static boolean_t sccp_session_set_ourip(sccp_session_t * s)
 
 		// now ask the system what would it use to talk to 'them'
 		if(!sccp_netsock_ouraddrfor(&them, &s->ourip)) {
-			pbx_log(LOG_ERROR, "SCCP: Could not retrieve a valid ip-address to use to communicate with client '%s'\n", sccp_netsock_stringify(&s->sin));
+			pbx_log(LOG_WARNING, "SCCP: could not determine the local address used to reach %s; RTP may advertise the wrong address\n", sccp_netsock_stringify(&s->sin));
 			// return FALSE
 		}
 	} else {
@@ -1082,7 +1082,7 @@ static void * accept_thread(void * data)
 		new_sc.ssl_lock = NULL;
 		length = (socklen_t)sizeof(incoming);
 		if (context->transport->accept(&context->sc, (struct sockaddr *)&incoming, &length, &new_sc) != &new_sc || new_sc.fd < 0) {
-			pbx_log(LOG_ERROR, "SCCP: Connection accept failed on fd %d: %s\n", context->sc.fd, strerror(errno));
+			pbx_log(LOG_WARNING, "SCCP: accepting a new phone connection failed: %s; retrying\n", strerror(errno));
 			usleep(1000);
 			continue;
 		}
@@ -1203,18 +1203,18 @@ boolean_t sccp_session_bind_and_listen(sccp_servercontext_t * context, struct so
 		sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "Checking /etc/services for '%s:%s'!\n", addrStr, port_str);
 		status = getaddrinfo(sccp_netsock_stringify_addr(bindaddr), port_str, &hints, &res);
 		if(status != 0) {
-			pbx_log(LOG_ERROR, "Failed to get addressinfo for %s:%s, error: %s!\n", sccp_netsock_stringify_addr(bindaddr), port_str, gai_strerror(status));
+			pbx_log(LOG_ERROR, "SCCP: listener not started: could not resolve bindaddr %s port %s: %s\n", sccp_netsock_stringify_addr(bindaddr), port_str, gai_strerror(status));
 			return FALSE;
 		}
 		do {
 			context->sc.fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 			if(context->sc.fd < 0) {
-				pbx_log(LOG_ERROR, "Unable to create SCCP socket: %s\n", strerror(errno));
+				pbx_log(LOG_ERROR, "SCCP: listener not started: could not create a socket: %s\n", strerror(errno));
 				break;
 			}
 			sccp_netsock_setoptions(context->sc.fd, /*reuse*/ 1, /*linger*/ -1, /*keepalive*/ -1, /*sndtimeout*/ 0, /*rcvtimeout*/ 0);
 			if(context->transport->bind(&context->sc, res->ai_addr, res->ai_addrlen) < 0) {
-				pbx_log(LOG_ERROR, "Failed to bind to %s:%d: %s!\n", addrStr, port, strerror(errno));
+				pbx_log(LOG_ERROR, "SCCP: listener not started: could not bind to %s:%d: %s\n", addrStr, port, strerror(errno));
 				context->transport->close(&context->sc);
 				context->sc.fd = -1;
 				break;
@@ -1223,14 +1223,14 @@ boolean_t sccp_session_bind_and_listen(sccp_servercontext_t * context, struct so
 			struct ast_sockaddr tmp_sa;
 			ast_sockaddr_copy(&internip, storage2ast_sockaddr(bindaddr, &tmp_sa));
 			if(ast_find_ourip(&internip, &tmp_sa, 0)) {
-				ast_log(LOG_ERROR, "Unable to get own IP address\n");
+				pbx_log(LOG_ERROR, "SCCP: listener not started: bindaddr is a wildcard and the local IP address could not be determined\n");
 				context->transport->close(&context->sc);
 				context->sc.fd = -1;
 				break;
 			}
 
 			if(listen(context->sc.fd, DEFAULT_SCCP_BACKLOG)) {
-				pbx_log(LOG_ERROR, "Failed to start listening to %s:%d: %s\n", addrStr, port, strerror(errno));
+				pbx_log(LOG_ERROR, "SCCP: listener not started: could not listen on %s:%d: %s\n", addrStr, port, strerror(errno));
 				context->transport->close(&context->sc);
 				context->sc.fd = -1;
 				break;
@@ -1338,7 +1338,7 @@ static int sccp_session_sendOwned(sessionPtr s, sccp_msg_t * msg)
 	struct messageinfo * msginfo = lookupMsgInfoStruct(msgid);
 	if(msginfo) {
 		if(msginfo->messageId != msgid) {
-			pbx_log(LOG_ERROR, "%s: (session_send2) messageId %d (0x%x) unknown. matched:0x%x discarding message.\n", DEV_ID_LOG(send_device), msgid, msgid, msginfo->messageId);
+			pbx_log(LOG_ERROR, "%s: tried to send unknown message ID 0x%04X (closest table entry 0x%04X); not sent (caller bug)\n", DEV_ID_LOG(send_device), msgid, msginfo->messageId);
 			sccp_free(msg);
 			return -4;
 		}
@@ -1378,7 +1378,7 @@ static int sccp_session_sendOwned(sessionPtr s, sccp_msg_t * msg)
 	msg = NULL;
 
 	if (bytesSent < bufLen) {
-		pbx_log(LOG_ERROR, "%s: Could only send %d of %d bytes!\n", DEV_ID_LOG(send_device), (int) bytesSent, (int) bufLen);
+		pbx_log(LOG_ERROR, "%s: only %d of %d bytes of a message were sent to the phone; the phone may be out of sync\n", DEV_ID_LOG(send_device), (int) bytesSent, (int) bufLen);
 		res = -1;
 	}
 
@@ -1435,7 +1435,7 @@ void sccp_session_crossdevice_cleanup(constSessionPtr current_session, sessionPt
 gcc_inline boolean_t sccp_session_check_crossdevice(constSessionPtr session, constDevicePtr device)
 {
 	if (session && device && ((session->device && session->device != device) || (device->session && device->session != session))) {
-		pbx_log(LOG_WARNING, "Session(%p) and Device Session(%p) are out of sync.\n", session, device->session);
+		pbx_log(LOG_WARNING, "%s: device and connection disagree: the device is attached to %s, this connection to %s\n", device->id, device->session ? device->session->designator : "none", session->designator);
 		return TRUE;
 	}
 	return FALSE;
@@ -1560,7 +1560,7 @@ gcc_inline devicePtr sccp_session_getDevice(constSessionPtr session, boolean_t r
 	}
 	sccp_device_t *device = (session->device) ? sccp_device_retain(session->device) : NULL;
 	if (required && !device) {
-		pbx_log(LOG_WARNING, "No valid Session Device available\n");
+		sccp_log((DEBUGCAT_SOCKET))(VERBOSE_PREFIX_3 "%s: connection has no registered device\n", session->designator);
 		return NULL;
 	}
 	if (required && sccp_session_check_crossdevice(session, device)) {

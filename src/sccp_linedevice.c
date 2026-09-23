@@ -83,7 +83,7 @@ static void regcontext_exten(constLineDevicePtr ld, int onoff)
 		if((context = strchr(ext, '@'))) {
 			*context++ = '\0'; /* split ext@context */
 			if(!pbx_context_find(context)) {
-				pbx_log(LOG_WARNING, "Context specified in regcontext=%s (sccp.conf) must exist\n", context);
+				pbx_log(LOG_WARNING, "SCCP: regcontext entry %s@%s skipped: context %s does not exist\n", ext, context, context);
 				continue;
 			}
 		} else {
@@ -198,7 +198,7 @@ void sccp_linedevice_create(constDevicePtr d, constLinePtr l, uint8_t lineInstan
 	AUTO_RELEASE(sccp_device_t, device, sccp_device_retain(d));
 
 	if(!device || !line) {
-		pbx_log(LOG_ERROR, "SCCP: sccp_linedevice_create: No line or device provided\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_linedevice_create() was called without a line or device (caller bug)\n");
 		return;
 	}
 	sccp_linedevice_t * ld = NULL;
@@ -335,13 +335,13 @@ lineDevicePtr __sccp_linedevice_find(constDevicePtr device, constLinePtr line, c
 	sccp_linedevice_t * ld = NULL;
 	sccp_line_t * l = NULL;                                        // loose const qualifier, to be able to lock the list;
 	if(!line) {
-		pbx_log(LOG_NOTICE, "SCCP: [%s:%d]->linedevice_find: No line provided to search in\n", filename, lineno);
+		pbx_log(LOG_WARNING, "SCCP: line-device lookup without a line (caller bug at %s:%d)\n", filename, lineno);
 		return NULL;
 	}
 	l = (sccp_line_t *)line;                                        // loose const qualifier, to be able to lock the list;
 
 	if(!device) {
-		pbx_log(LOG_NOTICE, "SCCP: [%s:%d]->linedevice_find: No device provided to search for (line: %s)\n", filename, lineno, line->name);
+		pbx_log(LOG_WARNING, "SCCP: line-device lookup on line %s without a device (caller bug at %s:%d)\n", line->name, filename, lineno);
 		return NULL;
 	}
 
@@ -360,11 +360,11 @@ lineDevicePtr __sccp_linedevice_findByLineinstance(constDevicePtr device, uint16
 	sccp_linedevice_t * ld = NULL;
 
 	if(instance < 1) {
-		pbx_log(LOG_NOTICE, "%s: [%s:%d]->linedevice_find: No line provided to search in\n", DEV_ID_LOG(device), filename, lineno);
+		pbx_log(LOG_WARNING, "%s: line-device lookup with line instance %d, which is not valid (caller bug at %s:%d)\n", DEV_ID_LOG(device), instance, filename, lineno);
 		return NULL;
 	}
 	if(!device) {
-		pbx_log(LOG_NOTICE, "SCCP: [%s:%d]->linedevice_find: No device provided to search for (lineinstance: %d)\n", filename, lineno, instance);
+		pbx_log(LOG_WARNING, "SCCP: line-device lookup for line instance %d without a device (caller bug at %s:%d)\n", instance, filename, lineno);
 		return NULL;
 	}
 
@@ -409,7 +409,7 @@ void sccp_linedevice_createButtonsArray(devicePtr device)
 		if(btn[i].type == SKINNY_BUTTONTYPE_LINE && btn[i].ptr) {
 			ld = sccp_linedevice_find(device, (sccp_line_t *)btn[i].ptr);
 			if(!(device->lineButtons.instance[btn[i].instance] = ld)) {
-				pbx_log(LOG_ERROR, "%s: ld could not be found or retained\n", device->id);
+				pbx_log(LOG_ERROR, "%s: line button %d has no line attached; button left out of the line list\n", device->id, btn[i].instance);
 				device->lineButtons.size--;
 				sccp_free(device->lineButtons.instance);
 			}

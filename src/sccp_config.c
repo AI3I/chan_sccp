@@ -2902,7 +2902,7 @@ sccp_configurationchange_t sccp_config_applyLineConfiguration(linePtr l, PBX_VAR
 	boolean_t           SetEntries[ARRAY_LEN(sccpLineConfigOptions)] = { FALSE };
 	PBX_VARIABLE_TYPE * cat_root                                     = v;
 	if (!l) {
-		pbx_log(LOG_ERROR, "SCCP: (sccp_config_applyLineConfiguration) called without valid line ptr\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_config_applyLineConfiguration() was called without a line (caller bug)\n");
 		return SCCP_CONFIG_ERROR;
 	}
 
@@ -2939,7 +2939,7 @@ sccp_configurationchange_t sccp_config_applyDeviceConfiguration(devicePtr d, PBX
 	boolean_t           SetEntries[ARRAY_LEN(sccpDeviceConfigOptions)] = { FALSE };
 	PBX_VARIABLE_TYPE * cat_root                                       = v;
 	if (!d) {
-		pbx_log(LOG_ERROR, "SCCP: (sccp_config_applyDeviceConfiguration) called without valid device ptr\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_config_applyDeviceConfiguration() was called without a device (caller bug)\n");
 		return SCCP_CONFIG_ERROR;
 	}
 

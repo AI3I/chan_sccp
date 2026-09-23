@@ -747,7 +747,7 @@ static int apply_netmask(const struct sockaddr_storage *netaddr, const struct so
 		}
 		memcpy(result, &result6, sizeof(result6));
 	} else {
-		pbx_log(LOG_NOTICE, "SCCP: (apply_netmask) Unsupported address scheme\n");
+		pbx_log(LOG_WARNING, "SCCP: netmask not applied: the address is neither IPv4 nor IPv6\n");
 		/* Unsupported address scheme */
 		res = -1;
 	}
@@ -801,7 +801,7 @@ int sccp_apply_ha_default(const struct sccp_ha *ha, const struct sockaddr_storag
 			if (sccp_netsock_is_IPv6(addr)) {
 				if (sccp_netsock_is_mapped_IPv4(addr)) {
 					if (!sccp_netsock_ipv4_mapped(addr, &mapped_addr)) {
-						pbx_log(LOG_ERROR, "%s provided to ast_sockaddr_ipv4_mapped could not be converted. That shouldn't be possible\n", sccp_netsock_stringify_addr(addr));
+						pbx_log(LOG_ERROR, "SCCP: IPv4-mapped address %s could not be converted to IPv4; ACL entry skipped\n", sccp_netsock_stringify_addr(addr));
 						continue;
 					}
 					addr_to_use = &mapped_addr;
@@ -893,7 +893,7 @@ int sccp_sockaddr_storage_parse(struct sockaddr_storage *addr, const char *str, 
 #endif
 	if ((e = getaddrinfo(host, port, &hints, &res))) {
 		if (e != EAI_NONAME) {										/* if this was just a host name rather than a ip address, don't print error */
-			pbx_log(LOG_ERROR, "getaddrinfo(\"%s\", \"%s\", ...): %s\n", host, S_OR(port, "(null)"), gai_strerror(e));
+			pbx_log(LOG_WARNING, "SCCP: could not resolve '%s' port '%s': %s\n", host, S_OR(port, ""), gai_strerror(e));
 		}
 		return 0;
 	}
@@ -903,7 +903,7 @@ int sccp_sockaddr_storage_parse(struct sockaddr_storage *addr, const char *str, 
 	 * names. But let's be careful...
 	 */
 	if (res->ai_next != NULL) {
-		pbx_log(LOG_WARNING, "getaddrinfo() returned multiple " "addresses. Ignoring all but the first.\n");
+		pbx_log(LOG_NOTICE, "SCCP: '%s' resolves to several addresses; using the first\n", host);
 	}
 
 	if (addr) {
@@ -1019,7 +1019,7 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 		mask = tmp;
 	}
 	if (!sccp_sockaddr_storage_parse(&ha->netaddr, address, PARSE_PORT_FORBID)) {
-		pbx_log(LOG_WARNING, "Invalid IP address: %s\n", address);
+		pbx_log(LOG_WARNING, "SCCP: deny/permit entry '%s' is not a valid IP address; entry ignored\n", address);
 		sccp_free_ha(ha);
 		if (error) {
 			*error = 1;
@@ -1033,7 +1033,7 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 	 * we just convert this to an IPv4 ACL
 	 */
 	if (sccp_netsock_ipv4_mapped(&ha->netaddr, &ha->netaddr)) {
-		pbx_log(LOG_NOTICE, "IPv4-mapped ACL network address specified. " "Converting to an IPv4 ACL network address.\n");
+		sccp_log((DEBUGCAT_CONFIG))(VERBOSE_PREFIX_3 "SCCP: deny/permit entry %s is IPv4-mapped; treated as an IPv4 entry\n", address);
 	}
 
 	addr_is_v4 = sccp_netsock_is_IPv4(&ha->netaddr);
@@ -1046,7 +1046,7 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 		/* Mask is of x.x.x.x or x:x:x:x:x:x:x:x variety */
 		sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: (sccp_append_ha) mask:%s\n", mask);
 		if (!sccp_sockaddr_storage_parse(&ha->netmask, mask, PARSE_PORT_FORBID)) {
-			pbx_log(LOG_WARNING, "Invalid netmask: %s\n", mask);
+			pbx_log(LOG_WARNING, "SCCP: deny/permit entry %s: '%s' is not a valid netmask; entry ignored\n", address, mask);
 			sccp_free_ha(ha);
 			if (error) {
 				*error = 1;
@@ -1058,11 +1058,11 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 		 * we just convert this to an IPv4 ACL
 		 */
 		if (sccp_netsock_ipv4_mapped(&ha->netmask, &ha->netmask)) {
-			ast_log(LOG_NOTICE, "IPv4-mapped ACL netmask specified. " "Converting to an IPv4 ACL netmask.\n");
+			sccp_log((DEBUGCAT_CONFIG))(VERBOSE_PREFIX_3 "SCCP: deny/permit netmask %s is IPv4-mapped; treated as an IPv4 netmask\n", mask);
 		}
 		mask_is_v4 = sccp_netsock_is_IPv4(&ha->netmask);
 		if (addr_is_v4 ^ mask_is_v4) {
-			pbx_log(LOG_WARNING, "Address and mask are not using same address scheme (%d / %d)\n", addr_is_v4, mask_is_v4);
+			pbx_log(LOG_WARNING, "SCCP: deny/permit entry %s/%s mixes IPv4 and IPv6; entry ignored\n", address, mask);
 			sccp_free_ha(ha);
 			if (error) {
 				*error = 1;
@@ -1070,7 +1070,7 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 			return ret;
 		}
 	} else if (parse_cidr_mask(&ha->netmask, addr_is_v4, mask)) {
-		pbx_log(LOG_WARNING, "Invalid CIDR netmask: %s\n", mask);
+		pbx_log(LOG_WARNING, "SCCP: deny/permit entry %s: '/%s' is not a valid prefix length; entry ignored\n", address, mask);
 		sccp_free_ha(ha);
 		if (error) {
 			*error = 1;
@@ -1084,7 +1084,7 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 		char *failaddr = pbx_strdupa(sccp_netsock_stringify_addr(&ha->netaddr));
 		char *failmask = pbx_strdupa(sccp_netsock_stringify_addr(&ha->netmask));
 
-		pbx_log(LOG_WARNING, "Unable to apply netmask %s to address %s\n", failaddr, failmask);
+		pbx_log(LOG_WARNING, "SCCP: deny/permit entry: netmask %s could not be applied to %s; entry ignored\n", failmask, failaddr);
 		sccp_free_ha(ha);
 		if (error) {
 			*error = 1;
@@ -1564,7 +1564,7 @@ boolean_t sccp_append_variable(PBX_VARIABLE_TYPE *params, const char *key, const
 		}
 		res = TRUE;
 	} else {
-		pbx_log(LOG_ERROR, "SCCP: (append_variable) Error while creating newvar structure\n");
+		pbx_log(LOG_ERROR, "SCCP: channel variable not added: out of memory\n");
 	}
 	return res;
 }
@@ -1715,7 +1715,7 @@ void sccp_do_backtrace(void)
 		bt_free(strings);
 
 		pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "================================================================================\n");
-		pbx_log(LOG_WARNING, "SCCP: (backtrace) \n%s\n", pbx_str_buffer(btbuf));
+		pbx_log(LOG_WARNING, "SCCP: backtrace:\n%s\n", pbx_str_buffer(btbuf));
 	}
 #endif	// HAVE_EXECINFO_H && HAVE_BKTR
 }

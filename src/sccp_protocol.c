@@ -1851,7 +1851,7 @@ gcc_inline boolean_t sccp_protocol_isProtocolSupported(uint8_t type, uint8_t ver
 			protocolDef = spcpProtocolDefinition;
 			break;
 		default:
-			pbx_log(LOG_WARNING, "SCCP: Unknown Protocol\n");
+			pbx_log(LOG_WARNING, "SCCP: protocol type %d is neither SCCP nor SPCP; no protocol definition used\n", type);
 	}
 
 	return (version < protocolArraySize && protocolDef[version] != NULL) ? TRUE : FALSE;
@@ -2138,7 +2138,7 @@ gcc_inline struct messageinfo * lookupMsgInfoStruct(uint32_t messageId)
 	if(messageId >= SPCP_MESSAGE_LOW_BOUNDARY && messageId <= SPCP_MESSAGE_HIGH_BOUNDARY) {
 		return (struct messageinfo *)&spcp_messageinfo[messageId - SPCP_MESSAGE_OFFSET];
 	}
-	pbx_log(LOG_ERROR, "SCCP: (session::lookupMsgInfo) messageId out of bounds: %d < %u > %d. Or messageId unknown. discarding message.\n", SCCP_MESSAGE_LOW_BOUNDARY, messageId, SPCP_MESSAGE_HIGH_BOUNDARY);
+	pbx_log(LOG_WARNING, "SCCP: message ID 0x%04X is outside the known SCCP and SPCP ranges; message discarded\n", messageId);
 	return NULL;
 }
 

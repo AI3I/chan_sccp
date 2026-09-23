@@ -84,7 +84,7 @@ static void pbx_mwi_event(const pbx_event_t *event, void *data)
 {
 	mwi_subscription_t *subscription = (mwi_subscription_t *)data;
 	if (!subscription || !subscription->line || !event) {
-		pbx_log(LOG_ERROR, "SCCP: MWI Event skipped (%p, %p)\n", subscription, event);
+		pbx_log(LOG_WARNING, "SCCP: MWI event ignored: its subscription, line or event data is missing\n");
 		return;
 	}
 	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s, event:%p\n", 
@@ -111,7 +111,7 @@ static pbx_event_subscription_t *pbxMailboxSubscribe(mwi_subscription_t *subscri
 
 	pbx_subscription = pbx_event_subscribe(AST_EVENT_MWI, pbx_mwi_event, "mailbox subscription", subscription, AST_EVENT_IE_MAILBOX, AST_EVENT_IE_PLTYPE_STR, mbox, AST_EVENT_IE_CONTEXT, AST_EVENT_IE_PLTYPE_STR, context, AST_EVENT_IE_NEWMSGS, AST_EVENT_IE_PLTYPE_EXISTS, AST_EVENT_IE_END);
 	if (!pbx_subscription) {
-		pbx_log(LOG_ERROR, "SCCP: PBX MWI event could not be subscribed to for mailbox %s\n", (subscription->mailbox)->uniqueid);
+		pbx_log(LOG_ERROR, "SCCP: could not subscribe to MWI events for mailbox %s; its message lamp will not update\n", (subscription->mailbox)->uniqueid);
 	}
 	pbxMailboxGetCached(subscription);
 	return pbx_subscription;
@@ -140,7 +140,7 @@ static void pbx_mwi_event(void *data, struct stasis_subscription *sub, struct st
 	struct ast_mwi_state *mwi_state = NULL;
 	//if (!subscription || !subscription->line || stasis_subscription_final_message(sub, msg)) {
 	if (!subscription || !subscription->line) {
-		pbx_log(LOG_ERROR, "SCCP: MWI Event skipped (%p, %s)\n", subscription, stasis_message_type_name(stasis_message_type(msg)));
+		pbx_log(LOG_WARNING, "SCCP: MWI event %s ignored: its subscription or line is gone\n", stasis_message_type_name(stasis_message_type(msg)));
 		return;
 	}
 	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s, msgtype:%s\n", 
@@ -180,7 +180,7 @@ static void pbxMailboxGetCached(mwi_subscription_t *subscription)
 	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s\n",
 		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid);
 	if (pbx_app_inboxcount(subscription->uniqueid, &(mailbox->newmsgs), &(mailbox->oldmsgs))) {
-		pbx_log(LOG_ERROR, "Failed to retrieve messages from mailbox:%s\n", mailbox->uniqueid);
+		pbx_log(LOG_WARNING, "SCCP: could not read message counts for mailbox %s (is app_voicemail loaded?)\n", mailbox->uniqueid);
 	}
 	NotifyLine(subscription->line, newmsgs, oldmsgs);
 }
@@ -189,7 +189,7 @@ static void pbxMailboxReschedule(mwi_subscription_t *subscription)
 	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s\n",
 		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid);
 	if ((subscription->schedUpdate = iPbx.sched_add(interval * 1000, pbxMailboxGetCached, subscription)) < 0) {
-		pbx_log(LOG_ERROR, "Error creating mailbox subscription.\n");
+		pbx_log(LOG_ERROR, "SCCP: could not schedule the next check of mailbox %s; its message lamp will not update\n", (subscription->mailbox)->uniqueid);
 	}
 }
 static int pbx_mwi_event(const void *data)
@@ -235,7 +235,7 @@ static void createSubscription(sccp_mailbox_t * mailbox, constLinePtr line)
 	subscription->mailbox = mailbox;
 	*(sccp_line_t **)&(subscription->line) = sccp_line_retain(line);                                        //! const cast / emplace line
 	if (!subscription->line) {
-		pbx_log(LOG_ERROR, "Could not retain the line, to assign to this subscription\n");
+		pbx_log(LOG_WARNING, "SCCP: mailbox %s not subscribed: its line is being removed\n", mailbox->uniqueid);
 		sccp_free(subscription);
 		return;
 	}
@@ -299,7 +299,7 @@ static void removeAllSubscriptions(void)
 static void handleLineCreationEvent(const sccp_event_t * event)
 {
 	if (!event || !event->lineInstance.line) {
-		pbx_log(LOG_ERROR, "Event or line not provided\n");
+		pbx_log(LOG_ERROR, "SCCP: line-created event without a line (caller bug)\n");
 		return;
 	}
 	sccp_line_t *line = event->lineInstance.line;
@@ -315,7 +315,7 @@ static void handleLineCreationEvent(const sccp_event_t * event)
 static void handleLineDestructionEvent(const sccp_event_t * event)
 {
 	if (!event || !event->lineInstance.line) {
-		pbx_log(LOG_ERROR, "Eevent or line not provided\n");
+		pbx_log(LOG_ERROR, "SCCP: line-destroyed event without a line (caller bug)\n");
 		return;
 	}
 	sccp_line_t *line = event->lineInstance.line;
@@ -421,7 +421,7 @@ static int showSubscriptions(int fd, sccp_cli_totals_t *totals, struct mansessio
  * ================================== */
 static void module_start(void)
 {
-	pbx_log(LOG_NOTICE, "SCCP: (mwi::module_start)\n");
+	sccp_log((DEBUGCAT_MWI))(VERBOSE_PREFIX_3 "SCCP: MWI module started\n");
 	SCCP_VECTOR_INIT(&subscriptions,10);
 	pbx_mutex_init(&subscriptions_lock);
 
@@ -431,7 +431,7 @@ static void module_start(void)
 
 static void module_stop(void)
 {
-	pbx_log(LOG_NOTICE, "SCCP: (mwi::module_stop)\n");
+	sccp_log((DEBUGCAT_MWI))(VERBOSE_PREFIX_3 "SCCP: MWI module stopping\n");
 	sccp_event_unsubscribe(SCCP_EVENT_LINEINSTANCE_DESTROYED, handleLineDestructionEvent);
 	sccp_event_unsubscribe(SCCP_EVENT_LINEINSTANCE_CREATED, handleLineCreationEvent);
 

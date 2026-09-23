@@ -273,7 +273,7 @@ sccp_channel_t *get_sccp_channel_from_pbx_channel(const PBX_CHANNEL_TYPE * pbx_c
 		if ((c = CS_AST_CHANNEL_PVT(pbx_channel))) {
 			return sccp_channel_retain(c);
 		} 
-		pbx_log(LOG_ERROR, "Channel is not a valid SCCP Channel\n");
+		pbx_log(LOG_ERROR, "%s: SCCP channel without SCCP call data (refcount bug)\n", pbx_channel_name(pbx_channel));
 		return NULL;
 	} else {
 		return NULL;
@@ -300,7 +300,7 @@ static void log_hangup_info(const char * hanguptype, constChannelPtr c, PBX_CHAN
 	if(d) {
 		pbx_str_t * buf = pbx_str_create(DEFAULT_PBX_STR_BUFFERSIZE * 3);
 		sccp_refcount_gen_report(d, &buf);
-		pbx_log(LOG_NOTICE, "%s: (%s) refcount_report:\n%s\n", c->designator, hanguptype, pbx_str_buffer(buf));
+		pbx_log(LOG_NOTICE, "%s: reference report for the device at %s:\n%s\n", c->designator, hanguptype, pbx_str_buffer(buf));
 		sccp_free(buf);
 	}
 #endif
@@ -693,7 +693,7 @@ int sccp_parse_alertinfo(PBX_CHANNEL_TYPE *pbx_channel, skinny_ringtype_t *ringe
 					*ringermode = SKINNY_RINGTYPE_URGENT;
 					break;
 				default:
-					pbx_log(LOG_NOTICE, "%s: ALERT_INFO:%s could not be mapped to skinny ringtype\n", pbx_channel_name(pbx_channel), alert_info);
+					pbx_log(LOG_NOTICE, "%s: ALERT_INFO '%s' is not a known ring type (Bellcore-dr1 to dr5); default ring used\n", pbx_channel_name(pbx_channel), alert_info);
 					*ringermode = SKINNY_RINGTYPE_SENTINEL;
 					res = -1;
 					break;
@@ -772,7 +772,7 @@ int sccp_parse_dial_options(char *options, sccp_autoanswer_t *autoanswer_type, u
 				optv[opti] += 7;
 				*ringermode = skinny_ringtype_str2val(optv[opti]);
 			} else {
-				pbx_log(LOG_WARNING, "SCCP: Unknown option %s\n", optv[opti]);
+				pbx_log(LOG_WARNING, "SCCP: dial option '%s' is not aa=, aa1w, aa2w, ringer=, or a known flag; ignored\n", optv[opti]);
 				res = -1;
 			}
 		}
@@ -806,7 +806,7 @@ int sccp_astgenwrap_channel_read(PBX_CHANNEL_TYPE * ast, NEWCONST char *funcname
 
 	/* begin asserts */
 	if (!ast || !CS_AST_CHANNEL_PVT_IS_SCCP(ast)) {
-		pbx_log(LOG_ERROR, "This function requires a valid SCCP channel\n");
+		pbx_log(LOG_WARNING, "CHANNEL() read of SCCP fields on %s, which is not an SCCP channel\n", ast ? pbx_channel_name(ast) : "none");
 		return -1;
 	}
 
@@ -946,7 +946,7 @@ int sccp_astgenwrap_channel_read(PBX_CHANNEL_TYPE * ast, NEWCONST char *funcname
 		} while (0);
 		ast_channel_unlock(ast);
 	} else {
-		pbx_log(LOG_WARNING, "SCCP: (channel_read) Unrecognized argument '%s' to %s\n", preparse, funcname);
+		pbx_log(LOG_WARNING, "%s: %s(%s) is not a known SCCP channel field; returned empty\n", pbx_channel_name(ast), funcname, preparse);
 	}
 	return res;
 }
@@ -974,7 +974,7 @@ int sccp_astgenwrap_channel_write(PBX_CHANNEL_TYPE * ast, const char *funcname, 
 			
 		} else if (!strcasecmp(args, "CallingParty")) {
 			if(!value || sccp_strlen_zero(value)) {
-				pbx_log(LOG_ERROR, "No valid party information provided: '%s'\n", value);
+				pbx_log(LOG_WARNING, "%s: CHANNEL(%s) needs a value like \"Name\" <number>; not set\n", pbx_channel_name(ast), "CallingParty");
 				return -1;
 			}
 			char *num, *name;
@@ -984,7 +984,7 @@ int sccp_astgenwrap_channel_write(PBX_CHANNEL_TYPE * ast, const char *funcname, 
 			pbx_builtin_setvar_helper(c->owner, "SETCALLINGPARTY", pbx_strdup(value));
 		} else if (!strcasecmp(args, "CalledParty")) {
 			if(!value || sccp_strlen_zero(value)) {
-				pbx_log(LOG_ERROR, "No valid party information provided: '%s'\n", value);
+				pbx_log(LOG_WARNING, "%s: CHANNEL(%s) needs a value like \"Name\" <number>; not set\n", pbx_channel_name(ast), "CalledParty");
 				return -1;
 			}
 			char *num, *name;
@@ -994,7 +994,7 @@ int sccp_astgenwrap_channel_write(PBX_CHANNEL_TYPE * ast, const char *funcname, 
 			pbx_builtin_setvar_helper(c->owner, "SETCALLEDPARTY", pbx_strdup(value));
 		} else if (!strcasecmp(args, "OriginalCallingParty")) {
 			if(!value || sccp_strlen_zero(value)) {
-				pbx_log(LOG_ERROR, "No valid party information provided: '%s'\n", value);
+				pbx_log(LOG_WARNING, "%s: CHANNEL(%s) needs a value like \"Name\" <number>; not set\n", pbx_channel_name(ast), "OriginalCallingParty");
 				return -1;
 			}
 			char *num, *name;
@@ -1004,7 +1004,7 @@ int sccp_astgenwrap_channel_write(PBX_CHANNEL_TYPE * ast, const char *funcname, 
 			pbx_builtin_setvar_helper(c->owner, "SETORIGCALLINGPARTY", pbx_strdup(value));
 		} else if (!strcasecmp(args, "OriginalCalledParty")) {
 			if(!value || sccp_strlen_zero(value)) {
-				pbx_log(LOG_ERROR, "No valid party information provided: '%s'\n", value);
+				pbx_log(LOG_WARNING, "%s: CHANNEL(%s) needs a value like \"Name\" <number>; not set\n", pbx_channel_name(ast), "OriginalCalledParty");
 				return -1;
 			}
 			char *num, *name;
@@ -1022,7 +1022,7 @@ int sccp_astgenwrap_channel_write(PBX_CHANNEL_TYPE * ast, const char *funcname, 
 			res = -1;
 		}
 	} else {
-		pbx_log(LOG_ERROR, "This function requires a valid SCCP channel\n");
+		pbx_log(LOG_WARNING, "CHANNEL() write of SCCP field '%s' on %s, which is not an SCCP channel; not set\n", args, ast ? pbx_channel_name(ast) : "none");
 		res = -1;
 	}
 	return res;
@@ -1037,7 +1037,7 @@ boolean_t sccp_astgenwrap_featureMonitor(const sccp_channel_t * channel)
 	char featexten[SCCP_MAX_EXTENSION] = "";
 
 	if (iPbx.getFeatureExtension(channel, "automon", featexten) && !sccp_strlen_zero(featexten)) {
-		pbx_log(LOG_ERROR, "%s: Sending DTMF:'%s' to switch Monitor Feature\n", channel->designator, featexten);
+		sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: sending feature code '%s' to toggle recording\n", channel->designator, featexten);
 		struct ast_frame f = { AST_FRAME_DTMF, };
 		uint j;
 
@@ -1048,7 +1048,7 @@ boolean_t sccp_astgenwrap_featureMonitor(const sccp_channel_t * channel)
 		}
 		return TRUE;
 	}
-	pbx_log(LOG_ERROR, "SCCP: Monitor Feature Extension Not available\n");
+	pbx_log(LOG_WARNING, "%s: recording not toggled: no automon feature code is set in features.conf\n", channel->designator);
 	return FALSE;
 }
 
@@ -1059,11 +1059,11 @@ int sccp_wrapper_sendDigits(const sccp_channel_t * channel, const char *digits)
 {
 	uint8_t maxdigits = AST_MAX_EXTENSION;
 	if (!channel || !channel->owner) {
-		pbx_log(LOG_WARNING, "No channel to send digits to\n");
+		pbx_log(LOG_WARNING, "SCCP: digits not sent: the call or its Asterisk channel is gone\n");
 		return 0;
 	}
 	if (!digits || sccp_strlen_zero(digits)) {
-		pbx_log(LOG_WARNING, "No digits to send\n");
+		sccp_log((DEBUGCAT_PBX))(VERBOSE_PREFIX_3 "%s: no digits to send\n", channel->designator);
 		return 0;
 	}
 	//ast_channel_undefer_dtmf(channel->owner);
@@ -1118,11 +1118,11 @@ static int sccp_astwrap_doPickup(PBX_CHANNEL_TYPE * pbx_channel)
 	}
 	pbx_channel_ref(pbx_channel);										// released by sccp_astwrap_doPickupThread
 	if (ast_pthread_create_detached_background(&threadid, NULL, sccp_astwrap_doPickupThread, pbx_channel)) {
-		pbx_log(LOG_ERROR, "Unable to start Group pickup thread on channel %s\n", pbx_channel_name(pbx_channel));
+		pbx_log(LOG_ERROR, "%s: group pickup not done: could not start its thread\n", pbx_channel_name(pbx_channel));
 		pbx_channel_unref(pbx_channel);
 		return FALSE;
 	}
-	pbx_log(LOG_NOTICE, "SCCP: Started Group pickup thread on channel %s\n", pbx_channel_name(pbx_channel));
+	sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: group pickup started\n", pbx_channel_name(pbx_channel));
 	return TRUE;
 }
 
@@ -1161,7 +1161,7 @@ enum ast_pbx_result pbx_pbx_start(PBX_CHANNEL_TYPE * pbx_channel)
 	enum ast_pbx_result res = AST_PBX_FAILED;
 
 	if (!pbx_channel) {
-		pbx_log(LOG_ERROR, "SCCP: (pbx_pbx_start) called without pbx channel\n");
+		pbx_log(LOG_ERROR, "SCCP: pbx_pbx_start() was called without a channel (caller bug)\n");
 		return res;
 	}
 
@@ -1191,7 +1191,7 @@ enum ast_pbx_result pbx_pbx_start(PBX_CHANNEL_TYPE * pbx_channel)
 				channel->isRunningPbxThread = TRUE;
 				channel->hangupRequest = sccp_astgenwrap_requestQueueHangup;
 			} else {
-				pbx_log(LOG_NOTICE, "%s: (pbx_pbx_start) pbx_pbx_start thread is not running anymore, carefullHangup should remain. This channel will be hungup/being hungup soon\n", channel->designator);
+				pbx_log(LOG_NOTICE, "%s: the dialplan thread ended right after starting (the call is hanging up)\n", channel->designator);
 				res = AST_PBX_FAILED;
 			}
 		}

@@ -76,11 +76,11 @@ void * const sccp_refcount_object_alloc(size_t size, enum sccp_refcounted_types 
 {
 	void *obj = NULL;
 	if (!runState) {
-		pbx_log(LOG_ERROR, "SCCP: (sccp_refcount_object_alloc) Not Running Yet!\n");
+		pbx_log(LOG_ERROR, "SCCP: object not created: reference counting is not running (called before module load or after unload)\n");
 		return NULL;
 	}
 	if (!(obj = ao2_alloc(size, (void (*)(void *))destructor))) {
-		pbx_log(LOG_ERROR, "Could not allocate object with id: %s\n", identifier);
+		pbx_log(LOG_ERROR, "SCCP: object %s not created: out of memory\n", identifier);
 	}
 	return (void * const)obj;
 }
@@ -241,7 +241,7 @@ void sccp_refcount_destroy(void)
 	uint32_t type = 0;
 	RefCountedObject * obj = NULL;
 
-	pbx_log(LOG_NOTICE, "SCCP: (Refcount) Shutting Down. Checking Clean Shutdown...\n");
+	sccp_log((DEBUGCAT_REFCOUNT))(VERBOSE_PREFIX_3 "SCCP: reference counting stopping; checking for leftover objects\n");
 	int numObjects = 0;
 	runState = SCCP_REF_STOPPED;
 
@@ -254,7 +254,7 @@ void sccp_refcount_destroy(void)
 			SCCP_RWLIST_WRLOCK(&(objects[hash]->refCountedObjects));
 			SCCP_RWLIST_TRAVERSE_SAFE_BEGIN(&(objects[hash]->refCountedObjects), obj, list) {
 				if (obj->type == type) {
-					pbx_log(LOG_NOTICE, "Cleaning up [%3d]=type:%17s, id:%25s, ptr:%15p, refcount:%4d, alive:%4s, size:%4d\n", hash, (obj_info[obj->type]).datatype, obj->identifier, obj, obj->refcount,
+					pbx_log(LOG_WARNING, "SCCP: leftover object at unload: bucket %d, type %s, id %s, %p, refcount %d, alive %s, %d bytes\n", hash, (obj_info[obj->type]).datatype, obj->identifier, obj, obj->refcount,
 						SCCP_LIVE_MARKER == obj->alive ? "yes" : "no", obj->len);
 					SCCP_RWLIST_REMOVE_CURRENT(list);
 					if ((&obj_info[obj->type])->destructor) {
@@ -280,7 +280,7 @@ void sccp_refcount_destroy(void)
 	ast_rwlock_unlock(&objectslock);
 	pbx_rwlock_destroy(&objectslock);
 	if (numObjects) {
-		pbx_log(LOG_WARNING, "SCCP: (Refcount) Note: We found %d objects which had to be forcefully removed during refcount shutdown, see above.\n", numObjects);
+		pbx_log(LOG_WARNING, "SCCP: %d objects were still referenced at unload and were freed forcibly (reference leak; list above)\n", numObjects);
 	}
 #if CS_REFCOUNT_DEBUG
 	if (sccp_ref_debug_log) {
@@ -302,7 +302,7 @@ void *const sccp_refcount_object_alloc(size_t size, enum sccp_refcounted_types t
 	RefCountedObject * obj = NULL;
 
 	if (!runState) {
-		pbx_log(LOG_ERROR, "SCCP: (sccp_refcount_object_alloc) Not Running Yet!\n");
+		pbx_log(LOG_ERROR, "SCCP: object not created: reference counting is not running (called before module load or after unload)\n");
 		return NULL;
 	}
 
@@ -568,7 +568,7 @@ void sccp_refcount_gen_report(const void * const ptr, pbx_str_t **buf)
 
 	RefCountedObject * obj = sccp_refcount_find_obj(ptr, __LINE__, __PRETTY_FUNCTION__);
 	if (!obj) {
-		pbx_log(LOG_NOTICE, "SCCP: (refcount_gen_report) Not Refcount Object found for %p\n", ptr);
+		pbx_log(LOG_NOTICE, "SCCP: no reference report for %p: it is not a tracked object\n", ptr);
 		return;
 	}
 	sccp_refrelation_t relations[REFCOUNT_MAX_RELATIONS] = {
@@ -751,7 +751,7 @@ void sccp_refcount_updateIdentifier(const void * const ptr, const char * const i
 {
 	RefCountedObject * obj = sccp_refcount_find_obj(ptr, __LINE__, __PRETTY_FUNCTION__);
 	if (!obj) {
-		pbx_log(LOG_ERROR, "SCCP: (updateIdentifier) Refcount Object %p could not be found\n", ptr);
+		pbx_log(LOG_ERROR, "SCCP: object %p not renamed: it is not a tracked object (refcount bug)\n", ptr);
 		return;
 	}
 	sccp_copy_string(obj->identifier, identifier, sizeof(obj->identifier));
@@ -762,7 +762,7 @@ void sccp_refcount_addRelationship(const void * const parentWeakPtr, const void 
 {
 	RefCountedObject * parent = sccp_refcount_find_obj(parentWeakPtr, __LINE__, __PRETTY_FUNCTION__);
 	if (!parent) {
-		pbx_log(LOG_ERROR, "SCCP: (addWeakParent) Refcount Parent Object %p could not be found\n", parentWeakPtr);
+		pbx_log(LOG_ERROR, "SCCP: weak parent %p not linked: it is not a tracked object (refcount bug)\n", parentWeakPtr);
 		return;
 	}
 	for(int x = 0; x < REFCOUNT_MAX_RELATIONS; x++) {
@@ -780,7 +780,7 @@ void sccp_refcount_removeRelationship(const void * const parentWeakPtr, const vo
 {
 	RefCountedObject * parent = sccp_refcount_find_obj(parentWeakPtr, __LINE__, __PRETTY_FUNCTION__);
 	if (!parent) {
-		pbx_log(LOG_ERROR, "SCCP: (removeWeakParent) Refcount Parent Object %p could not be found\n", parentWeakPtr);
+		pbx_log(LOG_ERROR, "SCCP: weak parent %p not unlinked: it is not a tracked object (refcount bug)\n", parentWeakPtr);
 		return;
 	}
 	for(int x = 0; x < REFCOUNT_MAX_RELATIONS; x++) {
@@ -798,7 +798,7 @@ gcc_inline void * const sccp_refcount_retain(const void * const ptr, const char 
 	pbx_assert(ptr != NULL && !isPointerDead(ptr));
 #	else
 	if(ptr == NULL || isPointerDead(ptr)) {                                        // soft failure
-		pbx_log(LOG_WARNING, "SCCP: (refcount_retain) tried to retain a NULL pointer\n");
+		pbx_log(LOG_WARNING, "SCCP: retain of a NULL or already freed pointer ignored (caller bug)\n");
 		usleep(10);
 		return NULL;
 	}
@@ -840,7 +840,7 @@ gcc_inline void * const sccp_refcount_release(const void * * const ptr, const ch
 	pbx_assert(ptr != NULL && *ptr != NULL && !isPointerDead(*ptr));
 #else
 	if(ptr == NULL || *ptr == NULL || isPointerDead(*ptr)) {                                        // soft failure
-		pbx_log(LOG_WARNING, "SCCP: (refcount_release) tried to release a NULL pointer\n");
+		pbx_log(LOG_WARNING, "SCCP: release of a NULL or already freed pointer ignored (caller bug)\n");
 		usleep(10);
 		return NULL;
 	}

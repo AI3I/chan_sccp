@@ -9,8 +9,13 @@ the real `sccp.conf` option, labelling internal misuse "(caller bug)", and no
 instructions or links to the dead upstream project. Routine or default events
 move to debug `sccp_log`. Order: `sccp_actions.c`, `sccp_config.c`,
 `sccp_channel.c`, `ast120.c`, `sccp_device.c`, `sccp_feature.c`,
-`sccp_conference.c`, `sccp_pbx.c` (done), then `sccp_cli.c`, `sccp_session.c`, the rest;
-then CLI/AMI output and phone prompts; debug `sccp_log` last.
+`sccp_conference.c`, `sccp_pbx.c`, `sccp_session.c`, `sccp_cli.c` and every
+remaining file, including stray `ast_log` calls (done for all always-visible
+log messages). Still to do: CLI/AMI output text and usage strings, phone
+prompts, then debug `sccp_log`. User rule added mid-pass: no made-up compound
+words in prose ("call forward", not CallForward); interface names (sccp.conf
+options, AMI headers, CLI keywords) keep their spelling, AMI headers written
+readably (ForwardType) since Asterisk matches them case-insensitively.
 
 Messages that described the wrong outcome (now corrected): token fallback
 failures said nothing about the token being refused; "Unable to schedule
@@ -36,6 +41,16 @@ Behavior bugs found and fixed along the way:
 - `sccp_feat_conflist()` read `c->callid` before checking `c` for NULL.
 - Four pickup-unsupported logs had a `%s` with no argument (undefined
   behavior; only compiled without Asterisk pickup support).
+- AMI `SCCPLineForwardUpdate` could never enable call forwarding: it tested
+  `astman_get_header()` results for NULL (they are "" when missing) and set
+  `enabled = sccp_true(Disable)`. Now ForwardType is required unless
+  `Disable: yes` (which still clears all forwards), Number is required when
+  enabling, and unknown types are rejected instead of reporting success.
+- A missing TLS certificate was only logged at debug level, so a configured
+  TLS listener could silently fail to start; now a warning.
+- CLI handlers logged user typos as Asterisk warnings; they now print the
+  error on the CLI instead. The reload path logged each config error three
+  times; now once plus "devices and lines keep their current settings".
 
 Found, not changed (need a decision):
 - Token backoff: `registrationTime < time(0) + backoff` is always true, so a

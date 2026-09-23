@@ -107,20 +107,20 @@ static boolean_t parse_manager_conf(void)
 			if (!strcasecmp(v->name, "enabled")) {
 				manager_enabled = ast_true(v->value);
 				if (!manager_enabled) {
-					pbx_log(LOG_NOTICE, "SCCP: manager.conf:enabled=yes are required\n");
+					pbx_log(LOG_NOTICE, "SCCP: web service not started: manager.conf has enabled=no\n");
 					break;
 				}
 			} else if (!strcasecmp(v->name, "webenabled")) {
 				webmanager_enabled = ast_true(v->value);
 				if (!webmanager_enabled) {
-					pbx_log(LOG_NOTICE, "SCCP: manager.conf:webenabled=yes are required\n");
+					pbx_log(LOG_NOTICE, "SCCP: web service not started: manager.conf has webenabled=no\n");
 					break;
 				}
 			}
 		}
 		ast_config_destroy(cfg);
 	} else {
-		pbx_log(LOG_NOTICE, "SCCP: manager.conf file not found or invalid\n");
+		pbx_log(LOG_NOTICE, "SCCP: web service not started: manager.conf is missing or could not be parsed\n");
 	}
 	if (manager_enabled && webmanager_enabled) {
 		result = TRUE;
@@ -148,17 +148,17 @@ static boolean_t parse_http_conf(char * const uri_str)
 			if (!strcasecmp(v->name, "enabled")) {
 				http_enabled = ast_true(v->value);
 				if (!http_enabled) {
-					pbx_log(LOG_NOTICE, "SCCP: http.conf:enabled=yes are required\n");
+					pbx_log(LOG_NOTICE, "SCCP: web service not started: http.conf has enabled=no\n");
 					break;
 				}
 			} else if (!strcasecmp(v->name, "bindport")) {
 				if (ast_parse_arg(v->value, (enum ast_parse_flags)(PARSE_UINT32 | PARSE_IN_RANGE | PARSE_DEFAULT), &bindport, DEFAULT_PORT, 0, 65535)) {
-					ast_log(LOG_WARNING, "Invalid port %s specified. Using default port %" PRId32, v->value, DEFAULT_PORT);
+					pbx_log(LOG_WARNING, "SCCP: http.conf bindport '%s' is not a valid port; the web service assumes %" PRId32 "\n", v->value, DEFAULT_PORT);
 					break;
 				}
 			} else if (!strcasecmp(v->name, "bindaddr") && !num_addrs) {
 				if (!(num_addrs = ast_sockaddr_resolve(&addr, v->value, 0, AST_AF_UNSPEC))) {
-					ast_log(LOG_WARNING, "Invalid bind address %s\n", v->value);
+					pbx_log(LOG_WARNING, "SCCP: http.conf bindaddr '%s' could not be resolved; web service not started\n", v->value);
 					break;
 				}
 			} else if (!strcasecmp(v->name, "prefix")) {
@@ -170,7 +170,7 @@ static boolean_t parse_http_conf(char * const uri_str)
 				}
 			} else if (strcasecmp(v->name, "sessionlimit") == 0) {
 				if (ast_parse_arg(v->value, (enum ast_parse_flags)(PARSE_UINT32 | PARSE_IN_RANGE | PARSE_DEFAULT), &cookie_timeout, DEFAULT_SESSION_LIMIT, 1, INT_MAX)) {
-					ast_log(LOG_WARNING, "Invalid %s '%s' at line %d of http.conf\n", v->name, v->value, v->lineno);
+					pbx_log(LOG_WARNING, "SCCP: http.conf line %d: %s '%s' is not a valid number; default used\n", v->lineno, v->name, v->value);
 				}
 			}
 		}
@@ -180,7 +180,7 @@ static boolean_t parse_http_conf(char * const uri_str)
 			result = TRUE;
 		}
 	} else {
-		pbx_log(LOG_NOTICE, "SCCP: http.conf file not found or invalid\n");
+		pbx_log(LOG_NOTICE, "SCCP: web service not started: http.conf is missing or could not be parsed\n");
 	}
 	if (addr) {
 		sccp_free(addr);
@@ -267,7 +267,7 @@ static boolean_t get_request_handler(PBX_VARIABLE_TYPE * request_params, handler
 	const char * uri = sccp_retrieve_str_variable_byKey(request_params, "handler");
 
 	if (!uri) {
-		pbx_log(LOG_ERROR, "no 'handler' parameter provided in request\n");
+		pbx_log(LOG_NOTICE, "SCCP: web request has no 'handler' parameter\n");
 		return FALSE;
 	}
 
@@ -279,7 +279,7 @@ static boolean_t get_request_handler(PBX_VARIABLE_TYPE * request_params, handler
 	SCCP_VECTOR_RW_UNLOCK(&handlers);
 
 	if (!found) {
-		pbx_log(LOG_ERROR, "no handler found for uri:%s\n", uri);
+		pbx_log(LOG_NOTICE, "SCCP: web request asks for handler '%s', which does not exist\n", uri);
 		return FALSE;
 	}
 	return TRUE;
@@ -310,7 +310,7 @@ static int parse_outputfmt(PBX_VARIABLE_TYPE * request_params, PBX_VARIABLE_TYPE
 			// unrecognized ?outformat=... value - do not let the SENTINEL flow on to
 			// be used as an outputfmt2contenttype[] index (out of bounds: valid
 			// indices are 0..SCCP_XML_OUTPUTFMT_SENTINEL-1)
-			pbx_log(LOG_WARNING, "SCCP: (parse_outputfmt) unrecognized outformat '%s'\n", requested_outputfmt);
+			pbx_log(LOG_NOTICE, "SCCP: web request asks for outformat '%s', which is not supported\n", requested_outputfmt);
 			return -1;
 		}
 		*outputfmt = parsed;
@@ -341,7 +341,7 @@ static __attribute__((malloc)) char * searchWebDirForFile(const char * filename,
 	}
 	sccp_log(DEBUGCAT_WEBSERVICE)("SCCP: (searchWebDirForFile) Looking for '%s'\n", filepath);
 	if (access(filepath, F_OK) == -1) {
-		pbx_log(LOG_ERROR, "\nSCCP: (searchWebDirForFile) file: '%s' could not be found\n", filepath);
+		pbx_log(LOG_NOTICE, "SCCP: web file '%s' does not exist\n", filepath);
 		filepath[0] = '\0';
 		return NULL;
 	}
@@ -379,7 +379,7 @@ static int request_parser(struct ast_tcptls_session_instance * ser, enum ast_htt
 		// get_request_handler() already logged the specific reason (missing
 		// 'handler' param, or no registered handler matches it); this line adds
 		// the request context (uri/remote address) that log line doesn't have.
-		pbx_log(LOG_WARNING, "SCCP: (request_parser) rejecting request for '%s' from %s - see prior log line for reason\n",
+		pbx_log(LOG_NOTICE, "SCCP: web request for '%s' from %s refused (reason in the previous message)\n",
 			request_uri, ast_sockaddr_stringify(&ser->remote_address));
 		// this is a malformed/unrecognized client request, not a server-side failure
 		ast_http_error(ser, 404, "Not Found", "No SCCP XML service is registered for the requested 'handler' parameter.\n");
@@ -412,19 +412,19 @@ static int request_parser(struct ast_tcptls_session_instance * ser, enum ast_htt
 		http_header = pbx_str_create(80);
 		out         = pbx_str_create(4196);
 		if (!http_header || !out) {
-			pbx_log(LOG_ERROR, "SCCP: (request_parser) pbx_str_create() failed to allocate the HTTP response buffer (out of memory)\n");
+			pbx_log(LOG_ERROR, "SCCP: web request not answered: out of memory for the response\n");
 			ast_http_error(ser, 500, "Server Error", "The server ran out of memory building this response. Try again; if this persists, check Asterisk's memory usage.\n");
 			break;
 		}
 
 		if (result != 0) {
-			pbx_log(LOG_ERROR, "SCCP: (request_parser) rejecting request for '%s': the request's URI, headers, or 'outformat' parameter could not be parsed (see prior log line for detail)\n", request_uri);
+			pbx_log(LOG_NOTICE, "SCCP: web request for '%s' refused: its URI, headers or outformat could not be parsed (details in the previous message)\n", request_uri);
 			ast_http_request_close_on_completion(ser);
 			ast_http_error(ser, 400, "Bad Request", "The request's URI, headers, or 'outformat' parameter could not be parsed.\n");
 			break;
 		}
 		if (!handler.callback(handler.uri, request_params, request_headers, &out)) {
-			pbx_log(LOG_ERROR, "SCCP: (request_parser) handler '%s' failed while building its response for '%s'\n", handler.uri, request_uri);
+			pbx_log(LOG_ERROR, "SCCP: web handler '%s' failed while building the response for '%s'\n", handler.uri, request_uri);
 			ast_http_request_close_on_completion(ser);
 			ast_http_error(ser, 500, "Server Error", "The matched SCCP XML service handler failed while building its response.\n");
 			break;
@@ -471,7 +471,7 @@ static int sccp_webservice_callback(struct ast_tcptls_session_instance * ser, co
 		for (PBX_VARIABLE_TYPE * v = headers; v; v = v->next) {
 			header_count++;
 		}
-		pbx_log(LOG_NOTICE, "SCCP: (sccp_webservice_callback) incoming %s request for '%s' (%d param%s, %d header%s)\n",
+		sccp_log((DEBUGCAT_WEBSERVICE))(VERBOSE_PREFIX_3 "SCCP: web %s request for '%s' (%d param%s, %d header%s)\n",
 			method == AST_HTTP_POST ? "POST" : "GET", uri,
 			param_count, param_count == 1 ? "" : "s", header_count, header_count == 1 ? "" : "s");
 		if (method == AST_HTTP_POST) {
@@ -605,13 +605,13 @@ static int sccp_webservice_xslt_callback(struct ast_tcptls_session_instance * se
 	return 0;
 
 out404:
-	pbx_log(LOG_NOTICE, "File not found '%s'\n", uri);
+	pbx_log(LOG_NOTICE, "SCCP: web request for '%s' answered 404: not found\n", uri);
 	ast_http_error(ser, 404, "Not Found", "The requested URL was not found on this server.");
 	return 0;
 
 out403:
 	ast_http_request_close_on_completion(ser);
-	pbx_log(LOG_NOTICE, "Access Denied '%s'\n", uri);
+	pbx_log(LOG_NOTICE, "SCCP: web request for '%s' answered 403: access denied\n", uri);
 	ast_http_error(ser, 403, "Access Denied", "You do not have permission to access the requested URL.");
 	return 0;
 }
@@ -642,14 +642,14 @@ static boolean_t xmlPostProcess(xmlDoc * const doc, const char * const uri, PBX_
 			char * stylesheetFilename = findStylesheet(uri, outputfmt);
 			if (stylesheetFilename) {
 				if (!iXML.applyStyleSheetByName(doc, stylesheetFilename, resultstr)) {
-					pbx_log(LOG_ERROR, "SCCP: (xmlPostProcess) handler '%s' matched stylesheet '%s', but applying it failed (see prior log line for the specific XSLT/parse error)\n", uri, stylesheetFilename);
+					pbx_log(LOG_ERROR, "SCCP: web handler '%s': applying stylesheet '%s' failed (details in the previous message)\n", uri, stylesheetFilename);
 					res = FALSE;
 				}
 				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (xmlPostProcess) resultstr:%s\n", *resultstr ? *resultstr : "");
 				sccp_free(stylesheetFilename);
 			} else {
-				pbx_log(LOG_ERROR, "SCCP: (xmlPostProcess) no '%s2%s.xsl' stylesheet found under " PBX_VARLIB "/sccpxslt/ for handler '%s'\n",
-					uri, sccp_xml_outputfmt2str(outputfmt), uri);
+				pbx_log(LOG_ERROR, "SCCP: web handler '%s': stylesheet %s2%s.xsl not found in " PBX_VARLIB "/sccpxslt/\n",
+					uri, uri, sccp_xml_outputfmt2str(outputfmt));
 				res = FALSE;
 			}
 		} else {

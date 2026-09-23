@@ -118,7 +118,7 @@ gcc_inline const skinny_payload_type_t codec2type(skinny_codec_t value)
 			return skinny_codecs[i].codec_type;
 		}
 	}
-	pbx_log(LOG_ERROR, "codec2type lookup failed for skinny_codecs[%i]\n", value);
+	pbx_log(LOG_ERROR, "SCCP: codec %i is not in the codec table; type unknown\n", value);
 	return SKINNY_CODEC_TYPE_UNKNOWN;
 }
 
@@ -130,7 +130,7 @@ gcc_inline const int32_t codec2rtp_payload_type(skinny_codec_t value)
 			return skinny_codecs[i].rtp_payload_type;
 		}
 	}
-	pbx_log(LOG_ERROR, "codec2rtp_payload_type lookup failed for skinny_codecs[%i]\n", value);
+	pbx_log(LOG_ERROR, "SCCP: codec %i is not in the codec table; no RTP payload type\n", value);
 	return SKINNY_CODEC_TYPE_UNKNOWN;
 }
 

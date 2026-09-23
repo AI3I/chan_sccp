@@ -44,7 +44,7 @@ static void write_openssl_error_to_log(void)
 
 	FILE * fp = open_memstream(&buffer, &length);
 	if (!fp) {
-		pbx_log(LOG_ERROR, "SCCP: error opening memstream for openssl_error_to_log\n");
+		pbx_log(LOG_ERROR, "SCCP: OpenSSL error details could not be collected (open_memstream failed)\n");
 		return;
 	}
 
@@ -52,7 +52,7 @@ static void write_openssl_error_to_log(void)
 	fclose(fp);
 
 	if (length) {
-		pbx_log(LOG_ERROR, "%.*s\n", (int)length, buffer);
+		pbx_log(LOG_ERROR, "SCCP: OpenSSL: %.*s\n", (int)length, buffer);
 	}
 
 	ast_free(buffer);
@@ -116,7 +116,7 @@ static SSL_CTX * create_context(void)
 	const SSL_METHOD * method = SSLv23_method();
 	SSL_CTX *          ctx    = SSL_CTX_new(method);
 	if (!ctx) {
-		pbx_log(LOG_WARNING, "Unable to create SSL context\n");
+		pbx_log(LOG_WARNING, "SCCP: TLS listener not started: OpenSSL could not create a context\n");
 		write_openssl_error_to_log();
 		return NULL;
 	}
@@ -138,19 +138,19 @@ static boolean_t configure_context(SSL_CTX * ctx)
 	}
 
 	if (access(cert_file, F_OK) != 0) {
-		sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_3 "TLS/SSL no certificate file not found\n");
+		pbx_log(LOG_WARNING, "SCCP: TLS listener not started: certfile %s does not exist\n", cert_file);
 		return FALSE;
 	} else {
 		if (SSL_CTX_use_certificate_file(ctx, cert_file, SSL_FILETYPE_PEM) <= 0) {
-			pbx_log(LOG_WARNING, "TLS/SSL error loading public key (certificate) from <%s>.\n", cert_file);
+			pbx_log(LOG_WARNING, "SCCP: TLS listener not started: could not load the certificate from %s\n", cert_file);
 			write_openssl_error_to_log();
 			return FALSE;
 		} else if (SSL_CTX_use_PrivateKey_file(ctx, cert_file, SSL_FILETYPE_PEM) <= 0) {
-			ast_log(LOG_WARNING, "TLS/SSL error loading private key from <%s>.\n", cert_file);
+			pbx_log(LOG_WARNING, "SCCP: TLS listener not started: could not load the private key from %s\n", cert_file);
 			write_openssl_error_to_log();
 			return FALSE;
 		} else if (SSL_CTX_check_private_key(ctx) == 0) {
-			ast_log(LOG_WARNING, "TLS/SSL error matching private key and certificate in <%s>.\n", cert_file);
+			pbx_log(LOG_WARNING, "SCCP: TLS listener not started: the private key in %s does not match its certificate\n", cert_file);
 			write_openssl_error_to_log();
 			return FALSE;
 		}

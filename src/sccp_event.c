@@ -208,7 +208,7 @@ boolean_t sccp_event_unsubscribe(int eventType /*sccp_event_type_t*/, sccp_event
 				if (SCCP_VECTOR_REMOVE_CMP_UNORDERED(subscribers, cb, SUBSCRIBER_CB_CMP, SCCP_VECTOR_ELEM_CLEANUP_NOOP) == 0) {
 					res = TRUE;
 				} else {
-					pbx_log(LOG_ERROR, "SCCP: (sccp_event_subscribe) Failed to remove subscriber from subscribers vector\n");
+					pbx_log(LOG_ERROR, "SCCP: event unsubscribe for %s: the callback was not in the subscriber list\n", sccp_event_type2str(eventType));
 				}
 				SCCP_VECTOR_RW_UNLOCK(subscribers);
 			}
@@ -352,7 +352,7 @@ boolean_t _sccp_event_fire(sccp_event_t * event, boolean_t forceSync)
 							res |= true;
 							break;						// break out of do/while loop, no further processing needed
 						} else {
-							pbx_log(LOG_ERROR, "Could not add work to threadpool for event: %s\n", sccp_event_type2str(event->type));
+							pbx_log(LOG_ERROR, "SCCP: event %s not delivered to one subscriber: the thread pool refused the job\n", sccp_event_type2str(event->type));
 							sccp_free(arg);					// explicit failure release
 						}
 					}

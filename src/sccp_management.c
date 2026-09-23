@@ -199,7 +199,7 @@ static int sccp_manager_holdCall(struct mansession * s, const struct message * m
 static char management_show_devices_desc[] = "Description: Lists SCCP devices in text format with details on current status. (DEPRECATED in favor of SCCPShowDevices)\n" "\n" "DevicelistComplete.\n" "Variables: \n" "  ActionID: <id>	Action ID for this transaction. Will be returned.\n";
 static char management_show_lines_desc[] = "Description: Lists SCCP lines in text format with details on current status. (DEPRECATED in favor of SCCPShowLines)\n" "\n" "LinelistComplete.\n" "Variables: \n" "  ActionID: <id>	Action ID for this transaction. Will be returned.\n";
 static char management_device_update_desc[] = "Description: restart a given device\n" "\n" "Variables:\n" "   Devicename: Name of device\n";
-static char management_line_fwd_update_desc[] = "Description: update forward status for line\n" "\n" "Variables:\n" "  Devicename: Name of device\n" "  Linename: Name of line\n" "  Forwardtype: type of cfwd (all | busy | noAnswer)\n" "  Disable: yes Disable call forward (optional)\n" "  Number: number to forward calls (optional)";
+static char management_line_fwd_update_desc[] = "Description: update forward status for line\n" "\n" "Variables:\n" "  DeviceName: name of the device\n" "  LineName: name of the line\n" "  ForwardType: all, busy or noanswer; required unless Disable is yes\n" "  Disable: yes clears all call forwards on the line (optional)\n" "  Number: the number to forward calls to; required when enabling";
 static char management_hangupcall_desc[] = "Description: hangup a channel/call\n" "\n" "Variables:\n" "  channelId: Id of the Channel to hangup\n";
 static char management_hold_desc[] = "Description: hold/resume a call\n" "\n" "Variables:\n" "  channelId: Id of the channel to hold/unhold\n" "  hold: hold=true / resume=false\n" "  Devicename: Name of the Device\n" "  SwapChannels: Swap channels when resuming and an active channel is present (true/false)\n";
 
@@ -500,7 +500,7 @@ static int sccp_manager_restart_device(struct mansession *s, const struct messag
 	}
 
 	if (sccp_strlen_zero(type)) {
-		pbx_log(LOG_WARNING, "Type not specified [reset|restart|applyconfig], using restart");
+		sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "SCCP: AMI SCCPDeviceRestart without Type; using restart\n");
 		type = "restart";
 	}
 
@@ -544,7 +544,7 @@ static int sccp_manager_device_add_line(struct mansession *s, const struct messa
 	const char *deviceName = astman_get_header(m, "Devicename");
 	const char *lineName = astman_get_header(m, "Linename");
 
-	pbx_log(LOG_WARNING, "Attempt to get device %s\n", deviceName);
+	sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "SCCP: AMI call forward request for device %s, line %s\n", deviceName, lineName);
 
 	if (sccp_strlen_zero(deviceName)) {
 		astman_send_error(s, m, "Please specify the name of device");
@@ -602,7 +602,6 @@ static int sccp_manager_line_fwd_update(struct mansession *s, const struct messa
 	AUTO_RELEASE(sccp_device_t, d , sccp_device_find_byid(deviceName, FALSE));
 
 	if (!d) {
-		pbx_log(LOG_WARNING, "%s: Device not found\n", deviceName);
 		astman_send_error(s, m, "Device not found");
 		return 0;
 	}
@@ -610,58 +609,54 @@ static int sccp_manager_line_fwd_update(struct mansession *s, const struct messa
 	AUTO_RELEASE(sccp_line_t, line , sccp_line_find_byname(lineName, TRUE));
 
 	if (!line) {
-		pbx_log(LOG_WARNING, "%s: Line %s not found\n", deviceName, lineName);
 		astman_send_error(s, m, "Line not found");
 		return 0;
 	}
 
 	if (SCCP_LIST_GETSIZE(&line->devices) > 1) {
-		pbx_log(LOG_WARNING, "%s: Callforwarding on shared lines is not supported at the moment\n", deviceName);
-		astman_send_error(s, m, "Callforwarding on shared lines is not supported at the moment");
+		astman_send_error(s, m, "Call forwarding on shared lines is not supported");
 		return 0;
 	}
 
-	if (!forwardType) {
-		pbx_log(LOG_WARNING, "%s: Forwardtype is not optional [all | busy | noanswer]\n", deviceName);
-		astman_send_error(s, m, "Forwardtype is not optional [all | busy | noanswer]"); /* NoAnswer to be added later on */
+	/* astman_get_header() returns "" (never NULL) for a missing header */
+	boolean_t disable = sccp_true(Disable);
+	if (sccp_strcaseequals("all", forwardType)) {
+		cfwd_type = SCCP_CFWD_ALL;
+	} else if (sccp_strcaseequals("busy", forwardType)) {
+		cfwd_type = SCCP_CFWD_BUSY;
+	} else if (sccp_strcaseequals("noanswer", forwardType)) {
+		cfwd_type = SCCP_CFWD_NOANSWER;
+	} else if (!disable) {
+		astman_send_error(s, m, "ForwardType is required: all, busy or noanswer");
 		return 0;
 	}
-
-	if (!Disable) {
-		Disable = "no";
+	if (!disable && sccp_strlen_zero(number)) {
+		astman_send_error(s, m, "Number is required to enable call forwarding");
+		return 0;
 	}
 
 	if (line) {
 		AUTO_RELEASE(sccp_linedevice_t, ld, sccp_linedevice_find(d, line));
 
 		if(ld) {
-			if(!sccp_strlen_zero(forwardType) && sccp_true(Disable)) {
+			if (disable) {
+				/* Disable: yes clears every forward type on the line */
 				for(uint x = SCCP_CFWD_ALL; x < SCCP_CFWD_SENTINEL; x++) {
-					cfwd_type = (sccp_cfwd_t)x;
-					ld->cfwd[cfwd_type].enabled = FALSE;
-					sccp_copy_string(ld->cfwd[cfwd_type].number, "", sizeof(ld->cfwd[cfwd_type].number));
-					sccp_feat_changed(ld->device, ld, sccp_cfwd2feature(cfwd_type));
+					sccp_cfwd_t clear_type = (sccp_cfwd_t)x;
+					ld->cfwd[clear_type].enabled = FALSE;
+					sccp_copy_string(ld->cfwd[clear_type].number, "", sizeof(ld->cfwd[clear_type].number));
+					sccp_feat_changed(ld->device, ld, sccp_cfwd2feature(clear_type));
 				}
+				snprintf(cbuf, sizeof(cbuf), "Line %s call forwarding cleared", lineName);
 			} else {
-				if(sccp_strcaseequals("all", forwardType)) {
-					cfwd_type = SCCP_CFWD_ALL;
-				} else if(sccp_strcaseequals("busy", forwardType)) {
-					cfwd_type = SCCP_CFWD_BUSY;
-				} else if(sccp_strcaseequals("noanswer", forwardType)) {
-					cfwd_type = SCCP_CFWD_NOANSWER;
-				}
-				if(cfwd_type != SCCP_CFWD_NONE) {
-					ld->cfwd[cfwd_type].enabled = sccp_true(Disable);
-					const char * destination = ld->cfwd[cfwd_type].enabled ? number : "";
-					sccp_copy_string(ld->cfwd[cfwd_type].number, destination, sizeof(ld->cfwd[cfwd_type].number));
-					sccp_feat_changed(ld->device, ld, sccp_cfwd2feature(cfwd_type));
-					snprintf(cbuf, sizeof(cbuf), "Line %s CallForward %s set to %s", lineName, sccp_cfwd2str(cfwd_type), destination);
-				}
+				ld->cfwd[cfwd_type].enabled = TRUE;
+				sccp_copy_string(ld->cfwd[cfwd_type].number, number, sizeof(ld->cfwd[cfwd_type].number));
+				sccp_feat_changed(ld->device, ld, sccp_cfwd2feature(cfwd_type));
+				snprintf(cbuf, sizeof(cbuf), "Line %s: call forward %s set to %s", lineName, sccp_cfwd2str(cfwd_type), number);
 			}
 			sccp_dev_forward_status(line, ld->lineInstance, ld->device);
 		} else {
-			pbx_log(LOG_WARNING, "%s: LineDevice not found for line %s (Device not registeed ?)\n", deviceName, lineName);
-			astman_send_error(s, m, "LineDevice not found (Device not registered ?)");
+			astman_send_error(s, m, "The line is not on this device, or the device is not registered");
 			return 0;
 		}
 	}
@@ -1124,7 +1119,7 @@ boolean_t sccp_manager_action2str(const char *manager_command, char **outStr)
 	struct ast_str * buf = NULL;
 
 	if(!outStr || sccp_strlen_zero(manager_command) || !(buf = ast_str_thread_get(&hookresult_threadbuf, HOOKRESULT_INITSIZE))) {
-		pbx_log(LOG_ERROR, "SCCP: No OutStr or Command Provided\n");
+		pbx_log(LOG_ERROR, "SCCP: manager command hook called without a command or output buffer (caller bug)\n");
         	return -2;
 	}
 

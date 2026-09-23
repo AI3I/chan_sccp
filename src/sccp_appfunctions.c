@@ -375,7 +375,7 @@ static int sccp_func_sccpdevice(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, ch
 		static int deprecation_warning = 0;
 		*colname++                     = '\0';
 		if (deprecation_warning++ % 10 == 0) {
-			pbx_log(LOG_WARNING, "SCCPDevice(): usage of ':' to separate arguments is deprecated. Please use ',' instead.\n");
+			pbx_log(LOG_WARNING, "SCCPDevice(): ':' as argument separator is deprecated; use ',' (channel %s)\n", chan ? ast_channel_name(chan) : "none");
 		}
 	} else if ((colname = strchr(data, ','))) {
 		*colname++ = '\0';
@@ -397,13 +397,13 @@ static int sccp_func_sccpdevice(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, ch
 		}
 		d = sccp_channel_getDevice(c) /*ref_replace*/;
 		if (!d) {
-			pbx_log(LOG_WARNING, "SCCPDevice(): SCCP Device not available\n");
+			pbx_log(LOG_WARNING, "SCCPDevice(current): the call on %s has no device attached\n", chan ? ast_channel_name(chan) : "none");
 			return -1;
 		}
 	} else {
 		d = sccp_device_find_byid(data, FALSE) /*ref_replace*/;
 		if (!d) {
-			pbx_log(LOG_WARNING, "SCCPDevice(): SCCP Device not available\n");
+			pbx_log(LOG_WARNING, "SCCPDevice(%s): no such device (channel %s)\n", data, chan ? ast_channel_name(chan) : "none");
 			return -1;
 		}
 	}
@@ -587,7 +587,7 @@ static int sccp_func_sccpdevice(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, ch
 					buf[0] = '\0';
 				}
 			} else {
-				pbx_log(LOG_WARNING, "SCCPDevice(%s): unknown colname: %s\n", data, token);
+				pbx_log(LOG_WARNING, "SCCPDevice(%s): '%s' is not a device field; returned empty\n", data, token);
 				buf[0] = '\0';
 			}
 
@@ -641,7 +641,7 @@ static int sccp_func_sccpline(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, char
 		static int deprecation_warning = 0;
 		*colname++                     = '\0';
 		if (deprecation_warning++ % 10 == 0) {
-			pbx_log(LOG_WARNING, "SCCPLine(): usage of ':' to separate arguments is deprecated.  Please use ',' instead.\n");
+			pbx_log(LOG_WARNING, "SCCPLine(): ':' as argument separator is deprecated; use ',' (channel %s)\n", chan ? ast_channel_name(chan) : "none");
 		}
 	} else if ((colname = strchr(data, ','))) {
 		*colname++ = '\0';
@@ -658,21 +658,21 @@ static int sccp_func_sccpline(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, char
 	if (!strncasecmp(data, "current", 7)) {
 		c = get_sccp_channel_from_pbx_channel(chan) /*ref_replace*/;
 		if (!c || !c->line) {
-			pbx_log(LOG_WARNING, "SCCPLine(): SCCP Line not available\n");
+			pbx_log(LOG_WARNING, "SCCPLine(current): %s is not an SCCP call with a line\n", chan ? ast_channel_name(chan) : "none");
 			return -1;
 		}
 		l = sccp_line_retain(c->line) /*ref_replace*/;
 	} else if (!strncasecmp(data, "parent", 7)) {
 		c = get_sccp_channel_from_pbx_channel(chan) /*ref_replace*/;
 		if (!c || !c->parentChannel || !c->parentChannel->line) {
-			pbx_log(LOG_WARNING, "SCCPLine(): SCCP Line not available\n");
+			pbx_log(LOG_WARNING, "SCCPLine(parent): %s has no SCCP parent call with a line\n", chan ? ast_channel_name(chan) : "none");
 			return -1;
 		}
 		l = sccp_line_retain(c->parentChannel->line) /*ref_replace*/;
 	} else {
 		l = sccp_line_find_byname(data, TRUE) /*ref_replace*/;
 		if (!l) {
-			pbx_log(LOG_WARNING, "SCCPLine(): SCCP Line not available\n");
+			pbx_log(LOG_WARNING, "SCCPLine(%s): no such line (channel %s)\n", data, chan ? ast_channel_name(chan) : "none");
 			return -1;
 		}
 	}
@@ -829,7 +829,7 @@ static int sccp_func_sccpline(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, char
 					}
 				}
 			} else {
-				pbx_log(LOG_WARNING, "SCCPLine(%s): unknown colname: %s\n", data, token);
+				pbx_log(LOG_WARNING, "SCCPLine(%s): '%s' is not a line field; returned empty\n", data, token);
 				buf[0] = '\0';
 			}
 
@@ -882,7 +882,7 @@ static int sccp_func_sccpchannel(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, c
 		static int deprecation_warning = 0;
 		*colname++                     = '\0';
 		if (deprecation_warning++ % 10 == 0) {
-			pbx_log(LOG_WARNING, "SCCPChannel(): usage of ':' to separate arguments is deprecated.  Please use ',' instead.\n");
+			pbx_log(LOG_WARNING, "SCCPChannel(): ':' as argument separator is deprecated; use ',' (channel %s)\n", chan ? ast_channel_name(chan) : "none");
 		}
 	} else if ((colname = strchr(data, ','))) {
 		*colname++ = '\0';
@@ -907,7 +907,7 @@ static int sccp_func_sccpchannel(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, c
 		c               = sccp_channel_find_byid(callid) /*ref_replace*/;
 	}
 	if (!c) {
-		pbx_log(LOG_WARNING, "SCCPChannel(): SCCP Channel not available\n");
+		pbx_log(LOG_WARNING, "SCCPChannel(%s): no such SCCP call (channel %s)\n", data, chan ? ast_channel_name(chan) : "none");
 		return -1;
 	}
 	pbx_str_reset(colnames);
@@ -1047,7 +1047,7 @@ static int sccp_func_sccpchannel(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, c
 					buf[0] = '\0';
 				}
 			} else {
-				pbx_log(LOG_WARNING, "SCCPChannel(%s): unknown colname: %s\n", data, token);
+				pbx_log(LOG_WARNING, "SCCPChannel(%s): '%s' is not a call field; returned empty\n", data, token);
 				buf[0] = '\0';
 			}
 
@@ -1088,12 +1088,12 @@ static int sccp_app_prefcodec(PBX_CHANNEL_TYPE * chan, const char * data)
 	int res = 0;
 
 	if (!c) {
-		pbx_log(LOG_WARNING, "SCCPSetCodec: Not an SCCP channel\n");
+		pbx_log(LOG_WARNING, "SCCPSetCodec: %s is not an SCCP call; codec not set\n", chan ? ast_channel_name(chan) : "none");
 		return -1;
 	}
 
 	res = sccp_channel_setPreferredCodec(c, data);
-	pbx_log(LOG_WARNING, "SCCPSetCodec: Is now deprecated. Please use 'Set(CHANNEL(codec)=%s)' insteadl.\n", (char *)data);
+	pbx_log(LOG_WARNING, "SCCPSetCodec is deprecated; use Set(CHANNEL(codec)=%s) (channel %s)\n", (char *)data, chan ? ast_channel_name(chan) : "none");
 	return res ? 0 : -1;
 }
 static char * prefcodec_name = "SCCPSetCodec";
@@ -1115,17 +1115,17 @@ static int sccp_app_calledparty(PBX_CHANNEL_TYPE * chan, const char * data)
 	char * name = NULL;
 	AUTO_RELEASE(sccp_channel_t, c, get_sccp_channel_from_pbx_channel(chan));
 	if (!c) {
-		pbx_log(LOG_WARNING, "SCCPSetCalledParty: Not an SCCP channel\n");
+		pbx_log(LOG_WARNING, "SCCPSetCalledParty: %s is not an SCCP call; not set\n", chan ? ast_channel_name(chan) : "none");
 		return 0;
 	}
 
 	if (!text) {
-		pbx_log(LOG_WARNING, "SCCPSetCalledParty: No CalledParty Information Provided\n");
+		pbx_log(LOG_WARNING, "SCCPSetCalledParty: no argument given (expected \"Name\" <number>) on %s; not set\n", chan ? ast_channel_name(chan) : "none");
 		return 0;
 	}
 
 	if (!text || sccp_strlen_zero(text)) {
-		pbx_log(LOG_ERROR, "SCCPSetCalledParty: No valid party information provided: '%s'\n", text);
+		pbx_log(LOG_WARNING, "SCCPSetCalledParty: empty argument on %s; not set\n", chan ? ast_channel_name(chan) : "none");
 		return 0;
 	}
 	pbx_callerid_parse(text, &name, &num);
@@ -1150,7 +1150,7 @@ static int sccp_app_setmessage(PBX_CHANNEL_TYPE * chan, const char * data)
 {
 	AUTO_RELEASE(sccp_channel_t, c, get_sccp_channel_from_pbx_channel(chan));
 	if (!c) {
-		pbx_log(LOG_WARNING, "SCCPSetMessage: Not an SCCP channel\n");
+		pbx_log(LOG_WARNING, "SCCPSetMessage: %s is not an SCCP call; message not shown\n", chan ? ast_channel_name(chan) : "none");
 		return 0;
 	}
 
@@ -1170,11 +1170,11 @@ static int sccp_app_setmessage(PBX_CHANNEL_TYPE * chan, const char * data)
 
 	AUTO_RELEASE(sccp_device_t, d, sccp_channel_getDevice(c));
 	if (!d) {
-		pbx_log(LOG_WARNING, "SCCPSetMessage: Not an SCCP device provided\n");
+		pbx_log(LOG_WARNING, "SCCPSetMessage: the call on %s has no device attached; message not shown\n", chan ? ast_channel_name(chan) : "none");
 		return 0;
 	}
 
-	pbx_log(LOG_WARNING, "SCCPSetMessage: text:'%s', prio:%d, timeout:%d\n", args.text, priority, timeout);
+	sccp_log((DEBUGCAT_PBX))(VERBOSE_PREFIX_3 "%s: SCCPSetMessage text '%s', priority %d, timeout %d\n", d->id, args.text, priority, timeout);
 	if (!sccp_strlen_zero(args.text)) {
 		if (priority != SCCP_MESSAGE_PRIORITY_SENTINEL) {
 			sccp_dev_displayprinotify(d, args.text, priority, timeout);

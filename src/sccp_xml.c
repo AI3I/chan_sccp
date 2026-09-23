@@ -119,7 +119,7 @@ static boolean_t applyStyleSheetByName(xmlDoc * const doc, const char * const st
 		if (!xslt) {
 			// malformed/unparseable .xsl file - xsltApplyStylesheet() would otherwise
 			// be handed a NULL stylesheet and crash the process on an ordinary request
-			pbx_log(LOG_ERROR, "SCCP: (applyStyleSheetByName) failed to parse stylesheet '%s'\n", styleSheetFilename);
+			pbx_log(LOG_ERROR, "SCCP: XSL stylesheet '%s' could not be parsed; the page was not rendered\n", styleSheetFilename);
 			return res;
 		}
 		xmlDoc * const newdoc = xsltApplyStylesheet(xslt, doc, params);

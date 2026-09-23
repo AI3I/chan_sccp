@@ -58,7 +58,7 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 
 	AUTO_RELEASE(sccp_line_t, l , sccp_line_retain(c->line));
 	if (!l) {
-		pbx_log(LOG_ERROR, "SCCP: The channel %d does not have a line\n", c->callid);
+		pbx_log(LOG_ERROR, "SCCP: call %d state not shown on the phone: the call has no line\n", c->callid);
 		return;
 	}
 	uint16_t lineInstance = sccp_device_find_index_for_line(d, l->name);
@@ -507,7 +507,7 @@ static void __sccp_indicate_remote_device(constDevicePtr device, channelPtr c, l
 	sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: Remote Indicate state %s (%d) with reason: %s (%d) on remote devices for channel %s\n", DEV_ID_LOG(device), sccp_channelstate2str(state), state, sccp_channelstatereason2str(c->channelStateReason), c->channelStateReason, c->designator);
 	SCCP_LIST_TRAVERSE(&line->devices, ld, list) {
 		if(!ld->device) {
-			pbx_log(LOG_NOTICE, "Strange to find a ld (%p) here without a valid device connected to it !", ld);
+			pbx_log(LOG_WARNING, "%s: line %s has a device link without a device; skipped while updating other phones\n", c->designator, line->name);
 			continue;
 		}
 

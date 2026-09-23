@@ -407,7 +407,7 @@
                         }										\
                         sccp_refcount_release(__tmp_##_var##_line, _file, _line, _func);		\
                 } else {										\
-                        pbx_log(LOG_ERROR, "SCCP (%s:%d:%s): Failed to get reference to variable during SCCP_LIST_FIND\n", _file, _line, _func);\
+                        pbx_log(LOG_ERROR, "SCCP: list lookup at %s:%d (%s) found an object that is being released; treated as not found\n", _file, _line, _func);\
                         (_var) = NULL;									\
                 }											\
         }                                                                                               \

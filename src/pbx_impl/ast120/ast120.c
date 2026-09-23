@@ -118,7 +118,7 @@ static inline skinny_codec_t sccp_astwrap_getSkinnyFormatSingle(struct ast_forma
 	}
 
 	if (codec == SKINNY_CODEC_NONE) {
-		ast_log(LOG_WARNING, "SCCP: (getSkinnyFormatSingle) No matching codec found");
+		sccp_log((DEBUGCAT_CODEC))(VERBOSE_PREFIX_3 "SCCP: none of the offered Asterisk formats maps to an SCCP codec\n");
 	}
 	return codec;
 }
@@ -146,7 +146,7 @@ static uint8_t sccp_astwrap_getSkinnyFormatMultiple(struct ast_format_cap *ast_f
 	}
 
 	if (codecs[0] == SKINNY_CODEC_NONE) {
-		ast_log(LOG_WARNING, "SCCP: (getSkinnyFormatSingle) No matching codecs found");
+		sccp_log((DEBUGCAT_CODEC))(VERBOSE_PREFIX_3 "SCCP: none of the offered Asterisk formats maps to an SCCP codec\n");
 	}
 
 	return position;
@@ -1202,7 +1202,7 @@ static boolean_t sccp_astwrap_allocPBXChannel(sccp_channel_t * channel, const vo
 		/* If we don't have an audio format, try to get something */
 		fmt = ast_format_cap_get_format(caps, 0);
 		if (!fmt) {
-			ast_log(LOG_WARNING, "No compatible formats could be found for %s\n", ast_channel_name(pbxDstChannel));
+			pbx_log(LOG_WARNING, "%s: channel not created: the call has no format list to choose an audio format from\n", ast_channel_name(pbxDstChannel));
 			ao2_cleanup(caps);
 			ast_channel_stage_snapshot_done(pbxDstChannel);
 			ast_hangup(pbxDstChannel);
@@ -1613,7 +1613,7 @@ static boolean_t sccp_astwrap_getPickupExtension(constChannelPtr channel, char e
 		pbx_channel_lock(channel->owner);
 		pickup_cfg = ast_get_chan_features_pickup_config(channel->owner);
 		if (!pickup_cfg) {
-			ast_log(LOG_ERROR, "Unable to retrieve pickup configuration options. Unable to detect call pickup extension\n");
+			pbx_log(LOG_WARNING, "%s: could not read Asterisk's pickup settings; the pickup feature code is not recognized on this call\n", channel->designator);
 		} else {
 			if (!sccp_strlen_zero(pickup_cfg->pickupexten)) {
 				sccp_copy_string(extension, pickup_cfg->pickupexten, SCCP_MAX_EXTENSION);
@@ -1670,7 +1670,7 @@ static sccp_extension_status_t sccp_astwrap_extensionStatus(constChannelPtr chan
 		pbx_channel_lock(channel->owner);
 		pickup_cfg = ast_get_chan_features_pickup_config(channel->owner);
 		if (!pickup_cfg) {
-			ast_log(LOG_ERROR, "Unable to retrieve pickup configuration options. Unable to detect call pickup extension\n");
+			pbx_log(LOG_WARNING, "%s: could not read Asterisk's pickup settings; the pickup feature code is not recognized on this call\n", channel->designator);
 			pickupexten = "";
 		} else {
 			pickupexten = pbx_strdupa(pickup_cfg->pickupexten);
@@ -1725,7 +1725,7 @@ static PBX_CHANNEL_TYPE *sccp_astwrap_request(const char *type, struct ast_forma
 	skinny_ringtype_t ringermode = GLOB(ringtype);
 
 	if (!(ast_format_cap_has_type(cap, AST_MEDIA_TYPE_AUDIO))) {
-		ast_log(LOG_NOTICE, "Asked to get a channel with an unsupported format '%s'\n", ast_format_cap_get_names(cap, &codec_buf));
+		pbx_log(LOG_NOTICE, "SCCP: channel requested without any audio format (offered: %s); continuing with defaults\n", ast_format_cap_get_names(cap, &codec_buf));
 
 		/*! \todo transcode or return NULL ? */
 		// return NULL;
@@ -1995,7 +1995,7 @@ static int sccp_astwrap_fixup(PBX_CHANNEL_TYPE * oldchan, PBX_CHANNEL_TYPE * new
 	AUTO_RELEASE(sccp_channel_t, c , get_sccp_channel_from_pbx_channel(newchan));
 	if (c) {
 		if (c->owner != oldchan) {
-			ast_log(LOG_WARNING, "old channel wasn't %p but was %p\n", oldchan, c->owner);
+			pbx_log(LOG_WARNING, "%s: Asterisk channel move not applied: the call belongs to %s, not %s\n", c->designator, c->owner ? pbx_channel_name(c->owner) : "none", pbx_channel_name(oldchan));
 			res = -1;
 		} else {
 			/* during a masquerade, fixup gets called twice */
@@ -3800,7 +3800,7 @@ static int register_channel_tech(struct ast_channel_tech *tech)
 	//ast_format_cap_append_by_type(tech->capabilities, AST_MEDIA_TYPE_TEXT);
 
 	if (ast_channel_register(tech)) {
-		ast_log(LOG_ERROR, "Unable to register channel technology %s(%s).\n", tech->type, tech->description);
+		pbx_log(LOG_ERROR, "SCCP: Asterisk refused to register channel type %s (%s)\n", tech->type, tech->description);
 		return -1;
 	}
 	return 0;
@@ -4009,7 +4009,7 @@ PBX_CHANNEL_TYPE *sccp_astwrap_findPickupChannelByExtenLocked(PBX_CHANNEL_TYPE *
 		ast_channel_lock(target);
 		//ast_log(LOG_NOTICE, "(findPickupChannelByExtenLocked) checking channel: %s, target:%s, can_pickup: %d\n", pbx_channel_name(chan), pbx_channel_name(target), ast_can_pickup(target));
 		if ((chan != target) && ast_can_pickup(target)) {
-			ast_log(LOG_NOTICE, "%s pickup by %s\n", ast_channel_name(target), ast_channel_name(chan));
+			sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "SCCP: %s can be picked up by %s\n", ast_channel_name(target), ast_channel_name(chan));
 			break;
 		}
 		ast_channel_unlock(target);

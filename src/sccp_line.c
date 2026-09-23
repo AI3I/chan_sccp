@@ -154,7 +154,7 @@ void sccp_line_addToGlobals(constLinePtr line)
 			sccp_event_fire(event);
 		}
 	} else {
-		pbx_log(LOG_ERROR, "Adding null to global line list is not allowed!\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_line_addToGlobals() was called without a line (caller bug)\n");
 	}
 }
 
@@ -177,7 +177,7 @@ void sccp_line_removeFromGlobals(sccp_line_t * line)
 
 		sccp_line_release(&removed_line);								/* explicit release */
 	} else {
-		pbx_log(LOG_ERROR, "Removing null from global line list is not allowed!\n");
+		pbx_log(LOG_ERROR, "SCCP: sccp_line_removeFromGlobals() was called without a line (caller bug)\n");
 	}
 }
 
@@ -294,7 +294,7 @@ int __sccp_line_destroy(const void *ptr)
 		}
 		SCCP_LIST_UNLOCK(&l->mailboxes);
 		if (!SCCP_LIST_EMPTY(&l->mailboxes)) {
-			pbx_log(LOG_WARNING, "%s: (line_destroy) there are connected mailboxes left during line destroy\n", l->name);
+			pbx_log(LOG_WARNING, "%s: mailboxes were still listed after the line was destroyed (list bug); they leak\n", l->name);
 		}
 		SCCP_LIST_HEAD_DESTROY(&l->mailboxes);
 	}
@@ -320,7 +320,7 @@ int __sccp_line_destroy(const void *ptr)
 		sccp_channel_release(&channel);
 	}
 	if (!SCCP_LIST_EMPTY(&l->channels)) {
-		pbx_log(LOG_WARNING, "%s: (line_destroy) there are connected channels left during line destroy\n", l->name);
+		pbx_log(LOG_WARNING, "%s: calls were still listed after the line was destroyed (list bug); they leak\n", l->name);
 	}
 	SCCP_LIST_UNLOCK(&l->channels);
 	SCCP_LIST_HEAD_DESTROY(&l->channels);
@@ -332,7 +332,7 @@ int __sccp_line_destroy(const void *ptr)
 		sccp_linedevice_release(&linedevice);
 	}
 	if (!SCCP_LIST_EMPTY(&l->devices)) {
-		pbx_log(LOG_WARNING, "%s: (line_destroy) there are connected linedevices left during line destroy\n", l->name);
+		pbx_log(LOG_WARNING, "%s: device links were still listed after the line was destroyed (list bug); they leak\n", l->name);
 	}
 	SCCP_LIST_UNLOCK(&l->devices);
 	SCCP_LIST_HEAD_DESTROY(&l->devices);
@@ -363,7 +363,7 @@ void sccp_line_copyCodecSetsFromLineToChannel(constLinePtr l, constDevicePtr may
 
 	// use a minimal default set, all devices should be able to support (last resort)
 	if (c->preferences.audio[0] == SKINNY_CODEC_NONE) {
-		pbx_log(LOG_WARNING, "%s: (updatePreferencesFromDevicesToLine) Could not retrieve preferences from line or device. Using Fallback Preferences from Global\n", c->designator);
+		pbx_log(LOG_NOTICE, "%s: neither the line nor its devices have codec preferences; using the global allow/disallow list\n", c->designator);
 		memcpy(&c->preferences.audio, &GLOB(global_preferences), sizeof(c->preferences.audio));
 		memcpy(&c->preferences.video, &GLOB(global_preferences), sizeof(c->preferences.video));
 	}
@@ -494,7 +494,7 @@ void sccp_line_cfwd(constLinePtr line, constDevicePtr device, sccp_cfwd_t type, 
 	if(ld) {
 		sccp_linedevice_cfwd(ld, type, number);
 	} else {
-		pbx_log(LOG_ERROR, "%s: Device does not have line configured (ld not found)\n", DEV_ID_LOG(device));
+		pbx_log(LOG_WARNING, "%s: call forward not set: line %s is not on this device\n", DEV_ID_LOG(device), line->name);
 	}
 }
 
@@ -657,7 +657,7 @@ linePtr sccp_line_find_realtime_byname(const char * name)
 			sccp_line_addToGlobals(l);								// can return previous instance on doubles
 			pbx_variables_destroy(v);
 		} else {
-			pbx_log(LOG_ERROR, "SCCP: Unable to build realtime line '%s'\n", name);
+			pbx_log(LOG_ERROR, "SCCP: realtime line '%s' not created: out of memory\n", name);
 		}
 		return l;
 	}

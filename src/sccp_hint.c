@@ -462,7 +462,7 @@ static void sccp_hint_addSubscription4Device(const sccp_device_t * device, const
 		sccp_log((DEBUGCAT_HINT)) (VERBOSE_PREFIX_4 "%s (hint_addSubscription4Device) create new hint for %s@%s\n", DEV_ID_LOG(device), hint_exten, hint_context);
 		hint = sccp_hint_create(hint_exten, hint_context);
 		if (!hint) {
-			pbx_log(LOG_NOTICE, "%s (hint_addSubscription4Device) hint create failed for %s@%s\n", DEV_ID_LOG(device), hint_exten, hint_context);
+			pbx_log(LOG_WARNING, "%s: speeddial hint %s@%s not monitored: the hint could not be created\n", DEV_ID_LOG(device), hint_exten, hint_context);
 			return;
 		}
 		SCCP_LIST_LOCK(&sccp_hint_subscriptions);
@@ -474,7 +474,7 @@ static void sccp_hint_addSubscription4Device(const sccp_device_t * device, const
 	sccp_log((DEBUGCAT_HINT)) (VERBOSE_PREFIX_4 "%s (hint_addSubscription4Device) create subscriber or hint: %s in %s\n", DEV_ID_LOG(device), hint->exten, hint->context);
 	sccp_hint_SubscribingDevice_t *subscriber = (sccp_hint_SubscribingDevice_t *)sccp_calloc(sizeof *subscriber, 1);
 	if (!subscriber) {
-		pbx_log(LOG_ERROR, "%s (hint_addSubscription4Device) Memory Allocation Error while creating subscriber object\n", DEV_ID_LOG(device));
+		pbx_log(LOG_ERROR, "%s: speeddial hint %s@%s not monitored: out of memory\n", DEV_ID_LOG(device), hint->exten, hint->context);
 		return;
 	}
 
@@ -536,7 +536,7 @@ static sccp_hint_list_t *sccp_hint_create(char *hint_exten, char *hint_context)
 
 	hint = (sccp_hint_list_t *)sccp_calloc(sizeof *hint, 1);
 	if (!hint) {
-		pbx_log(LOG_ERROR, "SCCP: (sccp_hint_create) Memory Allocation Error while creating hint list for hint: %s@%s\n", hint_exten, hint_context);
+		pbx_log(LOG_ERROR, "SCCP: hint %s@%s not created: out of memory\n", hint_exten, hint_context);
 		return NULL;
 	}
 	if (!(hint->callInfo = iCallInfo.Constructor(0, "hint"))) {
@@ -577,7 +577,7 @@ static void sccp_hint_attachLine(sccp_line_t * line, sccp_device_t * device)
 		sccp_log((DEBUGCAT_HINT)) (VERBOSE_PREFIX_3 "%s (hint_attachLine) Create new hint_lineState for line: %s\n", DEV_ID_LOG(device), line->name);
 		lineState = (struct sccp_hint_lineState *) sccp_calloc(sizeof *lineState, 1);
 		if (!lineState) {
-			pbx_log(LOG_ERROR, "%s (hint_attachLine) Memory Allocation Error while creating hint-lineState object for line %s\n", DEV_ID_LOG(device), line->name);
+			pbx_log(LOG_ERROR, "%s: line %s state not tracked for hints: out of memory\n", DEV_ID_LOG(device), line->name);
 			SCCP_LIST_UNLOCK(&lineStates);
 			return;
 		}
@@ -988,7 +988,7 @@ static void sccp_hint_notifySubscribers(sccp_hint_list_t * hint)
 	sccp_hint_SubscribingDevice_t *subscriber = NULL;
 
 	if (!hint) {
-		pbx_log(LOG_ERROR, "SCCP: (sccp_hint_notifySubscribers) no hint provided to notifySubscribers about\n");
+		pbx_log(LOG_ERROR, "SCCP: hint notification without a hint (caller bug)\n");
 		return;
 	}
 

@@ -94,7 +94,7 @@ static sccp_callinfo_t * const callinfo_Constructor(uint8_t callInstance, const 
 	sccp_callinfo_t *const ci = (sccp_callinfo_t *) sccp_calloc(sizeof *ci, 1);
 
 	if (!ci) {
-		pbx_log(LOG_ERROR, "SCCP: No memory to allocate callinfo object. Failing\n");
+		pbx_log(LOG_ERROR, "SCCP: call information not created: out of memory\n");
 		return NULL;
 	}
 	pbx_rwlock_init(&ci->lock);
@@ -284,7 +284,7 @@ static int callinfo_CopyByKey(const sccp_callinfo_t * const src_ci, sccp_callinf
 						changes++;
 					}
 				} else {
-					pbx_log(LOG_WARNING, "SCCP: can only assigned src originalCdpnRedirectReason to dst originalCdpnRedirectReason\n");
+					pbx_log(LOG_WARNING, "SCCP: call info copy: the original called party redirect reason can only be copied to the same field (caller bug)\n");
 				}
 			}
 			break;
@@ -296,7 +296,7 @@ static int callinfo_CopyByKey(const sccp_callinfo_t * const src_ci, sccp_callinf
 						changes++;
 					}
 				} else {
-					pbx_log(LOG_WARNING, "SCCP: can only assigned src lastRedirectReason to dst lastRedirectReason\n");
+					pbx_log(LOG_WARNING, "SCCP: call info copy: the last redirect reason can only be copied to the same field (caller bug)\n");
 				}
 			}
 			break;
@@ -308,7 +308,7 @@ static int callinfo_CopyByKey(const sccp_callinfo_t * const src_ci, sccp_callinf
 						changes++;
 					}
 				} else {
-					pbx_log(LOG_WARNING, "SCCP: can only assigned src presentation to dst presentation\n");
+					pbx_log(LOG_WARNING, "SCCP: call info copy: presentation can only be copied to the same field (caller bug)\n");
 				}
 			}
 			break;

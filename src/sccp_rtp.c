@@ -118,7 +118,7 @@ boolean_t sccp_rtp_createServer(constDevicePtr d, channelPtr c, sccp_rtp_type_t 
 			break;
 #endif
 		default:
-			pbx_log(LOG_ERROR, "%s: (sccp_rtp_createRTPServer) unknown/unhandled rtp type, cancelling\n", c->designator);
+			pbx_log(LOG_ERROR, "%s: RTP instance of type %d is neither audio nor video; not created\n", c->designator, type);
 			return FALSE;
 	}
 
@@ -135,13 +135,13 @@ boolean_t sccp_rtp_createServer(constDevicePtr d, channelPtr c, sccp_rtp_type_t 
 	if (iPbx.rtp_create_instance) {
 		rtp->instance_active = iPbx.rtp_create_instance(d, c, rtp);
 	} else {
-		pbx_log(LOG_ERROR, "we should start our own rtp server, but we don't have one\n");
+		pbx_log(LOG_ERROR, "%s: RTP not created: the Asterisk adapter provides no RTP support\n", c->designator);
 		return FALSE;
 	}
 	struct sockaddr_storage * phone_remote = &rtp->phone_remote;
 
 	if (!sccp_rtp_getUs(rtp, phone_remote)) {
-		pbx_log(LOG_WARNING, "%s: Did not get our rtp part\n", c->currentDeviceId);
+		pbx_log(LOG_WARNING, "%s: RTP for call %s not set up: could not read the local RTP address\n", c->currentDeviceId, c->designator);
 		return FALSE;
 	}
 
@@ -208,7 +208,7 @@ void sccp_rtp_stop(constChannelPtr channel)
 			video->instance_active = FALSE;
 		}
 	} else {
-		pbx_log(LOG_ERROR, "no pbx function to stop rtp\n");
+		pbx_log(LOG_ERROR, "%s: RTP not stopped: the Asterisk adapter provides no RTP support\n", channel->designator);
 	}
 }
 
@@ -326,7 +326,7 @@ void sccp_rtp_set_peer(constChannelPtr c, rtpPtr rtp, struct sockaddr_storage * 
 	}
 
 	memcpy(&rtp->phone_remote, new_peer, sizeof rtp->phone_remote);
-	pbx_log(LOG_NOTICE, "%s: ( sccp_rtp_set_peer ) Set new remote address to %s\n", c->currentDeviceId, sccp_netsock_stringify(&rtp->phone_remote));
+	sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: RTP remote address of call %s is now %s\n", c->currentDeviceId, c->designator, sccp_netsock_stringify(&rtp->phone_remote));
 
 	if (sccp_rtp_getState(rtp, SCCP_RTP_TRANSMISSION)) {
 		/* Shutdown any early-media or previous media on re-invite */
@@ -439,7 +439,7 @@ void sccp_rtp_print(constChannelPtr c, sccp_rtp_type_t type, struct ast_str * bu
 			break;
 #endif
 		default:
-			pbx_log(LOG_ERROR, "%s: (sccp_rtp_print) unknown/unhandled rtp type, cancelling\n", c->designator);
+			pbx_log(LOG_ERROR, "%s: RTP details not printed: type %d is neither audio nor video\n", c->designator, type);
 			return;
 	}
 	AUTO_RELEASE(sccp_device_t, d, sccp_channel_getDevice(c));

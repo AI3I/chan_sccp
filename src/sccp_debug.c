@@ -100,7 +100,7 @@ int32_t sccp_parse_debugline(char * arguments[], int startat, int argc, int32_t 
 						}
 					}
 					if (!matched) {
-						pbx_log(LOG_NOTICE, "SCCP: unknown debug value '%s'\n", token);
+						pbx_log(LOG_NOTICE, "SCCP: '%s' is not a debug category; ignored\n", token);
 					}
 					token = strtok_r(NULL, delimiters, &tokenrest);
 				}

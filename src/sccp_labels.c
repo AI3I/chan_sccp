@@ -128,7 +128,7 @@ gcc_inline const char *label2str(uint16_t value)
 			return skinny_labels[i].text;
 		}
 	}
-	pbx_log(LOG_ERROR, "Label could not be found for skinny_labels.label:%i\n", value);
+	pbx_log(LOG_ERROR, "SCCP: softkey label %i has no text; shown as empty\n", value);
 	return "";
 }
 
@@ -139,6 +139,6 @@ gcc_inline uint32_t labelstr2int(const char *str)
 			return skinny_labels[i].label;
 		}
 	}
-	pbx_log(LOG_ERROR, "Label could not be found for skinny_labels.text:%s\n", str);
+	pbx_log(LOG_ERROR, "SCCP: '%s' is not a softkey label; treated as label 0\n", str);
 	return 0;
 }

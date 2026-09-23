@@ -68,12 +68,12 @@ int load_config(void)
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "Platform byte order   : BIG ENDIAN\n");
 #endif
 	if(sccp_config_getConfig(TRUE, "sccp.conf") > CONFIG_STATUS_FILE_OK) {
-		pbx_log(LOG_ERROR, "Error loading configfile !\n");
+		sccp_log((DEBUGCAT_CONFIG))(VERBOSE_PREFIX_3 "SCCP: sccp.conf could not be loaded\n");
 		return FALSE;
 	}
 
 	if (!sccp_config_general(SCCP_CONFIG_READINITIAL)) {
-		pbx_log(LOG_ERROR, "Error parsing configfile !\n");
+		sccp_log((DEBUGCAT_CONFIG))(VERBOSE_PREFIX_3 "SCCP: the [general] section of sccp.conf could not be applied\n");
 		return FALSE;
 	}
 	sccp_config_readDevicesLines(SCCP_CONFIG_READINITIAL);
@@ -86,7 +86,7 @@ int load_config(void)
  */
 boolean_t sccp_prePBXLoad(void)
 {
-	pbx_log(LOG_NOTICE, "preloading pbx module\n");
+	sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "SCCP: initializing globals\n");
 	/* make globals */
 	sccp_globals = (struct sccp_global_vars *) sccp_calloc(sizeof *sccp_globals, 1);
 	if (!sccp_globals) {
@@ -290,7 +290,7 @@ int sccp_preUnload(void)
 	sccp_session_terminateAll();
 	/* Producers are stopped; callbacks must finish before their services go away. */
 	if (!sccp_threadpool_destroy(GLOB(general_threadpool))) {
-		pbx_log(LOG_ERROR, "SCCP: failed to join thread-pool workers\n");
+		pbx_log(LOG_ERROR, "SCCP: unload stopped: the thread-pool workers did not finish; the module stays loaded\n");
 		return -1;
 	}
 	GLOB(general_threadpool) = NULL;
@@ -353,7 +353,7 @@ int sccp_reload(void)
 
 	pbx_rwlock_wrlock(&GLOB(lock));
 	if (GLOB(reload_in_progress) == TRUE) {
-		pbx_log(LOG_ERROR, "SCCP reloading already in progress.\n");
+		pbx_log(LOG_NOTICE, "SCCP: reload ignored: another reload is still in progress\n");
 		returnval = 4;
 		goto EXIT;
 	}
@@ -370,12 +370,12 @@ int sccp_reload(void)
 			readingtype = SCCP_CONFIG_READRELOAD;
 			GLOB(reload_in_progress) = TRUE;
 			if (!sccp_config_general(readingtype)) {
-				pbx_log(LOG_ERROR, "Unable to reload configuration.\n");
+				pbx_log(LOG_ERROR, "SCCP: reload failed while applying [general] (see the previous message)\n");
 				returnval = 3;
 				break;
 			}
 			if (!sccp_config_readDevicesLines(readingtype)) {
-				pbx_log(LOG_ERROR, "Unable to reload configuration.\n");
+				pbx_log(LOG_ERROR, "SCCP: reload failed while applying devices and lines (see the previous message)\n");
 				returnval = 3;
 				break;
 			}
@@ -389,23 +389,19 @@ int sccp_reload(void)
 #endif
 			break;
 		case CONFIG_STATUS_FILE_OLD:
-			pbx_log(LOG_ERROR, "Error reloading from '%s'\n", GLOB(config_file_name));
-			pbx_log(LOG_ERROR, "\n\n --> '%s' uses an old configuration format; please update it.\n --> Loading of module chan_sccp with the current sccp.conf has been aborted.\n\n", GLOB(config_file_name));
+			pbx_log(LOG_ERROR, "SCCP: reload of '%s' aborted; devices and lines keep their current settings\n", GLOB(config_file_name));
 			returnval = 3;
 			break;
 		case CONFIG_STATUS_FILE_NOT_SCCP:
-			pbx_log(LOG_ERROR, "Error reloading from '%s'\n", GLOB(config_file_name));
-			pbx_log(LOG_ERROR, "\n\n --> '%s' does not follow the expected sccp.conf format; please check it.\n --> Loading of module chan_sccp with the current sccp.conf has been aborted.\n\n", GLOB(config_file_name));
+			pbx_log(LOG_ERROR, "SCCP: reload of '%s' aborted; devices and lines keep their current settings\n", GLOB(config_file_name));
 			returnval = 3;
 			break;
 		case CONFIG_STATUS_FILE_NOT_FOUND:
-			pbx_log(LOG_ERROR, "Error reloading from '%s'\n", GLOB(config_file_name));
-			pbx_log(LOG_ERROR, "Config file '%s' not found, aborting reload.\n", GLOB(config_file_name));
+			pbx_log(LOG_ERROR, "SCCP: reload of '%s' aborted; devices and lines keep their current settings\n", GLOB(config_file_name));
 			returnval = 3;
 			break;
 		case CONFIG_STATUS_FILE_INVALID:
-			pbx_log(LOG_ERROR, "Error reloading from '%s'\n", GLOB(config_file_name));
-			pbx_log(LOG_ERROR, "Config file '%s' specified is not a valid config file, aborting reload.\n", GLOB(config_file_name));
+			pbx_log(LOG_ERROR, "SCCP: reload of '%s' aborted; devices and lines keep their current settings\n", GLOB(config_file_name));
 			returnval = 3;
 			break;
 	}

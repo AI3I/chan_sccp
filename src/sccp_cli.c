@@ -1002,19 +1002,16 @@ static int sccp_show_device(int fd, sccp_cli_totals_t *totals, struct mansession
 	const char * dev = NULL;
 
 	if (argc < 4) {
-		pbx_log(LOG_WARNING, "DeviceName needs to be supplied\n");
-		CLI_AMI_RETURN_ERROR(fd, s, m, "DeviceName needs to be supplied %s\n", "");		/* explicit return */
+		CLI_AMI_RETURN_ERROR(fd, s, m, "A device name is required%s\n", "");		/* explicit return */
 	}
 	dev = pbx_strdupa(argv[3]);
 	if (pbx_strlen_zero(dev)) {
-		pbx_log(LOG_WARNING, "DeviceName needs to be supplied\n");
-		CLI_AMI_RETURN_ERROR(fd, s, m, "DeviceName needs to be supplied %s\n", "");		/* explicit return */
+		CLI_AMI_RETURN_ERROR(fd, s, m, "A device name is required%s\n", "");		/* explicit return */
 	}
 	AUTO_RELEASE(sccp_device_t, d , sccp_device_find_byid(dev, FALSE));
 
 	if (!d) {
-		pbx_log(LOG_WARNING, "Failed to get device %s\n", dev);
-		CLI_AMI_RETURN_ERROR(fd, s, m, "Can't find settings for device %s\n", dev);		/* explicit return */
+		CLI_AMI_RETURN_ERROR(fd, s, m, "Device %s does not exist\n", dev);		/* explicit return */
 	}
 	char apref_buf[256];
 	char acap_buf[512];
@@ -1564,15 +1561,13 @@ static int sccp_show_line(int fd, sccp_cli_totals_t *totals, struct mansession *
 	const char * line = NULL;
 
 	if (argc < 4) {
-		pbx_log(LOG_WARNING, "LineName needs to be supplied\n");
-		CLI_AMI_RETURN_ERROR(fd, s, m, "LineName needs to be supplied %s\n", "");		/* explicit return */
+		CLI_AMI_RETURN_ERROR(fd, s, m, "A line name is required%s\n", "");		/* explicit return */
 	}
 	line = pbx_strdupa(argv[3]);
 	AUTO_RELEASE(sccp_line_t, l , sccp_line_find_byname(line, FALSE));
 
 	if (!l) {
-		pbx_log(LOG_WARNING, "Failed to get line %s\n", line);
-		CLI_AMI_RETURN_ERROR(fd, s, m, "Can't find settings for line %s\n", line);		/* explicit return */
+		CLI_AMI_RETURN_ERROR(fd, s, m, "Line %s does not exist\n", line);		/* explicit return */
 	}
 
 	char apref_buf[256];
@@ -2058,13 +2053,11 @@ static int sccp_message_devices(int fd, sccp_cli_totals_t *totals, struct manses
 	int local_line_total = 0;
 
 	if (argc < 4) {
-		pbx_log(LOG_WARNING, "More parameters needed for sccp_message_devices\n");
 		return RESULT_SHOWUSAGE;
 	}
 
 	if (sccp_strlen_zero(argv[3])) {
-		pbx_log(LOG_WARNING, "MessageText cannot be empty\n");
-		CLI_AMI_RETURN_ERROR(fd, s, m, "messagetext cannot be empty, '%s'\n", argv[3]);		/* explicit return */
+		CLI_AMI_RETURN_ERROR(fd, s, m, "The message text is empty%s\n", "");		/* explicit return */
 	}
 
 	if (argc > 4) {
@@ -2128,12 +2121,10 @@ static int sccp_message_device(int fd, sccp_cli_totals_t *totals, struct mansess
 	int res = RESULT_FAILURE;
 
 	if (argc < 5) {
-		pbx_log(LOG_WARNING, "More parameters needed for sccp_message_device\n");
 		return RESULT_SHOWUSAGE;
 	}
 	if (sccp_strlen_zero(argv[4])) {
-		pbx_log(LOG_WARNING, "MessageText cannot be empty\n");
-		CLI_AMI_RETURN_ERROR(fd, s, m, "messagetext cannot be empty, '%s'\n", argv[4]);		/* explicit return */
+		CLI_AMI_RETURN_ERROR(fd, s, m, "The message text is empty%s\n", "");		/* explicit return */
 	}
 	if (argc > 5) {
 		if (!strcmp(argv[5], "beep")) {
@@ -2461,7 +2452,7 @@ static int sccp_remove_line_from_device(int fd, int argc, char *argv[])
 			SCCP_LIST_TRAVERSE_SAFE_BEGIN(&d->buttonconfig, config, list) {
 				if (config->type == LINE && sccp_strequals(config->button.line.name,line->name)) {
 					config->pendingDelete = 1;
-					pbx_cli(fd, "Found at ButtonIndex %d => Line %s, removing...\n", config->index, line->name);
+					pbx_cli(fd, "Removing line %s from button %d\n", line->name, config->index);
 				}
 			}
 			SCCP_LIST_TRAVERSE_SAFE_END;
@@ -2475,7 +2466,7 @@ static int sccp_remove_line_from_device(int fd, int argc, char *argv[])
 			return RESULT_FAILURE;
 		}
 	} else {
-		pbx_log(LOG_ERROR, "Error: Device %s not found\n", argv[3]);
+		pbx_cli(fd, "Device %s does not exist\n", argv[3]);
 	}
 	return res;
 }
@@ -2525,7 +2516,7 @@ static int sccp_add_line_to_device(int fd, int argc, char *argv[])
 	 		d->pendingUpdate = 0;;
 		}
 	} else {
-		pbx_log(LOG_ERROR, "Error: Device %s not found\n", argv[3]);
+		pbx_cli(fd, "Device %s does not exist\n", argv[3]);
 	}
 
 	return res;
@@ -2618,7 +2609,7 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 	}
 
 	if (!GLOB(config_file_name) && !sccp_strequals("file", argv[2])) {
-		pbx_log(LOG_NOTICE, "GLOB(config_file_name) not available. Skip loading default setting.\n");
+		pbx_cli(fd, "Reload not done: no configuration file name is set; use 'sccp reload file <filename>'\n");
 		pbx_rwlock_unlock(&GLOB(lock));
 		goto EXIT;
 	}
@@ -3208,7 +3199,7 @@ static int sccp_set_object(int fd, int argc, char *argv[])
 		do {
 			if (sccp_strcaseequals("hold", argv[4])) {
 				if (argc < 6) {
-					pbx_log(LOG_WARNING, "yes/no needs to be supplied\n");
+					pbx_cli(fd, "Missing on/off value\n");
 					cli_result = RESULT_FAILURE;
 					break;
 				}
@@ -3233,13 +3224,13 @@ static int sccp_set_object(int fd, int argc, char *argv[])
 						dev = pbx_strdupa(argv[6]);
 					}
 					if (pbx_strlen_zero(dev)) {
-						pbx_log(LOG_WARNING, "DeviceName needs to be supplied\n");
+						pbx_cli(fd, "A device name is required\n");
 						cli_result = RESULT_FAILURE;
 						break;
 					}
 					AUTO_RELEASE(sccp_device_t, d , sccp_device_find_byid(dev, FALSE));
 					if (!d) {
-						pbx_log(LOG_WARNING, "Device not found\n");
+						pbx_cli(fd, "Device %s does not exist\n", dev);
 						cli_result = RESULT_FAILURE;
 						break;
 					}
@@ -3271,12 +3262,12 @@ static int sccp_set_object(int fd, int argc, char *argv[])
 		char *dev = pbx_strdupa(argv[3]);
 
 		if (pbx_strlen_zero(dev)) {
-			pbx_log(LOG_WARNING, "DeviceName needs to be supplied\n");
+			pbx_cli(fd, "A device name is required\n");
 		}
 		AUTO_RELEASE(sccp_device_t, device , sccp_device_find_byid(dev, FALSE));
 
 		if (!device) {
-			pbx_log(LOG_WARNING, "Failed to get device %s\n", dev);
+			pbx_cli(fd, "Device %s does not exist\n", dev);
 			return RESULT_FAILURE;
 		}
 
@@ -3326,14 +3317,14 @@ static int sccp_set_object(int fd, int argc, char *argv[])
 				}
 				GLOB(token_fallback) = pbx_strdup(fallback_option);
 			} else {
-				pbx_log(LOG_WARNING, "Script %s, either not found or not executable by this user\n", fallback_option);
+				pbx_cli(fd, "Fallback script %s does not exist or is not executable by the Asterisk user\n", fallback_option);
 				return RESULT_FAILURE;
 			}
 		} else if (sccp_strcaseequals(fallback_option, "path")) {
-			pbx_log(LOG_WARNING, "Please specify a path to a script, using a fully qualified path (i.e. /etc/asterisk/tokenscript.sh)\n");
+			pbx_cli(fd, "A fallback script must be given as an absolute path, for example /etc/asterisk/tokenscript.sh\n");
 			return RESULT_FAILURE;
 		} else {
-			pbx_log(LOG_WARNING, "fallback option '%s' is unknown\n", fallback_option);
+			pbx_cli(fd, "Unknown fallback value '%s' (expected true, false, odd, even or a script path)\n", fallback_option);
 			return RESULT_FAILURE;
 		}
 		pbx_cli(fd, "New global fallback value: %s\n", GLOB(token_fallback));
@@ -3413,15 +3404,13 @@ static int sccp_answercall(int fd, sccp_cli_totals_t *totals, struct mansession 
 
 	do {
 		if(!c || !c->line) {
-			pbx_log(LOG_WARNING, "SCCP: (sccp_answercall) Channel %s is not active\n", argv[2]);
-			snprintf(error, sizeof(error), "SCCP: (sccp_answercall) Channel %s is not active\n", argv[2]);
+			snprintf(error, sizeof(error), "Call %s does not exist\n", argv[2]);
 			res = RESULT_FAILURE;
 			break;
 		}
 		AUTO_RELEASE(sccp_line_t, l, sccp_line_retain(c->line));
 		if(c->line->isShared && (argc < 4 || pbx_strlen_zero(argv[3]))) {
-			pbx_log(LOG_WARNING, "SCCP: (sccp_answercall) Channel %s is shared, to answer a device has to be specified.\n", argv[2]);
-			snprintf(error, sizeof(error), "SCCP: (sccp_answercall) Channel %s is shared, to answer a device has to be specified.\n", argv[2]);
+			snprintf(error, sizeof(error), "Call %s is on a shared line; name the device that should answer it\n", argv[2]);
 			res = RESULT_FAILURE;
 			break;
 		}
@@ -3440,14 +3429,12 @@ static int sccp_answercall(int fd, sccp_cli_totals_t *totals, struct mansession 
 				sccp_channel_answer(d, c);
 				res = RESULT_SUCCESS;
 			} else {
-				pbx_log(LOG_WARNING, "SCCP: (sccp_answercall) Device %s not found\n", argc == 4 ? argv[3] : "");
-				snprintf(error, sizeof(error), "SCCP: (sccp_answercall) Device %s not found\n", argc == 4 ? argv[3] : "");
+				snprintf(error, sizeof(error), "Device %s does not exist\n", argc == 4 ? argv[3] : "");
 				res = RESULT_FAILURE;
 			}
 			break;
 		}
-		pbx_log(LOG_WARNING, "SCCP: (sccp_answercall) Channel %s needs to be ringing and incoming, to be answered\n", c->designator);
-		snprintf(error, sizeof(error), "SCCP: (sccp_answercall) Channel %s needs to be ringing and incoming, to be answered\n", c->designator);
+		snprintf(error, sizeof(error), "Call %s is not an incoming call that is ringing, so it cannot be answered\n", c->designator);
 		res = RESULT_FAILURE;
 		break;
 	} while(0);
@@ -3552,13 +3539,11 @@ static int sccp_tokenack(int fd, sccp_cli_totals_t *totals, struct mansession *s
 	
 	AUTO_RELEASE(sccp_device_t, d , sccp_device_find_byid(dev, FALSE));
 	if (!d) {
-		pbx_log(LOG_WARNING, "Failed to get device %s\n", dev);
-		CLI_AMI_RETURN_ERROR(fd, s, m, "Can't find settings for device %s\n", dev);		/* explicit return */
+		CLI_AMI_RETURN_ERROR(fd, s, m, "Device %s does not exist\n", dev);		/* explicit return */
 	}
 
 	if (d->status.token != SCCP_TOKEN_STATE_REJ && d->session) {
-		pbx_log(LOG_WARNING, "%s: We need to have received a token request before we can acknowledge it\n", dev);
-		CLI_AMI_RETURN_ERROR(fd, s, m, "%s: We need to have received a token request before we can acknowledge it\n", dev);		/* explicit return */
+		CLI_AMI_RETURN_ERROR(fd, s, m, "%s has not requested a token, so there is nothing to acknowledge\n", dev);		/* explicit return */
 	} 
 	if (d->session) {
 		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Sending phone a token acknowledgement\n", dev);
@@ -3617,12 +3602,10 @@ static int sccp_microphone(int fd, sccp_cli_totals_t * totals, struct mansession
 			pbx_cli(fd, "%s: Switched microphone %s\n", d->id, sccp_true(argv[3]) ? "on" : "off");
 			res = RESULT_SUCCESS;
 		} else {
-			pbx_log(LOG_WARNING, "%s: (sccp_microphone) No active channel found\n", argv[2]);
-			snprintf(error, sizeof(error), "%s: (sccp_microphone) No active channel found\n", argv[2]);
+			snprintf(error, sizeof(error), "Device %s has no active call\n", argv[2]);
 		}
 	} else {
-		pbx_log(LOG_WARNING, "SCCP: (sccp_answercall) Device %s Not found\n", argv[2]);
-		snprintf(error, sizeof(error), "SCCP: (sccp_answercall) Device %s not found\n", argv[2]);
+		snprintf(error, sizeof(error), "Device %s does not exist\n", argv[2]);
 	}
 
 	if(res == RESULT_FAILURE && !sccp_strlen_zero(error)) {

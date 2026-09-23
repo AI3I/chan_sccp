@@ -527,7 +527,10 @@ passed for the source commit. No live handset test was run.
   setters, redirecting/connected-line handling, configuration, networking,
   and RTP quality reads. Feature probes that can still differ across Asterisk
   20–24 remain. The selected supported-version code paths are unchanged.
-- This removes about 200 lines of retired compatibility code. Build and static
-  validation are pending; no module installation or live handset test was run.
+- Source commit `8f46a28c` removes about 200 lines of retired compatibility
+  code. `git diff --check`, the hosted
+  [Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35897444609),
+  and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35897444602)
+  passed. No module installation or live handset test was run.
 - Dead `UNUSEDCODE` blocks and other PBX adapter files still contain retired
   branches and can be cleaned in later focused batches.

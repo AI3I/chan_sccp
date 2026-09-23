@@ -69,7 +69,10 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - Keep this document current with results, limitations, commits and deployment.
 - GitHub Actions was disabled when the first push landed, so no run was
   created. Actions was enabled on 2026-09-23 and a follow-up push triggered
-  the build matrix and CodeQL. Hosted results are pending.
+  the build matrix and CodeQL. The first hosted run found a missing `gettext` package for
+  the bootstrap lane (`AM_ICONV`); the workflow dependency is corrected. CodeQL init also rejected manual
+  mode for Python; it now uses a separate no-build Python job and a manual C
+  job. The subsequent hosted results are pending.
 - Next: run the GitHub matrix, validate live SCCP behavior on a genuine test
   PBX, and retire older adapters in a separate reviewable change.
 

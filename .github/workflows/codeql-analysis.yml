@@ -12,19 +12,30 @@ permissions:
 jobs:
   analyze:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: c-cpp
+            build_mode: manual
+          - language: python
+            build_mode: none
     steps:
       - uses: actions/checkout@v4
       - name: Dependencies
+        if: matrix.language == 'c-cpp'
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential autoconf automake libtool gawk pkg-config libedit-dev libjansson-dev libsqlite3-dev uuid-dev libssl-dev libxml2-dev libxslt1-dev xsltproc libncurses-dev
       - name: Prepare Asterisk headers
+        if: matrix.language == 'c-cpp'
         run: sh tools/ci-asterisk-headers.sh 22 "$RUNNER_TEMP/asterisk"
       - uses: github/codeql-action/init@v4
         with:
-          languages: c-cpp, python
-          build-mode: manual
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build_mode }}
       - name: Build
+        if: matrix.language == 'c-cpp'
         run: |
           ./configure --with-asterisk="$RUNNER_TEMP/asterisk/prefix" --with-asterisk-version=22.0 --enable-conference --enable-video --enable-experimental-xml
           make -j2

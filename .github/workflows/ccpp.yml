@@ -19,7 +19,7 @@ jobs:
       - name: Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential autoconf automake libtool gawk pkg-config libedit-dev libjansson-dev libsqlite3-dev uuid-dev libssl-dev libxml2-dev libxslt1-dev xsltproc libncurses-dev
+          sudo apt-get install -y build-essential autoconf automake libtool gettext gawk pkg-config libedit-dev libjansson-dev libsqlite3-dev uuid-dev libssl-dev libxml2-dev libxslt1-dev xsltproc libncurses-dev
       - name: Prepare Asterisk headers
         run: sh tools/ci-asterisk-headers.sh '${{ matrix.asterisk }}' "$RUNNER_TEMP/asterisk"
       - name: Build from checked-in generated files

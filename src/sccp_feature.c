@@ -44,9 +44,7 @@ SCCP_FILE_VERSION(__FILE__, "");
 #if CS_SCCP_PICKUP
 #  if defined(CS_AST_DO_PICKUP) && defined(HAVE_PBX_FEATURES_H)
 #    include <asterisk/features.h>
-#    if ASTERISK_VERSION_GROUP >= 112
 #      include <asterisk/pickup.h>
-#    endif
 #  endif
 #endif
 
@@ -357,9 +355,7 @@ int sccp_feat_directed_pickup(constDevicePtr d, channelPtr c, uint32_t lineInsta
 			pbx_log(LOG_NOTICE, "%s: (directed_pickup) target channel found: %s (callgroup:'%lld', namedcallgroups:'%s').\n", d->id, ast_channel_name(target), ast_channel_callgroup(target), pbx_str_buffer(buf));
 			// BTW: Remote end should change it's calltype for callinfo to FORWARD, upon pickup. Not sure how to inform them
 			// iCallInfo.Send(ci, c->callid, SKINNY_CALLTYPE_FORWARD, lineInstance, d, TRUE);
-#if ASTERISK_VERSION_GROUP > 106
 			iPbx.queue_control(target, AST_CONTROL_REDIRECTING);
-#endif			
 			sccp_device_setLamp(d, SKINNY_STIMULUS_CALLPICKUP, lineInstance, SKINNY_LAMP_FLASH);
 			res = sccp_feat_perform_pickup(d, c, target, c->line->pickup_modeanswer);			/* unlocks target */
 			target = pbx_channel_unref(target);
@@ -923,13 +919,7 @@ static void *sccp_feat_meetme_thread(void *data)
 
 	char meetmeopts[SCCP_MAX_CONTEXT];
 
-#if ASTERISK_VERSION_NUMBER >= 10600
 #define SCCP_CONF_SPACER ','
-#endif
-
-#if ASTERISK_VERSION_NUMBER >= 10400 && ASTERISK_VERSION_NUMBER < 10600
-#define SCCP_CONF_SPACER '|'
-#endif
 
 	unsigned int eid = sccp_random();
 	AUTO_RELEASE(sccp_channel_t, c, (sccp_channel_t *)data);

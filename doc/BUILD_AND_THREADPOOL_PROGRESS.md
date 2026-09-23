@@ -573,3 +573,15 @@ passed for the source commit. No live handset test was run.
   [Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35899186502),
   and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35899186290).
   No live call was run.
+
+### Remaining source-level Asterisk version guards
+
+- Collapsed 25 conditions in MWI, management, feature, device-state,
+  application, configuration, global, parking, and utility code to their
+  Asterisk 20–24 paths. Removed the pre-12 custom BFD backtrace symbolizer
+  and its unused headers/macros. Source `.c` and `.h` files now contain no
+  `ASTERISK_VERSION_GROUP` or `ASTERISK_VERSION_NUMBER` guards; feature probes
+  and the supported 20–24 adapter selection remain.
+- About 270 lines were removed. Build and static validation are pending. No
+  module installation or live handset test was run. Generated/autoconf files
+  still contain version handling for a later focused review.

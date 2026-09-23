@@ -1037,12 +1037,6 @@ sccp_value_changed_t sccp_config_parse_ipaddress(void * const dest, const size_t
 	sccp_value_changed_t changed = SCCP_CONFIG_CHANGE_NOCHANGE;
 	char *               value   = pbx_strdupa(v->value);
 
-#if ASTERISK_VERSION_GROUP == 106
-	if (sccp_strequals(value, "::")) {
-		pbx_log(LOG_ERROR, "Asterisk 1.6, does not support ipv6, '::' has been replaced with '0.0.0.0'\n");
-		value = pbx_strdupa("::");
-	}
-#endif
 	if (sccp_strlen_zero(value)) {
 		value = pbx_strdupa("0.0.0.0");
 	}

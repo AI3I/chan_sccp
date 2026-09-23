@@ -31,13 +31,7 @@ SCCP_FILE_VERSION(__FILE__, "");
 #endif
 #if defined(DEBUG) && defined(HAVE_EXECINFO_H)
 #  include <execinfo.h>
-#  if defined(HAVE_DLADDR_H) && defined(HAVE_BFD_H)
-#    include <dlfcn.h>
-#    include <bfd.h>
-#  endif
-#  if ASTERISK_VERSION_GROUP >= 112 
 #    include <asterisk/backtrace.h>
-#  endif
 #endif
 #include <asterisk/ast_version.h>		// ast_get_version
 #ifdef HAVE_PBX_ACL_H				// ast_ha, AST_SENSE_ALLOW
@@ -1684,168 +1678,6 @@ static void __attribute__((destructor)) sccp_unregister_tests(void)
 
 #ifdef DEBUG
 #	if defined(HAVE_BFD_H) && defined(HAVE_DETAILED_BACKTRACE)
-#		if HAVE_DECL_BFD_GET_SECTION_FLAGS
-#			define ucs_debug_bfd_section_flags(_abfd, _section) bfd_get_section_flags(_abfd, _section)
-#		elif HAVE_DECL_BFD_SECTION_FLAGS
-#			define ucs_debug_bfd_section_flags(_abfd, _section) bfd_section_flags(_section)
-#		endif
-#		if ASTERISK_VERSION_GROUP < 112
-#			if HAVE_EXECINFO_H
-static char **__sccp_bt_get_symbols(void **addresses, size_t num_frames)
-{
-	char ** strings = NULL;
-#			if defined(HAVE_DLADDR_H) && defined(HAVE_BFD_H)
-	size_t stackfr;
-	bfd * bfdobj = NULL;    /* bfd.h */
-	Dl_info dli;		/* dlfcn.h */
-	long allocsize;
-	asymbol **syms = NULL;	/* bfd.h */
-	bfd_vma offset;		/* bfd.h */
-	const char * lastslash = NULL;
-	asection * section = NULL;
-	const char *file, *func;
-	unsigned int line;
-	char address_str[128];
-	char msg[1024];
-	size_t strings_size;
-	size_t * eachlen = NULL;
-
-	strings_size = num_frames * sizeof(*strings);
-
-	eachlen = (size_t *) sccp_calloc(sizeof *eachlen, num_frames);
-	strings = (char **) sccp_calloc(sizeof *strings, num_frames);
-	if (!eachlen || !strings) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
-		sccp_free(eachlen);
-		sccp_free(strings);
-		return NULL;
-	}
-
-	for (stackfr = 0; stackfr < num_frames; stackfr++) {
-		int found = 0, symbolcount;
-
-		msg[0] = '\0';
-
-		if (!dladdr(addresses[stackfr], &dli)) {
-			continue;
-		}
-
-		if (strcmp(dli.dli_fname, "asterisk") == 0) {
-			char asteriskpath[256];
-
-			if (!(dli.dli_fname = ast_utils_which("asterisk", asteriskpath, sizeof(asteriskpath)))) {
-				/* This will fail to find symbols */
-				dli.dli_fname = "asterisk";
-			}
-		}
-
-		lastslash = strrchr(dli.dli_fname, '/');
-		if ((bfdobj = bfd_openr(dli.dli_fname, NULL)) &&
-			bfd_check_format(bfdobj, bfd_object) &&
-			(allocsize = bfd_get_symtab_upper_bound(bfdobj)) > 0 &&
-			(syms = (asymbol **)sccp_malloc(allocsize)) &&
-			(symbolcount = bfd_canonicalize_symtab(bfdobj, syms))) {
-
-			if (bfdobj->flags & DYNAMIC) {
-				offset = addresses[stackfr] - dli.dli_fbase;
-			} else {
-				offset = addresses[stackfr] - (void *) 0;
-			}
-
-			for (section = bfdobj->sections; section; section = section->next) {
-				if (!(ucs_debug_bfd_section_flags(bfdobj, section) & SEC_ALLOC) || section->vma > offset || section->size + section->vma < offset) {
-					continue;
-				}
-
-				if (!bfd_find_nearest_line(bfdobj, section, syms, offset - section->vma, &file, &func, &line)) {
-					continue;
-				}
-
-				/* file can possibly be null even with a success result from bfd_find_nearest_line */
-				file = file ? file : "";
-
-				/* Stack trace output */
-				found++;
-				if ((lastslash = strrchr(file, '/'))) {
-					const char * prevslash = NULL;
-
-					for (prevslash = lastslash - 1; *prevslash != '/' && prevslash >= file; prevslash--) {
-					}
-					if (prevslash >= file) {
-						lastslash = prevslash;
-					}
-				}
-				if (dli.dli_saddr == NULL) {
-					address_str[0] = '\0';
-				} else {
-					snprintf(address_str, sizeof(address_str), " (%p+%lX)",
-						dli.dli_saddr,
-						(unsigned long) (addresses[stackfr] - dli.dli_saddr));
-				}
-				snprintf(msg, sizeof(msg), "%s:%u %s()%s",
-					lastslash ? lastslash + 1 : file, line,
-					S_OR(func, "???"),
-					address_str);
-
-				break; /* out of section iteration */
-			}
-		}
-		if (bfdobj) {
-			bfd_close(bfdobj);
-		}
-		if (syms) {
-			sccp_free(syms);
-		}
-
-		/* Default output, if we cannot find the information within BFD */
-		if (!found) {
-			if (dli.dli_saddr == NULL) {
-				address_str[0] = '\0';
-			} else {
-				snprintf(address_str, sizeof(address_str), " (%p+%lX)",
-					dli.dli_saddr,
-					(unsigned long) (addresses[stackfr] - dli.dli_saddr));
-			}
-			snprintf(msg, sizeof(msg), "%s %s()%s",
-				lastslash ? lastslash + 1 : dli.dli_fname,
-				S_OR(dli.dli_sname, "<unknown>"),
-				address_str);
-		}
-
-		if (!ast_strlen_zero(msg)) {
-			char ** tmp = NULL;
-
-			eachlen[stackfr] = strlen(msg) + 1;
-			if (!(tmp = (char **)sccp_realloc(strings, strings_size + eachlen[stackfr]))) {
-				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
-				sccp_free(strings);
-				strings = NULL;
-				break; /* out of stack frame iteration */
-			}
-			strings = tmp;
-			strings[stackfr] = (char *) strings + strings_size;
-			//__strcpy(strings[stackfr], msg);/* Safe since we just allocated the room. */
-			sccp_copy_string(strings[stackfr], msg, strings_size + eachlen[stackfr]);
-			strings_size += eachlen[stackfr];
-		}
-	}
-
-	if (strings) {
-		/* Recalculate the offset pointers because of the reallocs. */
-		strings[0] = (char *) strings + num_frames * sizeof(*strings);
-		for (stackfr = 1; stackfr < num_frames; stackfr++) {
-			strings[stackfr] = strings[stackfr - 1] + eachlen[stackfr - 1];
-		}
-	}
-	sccp_free(eachlen);
-#else
-	strings = backtrace_symbols(addresses, num_frames);
-#endif  // defined(HAVE_DLADDR_H) && defined(HAVE_BFD_H)
-	return strings;
-}
-#endif  // HAVE_EXECINFO_H
-#endif	// ASTERISK_VERSION_GROUP
-
 void sccp_do_backtrace()
 {
 	pbx_rwlock_rdlock(&GLOB(lock));
@@ -1873,11 +1705,7 @@ void sccp_do_backtrace()
 #endif		
 	pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "--------------------------------------------------------------------------(bt)--\n");
 	size = backtrace(addresses, SCCP_BACKTRACE_SIZE);
-#if ASTERISK_VERSION_GROUP >= 112 
 	strings = ast_bt_get_symbols(addresses, size);
-#else
-	strings = __sccp_bt_get_symbols(addresses, size);
-#endif
 
 	if (strings) {
 		for (i = 1; i < size; i++) {

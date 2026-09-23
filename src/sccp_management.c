@@ -222,11 +222,7 @@ int sccp_register_management(void)
 	int result = 0;
 
 	/* Register manager commands */
-#if ASTERISK_VERSION_NUMBER < 10600
-#define _MAN_FLAGS	EVENT_FLAG_SYSTEM | EVENT_FLAG_CONFIG
-#else
 #define _MAN_FLAGS	(EVENT_FLAG_SYSTEM | EVENT_FLAG_CONFIG | EVENT_FLAG_REPORTING)
-#endif
 
 	result = pbx_manager_register("SCCPListDevices", _MAN_FLAGS, sccp_manager_show_devices, "List SCCP devices", management_show_devices_desc);
 	result |= pbx_manager_register("SCCPListLines", _MAN_FLAGS, sccp_manager_show_lines, "List SCCP lines", management_show_lines_desc);
@@ -804,8 +800,6 @@ static int sccp_manager_startCall(struct mansession *s, const struct message *m)
 		return 0;
 	}
 
-
-#if ASTERISK_VERSION_GROUP >= 112
 	struct ast_assigned_ids ids = {
 		.uniqueid = astman_get_header(m, "ChannelId"),
 		//.uniqueid2 = astman_get_header(m, "OtherChannelId")
@@ -817,9 +811,6 @@ static int sccp_manager_startCall(struct mansession *s, const struct message *m)
 		return 0;
 	}
 	AUTO_RELEASE(sccp_channel_t, new_channel, sccp_channel_newcall(line, d, sccp_strlen_zero(number) ? NULL : (char *)number, SKINNY_CALLTYPE_OUTBOUND, NULL, (ids.uniqueid) ? &ids : NULL));
-#	else
-	AUTO_RELEASE(sccp_channel_t, new_channel, sccp_channel_newcall(line, d, sccp_strlen_zero(number) ? NULL : (char *)number, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));
-#	endif
 	astman_send_ack(s, m, "Call Started");
 	return 0;
 }
@@ -1032,17 +1023,9 @@ static int sccp_asterisk_managerHookHelper(int category, const char *event, char
 					if ((CS_AST_CHANNEL_PVT_IS_SCCP(pbxBridge))) {
 						channel = get_sccp_channel_from_pbx_channel(pbxBridge) /*ref_replace*/;
 					}
-#if ASTERISK_VERSION_GROUP == 106
-					pbx_channel_unlock(pbxBridge);
-#else
 					pbxBridge = ast_channel_unref(pbxBridge);
-#endif
 				}
-#if ASTERISK_VERSION_GROUP == 106
-				pbx_channel_unlock(pbxchannel);
-#else
 				pbxchannel = ast_channel_unref(pbxchannel);
-#endif
 			}
 
 			if (channel) {
@@ -1116,7 +1099,6 @@ static int sccp_asterisk_managerHookHelper(int category, const char *event, char
 AST_THREADSTORAGE(hookresult_threadbuf);
 #define HOOKRESULT_INITSIZE DEFAULT_PBX_STR_BUFFERSIZE*2
 
-#if ASTERISK_VERSION_GROUP >= 108
 /*
  * \brief helper function to concatenate the result from a ami hook send action using a threadlocal buffer
  */
@@ -1127,7 +1109,6 @@ static int __sccp_manager_hookresult(int category, const char *event, char *cont
 	}
 	return 0;
 }
-#endif
 /*!
  * \brief Call an AMI/Manager Function and Wait for the Result
  * 
@@ -1139,7 +1120,6 @@ static int __sccp_manager_hookresult(int category, const char *event, char *cont
  */
 boolean_t sccp_manager_action2str(const char *manager_command, char **outStr) 
 {
-#if ASTERISK_VERSION_GROUP >= 108
         int failure = 0;
 	struct ast_str * buf = NULL;
 
@@ -1156,10 +1136,6 @@ boolean_t sccp_manager_action2str(const char *manager_command, char **outStr)
         }
        	ast_str_reset(buf);
         return !failure ? TRUE : FALSE;
-#else
-	sccp_log(DEBUGCAT_CORE)("SCCP: ast_hook_send_action is not available in asterisk-1.6\n");
-	return FALSE;
-#endif
 }
 
 /*

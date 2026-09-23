@@ -1082,11 +1082,7 @@ static struct pbx_custom_function sccpchannel_function = {
  * \called_from_asterisk
  * \deprecated
  */
-#if ASTERISK_VERSION_NUMBER >= 10800
 static int sccp_app_prefcodec(PBX_CHANNEL_TYPE * chan, const char * data)
-#else
-static int sccp_app_prefcodec(PBX_CHANNEL_TYPE * chan, void * data)
-#endif
 {
 	AUTO_RELEASE(sccp_channel_t, c, get_sccp_channel_from_pbx_channel(chan));
 	int res = 0;
@@ -1111,11 +1107,7 @@ static char * prefcodec_name = "SCCPSetCodec";
  * \called_from_asterisk
  * \deprecated
  */
-#if ASTERISK_VERSION_NUMBER >= 10800
 static int sccp_app_calledparty(PBX_CHANNEL_TYPE * chan, const char * data)
-#else
-static int sccp_app_calledparty(PBX_CHANNEL_TYPE * chan, void * data)
-#endif
 {
 	char * text = (char *)data;
 	char * num  = NULL;
@@ -1154,11 +1146,7 @@ static char * calledparty_name = "SCCPSetCalledParty";
  *
  * \called_from_asterisk
  */
-#if ASTERISK_VERSION_NUMBER >= 10800
 static int sccp_app_setmessage(PBX_CHANNEL_TYPE * chan, const char * data)
-#else
-static int sccp_app_setmessage(PBX_CHANNEL_TYPE * chan, void * data)
-#endif
 {
 	AUTO_RELEASE(sccp_channel_t, c, get_sccp_channel_from_pbx_channel(chan));
 	if (!c) {

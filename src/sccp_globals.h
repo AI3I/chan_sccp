@@ -136,9 +136,7 @@ struct sccp_global_vars {
 	sccp_nat_t nat;												/*!< Network Address Translation */
 	sccp_call_answer_order_t callanswerorder;								/*!< Call Answer Order */
 
-#if ASTERISK_VERSION_NUMBER >= 10400
 	struct ast_jb_conf *global_jbconf;									/*!< Global Jitter Buffer Configuration */
-#endif
 	char *servername;											/*!< ServerName */
 	char *context;												/*!< Global / General Context */
 	skinny_capabilities_t global_preferences;

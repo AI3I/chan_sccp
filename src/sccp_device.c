@@ -1346,7 +1346,7 @@ int sccp_dev_send(constDevicePtr d, sccp_msg_t * msg)
 {
 	int result = -1;
 
-	if (d && d->session && msg) {
+	if (d && msg) {
 		sccp_log((DEBUGCAT_MESSAGE))(VERBOSE_PREFIX_3 "%s: >> Send message %s\n", d->id, msginfo2str(letohl(msg->header.lel_messageId)));
 		result = sccp_session_send(d, msg);
 	} else {

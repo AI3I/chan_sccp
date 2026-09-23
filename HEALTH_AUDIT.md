@@ -1,5 +1,22 @@
 # chan_sccp-modern Health Audit
 
+## Fixed — sscanf format and return checks (CodeQL, 2026-09-23)
+
+CodeQL `cpp/incorrectly-checked-scanf` flagged 8 calls that tested
+`sscanf()` as a boolean; it returns -1 (true) on empty input. Two were also
+wrong formats:
+
+- `sccp_config.c`, 2-byte numeric options: `"%ux"` is decimal followed by a
+  literal `x`, so any `0x…` value parsed as **0**. Now `"%x"`.
+- `ast.c`, `MaxCallBR` channel option: `"%ud"` (with a trailing literal `d`)
+  into a signed `int32_t`. Now `"%d"`.
+
+All eight now require a return of exactly 1. Empty config values still
+become `"0"` before parsing, so the numeric path's behavior is unchanged
+except for the hex fix. An empty group entry (`1,,3`) used to re-add the
+previous group; it is now logged as a syntax error and skipped. Validation: CI build (`ccpp.yml` and the CodeQL c-cpp
+build); not rebuilt or deployed to the PBX.
+
 ## RTP transmit payload initialization correction (2026-09-22)
 
 The answer-time format changes described below did **not** fix the live

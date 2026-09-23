@@ -702,7 +702,7 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 			}
 			switch (sccpConfigOption->size) {
 				case 1:
-					if ((!strncmp("0x", tmp_value, 2) && sscanf(tmp_value, "%hx", &uint8num)) || (sscanf(tmp_value, "%hu", &uint8num) == 1)) {
+					if ((!strncmp("0x", tmp_value, 2) && sscanf(tmp_value, "%hx", &uint8num) == 1) || (sscanf(tmp_value, "%hu", &uint8num) == 1)) {
 						if ((*(uint8_t *)dst) != uint8num) {
 							*(uint8_t *)dst = uint8num;
 							changed         = SCCP_CONFIG_CHANGE_CHANGED;
@@ -710,7 +710,7 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 					}
 					break;
 				case 2:
-					if ((!strncmp("0x", tmp_value, 2) && sscanf(tmp_value, "%ux", &uint16num)) || (sscanf(tmp_value, "%u", &uint16num) == 1)) {
+					if ((!strncmp("0x", tmp_value, 2) && sscanf(tmp_value, "%x", &uint16num) == 1) || (sscanf(tmp_value, "%u", &uint16num) == 1)) {
 						if ((*(uint16_t *)dst) != uint16num) {
 							*(uint16_t *)dst = uint16num;
 							changed          = SCCP_CONFIG_CHANGE_CHANGED;
@@ -718,7 +718,7 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 					}
 					break;
 				case 4:
-					if ((!strncmp("0x", tmp_value, 2) && sscanf(tmp_value, "%lx", &uint32num)) || (sscanf(tmp_value, "%lu", &uint32num) == 1)) {
+					if ((!strncmp("0x", tmp_value, 2) && sscanf(tmp_value, "%lx", &uint32num) == 1) || (sscanf(tmp_value, "%lu", &uint32num) == 1)) {
 						if ((*(uint32_t *)dst) != uint32num) {
 							*(uint32_t *)dst = uint32num;
 							changed          = SCCP_CONFIG_CHANGE_CHANGED;
@@ -726,7 +726,7 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 					}
 					break;
 				case 8:
-					if ((!strncmp("0x", tmp_value, 2) && sscanf(tmp_value, "%llx", &uint64num)) || (sscanf(tmp_value, "%llu", &uint64num) == 1)) {
+					if ((!strncmp("0x", tmp_value, 2) && sscanf(tmp_value, "%llx", &uint64num) == 1) || (sscanf(tmp_value, "%llu", &uint64num) == 1)) {
 						if ((*(uint64_t *)dst) != uint64num) {
 							*(uint64_t *)dst = uint64num;
 							changed          = SCCP_CONFIG_CHANGE_CHANGED;
@@ -802,9 +802,9 @@ static sccp_configurationchange_t sccp_config_object_setValue(void * const obj, 
 								enumValue = sccpConfigOption->str2intval("False");
 							}
 						}
-					} else if (!strncmp("0x", value, 2) && sscanf(value, "%x", &enumValue)) {
+					} else if (!strncmp("0x", value, 2) && sscanf(value, "%x", &enumValue) == 1) {
 						sccp_log(DEBUGCAT_HIGH)("SCCP: Parse Other Value: %s -> %d\n", value, enumValue);
-					} else if (sscanf(value, "%d", &enumValue)) {
+					} else if (sscanf(value, "%d", &enumValue) == 1) {
 						sccp_log(DEBUGCAT_HIGH)("SCCP: Parse Other Value: %s -> %d\n", value, enumValue);
 					} else if ((enumValue = sccpConfigOption->str2intval(value)) != -1) {
 						sccp_log(DEBUGCAT_HIGH)("SCCP: Parse Other Value: %s -> %d\n", value, enumValue);
@@ -1317,7 +1317,7 @@ sccp_value_changed_t sccp_config_parse_group(void * const dest, const size_t siz
 		while ((piece = strsep(&c, ","))) {
 			if (sscanf(piece, "%30d-%30d", &start, &finish) == 2) {
 				/* Range */
-			} else if (sscanf(piece, "%30d", &start)) {
+			} else if (sscanf(piece, "%30d", &start) == 1) {
 				/* Just one */
 				finish = start;
 			} else {

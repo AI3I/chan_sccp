@@ -960,7 +960,7 @@ int sccp_astgenwrap_channel_write(PBX_CHANNEL_TYPE * ast, const char *funcname, 
 		if (!strcasecmp(args, "MaxCallBR")) {
 			sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: set max call bitrate to %s\n", (char *) c->designator, value);
 
-			if (sscanf(value, "%ud", &c->maxBitRate)) {
+			if (sscanf(value, "%d", &c->maxBitRate) == 1) {
 				pbx_builtin_setvar_helper(ast, "_MaxCallBR", value);
 			} else {
 				res = -1;

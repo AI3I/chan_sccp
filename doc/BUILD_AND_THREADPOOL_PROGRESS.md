@@ -603,5 +603,7 @@ passed for the source commit. No live handset test was run.
   Lab activity is recorded in `/root/asterisk.txt` on wadsworth.
 - The nine checked-in generated files match fresh output ignoring unrelated
   generator whitespace. `bash -n configure`, `configure --help`, and
-  `git diff --check` passed. The hosted build matrix and CodeQL are pending;
-  no module installation or live handset test was run.
+  `git diff --check` passed. Source commit `15b9fea9` passed the hosted
+  [Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35900814980)
+  and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35900815261).
+  No module installation or live handset test was run.

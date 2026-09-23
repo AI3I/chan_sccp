@@ -54,9 +54,7 @@ struct sccp_channel {
 	skinny_capabilities_t preferences;
 	skinny_capabilities_t remoteCapabilities;
 	
-#if ASTERISK_VERSION_GROUP >= 113
 	struct ast_format_cap *caps;
-#endif
 	struct {
 		uint32_t digittimeout;										/*!< Digit Timeout on Dialing State (Enbloc-Emu) */
 		uint32_t totaldigittime;									/*!< Total Time used to enter Number (Enbloc-Emu) */
@@ -115,9 +113,7 @@ struct sccp_channel {
 	uint16_t autoanswer_cause;										/*!< Auto Answer Cause */
 	pbx_event_subscription_t * parking_sub;
 
-#if ASTERISK_VERSION_GROUP >= 111
 	pbx_callid_t pbx_callid;
-#endif
 };														/*!< SCCP Channel Structure */
 
 /*!

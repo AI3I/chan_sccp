@@ -560,3 +560,13 @@ passed for the source commit. No live handset test was run.
   hosted [Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35898528592),
   and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35898528632)
   passed. No module installation or live handset test was run.
+
+### Channel and PBX interface version guards
+
+- Removed pre-20 branches around channel capabilities and call IDs, call-group
+  restoration, transfer notifications, PBX application callbacks, and AMI
+  registration flags. The Asterisk 20–24 paths remain the same. The named-group
+  feature probe remains because it can differ by build configuration.
+- Removed a commented-out redirected-update call exposed by this cleanup.
+  Other older-version guards remain in management, feature, and utility code.
+  Build and static validation are pending; no live call was run.

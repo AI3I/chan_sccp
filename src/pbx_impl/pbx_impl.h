@@ -161,7 +161,7 @@ typedef struct _PbxInterface {
 
 	void (*const set_callgroup)(sccp_channel_t * channel, ast_group_t value);
 	void (*const set_pickupgroup)(sccp_channel_t * channel, ast_group_t value);
-#if CS_AST_HAS_NAMEDGROUP && ASTERISK_VERSION_GROUP >= 111
+#if CS_AST_HAS_NAMEDGROUP
 	void (*const set_named_callgroups)(sccp_channel_t * channel, struct ast_namedgroups * value);
 	void (*const set_named_pickupgroups)(sccp_channel_t * channel, struct ast_namedgroups * value);
 #else
@@ -169,11 +169,7 @@ typedef struct _PbxInterface {
 	void (*const set_named_pickupgroups)(sccp_channel_t * channel, void * value);
 #endif
 	int (*register_manager)(const char * action, int authority, int (*func)(struct mansession * s, const struct message * m), const char * synopsis, const char * description);
-#if ASTERISK_VERSION_GROUP >= 108
 	int (*const register_application)(const char * app_name, int (*execute_cb)(struct ast_channel *, const char *));
-#else
-	int (*const register_application)(const char * app_name, int (*execute_cb)(struct ast_channel *, void *));
-#endif
 	int (*const unregister_application)(const char * app_name);
 	int (*const register_function)(struct pbx_custom_function * custom_function);
 	int (*const unregister_function)(struct pbx_custom_function * custom_function);

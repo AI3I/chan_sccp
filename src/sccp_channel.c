@@ -2129,18 +2129,11 @@ static int channel_resume_locked(devicePtr d, linePtr l, channelPtr channel, boo
 	sccp_log((DEBUGCAT_CHANNEL + DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Resume the channel %s\n", d->id, channel->designator);
 	sccp_channel_setDevice(channel, d, TRUE);
 
-#if ASTERISK_VERSION_GROUP >= 111
 	// update callgroup / pickupgroup
 	ast_channel_callgroup_set(channel->owner, l->callgroup);
 #if CS_SCCP_PICKUP
 	ast_channel_pickupgroup_set(channel->owner, l->pickupgroup);
 #endif
-#else
-	channel->owner->callgroup = l->callgroup;
-#if CS_SCCP_PICKUP
-	channel->owner->pickupgroup = l->pickupgroup;
-#endif
-#endif														// ASTERISK_VERSION_GROUP >= 111
 
 #ifdef CS_SCCP_CONFERENCE
 	if (channel->conference) {
@@ -2417,11 +2410,9 @@ int __sccp_channel_destroy(const void * data)
 		iCallInfo.Destructor(&channel->privateData->callInfo);
 	}
 
-#if ASTERISK_VERSION_GROUP >= 113
 	if (channel->caps) {
 		ao2_t_cleanup(channel->caps, "sccp_channel_caps cleanup");
 	}
-#endif
 
 	if (channel->owner) {
 		if (iPbx.removeTimingFD) {
@@ -2632,10 +2623,8 @@ void sccp_channel_transfer_cancel(devicePtr d, channelPtr c)
 		sccp_dev_setActiveLine(d, NULL);
 		sccp_indicate(d, transferee, SCCP_CHANNELSTATE_HOLD);
 		sccp_channel_setDevice(transferee, NULL, FALSE);
-#if ASTERISK_VERSION_GROUP >= 108
 		enum ast_control_transfer control_transfer_message = AST_TRANSFER_FAILED;
 		iPbx.queue_control_data(c->owner, AST_CONTROL_TRANSFER, &control_transfer_message, sizeof(control_transfer_message));
-#endif
 		sccp_channel_transfer_release(d, transferee);			/* explicit release */
 	} else {
 		pbx_log(LOG_WARNING, "%s: (sccp_channel_transfer_cancel) Could not retain the transferee channel, giving up.\n", d->id);
@@ -2657,9 +2646,7 @@ void sccp_channel_transfer_complete(channelPtr sccp_destination_local_channel)
 	PBX_CHANNEL_TYPE * pbx_destination_local_channel = NULL;
 	PBX_CHANNEL_TYPE * pbx_destination_remote_channel = NULL;
 	boolean_t result = FALSE;
-#if ASTERISK_VERSION_GROUP >= 108
 	enum ast_control_transfer control_transfer_message = AST_TRANSFER_FAILED;
-#endif
 	uint16_t instance = 0;
 
 	if (!sccp_destination_local_channel) {
@@ -2765,18 +2752,11 @@ void sccp_channel_transfer_complete(channelPtr sccp_destination_local_channel)
 
 		/* update transferee */
 		iPbx.set_connected_line(sccp_source_local_channel, called_number, called_name, connectedLineUpdateReason);
-#if ASTERISK_VERSION_GROUP > 106										/*! \todo change to SCCP_REASON Codes, using mapping table */
 		if (iPbx.sendRedirectedUpdate) {
 			iPbx.sendRedirectedUpdate(sccp_source_local_channel, calling_number, calling_name, called_number, called_name, AST_REDIRECTING_REASON_UNCONDITIONAL);
 		}
-#endif
 		/* update ring-in channel directly */
 		iPbx.set_connected_line(sccp_destination_local_channel, orig_number, orig_name, connectedLineUpdateReason);
-#if ASTERISK_VERSION_GROUP > 106										/*! \todo change to SCCP_REASON Codes, using mapping table */
-//		if (iPbx.sendRedirectedUpdate) {
-//			iPbx.sendRedirectedUpdate(sccp_destination_local_channel, calling_number, calling_name, called_number, called_name, AST_REDIRECTING_REASON_UNCONDITIONAL);
-//		}
-#endif
 	}
 
 	if (sccp_destination_local_channel->state == SCCP_CHANNELSTATE_RINGOUT) {
@@ -2806,9 +2786,7 @@ void sccp_channel_transfer_complete(channelPtr sccp_destination_local_channel)
 		sccp_destination_local_channel->setTone(sccp_destination_local_channel, GLOB(autoanswer_tone), SKINNY_TONEDIRECTION_USER);
 	}
 
-#if ASTERISK_VERSION_GROUP >= 108
 	control_transfer_message = AST_TRANSFER_SUCCESS;
-#endif
 	result = TRUE;
 EXIT:
 	if (pbx_source_remote_channel) {
@@ -2827,9 +2805,7 @@ EXIT:
 		sccp_log((DEBUGCAT_CHANNEL + DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: Peer owner disappeared! Can't free resources\n");
 		return;
 	}
-#if ASTERISK_VERSION_GROUP >= 108
 	iPbx.queue_control_data(sccp_source_local_channel->owner, AST_CONTROL_TRANSFER, &control_transfer_message, sizeof(control_transfer_message));
-#endif
 }
 
 /*!

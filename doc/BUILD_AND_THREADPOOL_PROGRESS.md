@@ -499,3 +499,21 @@ passed for the source commit. No live handset test was run.
 - Other pre-20 version branches remain, notably in `sccp_hint.c` and the PBX
   compatibility headers. They should be removed in focused batches so the
   Asterisk 20–24 build matrix can catch dependency mistakes.
+
+### Hint callback and obsolete distributed-state option
+
+- `sccp_hint.c` now keeps only the Asterisk 20–24 extension-state callback
+  signature and state extraction. Removed its pre-11 variants and the optional
+  distributed-state subscription: the supported-version callback assigned
+  empty caller ID fields, so it could not update hint call information.
+- Removed `--enable-distributed-devicestate`, whose help text targeted Asterisk
+  1.8–12, plus its configure macro, generated configuration entry, and an
+  empty adapter preprocessor block. About 160 further lines were removed.
+- Autotools files were regenerated in a fresh wadsworth scratch directory.
+  The local `configure` diff was reduced to the option removal and compared
+  equal to generated output with whitespace ignored; unrelated generator
+  whitespace was discarded. Scratch was removed. All wadsworth actions are
+  recorded in `/root/asterisk.txt` there.
+- `bash -n configure` and `git diff --check` passed; the option is absent from
+  `./configure --help`. Hosted matrix and CodeQL results are pending. No
+  module installation or live handset test was run.

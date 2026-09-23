@@ -930,7 +930,6 @@ enable_devstate_feature
 enable_dynamic_speeddial
 enable_dynamic_speeddial_cid
 enable_video
-enable_distributed_devicestate
 enable_experimental_mode
 with_hash_size
 with_astmoddir
@@ -1643,8 +1642,6 @@ Optional Features:
   --disable-dynamic-speeddial-cid
                           disable dynamic speeddials with call info
   --enable-video          enable streaming video (experimental)
-  --enable-distributed-devicestate
-                          enable distributed devicestate (ast 1.8 - 12)
   --enable-experimental-mode
                           enable experimental mode (only for developers)
 
@@ -28453,26 +28450,6 @@ printf "%s\n" "#define CS_SCCP_VIDEO 1" >>confdefs.h
 fi
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: --enable-video: ${ac_cv_streaming_video}" >&5
 printf "%s\n" "--enable-video: ${ac_cv_streaming_video}" >&6; }
-
-
-	# Check whether --enable-distributed_devicestate was given.
-if test ${enable_distributed_devicestate+y}
-then :
-  enableval=$enable_distributed_devicestate; ac_cv_use_distributed_devicestate=$enableval
-else case e in #(
-  e) ac_cv_use_distributed_devicestate=no
-	 ;;
-esac
-fi
-
-	if test "_${ac_cv_use_distributed_devicestate}" == "_yes"
-then :
-
-printf "%s\n" "#define CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE 1" >>confdefs.h
-
-fi
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: --enable-distributed-devicestate: ${ac_cv_use_distributed_devicestate}" >&5
-printf "%s\n" "--enable-distributed-devicestate: ${ac_cv_use_distributed_devicestate}" >&6; }
 
 
 	# Check whether --enable-experimental_mode was given.

@@ -3891,9 +3891,6 @@ static enum ast_module_load_result load_module(void)
 			sched = NULL;
 			break;
 		}
-#if defined(CS_DEVSTATE_FEATURE) || defined(CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE)
-		// ast_enable_distributed_devstate();
-#endif
 		if (!sccp_prePBXLoad()) {
 			pbx_log(LOG_ERROR, "SCCP: prePBXLoad Failed\n");
 			break;

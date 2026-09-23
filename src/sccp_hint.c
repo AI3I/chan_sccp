@@ -36,9 +36,6 @@ SCCP_FILE_VERSION(__FILE__, "");
 #include "sccp_utils.h"
 #include "sccp_labels.h"
 
-#if defined(CS_AST_HAS_EVENT) && defined(HAVE_PBX_EVENT_H) 	// ast_event_subscribe
-#  include <asterisk/event.h>
-#endif
 
 /* ========================================================================================================================= Struct Definitions */
 /*!
@@ -46,9 +43,6 @@ SCCP_FILE_VERSION(__FILE__, "");
  */
 typedef struct sccp_hint_SubscribingDevice sccp_hint_SubscribingDevice_t;
 typedef struct sccp_hint_list sccp_hint_list_t;
-#ifdef CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE
-static char default_eid_str[32];
-#endif
 
 struct sccp_hint_SubscribingDevice 
 {
@@ -104,9 +98,6 @@ struct sccp_hint_list {
 	skinny_calltype_t calltype;										/*!< Skinny Call Type */
 
 	int stateid;												/*!< subscription id in asterisk */
-#ifdef CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE
-	PBX_EVENT_SUBSCRIPTION * device_state_sub; /*!< asterisk distributed device state subscription */
-#endif
 
 	SCCP_LIST_HEAD (, sccp_hint_SubscribingDevice_t) subscribers;						/*!< Hint Type Subscribers Linked List Entry */
 	SCCP_LIST_ENTRY (sccp_hint_list_t) list;								/*!< Hint Type Linked List Entry */
@@ -132,62 +123,6 @@ static void sccp_hint_eventListener(const sccp_event_t * event);
 static gcc_inline boolean_t sccp_hint_isCIDavailabe(const sccp_device_t * device, const uint8_t positionOnDevice);
 #endif
 
-#ifdef CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE
-#if ASTERISK_VERSION_GROUP >= 112
-static void sccp_hint_distributed_devstate_cb(void *data, struct stasis_subscription *sub, struct stasis_message *msg)
-#else
-static void sccp_hint_distributed_devstate_cb(const pbx_event_t * event, void *data)
-#endif
-{
-	sccp_hint_list_t *hint = (sccp_hint_list_t *) data;
-	const char * cidName = NULL;
-	const char * cidNumber = NULL;
-	//enum ast_device_state state;		/* maybe we should store the last state */
-	
-#if ASTERISK_VERSION_GROUP >= 112
-	struct ast_device_state_message *dev_state = (struct ast_device_state_message *)stasis_message_data(msg);
-	if (ast_device_state_message_type() != stasis_message_type(msg)) {
-		return;
-	}
-	if (dev_state->eid) {
-		return;
-	}
-	//eid = dev_state->eid;
-	//state = dev_state->state;
-	cidName = "";
-	cidNumber = "";
-	// sccp_log((DEBUGCAT_HINT)) (VERBOSE_PREFIX_3 "Got new hint event %s, cidname: %s, cidnum: %s\n", hint->hint_dialplan, cidName ? cidName : "NULL", cidNumber ? cidNumber : "NULL");
-#	else
-	const struct ast_eid *eid = (const struct ast_eid *)ast_event_get_ie_raw(event, AST_EVENT_IE_EID);
-	//state = pbx_event_get_ie_uint(ast_event, AST_EVENT_IE_STATE);
-#		if ASTERISK_VERSION_GROUP >= 108
-	cidName = pbx_event_get_ie_str(event, AST_EVENT_IE_CEL_CIDNAME);
-	cidNumber = pbx_event_get_ie_str(event, AST_EVENT_IE_CEL_CIDNUM);
-#		else
-	cidName = "";
-	cidNumber = "";
-#		endif
-	char eid_str[32] = "";
-	ast_eid_to_str(eid_str, sizeof(eid_str), (struct ast_eid *) eid);
-	if (!ast_eid_cmp(&ast_eid_default, eid)) {
-		sccp_log((DEBUGCAT_HINT)) (VERBOSE_PREFIX_3 "Skipping distribute devstate update from EID:'%s', MYEID:'%s' (i.e. myself)\n", eid_str, default_eid_str);
-		return;
-	}
-	sccp_log((DEBUGCAT_HINT)) (VERBOSE_PREFIX_3 "Got new hint event %s, cidname: %s, cidnum: %s, originated from EID:'%s'\n", hint->hint_dialplan, cidName ? cidName : "NULL", cidNumber ? cidNumber : "NULL", eid_str);
-#	endif
-
-	if(hint->callInfo && (!sccp_strlen_zero(cidNumber) || !sccp_strlen_zero(cidName))) {
-		if (hint->calltype == SKINNY_CALLTYPE_INBOUND) {
-			iCallInfo.Setter(hint->callInfo, SCCP_CALLINFO_CALLINGPARTY_NAME, cidName, SCCP_CALLINFO_CALLINGPARTY_NUMBER, cidNumber, SCCP_CALLINFO_KEY_SENTINEL);
-		} else {
-			iCallInfo.Setter(hint->callInfo, SCCP_CALLINFO_CALLEDPARTY_NAME, cidName, SCCP_CALLINFO_CALLEDPARTY_NUMBER, cidNumber, SCCP_CALLINFO_KEY_SENTINEL);
-		}
-	}
-
-	return;
-}
-#endif
-
 /* ========================================================================================================================= List Declarations */
 static SCCP_LIST_HEAD (, struct sccp_hint_lineState) lineStates;
 static SCCP_LIST_HEAD (, sccp_hint_list_t) sccp_hint_subscriptions;
@@ -204,9 +139,6 @@ void sccp_hint_module_start(void)
 	sccp_event_subscribe(SCCP_EVENT_DEVICE_REGISTERED | SCCP_EVENT_DEVICE_ATTACHED | SCCP_EVENT_LINESTATUS_CHANGED, sccp_hint_eventListener, TRUE);
 	sccp_event_subscribe(SCCP_EVENT_DEVICE_UNREGISTERED | SCCP_EVENT_DEVICE_DETACHED, sccp_hint_eventListener, FALSE);
 	sccp_event_subscribe(SCCP_EVENT_FEATURE_CHANGED, sccp_hint_handleFeatureChangeEvent, TRUE);
-#ifdef CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE
-	ast_eid_to_str(default_eid_str, sizeof(default_eid_str), &ast_eid_default);
-#endif
 }
 
 /*!
@@ -235,11 +167,6 @@ void sccp_hint_module_stop(void)
 
 		SCCP_LIST_LOCK(&sccp_hint_subscriptions);
 		while ((hint = SCCP_LIST_REMOVE_HEAD(&sccp_hint_subscriptions, list))) {
-#ifdef CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE
-			if (hint->device_state_sub) {
-				pbx_event_unsubscribe(hint->device_state_sub);
-			}
-#endif
 			ast_extension_state_del(hint->stateid, NULL);
 
 			// All subscriptions that have this device should be removed, force cleanup 
@@ -271,7 +198,6 @@ void sccp_hint_module_stop(void)
 /*!
  * \brief asterisk callback for extension state changes (we subscribed with ast_extension_state_add)
  */
-#if ASTERISK_VERSION_GROUP >= 111
 /*!
  * \param context extension context (char *)
  * \param id extension (char *)
@@ -282,23 +208,6 @@ void sccp_hint_module_stop(void)
 static int sccp_hint_devstate_cb(const char *context, const char *id, struct ast_state_cb_info *info, void *data)
 #else
 static int sccp_hint_devstate_cb(char *context, char *id, struct ast_state_cb_info *info, void *data)
-#endif
-#elif ASTERISK_VERSION_GROUP >= 110
-/*!
- * \param context extension context (const char *)
- * \param id extension (const char *)
- * \param state ast_extension_state (enum)
- * \param data private channel data (sccp_hint_list_t *hint) as void pointer
- */
-static int sccp_hint_devstate_cb(const char *context, const char *id, enum ast_extension_states state, void *data)
-#else
-/*!
- * \param context extension context (char *)
- * \param id extension (char *)
- * \param state ast_extension_state (enum)
- * \param data private channel data (sccp_hint_list_t *hint) as void pointer
- */
-static int sccp_hint_devstate_cb(char *context, char *id, enum ast_extension_states state, void *data)
 #endif
 {
 	sccp_hint_list_t * hint = NULL;
@@ -314,11 +223,7 @@ static int sccp_hint_devstate_cb(char *context, char *id, enum ast_extension_sta
 		return -1;
 	}
 
-#if ASTERISK_VERSION_GROUP >= 111
 	extensionState = info->exten_state;
-#else
-	extensionState = state;
-#endif
 	sccp_channelstate_t previousState = hint->currentState;
 
 	if (hint->callInfo) {
@@ -650,36 +555,10 @@ static sccp_hint_list_t *sccp_hint_create(char *hint_exten, char *hint_context)
 	/* subscripbe to the hint */
 	hint->stateid = pbx_extension_state_add(hint->context, hint->exten, sccp_hint_devstate_cb, hint);
 
-#ifdef CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE
-	/* subscripbe to the distributed hint event */
-#if CS_AST_HAS_STASIS
-	struct stasis_topic *devstate_hint_dialplan = ast_device_state_topic(hint->hint_dialplan);
-	if (devstate_hint_dialplan) {
-		hint->device_state_sub = stasis_subscribe(devstate_hint_dialplan, sccp_hint_distributed_devstate_cb, hint);
-//#  if CS_AST_HAS_STASIS_SUBSCRIPTION_SET_FILTER
-//		if (hint->device_state_sub)
-//			stasis_subscription_accept_message_type((hint->device_state_sub)->event_sub, ast_device_state_message_type());
-//			stasis_subscription_set_filter((hint->device_state_sub)->event_sub, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
-//		}
-//#  endif
-	}
-#elif CS_AST_HAS_EVENT
-	hint->device_state_sub = pbx_event_subscribe(AST_EVENT_DEVICE_STATE_CHANGE, sccp_hint_distributed_devstate_cb, "sccp_hint_distributed_devstate_cb", hint, AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, hint->hint_dialplan, AST_EVENT_IE_END);
-#else
-	pbx_log(LOG_ERROR, "SCCP: distributed devstate not supported\n");
-#endif
-#endif
-
 	/* force hint update to get currentState */
-#if ASTERISK_VERSION_GROUP >= 111
 	struct ast_state_cb_info info;
 	info.exten_state = (enum ast_extension_states)pbx_extension_state(NULL, hint->context, hint->exten);
 	sccp_hint_devstate_cb(hint->context, hint->exten, &info, hint);
-#else
-	enum ast_extension_states state = pbx_extension_state(NULL, hint->context, hint->exten);
-
-	sccp_hint_devstate_cb(hint->context, hint->exten, state, hint);
-#endif
 	return hint;
 }
 

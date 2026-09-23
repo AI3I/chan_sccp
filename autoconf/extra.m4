@@ -1095,16 +1095,6 @@ AC_DEFUN([CS_ENABLE_VIDEO], [
 	AC_MSG_RESULT([--enable-video: ${ac_cv_streaming_video}])
 ])
 
-AC_DEFUN([CS_ENABLE_DISTRIBUTED_DEVSTATE], [
-	AC_ARG_ENABLE(distributed_devicestate, 
-		[AC_HELP_STRING([--enable-distributed-devicestate], [enable distributed devicestate (ast 1.8 - 12)])], 
-		[ac_cv_use_distributed_devicestate=$enableval], 
-		[ac_cv_use_distributed_devicestate=no]
-	)
-	AS_IF([test "_${ac_cv_use_distributed_devicestate}" == "_yes"], [AC_DEFINE(CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE, 1, [distributed devicestate])])
-	AC_MSG_RESULT([--enable-distributed-devicestate: ${ac_cv_use_distributed_devicestate}])
-])
-
 AC_DEFUN([CS_WITH_HASH_SIZE], [
 	AC_ARG_WITH(hash_size, 
 		[AC_HELP_STRING([--with-hash-size], [to provide room for higher number of phones (>100), specify a prime number, bigger then number of phones times 4 (default=563)])], 
@@ -1147,7 +1137,6 @@ AC_DEFUN([CS_PARSE_WITH_AND_ENABLE], [
 	CS_DISABLE_DYNAMIC_SPEEDDIAL
 	CS_DISABLE_DYNAMIC_SPEEDDIAL_CID
 	CS_ENABLE_VIDEO
-	CS_ENABLE_DISTRIBUTED_DEVSTATE
 	CS_ENABLE_EXPERIMENTAL_MODE
 	AC_MSG_RESULT([--enable-experimental-xml: ${ac_cv_experimental_xml}])
 	CS_WITH_HASH_SIZE

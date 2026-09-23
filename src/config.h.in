@@ -292,9 +292,6 @@
 /* Transport Layer Security (EXPERIMENTAL) enabled */
 #undef CS_TLS
 
-/* distributed devicestate */
-#undef CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE
-
 /* Define to 1 if internal poll should be used. */
 #undef CS_USE_POLL_COMPAT
 

@@ -52,10 +52,6 @@ static PBX_FRAME_TYPE sccp_null_frame;										/*!< Asterisk Structure */
  */
 int load_config(void)
 {
-	/* Setup the monitor thread default */
-#if ASTERISK_VERSION_GROUP < 110
-	GLOB(monitor_thread) = AST_PTHREADT_NULL;								// ADDED IN SVN 414 -FS
-#endif
 	GLOB(mwiMonitorThread) = AST_PTHREADT_NULL;
 
 	memset(&GLOB(bindaddr), 0, sizeof(GLOB(bindaddr)));
@@ -106,10 +102,6 @@ boolean_t sccp_prePBXLoad(void)
 #ifndef SCCP_ATOMIC	
 	pbx_mutex_init(&GLOB(usecnt_lock));
 #endif
-#if ASTERISK_VERSION_GROUP < 110
-	pbx_mutex_init(&GLOB(monitor_lock));
-#endif
-
 	/* init refcount */
 	sccp_refcount_init();
 

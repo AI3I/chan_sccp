@@ -42,10 +42,6 @@ struct sccp_global_vars {
 	int module_running;
 	pbx_rwlock_t lock;											/*!< Asterisk: Lock Me Up and Tie me Down */
 
-#if ASTERISK_VERSION_GROUP < 110
-	pthread_t monitor_thread;										/*!< Monitor Thread */
-	sccp_mutex_t monitor_lock;										/*!< Monitor Asterisk Lock */
-#endif
 	sccp_threadpool_t *general_threadpool;									/*!< General Work Threadpool */
 
 	SCCP_RWLIST_HEAD (, sccp_session_t) sessions;								/*!< SCCP Sessions */

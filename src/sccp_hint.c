@@ -1319,27 +1319,7 @@ static void sccp_hint_notifySubscribers(sccp_hint_list_t * hint)
 static void sccp_hint_notifySubscribersViaPbx(struct sccp_hint_lineState *lineState, char *lineName, enum ast_device_state newDeviceState)
 {
 	sccp_log((DEBUGCAT_HINT)) (VERBOSE_PREFIX_3 "SCCP: (sccp_hint_notifySubscribersViaPbx) Notify asterisk to set state to sccp channelstate '%s' (%d) => asterisk: '%s' (%d) on channel SCCP/%s\n", sccp_channelstate2str(lineState->state), lineState->state, pbxsccp_devicestate2str(newDeviceState), newDeviceState, lineState->line->name);
-#if defined(CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE) && ASTERISK_VERSION_GROUP < 112		/* no distributed devstate support for ast-12 and up (yet) */
-	pbx_event_t *event = pbx_event_new(AST_EVENT_DEVICE_STATE_CHANGE,
-		AST_EVENT_IE_DEVICE, AST_EVENT_IE_PLTYPE_STR, lineName, 
-		AST_EVENT_IE_STATE, AST_EVENT_IE_PLTYPE_UINT, newDeviceState, 
-#if ASTERISK_VERSION_GROUP >= 108
-		AST_EVENT_IE_CEL_CIDNAME, AST_EVENT_IE_PLTYPE_STR, lineState->callInfo.partyName, 
-		AST_EVENT_IE_CEL_CIDNUM, AST_EVENT_IE_PLTYPE_STR, lineState->callInfo.partyNumber, 
-		AST_EVENT_IE_CEL_USERFIELD, AST_EVENT_IE_PLTYPE_UINT, lineState->callInfo.calltype, 
-		AST_EVENT_IE_CEL_EXTRA, AST_EVENT_IE_PLTYPE_STR, sccp_channelstate2str(lineState->state),
-#endif
-		/* AST_EVENT_IE_PRESENCE_STATE, AST_EVENT_IE_PLTYPE_UINT, ->privacy ?? */
-		AST_EVENT_IE_END);
-	if (!event) {
-		pbx_log(LOG_ERROR, "SCCP: Could not create AST_EVENT_DEVICE_STATE_CHANGE event.\n");
-	} else if (!pbx_event_queue_and_cache(event)) {
-		pbx_event_destroy(event);
-		pbx_log(LOG_ERROR, "SCCP: Could not queue AST_EVENT_DEVICE_STATE_CHANGE event.\n");
-	}
-#else  /* CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE && ASTERISK_VERSION_GROUP < 112 */
 	pbx_devstate_changed_literal(newDeviceState, lineName);					/* callback via pbx callback and update subscribers */
-#endif /* CS_USE_ASTERISK_DISTRIBUTED_DEVSTATE && ASTERISK_VERSION_GROUP < 112 */
 }
 
 /* ========================================================================================================================= PBX Notify */

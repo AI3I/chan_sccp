@@ -686,11 +686,6 @@ int sccp_pbx_remote_answer(constChannelPtr channel)
 			sccp_channel_release(&c->parentChannel);
 			if(destination) {
 				sccp_log((DEBUGCAT_PBX))(VERBOSE_PREFIX_3 "%s: (%s) handling forwarded call. Replace %s with %s.\n", c->designator, __func__, pbx_channel_name(forwarder), pbx_channel_name(destination));
-#if ASTERISK_VERSION_GROUP < 116
-				/* set the channel and the bridge to state UP to fix problem with fast pickup / autoanswer */
-				pbx_setstate(tmp_channel, AST_STATE_UP);
-				pbx_setstate(destination, AST_STATE_UP);
-#endif
 				if(!iPbx.masqueradeHelper(destination, forwarder)) {
 					pbx_log(LOG_ERROR, "%s: (%s) Failed to masquerade bridge into forwarded channel\n", c->designator, __func__);
 					if(destination) {
@@ -699,10 +694,8 @@ int sccp_pbx_remote_answer(constChannelPtr channel)
 					res = -3;
 					break;
 				}
-#if ASTERISK_VERSION_GROUP > 106
 				// Note: destination has taken the place of forwarder
 				pbx_indicate(forwarder, AST_CONTROL_CONNECTED_LINE);
-#endif
 				sccp_log((DEBUGCAT_PBX))(VERBOSE_PREFIX_4 "%s: (%s) Masqueraded into %s\n", c->designator, __func__, pbx_channel_name(forwarder));
 				res = 0;
 			} else {

@@ -39,15 +39,6 @@ AC_DEFUN([AST_GET_VERSION], [
 		20|21|22|23|24) ;;
 		*) AC_MSG_ERROR([Supported Asterisk versions are 20 through 24]);;
 	esac
-	ASTERISK_VER_GROUP="1${ASTERISK_MAJOR}"
-	ASTERISK_VERSION_NUMBER=`printf '1%s%02d' "$ASTERISK_MAJOR" "$ASTERISK_MINOR"`
-	ASTERISK_REPOS_LOCATION=TRUNK
-	AC_DEFINE_UNQUOTED([ASTERISK_VERSION_NUMBER], [${ASTERISK_VERSION_NUMBER}], [Asterisk version number])
-	AC_DEFINE_UNQUOTED([ASTERISK_VERSION_GROUP], [${ASTERISK_VER_GROUP}], [Asterisk version group])
-	AC_DEFINE_UNQUOTED([ASTERISK_REPOS_LOCATION], ["TRUNK"], [Asterisk source location])
-	AC_SUBST([ASTERISK_VERSION_NUMBER])
-	AC_SUBST([ASTERISK_VER_GROUP])
-	AC_SUBST([ASTERISK_REPOS_LOCATION])
 	case "$ASTERISK_MAJOR" in
 		20) AC_DEFINE([ASTERISK_CONF_1_20], [1], [Asterisk 20]);;
 		21) AC_DEFINE([ASTERISK_CONF_1_21], [1], [Asterisk 21]);;
@@ -55,7 +46,7 @@ AC_DEFUN([AST_GET_VERSION], [
 		23) AC_DEFINE([ASTERISK_CONF_1_23], [1], [Asterisk 23]);;
 		24) AC_DEFINE([ASTERISK_CONF_1_24], [1], [Asterisk 24]);;
 	esac
-	AC_MSG_RESULT([Asterisk ${ASTERISK_MAJOR}.${ASTERISK_MINOR} (group ${ASTERISK_VER_GROUP})])
+	AC_MSG_RESULT([Asterisk ${ASTERISK_MAJOR}.${ASTERISK_MINOR}])
 ])
 
 dnl Find Asterisk Header Files
@@ -80,9 +71,7 @@ dnl 	CFLAGS="${CFLAGS_saved} -Werror=implicit-function-declaration"
 #undef VERSION
 #define AST_MODULE_SELF_SYM __internal_chan_sccp_la_self
 #define AST_MODULE "chan_sccp"
-#if ASTERISK_VERSION_NUMBER >= 10400
 #  include <asterisk.h>
-#endif
 #include <asterisk/autoconfig.h>
 #include <asterisk/buildopts.h>
 "
@@ -758,30 +747,18 @@ dnl 	CFLAGS="${CFLAGS_saved} -Werror=implicit-function-declaration"
 				], [CS_AST_HAS_EXTENSION_RINGING],['AST_EXTENSION_RINGING' available]
 			)
 
-			AS_IF([test "${ASTERISK_VER_GROUP}" -gt "112"], [
-				CFLAGS="${CFLAGS_saved} ${TEST_SUPPORTED_CFLAGS} -Werror"
-				CS_CV_TRY_COMPILE_DEFINE([ - ast_state_cb_type uses const char (13)...], [ac_cv_ast_state_cb_type_const_char], [
-					$HEADER_INCLUDE
-					#include <asterisk/pbx.h>
-					static int test_cb(const char *context, const char *exten, struct ast_state_cb_info *info, void *data) {
-						return 0;
-					}
-					], [
-						int __attribute__((unused)) id = ast_extension_state_add("","",test_cb,"");
-					], [CS_AST_HAS_EXTENSION_STATE_CB_TYPE_CONST_CHAR], ['AST_EXTENSION_STATE_CB_TYPE_CONST_CHAR' available]
-				)
-				CS_CV_TRY_COMPILE_DEFINE([ - ast_state_cb_type uses char (11-13)...], [ac_cv_ast_state_cb_type_char], [
-					$HEADER_INCLUDE
-					#include <asterisk/pbx.h>
-					static int test_cb(char *context, char *exten, struct ast_state_cb_info *info, void *data) {
-						return 0;
-					}
-					], [
-						int __attribute__((unused)) id = ast_extension_state_add("","",test_cb,"");
-					], [CS_AST_HAS_EXTENSION_STATE_CB_TYPE_CHAR], ['AST_EXTENSION_STATE_CB_TYPE_CHAR' available]
-				)
-				CFLAGS="${CFLAGS_saved} ${TEST_SUPPORTED_CFLAGS}"
-			])
+			CFLAGS="${CFLAGS_saved} ${TEST_SUPPORTED_CFLAGS} -Werror"
+			CS_CV_TRY_COMPILE_DEFINE([ - ast_state_cb_type uses const char...], [ac_cv_ast_state_cb_type_const_char], [
+				$HEADER_INCLUDE
+				#include <asterisk/pbx.h>
+				static int test_cb(const char *context, const char *exten, struct ast_state_cb_info *info, void *data) {
+					return 0;
+				}
+				], [
+					int __attribute__((unused)) id = ast_extension_state_add("","",test_cb,"");
+				], [CS_AST_HAS_EXTENSION_STATE_CB_TYPE_CONST_CHAR], ['AST_EXTENSION_STATE_CB_TYPE_CONST_CHAR' available]
+			)
+			CFLAGS="${CFLAGS_saved} ${TEST_SUPPORTED_CFLAGS}"
 
 			CS_CV_TRY_COMPILE_DEFINE([ - availability 'ast_context_destroy_by_name'...], [ac_cv_ast_context_destroy_by_name], [
 				$HEADER_INCLUDE
@@ -844,53 +821,11 @@ dnl 	CFLAGS="${CFLAGS_saved} -Werror=implicit-function-declaration"
 						], [CS_AST_RTP_CHANGE_SOURCE],['ast_rtp_change_source' available]
 					)
 				],,[ 
-				#if ASTERISK_VERSION_NUMBER >= 10400
 				#include <asterisk.h>
-				#endif
 			])
 		],[ 
 			#undef new
 			#define new avoid_cxx_new_keyword
-			$HEADER_INCLUDE
-		])
-		AC_CHECK_HEADER([asterisk/sched.h],
-		[
-			AC_DEFINE([HAVE_PBX_SCHED_H],1,[Found 'asterisk/sched.h'])
-			AS_IF([test ${ASTERISK_VER_GROUP} -lt 110], [
-				CS_CV_TRY_COMPILE_DEFINE([ - availability 'ast_sched_del'...], [ac_cv_ast_sched_del], [
-						#include <unistd.h>				
-						$HEADER_INCLUDE
-						#ifdef HAVE_PBX_OPTIONS_H
-						#  include <asterisk/options.h>
-						#endif
-						#ifdef HAVE_PBX_LOGGER_H
-						#  include <asterisk/logger.h>
-						#endif
-						#include <asterisk/sched.h>
-					],[
-						int __attribute__((unused)) test_sched_del = AST_SCHED_DEL(NULL, 0);
-					],[CS_AST_SCHED_DEL],['AST_SCHED_DEL' available]
-				)
-				AC_DEFINE([CS_SCHED_CONTEXT],1,[Found 'asterisk/sched.h'])
-			],[
-				CS_CV_TRY_COMPILE_DEFINE([ - availability 'ast_sched_del'...], [ac_cv_ast_sched_del], [
-						#include <unistd.h>				
-						$HEADER_INCLUDE
-						#ifdef HAVE_PBX_OPTIONS_H
-						#  include <asterisk/options.h>
-						#endif
-						#ifdef HAVE_PBX_LOGGER_H
-						#  include <asterisk/logger.h>
-						#endif
-						#include <asterisk/sched.h>
-					],[
-						struct ast_sched_context *test_con = NULL;
-						int __attribute__((unused)) test_sched_del = AST_SCHED_DEL(test_con, 0);
-					],[CS_AST_SCHED_DEL],['AST_SCHED_DEL' available]
-				)
-				AC_DEFINE([CS_AST_SCHED_CONTEXT],1,[Found 'asterisk/sched.h'])
-			])
-		],,[ 
 			$HEADER_INCLUDE
 		])
 		AC_CHECK_HEADER([asterisk/strings.h],

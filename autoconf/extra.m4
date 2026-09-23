@@ -370,10 +370,8 @@ AC_DEFUN([AST_SET_PBX_AMCONDITIONALS],[
 		PBX_COND_LIBADD=pbx_impl/ast/libast.la
 		PBXVER_COND_SUBDIR=pbx_impl/ast120/
 		PBXVER_COND_LIBADD=pbx_impl/ast120/libast120.la
-		if test ${ASTERISK_VER_GROUP} -ge 120;then
-			PBXVER_COND_ANNOUNCE_SUBDIR=pbx_impl/ast_announce
-			PBXVER_COND_ANNOUNCE_LIBADD=pbx_impl/ast_announce/libast_announce.la
-		fi
+		PBXVER_COND_ANNOUNCE_SUBDIR=pbx_impl/ast_announce
+		PBXVER_COND_ANNOUNCE_LIBADD=pbx_impl/ast_announce/libast_announce.la
 	fi
 	AC_SUBST([PBX_COND_SUBDIR])
 	AC_SUBST([PBX_COND_LIBADD])
@@ -1055,7 +1053,6 @@ AC_DEFUN([CS_DISABLE_DEVSTATE_FEATURE], [
 		[ac_cv_devstate_feature=$enableval], 
 		[ac_cv_devstate_feature=yes]
 	)
-	AS_IF([test ${ASTERISK_VERSION_NUMBER} -lt 10601], [ac_cv_devstate_feature=no])
 	AS_IF([test "_${DEVICESTATE_H}" != "_yes"], [ac_cv_devstate_feature=no])
 	AS_IF([test "_${ac_cv_devstate_feature}" == "_yes"], [AC_DEFINE(CS_DEVSTATE_FEATURE, 1, [devstate feature enabled])])
 	AC_MSG_RESULT([--enable-devstate-feature: ${ac_cv_devstate_feature}])

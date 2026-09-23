@@ -688,9 +688,6 @@ SANITIZE_LDFLAGS
 SANITIZE_CFLAGS
 HAVE_PBX_HTTP
 TEST_FRAMEWORK
-ASTERISK_REPOS_LOCATION
-ASTERISK_VER_GROUP
-ASTERISK_VERSION_NUMBER
 PBX_SBINDIR
 PBX_LDFLAGS
 PBX_CFLAGS
@@ -22705,21 +22702,6 @@ fi
 		20|21|22|23|24) ;;
 		*) as_fn_error $? "Supported Asterisk versions are 20 through 24" "$LINENO" 5;;
 	esac
-	ASTERISK_VER_GROUP="1${ASTERISK_MAJOR}"
-	ASTERISK_VERSION_NUMBER=`printf '1%s%02d' "$ASTERISK_MAJOR" "$ASTERISK_MINOR"`
-	ASTERISK_REPOS_LOCATION=TRUNK
-
-printf "%s\n" "#define ASTERISK_VERSION_NUMBER ${ASTERISK_VERSION_NUMBER}" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_GROUP ${ASTERISK_VER_GROUP}" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_REPOS_LOCATION \"TRUNK\"" >>confdefs.h
-
-
-
-
 	case "$ASTERISK_MAJOR" in
 		20)
 printf "%s\n" "#define ASTERISK_CONF_1_20 1" >>confdefs.h
@@ -22737,8 +22719,8 @@ printf "%s\n" "#define ASTERISK_CONF_1_23 1" >>confdefs.h
 printf "%s\n" "#define ASTERISK_CONF_1_24 1" >>confdefs.h
 ;;
 	esac
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Asterisk ${ASTERISK_MAJOR}.${ASTERISK_MINOR} (group ${ASTERISK_VER_GROUP})" >&5
-printf "%s\n" "Asterisk ${ASTERISK_MAJOR}.${ASTERISK_MINOR} (group ${ASTERISK_VER_GROUP})" >&6; }
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Asterisk ${ASTERISK_MAJOR}.${ASTERISK_MINOR}" >&5
+printf "%s\n" "Asterisk ${ASTERISK_MAJOR}.${ASTERISK_MINOR}" >&6; }
 
 
 
@@ -22859,9 +22841,7 @@ done
 #undef VERSION
 #define AST_MODULE_SELF_SYM __internal_chan_sccp_la_self
 #define AST_MODULE "chan_sccp"
-#if ASTERISK_VERSION_NUMBER >= 10400
 #  include <asterisk.h>
-#endif
 #include <asterisk/autoconfig.h>
 #include <asterisk/buildopts.h>
 "
@@ -23024,11 +23004,9 @@ else case e in #(
 				#undef PACKAGE_TARNAME
 				#undef PACKAGE_VERSION
 				#undef VERSION
-			        #if ASTERISK_VERSION_NUMBER >= 10400
 			        #define AST_MODULE_SELF_SYM __internal_chan_sccp_la_self
 				#define AST_MODULE "chan_sccp"
 			        #include <asterisk.h>
-			        #endif
 				#include <asterisk/autoconfig.h>
 				#include <asterisk/buildopts.h>
 				#include <$ac_cv_check_typedef_header>
@@ -23846,11 +23824,9 @@ else case e in #(
 				#undef PACKAGE_TARNAME
 				#undef PACKAGE_VERSION
 				#undef VERSION
-			        #if ASTERISK_VERSION_NUMBER >= 10400
 			        #define AST_MODULE_SELF_SYM __internal_chan_sccp_la_self
 				#define AST_MODULE "chan_sccp"
 			        #include <asterisk.h>
-			        #endif
 				#include <asterisk/autoconfig.h>
 				#include <asterisk/buildopts.h>
 				#include <$ac_cv_check_typedef_header>
@@ -24217,11 +24193,9 @@ else case e in #(
 				#undef PACKAGE_TARNAME
 				#undef PACKAGE_VERSION
 				#undef VERSION
-			        #if ASTERISK_VERSION_NUMBER >= 10400
 			        #define AST_MODULE_SELF_SYM __internal_chan_sccp_la_self
 				#define AST_MODULE "chan_sccp"
 			        #include <asterisk.h>
-			        #endif
 				#include <asterisk/autoconfig.h>
 				#include <asterisk/buildopts.h>
 				#include <$ac_cv_check_typedef_header>
@@ -26101,9 +26075,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-			if test "${ASTERISK_VER_GROUP}" -gt "112"
-then :
-
 				CFLAGS="${CFLAGS_saved} ${TEST_SUPPORTED_CFLAGS} -Werror"
 
 		ac_ext=c
@@ -26112,8 +26083,8 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking  - ast_state_cb_type uses const char (13)..." >&5
-printf %s "checking  - ast_state_cb_type uses const char (13)...... " >&6; }
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking  - ast_state_cb_type uses const char..." >&5
+printf %s "checking  - ast_state_cb_type uses const char...... " >&6; }
 if test ${ac_cv_ast_state_cb_type_const_char+y}
 then :
   printf %s "(cached) " >&6
@@ -26188,92 +26159,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-
-		ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking  - ast_state_cb_type uses char (11-13)..." >&5
-printf %s "checking  - ast_state_cb_type uses char (11-13)...... " >&6; }
-if test ${ac_cv_ast_state_cb_type_char+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-					$HEADER_INCLUDE
-					#include <asterisk/pbx.h>
-					static int test_cb(char *context, char *exten, struct ast_state_cb_info *info, void *data) {
-						return 0;
-					}
-
-int
-main (void)
-{
-
-						int __attribute__((unused)) id = ast_extension_state_add("","",test_cb,"");
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-                                        ac_cv_ast_state_cb_type_char="yes"
-                                        if test ${ac_cv_ast_state_cb_type_char+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) "yes" ;;
-esac
-fi
-
-
-else case e in #(
-  e)
-                                        ac_cv_ast_state_cb_type_char="no"
-                                        if test ${ac_cv_ast_state_cb_type_char+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) "no" ;;
-esac
-fi
-
-
-                         ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-
-         ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ast_state_cb_type_char" >&5
-printf "%s\n" "$ac_cv_ast_state_cb_type_char" >&6; }
-        eval val=\$ac_cv_ast_state_cb_type_char
-        if test "x$val" = "xyes"; then
-
-printf "%s\n" "#define CS_AST_HAS_EXTENSION_STATE_CB_TYPE_CHAR 1" >>confdefs.h
- :
-             : :
-        fi
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
-
-				CFLAGS="${CFLAGS_saved} ${TEST_SUPPORTED_CFLAGS}"
-
-fi
+			CFLAGS="${CFLAGS_saved} ${TEST_SUPPORTED_CFLAGS}"
 
 
 		ac_ext=c
@@ -26292,8 +26178,8 @@ else case e in #(
                         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-				$HEADER_INCLUDE
-				#include <asterisk/pbx.h>
+					$HEADER_INCLUDE
+					#include <asterisk/pbx.h>
 
 int
 main (void)
@@ -26468,7 +26354,7 @@ printf %s "checking  - availability 'ast_rtp_instance_bridge'...... " >&6; }
 				$HEADER_INCLUDE
 				#define new avoid_cxx_new_keyword
 				#include <asterisk/rtp_engine.h>
-				#undef new
+			#undef new
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
@@ -26494,9 +26380,7 @@ rm -rf conftest*
 else case e in #(
   e)
 			ac_fn_c_check_header_compile "$LINENO" "asterisk/rtp.h" "ac_cv_header_asterisk_rtp_h" "
-				#if ASTERISK_VERSION_NUMBER >= 10400
 				#include <asterisk.h>
-				#endif
 
 "
 if test "x$ac_cv_header_asterisk_rtp_h" = xyes
@@ -26525,7 +26409,7 @@ else case e in #(
                         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-							$HEADER_INCLUDE
+				$HEADER_INCLUDE
 							#include <asterisk/rtp.h>
 
 int
@@ -26676,209 +26560,6 @@ fi
 
 		 ;;
 esac
-fi
-
-		ac_fn_c_check_header_compile "$LINENO" "asterisk/sched.h" "ac_cv_header_asterisk_sched_h" "
-			$HEADER_INCLUDE
-
-"
-if test "x$ac_cv_header_asterisk_sched_h" = xyes
-then :
-
-
-printf "%s\n" "#define HAVE_PBX_SCHED_H 1" >>confdefs.h
-
-			if test ${ASTERISK_VER_GROUP} -lt 110
-then :
-
-
-		ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking  - availability 'ast_sched_del'..." >&5
-printf %s "checking  - availability 'ast_sched_del'...... " >&6; }
-if test ${ac_cv_ast_sched_del+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-						#include <unistd.h>
-						$HEADER_INCLUDE
-						#ifdef HAVE_PBX_OPTIONS_H
-						#  include <asterisk/options.h>
-						#endif
-						#ifdef HAVE_PBX_LOGGER_H
-						#  include <asterisk/logger.h>
-						#endif
-						#include <asterisk/sched.h>
-
-int
-main (void)
-{
-
-						int __attribute__((unused)) test_sched_del = AST_SCHED_DEL(NULL, 0);
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-                                        ac_cv_ast_sched_del="yes"
-                                        if test ${ac_cv_ast_sched_del+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) "yes" ;;
-esac
-fi
-
-
-else case e in #(
-  e)
-                                        ac_cv_ast_sched_del="no"
-                                        if test ${ac_cv_ast_sched_del+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) "no" ;;
-esac
-fi
-
-
-                         ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-
-         ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ast_sched_del" >&5
-printf "%s\n" "$ac_cv_ast_sched_del" >&6; }
-        eval val=\$ac_cv_ast_sched_del
-        if test "x$val" = "xyes"; then
-
-printf "%s\n" "#define CS_AST_SCHED_DEL 1" >>confdefs.h
- :
-             : :
-        fi
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
-
-
-printf "%s\n" "#define CS_SCHED_CONTEXT 1" >>confdefs.h
-
-
-else case e in #(
-  e)
-
-		ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking  - availability 'ast_sched_del'..." >&5
-printf %s "checking  - availability 'ast_sched_del'...... " >&6; }
-if test ${ac_cv_ast_sched_del+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-                        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-						#include <unistd.h>
-						$HEADER_INCLUDE
-						#ifdef HAVE_PBX_OPTIONS_H
-						#  include <asterisk/options.h>
-						#endif
-						#ifdef HAVE_PBX_LOGGER_H
-						#  include <asterisk/logger.h>
-						#endif
-						#include <asterisk/sched.h>
-
-int
-main (void)
-{
-
-						struct ast_sched_context *test_con = NULL;
-						int __attribute__((unused)) test_sched_del = AST_SCHED_DEL(test_con, 0);
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-                                        ac_cv_ast_sched_del="yes"
-                                        if test ${ac_cv_ast_sched_del+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) "yes" ;;
-esac
-fi
-
-
-else case e in #(
-  e)
-                                        ac_cv_ast_sched_del="no"
-                                        if test ${ac_cv_ast_sched_del+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) "no" ;;
-esac
-fi
-
-
-                         ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-
-         ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_ast_sched_del" >&5
-printf "%s\n" "$ac_cv_ast_sched_del" >&6; }
-        eval val=\$ac_cv_ast_sched_del
-        if test "x$val" = "xyes"; then
-
-printf "%s\n" "#define CS_AST_SCHED_DEL 1" >>confdefs.h
- :
-             : :
-        fi
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
-
-
-printf "%s\n" "#define CS_AST_SCHED_CONTEXT 1" >>confdefs.h
-
-			 ;;
-esac
-fi
-
 fi
 
 		ac_fn_c_check_header_compile "$LINENO" "asterisk/strings.h" "ac_cv_header_asterisk_strings_h" "
@@ -28367,10 +28048,6 @@ else case e in #(
 esac
 fi
 
-	if test ${ASTERISK_VERSION_NUMBER} -lt 10601
-then :
-  ac_cv_devstate_feature=no
-fi
 	if test "_${DEVICESTATE_H}" != "_yes"
 then :
   ac_cv_devstate_feature=no
@@ -28607,10 +28284,8 @@ fi
 		PBX_COND_LIBADD=pbx_impl/ast/libast.la
 		PBXVER_COND_SUBDIR=pbx_impl/ast120/
 		PBXVER_COND_LIBADD=pbx_impl/ast120/libast120.la
-		if test ${ASTERISK_VER_GROUP} -ge 120;then
 			PBXVER_COND_ANNOUNCE_SUBDIR=pbx_impl/ast_announce
 			PBXVER_COND_ANNOUNCE_LIBADD=pbx_impl/ast_announce/libast_announce.la
-		fi
 	fi
 
 
@@ -30962,8 +30637,7 @@ echo
 echo "Operating System : ${BUILD_OS}"
 echo "          Kernel : ${BUILD_KERNEL}"
 echo "    Architecture : ${BUILD_MACHINE}"
-echo "Asterisk Version : ${ASTERISK_VERSION_NUMBER} / ${ASTERISK_VER_GROUP}"
-echo "  Asterisk Repos : ${ASTERISK_REPOS_LOCATION}"
+echo "Asterisk Version : ${ASTERISK_MAJOR}.${ASTERISK_MINOR}"
 echo "      Build user : ${BUILD_USER}"
 echo "         Version : ${SCCP_VERSION}_${SCCP_BRANCH}_r${SCCP_REVISION}"
 echo "Compiler Version : `${CC} -dumpversion`"

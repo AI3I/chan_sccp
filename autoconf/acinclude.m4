@@ -283,11 +283,9 @@ AC_DEFUN([CS_CHECK_AST_TYPEDEF],
 				#undef PACKAGE_TARNAME
 				#undef PACKAGE_VERSION
 				#undef VERSION
-			        #if ASTERISK_VERSION_NUMBER >= 10400
 			        #define AST_MODULE_SELF_SYM __internal_chan_sccp_la_self
 				#define AST_MODULE "chan_sccp"
 			        #include <asterisk.h>
-			        #endif
 				#include <asterisk/autoconfig.h>
 				#include <asterisk/buildopts.h>
 				#include <$ac_cv_check_typedef_header>
@@ -642,5 +640,4 @@ for flag in $1; do
   AX_CHECK_LINK_FLAG([$flag], [AX_APPEND_FLAG([$flag], [m4_default([$2], [LDFLAGS])])], [], [$3], [$4])
 done
 ])dnl AX_APPEND_LINK_FLAGS
-
 

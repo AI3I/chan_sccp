@@ -36,15 +36,6 @@
 /* Asterisk 24 */
 #undef ASTERISK_CONF_1_24
 
-/* Asterisk source location */
-#undef ASTERISK_REPOS_LOCATION
-
-/* Asterisk version group */
-#undef ASTERISK_VERSION_GROUP
-
-/* Asterisk version number */
-#undef ASTERISK_VERSION_NUMBER
-
 /* using BSD */
 #undef BSD
 
@@ -150,9 +141,6 @@
 /* 'AST_EXTENSION_RINGING' available */
 #undef CS_AST_HAS_EXTENSION_RINGING
 
-/* 'AST_EXTENSION_STATE_CB_TYPE_CHAR' available */
-#undef CS_AST_HAS_EXTENSION_STATE_CB_TYPE_CHAR
-
 /* 'AST_EXTENSION_STATE_CB_TYPE_CONST_CHAR' available */
 #undef CS_AST_HAS_EXTENSION_STATE_CB_TYPE_CONST_CHAR
 
@@ -200,12 +188,6 @@
 
 /* 'ast_rtp_new_source' available */
 #undef CS_AST_RTP_NEW_SOURCE
-
-/* Found 'asterisk/sched.h' */
-#undef CS_AST_SCHED_CONTEXT
-
-/* 'AST_SCHED_DEL' available */
-#undef CS_AST_SCHED_DEL
 
 /* 'AST_XML_DOCS' available */
 #undef CS_AST_XML_DOCS
@@ -282,9 +264,6 @@
 
 /* Using streaming video */
 #undef CS_SCCP_VIDEO
-
-/* Found 'asterisk/sched.h' */
-#undef CS_SCHED_CONTEXT
 
 /* asterisk compiled with 'TEST_FRAMEWORK' */
 #undef CS_TEST_FRAMEWORK
@@ -540,9 +519,6 @@
 
 /* Found 'asterisk/rtp.h' */
 #undef HAVE_PBX_RTP_H
-
-/* Found 'asterisk/sched.h' */
-#undef HAVE_PBX_SCHED_H
 
 /* Found 'asterisk/stasis_endpoints.h' */
 #undef HAVE_PBX_STASIS_H

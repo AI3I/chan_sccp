@@ -588,3 +588,20 @@ passed for the source commit. No live handset test was run.
   passed. No module installation or live handset test was run.
   Generated/autoconf files still contain version handling for a later focused
   review.
+
+### Configure-time legacy version cleanup
+
+- Removed the unused numeric Asterisk version/group and `TRUNK` repository
+  defines, substitutions, and summary lines. Configuration still accepts and
+  validates only Asterisk 20–24, and still defines the supported per-major
+  adapter selection macros. The announcement library is selected directly for
+  every supported release.
+- Removed pre-20 header, scheduler, and device-state checks and an unused
+  legacy callback-signature probe. Kept the active `const char` callback
+  feature probe. Regenerated `configure`, `src/config.h.in`, and Makefile
+  templates in a private wadsworth scratch copy; the scratch was removed.
+  Lab activity is recorded in `/root/asterisk.txt` on wadsworth.
+- The nine checked-in generated files match fresh output ignoring unrelated
+  generator whitespace. `bash -n configure`, `configure --help`, and
+  `git diff --check` passed. The hosted build matrix and CodeQL are pending;
+  no module installation or live handset test was run.

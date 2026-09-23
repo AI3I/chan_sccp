@@ -1495,18 +1495,18 @@ int sccp_cli_show_sessions(int fd, sccp_cli_totals_t *totals, struct mansession 
 	sccp_session_unlock(session);
 #define CLI_AMI_TABLE_FIELDS                                                                                                           \
 	CLI_AMI_TABLE_FIELD(Socket, "-6", d, 6, session->sc.fd)                                                                        \
-	CLI_AMI_TABLE_FIELD(IP, "40.40", s, 40, clientAddress)                                                                         \
-	CLI_AMI_TABLE_FIELD(Trans, "5.5", s, 5, session->srvcontext->transport->name)                                                  \
+	CLI_AMI_TABLE_FIELD_NAMED(IP, "IP Address", "40.40", s, 40, clientAddress)                                                                         \
+	CLI_AMI_TABLE_FIELD_NAMED(Trans, "Transport", "5.5", s, 5, session->srvcontext->transport->name)                                                  \
 	CLI_AMI_TABLE_FIELD(Port, "-5", d, 5, sccp_netsock_getPort(&session->sin))                                                     \
-	CLI_AMI_TABLE_FIELD(KALST, "-5", d, 5, (uint32_t)(time(0) - session->lastKeepAlive))                                           \
-	CLI_AMI_TABLE_FIELD(KAINT, "-5", d, 5, (d ? d->keepaliveinterval : session->keepAliveInterval))                                \
-	CLI_AMI_TABLE_FIELD(KAMAX, "-5", d, 5, session->keepAlive)                                                                     \
-	CLI_AMI_TABLE_FIELD(DeviceName, "15", s, 15, (d) ? d->id : "--")                                                               \
+	CLI_AMI_TABLE_FIELD_NAMED(KALST, "Last Keepalive (s)", "-5", d, 5, (uint32_t)(time(0) - session->lastKeepAlive))                                           \
+	CLI_AMI_TABLE_FIELD_NAMED(KAINT, "Interval (s)", "-5", d, 5, (d ? d->keepaliveinterval : session->keepAliveInterval))                                \
+	CLI_AMI_TABLE_FIELD_NAMED(KAMAX, "Timeout (s)", "-5", d, 5, session->keepAlive)                                                                     \
+	CLI_AMI_TABLE_FIELD_NAMED(DeviceName, "Device", "15", s, 15, (d) ? d->id : "--")                                                               \
 	CLI_AMI_TABLE_FIELD(State, "-14.14", s, 14, (d) ? sccp_devicestate2str(sccp_device_getDeviceState(d)) : "--")                  \
 	CLI_AMI_TABLE_FIELD(Type, "-15.15", s, 15, (d) ? skinny_devicetype2str(d->skinny_type) : "--")                                 \
-	CLI_AMI_TABLE_FIELD(RegState, "-10.10", s, 10, (d) ? skinny_registrationstate2str(sccp_device_getRegistrationState(d)) : "--") \
+	CLI_AMI_TABLE_FIELD_NAMED(RegState, "Registration", "-10.10", s, 10, (d) ? skinny_registrationstate2str(sccp_device_getRegistrationState(d)) : "--") \
 	CLI_AMI_TABLE_FIELD(Token, "-10.10", s, 10, d ? sccp_tokenstate2str(d->status.token) : "--")                                   \
-	CLI_AMI_TABLE_FIELD(Req, "-3", d, 3, session->requestsInFlight)
+	CLI_AMI_TABLE_FIELD_NAMED(Req, "Pending Requests", "-3", d, 3, session->requestsInFlight)
 #include "sccp_cli_table.h"
 
 	if (s) {

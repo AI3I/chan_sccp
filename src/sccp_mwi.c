@@ -396,6 +396,7 @@ static int showSubscriptions(int fd, sccp_cli_totals_t *totals, struct mansessio
 
 	subscription_lock();
 #define CLI_AMI_TABLE_NAME MWISubscriptions
+#define CLI_AMI_TABLE_TITLE "MWI Subscriptions"
 #define CLI_AMI_TABLE_PER_ENTRY_NAME MailboxSubscriber
 #define CLI_AMI_TABLE_ITERATOR for (uint32_t idx = 0; idx < SCCP_VECTOR_SIZE(&subscriptions); idx++)
 #define CLI_AMI_TABLE_BEFORE_ITERATION                                            \
@@ -404,27 +405,27 @@ static int showSubscriptions(int fd, sccp_cli_totals_t *totals, struct mansessio
 
 #if defined (CS_AST_HAS_EVENT)
 #define CLI_AMI_TABLE_FIELDS 																\
- 		CLI_AMI_TABLE_FIELD(Mailbox,		"-30.30",	s,	30,	(subscription->mailbox)->uniqueid)				\
- 		CLI_AMI_TABLE_FIELD(LineName,		"-20.20",	s,	20,	line->name)							\
- 		CLI_AMI_TABLE_FIELD(New,		"3.3",		d,	3,	line->voicemailStatistic.newmsgs)				\
- 		CLI_AMI_TABLE_FIELD(Old,		"3.3",		d,	3,	line->voicemailStatistic.oldmsgs)				\
- 		CLI_AMI_TABLE_FIELD(Sub,		"-3.3",		s,	3,	subscription->pbx_subscription ? "YES" : "NO")
+		CLI_AMI_TABLE_FIELD(Mailbox,		"-30.30",	s,	30,	(subscription->mailbox)->uniqueid)				\
+		CLI_AMI_TABLE_FIELD_NAMED(LineName, "Line",		"-20.20",	s,	20,	line->name)							\
+		CLI_AMI_TABLE_FIELD(New,		"3.3",		d,	3,	line->voicemailStatistic.newmsgs)				\
+		CLI_AMI_TABLE_FIELD(Old,		"3.3",		d,	3,	line->voicemailStatistic.oldmsgs)				\
+		CLI_AMI_TABLE_FIELD_NAMED(Sub, "Subscribed",		"-3.3",		s,	3,	subscription->pbx_subscription ? "YES" : "NO")
 
 #elif defined(CS_AST_HAS_STASIS)
 #define CLI_AMI_TABLE_FIELDS 																\
- 		CLI_AMI_TABLE_FIELD(Mailbox,		"-30.30",	s,	30,	(subscription->mailbox)->uniqueid)				\
- 		CLI_AMI_TABLE_FIELD(LineName,		"-20.20",	s,	20,	line->name)							\
- 		CLI_AMI_TABLE_FIELD(New,		"3.3",		d,	3,	line->voicemailStatistic.newmsgs)				\
- 		CLI_AMI_TABLE_FIELD(Old,		"3.3",		d,	3,	line->voicemailStatistic.oldmsgs)				\
- 		CLI_AMI_TABLE_FIELD(Sub,		"-3.3",		s,	3,	subscription->pbx_subscription ? "YES" : "NO")			\
-		CLI_AMI_TABLE_FIELD(AstUniq,		"36.36",	s,	36,	subscription->pbx_subscription ? 				\
+		CLI_AMI_TABLE_FIELD(Mailbox,		"-30.30",	s,	30,	(subscription->mailbox)->uniqueid)				\
+		CLI_AMI_TABLE_FIELD_NAMED(LineName, "Line",		"-20.20",	s,	20,	line->name)							\
+		CLI_AMI_TABLE_FIELD(New,		"3.3",		d,	3,	line->voicemailStatistic.newmsgs)				\
+		CLI_AMI_TABLE_FIELD(Old,		"3.3",		d,	3,	line->voicemailStatistic.oldmsgs)				\
+		CLI_AMI_TABLE_FIELD_NAMED(Sub, "Subscribed",		"-3.3",		s,	3,	subscription->pbx_subscription ? "YES" : "NO")			\
+		CLI_AMI_TABLE_FIELD_NAMED(AstUniq, "Subscription ID",		"36.36",	s,	36,	subscription->pbx_subscription ? 				\
 											stasis_subscription_uniqueid(subscription->pbx_subscription) : "")
 #else
 #define CLI_AMI_TABLE_FIELDS 																\
- 		CLI_AMI_TABLE_FIELD(Mailbox,		"-30.30",	s,	30,	(subscription->mailbox)->uniqueid)				\
- 		CLI_AMI_TABLE_FIELD(LineName,		"-20.20",	s,	20,	line->name)							\
- 		CLI_AMI_TABLE_FIELD(New,		"3.3",		d,	3,	line->voicemailStatistic.newmsgs)				\
- 		CLI_AMI_TABLE_FIELD(Old,		"3.3",		d,	3,	line->voicemailStatistic.oldmsgs)
+		CLI_AMI_TABLE_FIELD(Mailbox,		"-30.30",	s,	30,	(subscription->mailbox)->uniqueid)				\
+		CLI_AMI_TABLE_FIELD_NAMED(LineName, "Line",		"-20.20",	s,	20,	line->name)							\
+		CLI_AMI_TABLE_FIELD(New,		"3.3",		d,	3,	line->voicemailStatistic.newmsgs)				\
+		CLI_AMI_TABLE_FIELD(Old,		"3.3",		d,	3,	line->voicemailStatistic.oldmsgs)
 #endif
 #include "sccp_cli_table.h"
 		local_line_total++;

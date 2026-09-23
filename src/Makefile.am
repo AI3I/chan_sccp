@@ -9,7 +9,7 @@ include 		$(top_srcdir)/src/Makefile.inc.am
 
 SUBDIRS			= pbx_impl $(PBX_COND_SUBDIR) $(PBXVER_COND_SUBDIR) $(PBXVER_COND_ANNOUNCE_SUBDIR) .
 DIST_SUBDIRS		= pbx_impl pbx_impl/ast pbx_impl/ast106 pbx_impl/ast108 pbx_impl/ast110 pbx_impl/ast111 pbx_impl/ast112 pbx_impl/ast113 pbx_impl/ast114 pbx_impl/ast115 pbx_impl/ast116 pbx_impl/ast117 pbx_impl/ast118 pbx_impl/ast_announce .
-EXTRA_DIST 		= sccp_enum.in sccp_config_entries.hh
+EXTRA_DIST 		= sccp_enum.in sccp_config_entries.hh sccp_cli_table_data.h
 BUILT_SOURCES           = revision.h sccp_enum.h sccp_enum.c
 CLEANFILES              = revision.h sccp_enum.h sccp_enum.c stamp-g1
 .PHONY:			force
@@ -59,7 +59,7 @@ noinst_HEADERS		= chan_sccp.h			sccp_actions.h			sccp_cli.h			sccp_devstate.h			
 			  define.h			sccp_netsock.h			sccp_xml.h			sccp_webservice.h		\
 			  sccp_utils.h			sccp_featureParkingLot.h	sccp_transport.h
 
-libsccp_la_SOURCES	= sccp_callinfo.c 		sccp_channel.c			sccp_device.c			sccp_debug.c			\
+libsccp_la_SOURCES	= sccp_cli_table_data.c sccp_callinfo.c 		sccp_channel.c			sccp_device.c			sccp_debug.c			\
 			  sccp_indicate.c 		sccp_pbx.c 			sccp_session.c			sccp_threadpool.c		\
 			  sccp_softkeys.c		sccp_featureButton.c		sccp_line.c			sccp_linedevice.c		\
 			  sccp_actions.c		sccp_cli.c			sccp_feature.c 			sccp_config.c			\

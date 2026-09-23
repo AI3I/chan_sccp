@@ -677,11 +677,11 @@ int sccp_show_refcount(int fd, sccp_cli_totals_t *totals, struct mansession *s, 
 #define CLI_AMI_TABLE_FIELDS 												\
 	CLI_AMI_TABLE_FIELD(Hash,	"-7.7",		s,	7,	bucketstr)					\
 	CLI_AMI_TABLE_FIELD(Type,	"-17.17",	s,	17,	(obj_info[obj->type]).datatype)			\
-	CLI_AMI_TABLE_FIELD(Id,		"-25.25",	s,	25,	obj->identifier)				\
-	CLI_AMI_TABLE_FIELD(Ptr,	"-15",		p,	15,	obj)						\
-	CLI_AMI_TABLE_FIELD(Refc,	"-4.4",		d,	4,	obj->refcount)					\
+	CLI_AMI_TABLE_FIELD_NAMED(Id, "ID",		"-25.25",	s,	25,	obj->identifier)				\
+	CLI_AMI_TABLE_FIELD_NAMED(Ptr, "Address",	"-15",		p,	15,	obj)						\
+	CLI_AMI_TABLE_FIELD_NAMED(Refc, "References",	"-4.4",		d,	4,	obj->refcount)					\
 	CLI_AMI_TABLE_FIELD(Alive,	"-5.5",		s,	5,	SCCP_LIVE_MARKER == obj->alive ? "yes" : "no")	\
-	CLI_AMI_TABLE_FIELD(InUse,	"-5.5",		s,	5,	check_inuse ? (inuse ? "yes" : "no") : "off")	\
+	CLI_AMI_TABLE_FIELD_NAMED(InUse, "In Use",	"-5.5",		s,	5,	check_inuse ? (inuse ? "yes" : "no") : "off")	\
 	CLI_AMI_TABLE_FIELD(Size,	"-4.4",		d,	4,	obj->len)
 #include "sccp_cli_table.h"
 	local_line_total++;
@@ -691,13 +691,14 @@ int sccp_show_refcount(int fd, sccp_cli_totals_t *totals, struct mansession *s, 
 	fillfactor = (float) numentries / SCCP_HASH_PRIME;
 	int once = 0;
 #define CLI_AMI_TABLE_NAME FillFactor
+#define CLI_AMI_TABLE_TITLE "Hash Table Usage"
 #define CLI_AMI_TABLE_PER_ENTRY_NAME Factor
 #define CLI_AMI_TABLE_ITERATOR for(once=0;once<1;once++)
 #define CLI_AMI_TABLE_FIELDS 												\
 	CLI_AMI_TABLE_FIELD(Entries,		"-8.8",		d,	8,	numentries)				\
 	CLI_AMI_TABLE_FIELD(Buckets,		"-8.8",		d,	8,	SCCP_HASH_PRIME)			\
 	CLI_AMI_TABLE_FIELD(Factor,		"08.02",	f,	8,	fillfactor)				\
-	CLI_AMI_TABLE_FIELD(MaxDepth,		"-8.8",		d,	8,	maxdepth)
+	CLI_AMI_TABLE_FIELD_NAMED(MaxDepth, "Max Depth",		"-8.8",		d,	8,	maxdepth)
 #include "sccp_cli_table.h"
 	local_line_total++;
 	if (fillfactor > 1.00) {

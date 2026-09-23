@@ -171,7 +171,8 @@ chan_sccp_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(chan_sccp_la_CFLAGS) \
 	$(CFLAGS) $(chan_sccp_la_LDFLAGS) $(LDFLAGS) -o $@
 libsccp_la_LIBADD =
-am_libsccp_la_OBJECTS = libsccp_la-sccp_callinfo.lo \
+am_libsccp_la_OBJECTS = libsccp_la-sccp_cli_table_data.lo \
+	libsccp_la-sccp_callinfo.lo \
 	libsccp_la-sccp_channel.lo libsccp_la-sccp_device.lo \
 	libsccp_la-sccp_debug.lo libsccp_la-sccp_indicate.lo \
 	libsccp_la-sccp_pbx.lo libsccp_la-sccp_session.lo \
@@ -213,6 +214,7 @@ am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/chan_sccp_la-chan_sccp.Plo \
 	./$(DEPDIR)/libsccp_la-sccp_actions.Plo \
 	./$(DEPDIR)/libsccp_la-sccp_appfunctions.Plo \
+	./$(DEPDIR)/libsccp_la-sccp_cli_table_data.Plo \
 	./$(DEPDIR)/libsccp_la-sccp_callinfo.Plo \
 	./$(DEPDIR)/libsccp_la-sccp_channel.Plo \
 	./$(DEPDIR)/libsccp_la-sccp_cli.Plo \
@@ -620,7 +622,7 @@ AM_CXXFLAGS = -std=c++11 $(PBX_CFLAGS) $(GDB_FLAGS) $(PTHREAD_CFLAGS) \
 	-D_GNU_SOURCE -DCRYPTO -fPIC -pipe -Wall -fpermissive
 SUBDIRS = pbx_impl $(PBX_COND_SUBDIR) $(PBXVER_COND_SUBDIR) $(PBXVER_COND_ANNOUNCE_SUBDIR) .
 DIST_SUBDIRS = pbx_impl pbx_impl/ast pbx_impl/ast106 pbx_impl/ast108 pbx_impl/ast110 pbx_impl/ast111 pbx_impl/ast112 pbx_impl/ast113 pbx_impl/ast114 pbx_impl/ast115 pbx_impl/ast116 pbx_impl/ast117 pbx_impl/ast118 pbx_impl/ast_announce .
-EXTRA_DIST = sccp_enum.in sccp_config_entries.hh
+EXTRA_DIST = sccp_enum.in sccp_config_entries.hh sccp_cli_table_data.h
 BUILT_SOURCES = revision.h sccp_enum.h sccp_enum.c
 CLEANFILES = revision.h sccp_enum.h sccp_enum.c stamp-g1
 
@@ -641,7 +643,7 @@ noinst_HEADERS = chan_sccp.h			sccp_actions.h			sccp_cli.h			sccp_devstate.h			\
 			  define.h			sccp_netsock.h			sccp_xml.h			sccp_webservice.h		\
 			  sccp_utils.h			sccp_featureParkingLot.h	sccp_transport.h
 
-libsccp_la_SOURCES = sccp_callinfo.c 		sccp_channel.c			sccp_device.c			sccp_debug.c			\
+libsccp_la_SOURCES = sccp_cli_table_data.c sccp_callinfo.c 		sccp_channel.c			sccp_device.c			sccp_debug.c			\
 			  sccp_indicate.c 		sccp_pbx.c 			sccp_session.c			sccp_threadpool.c		\
 			  sccp_softkeys.c		sccp_featureButton.c		sccp_line.c			sccp_linedevice.c		\
 			  sccp_actions.c		sccp_cli.c			sccp_feature.c 			sccp_config.c			\
@@ -761,6 +763,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chan_sccp_la-chan_sccp.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsccp_la-sccp_actions.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsccp_la-sccp_appfunctions.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsccp_la-sccp_cli_table_data.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsccp_la-sccp_callinfo.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsccp_la-sccp_channel.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsccp_la-sccp_cli.Plo@am__quote@ # am--include-marker
@@ -833,6 +836,13 @@ chan_sccp_la-chan_sccp.lo: chan_sccp.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='chan_sccp.c' object='chan_sccp_la-chan_sccp.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chan_sccp_la_CFLAGS) $(CFLAGS) -c -o chan_sccp_la-chan_sccp.lo `test -f 'chan_sccp.c' || echo '$(srcdir)/'`chan_sccp.c
+
+libsccp_la-sccp_cli_table_data.lo: sccp_cli_table_data.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsccp_la_CFLAGS) $(CFLAGS) -MT libsccp_la-sccp_cli_table_data.lo -MD -MP -MF $(DEPDIR)/libsccp_la-sccp_cli_table_data.Tpo -c -o libsccp_la-sccp_cli_table_data.lo `test -f 'sccp_cli_table_data.c' || echo '$(srcdir)/'`sccp_cli_table_data.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libsccp_la-sccp_cli_table_data.Tpo $(DEPDIR)/libsccp_la-sccp_cli_table_data.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='sccp_cli_table_data.c' object='libsccp_la-sccp_cli_table_data.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsccp_la_CFLAGS) $(CFLAGS) -c -o libsccp_la-sccp_cli_table_data.lo `test -f 'sccp_cli_table_data.c' || echo '$(srcdir)/'`sccp_cli_table_data.c
 
 libsccp_la-sccp_callinfo.lo: sccp_callinfo.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsccp_la_CFLAGS) $(CFLAGS) -MT libsccp_la-sccp_callinfo.lo -MD -MP -MF $(DEPDIR)/libsccp_la-sccp_callinfo.Tpo -c -o libsccp_la-sccp_callinfo.lo `test -f 'sccp_callinfo.c' || echo '$(srcdir)/'`sccp_callinfo.c
@@ -1308,6 +1318,7 @@ distclean: distclean-recursive
 		-rm -f ./$(DEPDIR)/chan_sccp_la-chan_sccp.Plo
 	-rm -f ./$(DEPDIR)/libsccp_la-sccp_actions.Plo
 	-rm -f ./$(DEPDIR)/libsccp_la-sccp_appfunctions.Plo
+	-rm -f ./$(DEPDIR)/libsccp_la-sccp_cli_table_data.Plo
 	-rm -f ./$(DEPDIR)/libsccp_la-sccp_callinfo.Plo
 	-rm -f ./$(DEPDIR)/libsccp_la-sccp_channel.Plo
 	-rm -f ./$(DEPDIR)/libsccp_la-sccp_cli.Plo
@@ -1391,6 +1402,7 @@ maintainer-clean: maintainer-clean-recursive
 		-rm -f ./$(DEPDIR)/chan_sccp_la-chan_sccp.Plo
 	-rm -f ./$(DEPDIR)/libsccp_la-sccp_actions.Plo
 	-rm -f ./$(DEPDIR)/libsccp_la-sccp_appfunctions.Plo
+	-rm -f ./$(DEPDIR)/libsccp_la-sccp_cli_table_data.Plo
 	-rm -f ./$(DEPDIR)/libsccp_la-sccp_callinfo.Plo
 	-rm -f ./$(DEPDIR)/libsccp_la-sccp_channel.Plo
 	-rm -f ./$(DEPDIR)/libsccp_la-sccp_cli.Plo

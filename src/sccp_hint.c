@@ -1521,6 +1521,7 @@ int sccp_show_hint_lineStates(int fd, sccp_cli_totals_t *totals, struct mansessi
 	int local_line_total = 0;
 
 #define CLI_AMI_TABLE_NAME HintLineStates
+#define CLI_AMI_TABLE_TITLE "Hint Line States"
 #define CLI_AMI_TABLE_PER_ENTRY_NAME HintLineState
 #define CLI_AMI_TABLE_LIST_ITER_HEAD &lineStates
 #define CLI_AMI_TABLE_LIST_ITER_TYPE struct sccp_hint_lineState
@@ -1529,11 +1530,11 @@ int sccp_show_hint_lineStates(int fd, sccp_cli_totals_t *totals, struct mansessi
 #define CLI_AMI_TABLE_LIST_ITERATOR SCCP_LIST_TRAVERSE
 #define CLI_AMI_TABLE_LIST_UNLOCK SCCP_LIST_UNLOCK
 #define CLI_AMI_TABLE_FIELDS 															\
- 		CLI_AMI_TABLE_FIELD(LineName,		"-10.10",	s,	10,	lineState->line ? lineState->line->name : "")		\
- 		CLI_AMI_TABLE_FIELD(State,		"-22.22",	s,	22,	sccp_channelstate2str(lineState->state))		\
- 		CLI_AMI_TABLE_FIELD(CallInfoNumber,	"-15.15",	s,	15,	lineState->callInfo.partyNumber)			\
- 		CLI_AMI_TABLE_FIELD(CallInfoName,	"-30.30",	s,	30,	lineState->callInfo.partyName)				\
- 		CLI_AMI_TABLE_FIELD(Direction,		"-10.10",	s,	10,	(!SCCP_CHANNELSTATE_Idling(lineState->state) && lineState->callInfo.calltype) ? skinny_calltype2str(lineState->callInfo.calltype) : "INACTIVE")
+		CLI_AMI_TABLE_FIELD_NAMED(LineName, "Line",		"-10.10",	s,	10,	lineState->line ? lineState->line->name : "")		\
+		CLI_AMI_TABLE_FIELD(State,		"-22.22",	s,	22,	sccp_channelstate2str(lineState->state))		\
+		CLI_AMI_TABLE_FIELD_NAMED(CallInfoNumber, "Party Number",	"-15.15",	s,	15,	lineState->callInfo.partyNumber)			\
+		CLI_AMI_TABLE_FIELD_NAMED(CallInfoName, "Party Name",	"-30.30",	s,	30,	lineState->callInfo.partyName)				\
+		CLI_AMI_TABLE_FIELD(Direction,		"-10.10",	s,	10,	(!SCCP_CHANNELSTATE_Idling(lineState->state) && lineState->callInfo.calltype) ? skinny_calltype2str(lineState->callInfo.calltype) : "INACTIVE")
 
 #include "sccp_cli_table.h"
 
@@ -1562,6 +1563,7 @@ int sccp_show_hint_subscriptions(int fd, sccp_cli_totals_t *totals, struct manse
 	
 
 #define CLI_AMI_TABLE_NAME HintSubscriptions
+#define CLI_AMI_TABLE_TITLE "Hint Subscriptions"
 #define CLI_AMI_TABLE_PER_ENTRY_NAME HintSubscription
 #define CLI_AMI_TABLE_LIST_ITER_HEAD &sccp_hint_subscriptions
 #define CLI_AMI_TABLE_LIST_ITER_TYPE sccp_hint_list_t
@@ -1587,14 +1589,14 @@ int sccp_show_hint_subscriptions(int fd, sccp_cli_totals_t *totals, struct manse
 #define CLI_AMI_TABLE_AFTER_ITERATION 														\
 	}
 #define CLI_AMI_TABLE_FIELDS 															\
- 		CLI_AMI_TABLE_FIELD(Exten,		"-10.10",	s,	10,	subscription->exten)					\
- 		CLI_AMI_TABLE_FIELD(Context,		"-10.10",	s,	10,	subscription->context)					\
- 		CLI_AMI_TABLE_FIELD(Hint,		"-15.15",	s,	15,	subscription->hint_dialplan)				\
- 		CLI_AMI_TABLE_FIELD(State,		"-22.22",	s,	22,	sccp_channelstate2str(subscription->currentState))	\
- 		CLI_AMI_TABLE_FIELD(CallInfoNumber,	"-15.15",	s,	15,	cidNumber)			\
- 		CLI_AMI_TABLE_FIELD(CallInfoName,	"-30.30",	s,	30,	cidName)			\
- 		CLI_AMI_TABLE_FIELD(Direction,		"-10.10",	s,	10,	(subscription->calltype && subscription->calltype != SKINNY_CALLTYPE_SENTINEL) ? skinny_calltype2str(subscription->calltype) : "") \
- 		CLI_AMI_TABLE_FIELD(Subs,		"-4",		d,	4,	SCCP_LIST_GETSIZE(&subscription->subscribers))
+		CLI_AMI_TABLE_FIELD_NAMED(Exten, "Extension",		"-10.10",	s,	10,	subscription->exten)					\
+		CLI_AMI_TABLE_FIELD(Context,		"-10.10",	s,	10,	subscription->context)					\
+		CLI_AMI_TABLE_FIELD(Hint,		"-15.15",	s,	15,	subscription->hint_dialplan)				\
+		CLI_AMI_TABLE_FIELD(State,		"-22.22",	s,	22,	sccp_channelstate2str(subscription->currentState))	\
+		CLI_AMI_TABLE_FIELD_NAMED(CallInfoNumber, "Party Number",	"-15.15",	s,	15,	cidNumber)			\
+		CLI_AMI_TABLE_FIELD_NAMED(CallInfoName, "Party Name",	"-30.30",	s,	30,	cidName)			\
+		CLI_AMI_TABLE_FIELD(Direction,		"-10.10",	s,	10,	(subscription->calltype && subscription->calltype != SKINNY_CALLTYPE_SENTINEL) ? skinny_calltype2str(subscription->calltype) : "") \
+		CLI_AMI_TABLE_FIELD_NAMED(Subs, "Subscribers",		"-4",		d,	4,	SCCP_LIST_GETSIZE(&subscription->subscribers))
 
 #include "sccp_cli_table.h"
 

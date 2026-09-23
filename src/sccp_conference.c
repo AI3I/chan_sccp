@@ -1840,11 +1840,11 @@ int sccp_cli_show_conferences(int fd, sccp_cli_totals_t *totals, struct mansessi
 #define CLI_AMI_TABLE_LIST_UNLOCK SCCP_LIST_UNLOCK
 
 #define CLI_AMI_TABLE_FIELDS 																			\
-		CLI_AMI_TABLE_FIELD(Id,			"3.3",		d,	3,	conference->id)										\
+		CLI_AMI_TABLE_FIELD_NAMED(Id, "ID",			"3.3",		d,	3,	conference->id)										\
 		CLI_AMI_TABLE_FIELD(Participants,	"-12.12",	d,	12,	SCCP_RWLIST_GETSIZE(&conference->participants))						\
 		CLI_AMI_TABLE_FIELD(Moderators,		"-12.12",	d,	12,	conference->num_moderators)								\
 		CLI_AMI_TABLE_FIELD(Announce,		"-12.12",	s,	12,	conference->playback_announcements ? "Yes" : "No")					\
-		CLI_AMI_TABLE_FIELD(MuteOnEntry,	"-12.12",	s,	12,	conference->mute_on_entry ? "Yes" : "No")						\
+		CLI_AMI_TABLE_FIELD_NAMED(MuteOnEntry, "Mute on Entry",	"-12.12",	s,	12,	conference->mute_on_entry ? "Yes" : "No")						\
 
 #include "sccp_cli_table.h"
 	if (s) {
@@ -1900,12 +1900,12 @@ int sccp_cli_show_conference(int fd, sccp_cli_totals_t *totals, struct mansessio
 #define CLI_AMI_TABLE_LIST_ITERATOR SCCP_RWLIST_TRAVERSE
 #define CLI_AMI_TABLE_LIST_UNLOCK SCCP_RWLIST_UNLOCK
 #define CLI_AMI_TABLE_FIELDS 																						\
-			CLI_AMI_TABLE_FIELD(Id,			"3.3",		d,	3,	participant->id)											\
-			CLI_AMI_TABLE_FIELD(ChannelName,	"-20.20",	s,	20,	participant->conferenceBridgePeer ? pbx_channel_name(participant->conferenceBridgePeer) : "NULL")	\
+			CLI_AMI_TABLE_FIELD_NAMED(Id, "ID",			"3.3",		d,	3,	participant->id)											\
+			CLI_AMI_TABLE_FIELD_NAMED(ChannelName, "Channel",	"-20.20",	s,	20,	participant->conferenceBridgePeer ? pbx_channel_name(participant->conferenceBridgePeer) : "NULL")	\
 			CLI_AMI_TABLE_FIELD(Moderator,		"-11.11",	s,	11,	participant->isModerator ? "Yes" : "No")								\
 			CLI_AMI_TABLE_FIELD(Muted,		"-5.5",		s,	5,	participant->features.mute ? "Yes" : "No")								\
 			CLI_AMI_TABLE_FIELD(Announce,		"-8.8",		s,	8,	participant->playback_announcements ? "Yes" : "No")							\
-			CLI_AMI_TABLE_FIELD(ConfList,		"-8.8",		s,	8,	(participant->device && participant->device->conferencelist_active) ? "YES" : "NO")
+			CLI_AMI_TABLE_FIELD_NAMED(ConfList, "Conference List",		"-8.8",		s,	8,	(participant->device && participant->device->conferencelist_active) ? "YES" : "NO")
 
 #include "sccp_cli_table.h"
 	} else {

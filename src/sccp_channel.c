@@ -1005,21 +1005,6 @@ void sccp_channel_closeReceiveChannel(constChannelPtr channel, boolean_t KeepPor
 	}
 }
 
-#if UNUSEDCODE // 2015-11-01
-void sccp_channel_updateReceiveChannel(constChannelPtr channel)
-{
-	/* \todo possible to skip the closing of the receive channel (needs testing) */
-	/* \todo if this works without closing, this would make changing codecs on the fly possible */
-	if(sccp_rtp_getState(&channel->rtp.audio, SCCP_RTP_RECEPTION)) {
-		sccp_log((DEBUGCAT_RTP)) (VERBOSE_PREFIX_2 "%s: (sccp_channel_updateReceiveChannel) Close Receive Channel on channel %d\n", channel->currentDeviceId, channel->callid);
-		sccp_channel_closeReceiveChannel(channel, TRUE);
-	}
-	if(!sccp_rtp_getState(&channel->rtp.audio, SCCP_RTP_RECEPTION)) {
-		sccp_log((DEBUGCAT_RTP)) (VERBOSE_PREFIX_2 "%s: (sccp_channel_updateReceiveChannel) Open Receive Channel on channel %d\n", channel->currentDeviceId, channel->callid);
-		sccp_channel_openReceiveChannel(channel);
-	}
-}
-#endif
 
 /*!
  * \brief Tell a Device to Start Media Transmission.
@@ -1315,19 +1300,6 @@ void sccp_channel_closeMultiMediaReceiveChannel(constChannelPtr channel, boolean
 	((channelPtr)channel)->videomode = channel->line->videomode;								// discard const
 }
 
-#if UNUSEDCODE // 2015-11-01
-void sccp_channel_updateMultiMediaReceiveChannel(constChannelPtr channel)
-{
-	if(sccp_rtp_getState(&channel->rtp.video, SCCP_RTP_RECEPTION)) {
-		sccp_log((DEBUGCAT_RTP)) (VERBOSE_PREFIX_2 "%s: (sccp_channel_updateMultiMediaReceiveChannel) Stop multimedia transmission on channel %d\n", channel->currentDeviceId, channel->callid);
-		sccp_channel_closeMultiMediaReceiveChannel(channel, TRUE);
-	}
-	if(!sccp_rtp_getState(&channel.rtp.video, SCCP_RTP_RECEPTION)) {
-		sccp_log((DEBUGCAT_RTP)) (VERBOSE_PREFIX_2 "%s: (sccp_channel_updateMultiMediaReceiveChannel) Start media transmission on channel %d\n", channel->currentDeviceId, channel->callid);
-		sccp_channel_openMultiMediaReceiveChannel(channel);
-	}
-}
-#endif
 
 /*!
  * \brief Start Multi Media Transmission (Video) on Channel
@@ -1462,19 +1434,6 @@ void sccp_channel_stopMultiMediaTransmission(constChannelPtr channel, boolean_t 
 	}
 }
 
-#if UNUSEDCODE // 2015-11-01
-void sccp_channel_updateMultiMediaTransmission(constChannelPtr channel)
-{
-	if(sccp_rtp_getState(&channel->rtp.video, SCCP_RTP_TRANSMISSION)) {
-		sccp_log((DEBUGCAT_RTP)) (VERBOSE_PREFIX_2 "%s: (updateMultiMediaTransmission) Stop multiemedia transmission on channel %d\n", channel->currentDeviceId, channel->callid);
-		sccp_channel_stopMultiMediaTransmission(channel, TRUE);
-	}
-	if(!sccp_rtp_getState(&channel->rtp.video, SCCP_RTP_TRANSMISSION)) {
-		sccp_log((DEBUGCAT_RTP)) (VERBOSE_PREFIX_2 "%s: (updateMultiMediaTransmission) Start multimedia transmission on channel %d\n", channel->currentDeviceId, channel->callid);
-		sccp_channel_startMultiMediaTransmission(channel);
-	}
-}
-#endif
 
 sccp_rtp_status_t sccp_channel_closeAllMediaTransmitAndReceive(constChannelPtr channel)
 {

@@ -26,9 +26,6 @@ typedef struct tagCallInfo {
 	sccp_callinfo_t * const (*const Destructor)(sccp_callinfo_t ** const ci);
 	sccp_callinfo_t * (*const CopyConstructor)(const sccp_callinfo_t * const src_ci);
 
-#if UNUSEDCODE // 2015-11-01
-	boolean_t (*const Copy)(const sccp_callinfo_t * const src, sccp_callinfo_t * const dst);
-#endif
 	/*
 	 * \brief callinfo setter with variable number of arguments
 	 * settting "" means to clear out a particular entry. provising a NULL pointer will skip updating the entry.

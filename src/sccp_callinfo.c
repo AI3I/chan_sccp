@@ -138,28 +138,6 @@ static sccp_callinfo_t * callinfo_CopyConstructor(const sccp_callinfo_t * const 
 	return NULL;
 }
 
-#if UNUSEDCODE // 2015-11-01
-static boolean_t callinfo_Copy(const sccp_callinfo_t * const src_ci, sccp_callinfo_t * const dst_ci)
-{
-	/* observing locking order. not locking both callinfo objects at the same time, using a tmp as go between */
-	if (src_ci && dst_ci) {
-		struct ci_content tmp_ci_content;
-		memset(&tmp_ci_content, 0, sizeof(struct ci_content));
-
-		sccp_callinfo_rdlock(src_ci);
-		memcpy(&tmp_ci_content, &src_ci->content, sizeof(struct ci_content));
-		sccp_callinfo_unlock(src_ci);
-
-		sccp_callinfo_wrlock(dst_ci);
-		memcpy(&dst_ci->content, &tmp_ci_content, sizeof(struct ci_content));
-		dst_ci->content.changed = TRUE;
-		sccp_callinfo_unlock(dst_ci);
-
-		return TRUE;
-	}
-	return FALSE;
-}
-#endif
 
 // clang complain about default argument promotion when using enum instead of int for the key
 // previous: static int callinfo_Setter(sccp_callinfo_t * const ci, sccp_callinfo_key_t key, ...) 
@@ -268,7 +246,6 @@ static int callinfo_Setter(sccp_callinfo_t * const ci, int key, ...)							// ke
 	return changes;
 }
 
-//#if UNUSEDCODE // 2015-11-01
 // clang complain about default argument promotion when using enum instead of int for the key
 // previous: static int callinfo_CopyByKey(const sccp_callinfo_t * const src_ci, sccp_callinfo_t * const dst_ci, sccp_callinfo_key_t key, ...)
 static int callinfo_CopyByKey(const sccp_callinfo_t * const src_ci, sccp_callinfo_t * const dst_ci, int key, ...)	// key is a va_arg of type sccp_callinfo_key_t
@@ -411,8 +388,6 @@ static int callinfo_CopyByKey(const sccp_callinfo_t * const src_ci, sccp_callinf
 	}
 	return changes;
 }
-//#endif
-
 // clang complain about default argument promotion when using enum instead of int for the key
 // previous: static int callinfo_Getter(const sccp_callinfo_t * const ci, sccp_callinfo_key_t key, ...)
 static int callinfo_Getter(const sccp_callinfo_t * const ci, int key, ...)						// key is a va_arg of type sccp_callinfo_key_t
@@ -621,9 +596,6 @@ const CallInfoInterface iCallInfo = {
 	callinfo_Constructor,
         callinfo_Destructor,
         callinfo_CopyConstructor,
-#if UNUSEDCODE // 2015-11-01
-	callinfo_Copy,
-#endif
 	callinfo_Setter,
 	callinfo_CopyByKey,
 	callinfo_Send,

@@ -547,3 +547,14 @@ passed for the source commit. No live handset test was run.
   and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35897985379)
   passed. No live module or handset test was run. Other disabled blocks
   elsewhere in the project remain for subsequent review.
+
+### Remaining disabled core blocks
+
+- Removed the remaining `UNUSEDCODE` blocks from the core source and headers:
+  abandoned audio/video media-update helpers, scheduler-free helper, device
+  display helper, and call-info copy method. Their declarations, interface
+  entry, and display macro are removed too; no active callers were found.
+  The commented-out guard around active `CopyByKey` was removed without
+  changing that function.
+- This batch removes about 140 lines. Build and static validation are pending;
+  no module installation or live handset test was run.

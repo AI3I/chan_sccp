@@ -1824,43 +1824,6 @@ void sccp_dev_cleardisplay(constDevicePtr d)
 	//sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: Clear the display\n", d->id);
 }
 
-#if UNUSEDCODE // 2015-11-01
-/*!
- * \brief Send Display to Device
- * \param d SCCP Device
- * \param msgstr Msg as char
- * \param file Source File
- * \param lineno Source Line
- * \param pretty_function CB Function to Print
- *
- * \callgraph
- * \callergraph
- */
-void sccp_dev_display_debug(constDevicePtr d, const char *msgstr, const char *file, const int lineno, const char *pretty_function)
-{
-#if DEBUG
-	sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: ( %s:%d:%s ) sccp_dev_display '%s'\n", DEV_ID_LOG(d), file, lineno, pretty_function, msgstr);
-#endif
-	sccp_msg_t *msg = NULL;
-
-	if (!d || !d->session || !d->protocol || (!d->hasDisplayPrompt() && !d->hasLabelLimitedDisplayPrompt())) {
-	if (!d || !d->session || !d->protocol || !d->hasDisplayPrompt()) {
-		return;
-	}
-	if (!msgstr || sccp_strlen_zero(msgstr)) {
-		return;
-	}
-	REQ(msg, DisplayTextMessage);
-	if (!msg) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
-		return;
-	}
-	sccp_copy_string(msg->data.DisplayTextMessage.displayMessage, msgstr, sizeof(msg->data.DisplayTextMessage.displayMessage));
-
-	sccp_dev_send(d, msg);
-	sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: Display text\n", d->id);
-}
-#endif
 
 /*!
  * \brief Send Clear Display Notification to Device

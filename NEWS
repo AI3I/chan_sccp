@@ -1,3 +1,14 @@
+Version: 5.0.0 (unreleased)
+==========================
+
+ - Supported Asterisk targets: 20 through 24.
+ - Measured CLI table widths, readable headings, and a tone reference command.
+ - Canonical hint linestates and softkeysets commands; remove softkeyssets alias.
+ - Corrected tone descriptions and static audio RTP payload mappings.
+ - Reproducible release-version handling, repaired build/archive inputs, and
+   standalone regression tests.
+ - Joinable thread-pool workers, cooperative draining, and explicit job ownership.
+
 Version: v4.3.4_DEV
 ==========================
 

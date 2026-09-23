@@ -316,3 +316,16 @@ steps. The CLI/tone work is complete; the correctness findings above remain
 open. The latest priority is build reproducibility/CI, followed by thread-pool
 lifetime, TCP framing, read-format correction, legacy retirement, and optional
 feature repairs. Keep that progress document updated as implementation proceeds.
+
+## Progress on prioritized findings (2026-09-23)
+
+- R4/R10: generated build files, archive packaging, and real test/CI steps were
+  repaired. Asterisk 22 build and clean archive builds with 20/24 headers pass.
+  Full GitHub matrix remains to run after push.
+- R1/R9: joinable pool workers, admission stop, ownership handling, and failure
+  returns are implemented. Sanitizer/standalone tests and ten isolated module
+  unload/load cycles pass. Live SCCP call workload remains unverified.
+- The 31,705 lines of obsolete pre-20 adapters remain in Git for a separate,
+  reviewable retirement. Asterisk 20–24 are the supported build targets.
+- See [BUILD_AND_THREADPOOL_PROGRESS.md](BUILD_AND_THREADPOOL_PROGRESS.md) for
+  source and test details and for the CLI command audit.

@@ -415,15 +415,15 @@ AC_DEFUN([AST_SET_PBX_AMCONDITIONALS],[
 	AM_COND_IF([ASTERISK_VER_GROUP_113],[AC_CONFIG_FILES([src/pbx_impl/ast113/Makefile])])
 	AM_COND_IF([ASTERISK_VER_GROUP_114],[AC_CONFIG_FILES([src/pbx_impl/ast114/Makefile])])
 	AM_COND_IF([ASTERISK_VER_GROUP_115],[AC_CONFIG_FILES([src/pbx_impl/ast115/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_116],[AC_CONFIG_FILES([src/pbx_impl/ast116/Makefile])])
+
 	AM_COND_IF([ASTERISK_VER_GROUP_117],[AC_CONFIG_FILES([src/pbx_impl/ast117/Makefile])])
 	AM_COND_IF([ASTERISK_VER_GROUP_118],[AC_CONFIG_FILES([src/pbx_impl/ast118/Makefile])])
 	AM_COND_IF([ASTERISK_VER_GROUP_119],[AC_CONFIG_FILES([src/pbx_impl/ast119/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_120],[AC_CONFIG_FILES([src/pbx_impl/ast120/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_121],[AC_CONFIG_FILES([src/pbx_impl/ast121/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_122],[AC_CONFIG_FILES([src/pbx_impl/ast122/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_123],[AC_CONFIG_FILES([src/pbx_impl/ast123/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_124],[AC_CONFIG_FILES([src/pbx_impl/ast124/Makefile])])
+
+
+
+
+
 ])
 
 AC_DEFUN([CS_WITH_PBX], [
@@ -453,6 +453,8 @@ AC_DEFUN([CS_WITH_PBX], [
 		AC_DEFINE_UNQUOTED([PBX_TYPE],ASTERISK,[PBX Type])
 		AC_DEFINE([HAVE_ASTERISK], 1, [Uses Asterisk as PBX])
 		AST_GET_VERSION
+		AS_IF([test "$ASTERISK_VER_GROUP" -lt "$MIN_ASTERISK_VERSION" || test "$ASTERISK_VER_GROUP" -gt "$MAX_ASTERISK_VERSION"],
+			[AC_MSG_ERROR([Supported Asterisk versions are 20 through 24])])
 		AST_CHECK_HEADERS
 	elif test "${PBX_TYPE}" = "Callweaver"; then
 		AC_DEFINE_UNQUOTED([PBX_TYPE],CALLWEAVER,[PBX Type])

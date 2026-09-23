@@ -1,24 +1,54 @@
-name: CI
-
-on: [push]
-
+name: Build and test
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        asterisk: [20, 21, 22, 23, 24]
+        features: [default, optional]
     steps:
-    - uses: actions/checkout@v1
-    - name: Update apt
-      run: sudo apt update
-    - name: Install Dependencies
-      #run: sudo apt install asterisk asterisk-dev asterisk-config asterisk-tests asterisk-testsuite asttest automake autoconf libtool gawk libxml2-dev libxslt1-dev xsltproc libssl-dev 
-      run: sudo apt install asterisk asterisk-dev asterisk-config automake autoconf libtool gawk libxml2-dev libxslt1-dev xsltproc libssl-dev 
-    - name: configure
-      run: ./configure --enable-conference --enable-devdoc --with-hash-size=3001 --enable-experimental-xml --enable-video
-    - name: make
-      run: make -j4
-#    - name: make check
-#      run: make check
-#    - name: make distcheck
-#      run: make distcheck
+      - uses: actions/checkout@v4
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential autoconf automake libtool gawk pkg-config libedit-dev libjansson-dev libsqlite3-dev uuid-dev libssl-dev libxml2-dev libxslt1-dev xsltproc libncurses-dev
+      - name: Prepare Asterisk headers
+        run: sh tools/ci-asterisk-headers.sh '${{ matrix.asterisk }}' "$RUNNER_TEMP/asterisk"
+      - name: Build from checked-in generated files
+        run: |
+          flags=
+          if [ '${{ matrix.features }}' = optional ]; then
+            flags='--enable-conference --enable-video --enable-experimental-xml'
+          fi
+          ./configure --with-asterisk="$RUNNER_TEMP/asterisk/prefix" --with-asterisk-version='${{ matrix.asterisk }}.0' $flags
+          make -j2
+          make check
+      - name: Sanitizer tests
+        if: matrix.asterisk == 22 && matrix.features == 'default'
+        run: TEST_CFLAGS='-fsanitize=address,undefined' TEST_LDFLAGS='-fsanitize=address,undefined' sh tools/run-tests.sh
+      - name: Archive build
+        if: matrix.asterisk == 22 && matrix.features == 'default'
+        run: |
+          make dist
+          mkdir "$RUNNER_TEMP/archive"
+          tar -xf Chan_SCCP-*.tar.gz -C "$RUNNER_TEMP/archive" --strip-components=1
+          cd "$RUNNER_TEMP/archive"
+          ./configure --with-asterisk="$RUNNER_TEMP/asterisk/prefix" --with-asterisk-version=22.0
+          make -j2
+          make check
+      - name: Bootstrap build
+        if: matrix.asterisk == 24 && matrix.features == 'optional'
+        run: |
+          sh tools/bootstrap.sh
+          ./config.status --recheck
+          ./config.status
+          make -j2
+          make check

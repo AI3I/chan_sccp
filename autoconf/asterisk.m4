@@ -44,6 +44,9 @@ AC_DEFUN([AST_GET_VERSION], [
 				AC_DEFINE([ASTERISK_CONF], [0], [NOT Defined ASTERISK_CONF !!])
 				ASTERISK_INCOMPATIBLE=yes;;
 		esac
+		AS_IF([test "$ASTERISK_VER_GROUP" -lt "$MIN_ASTERISK_VERSION" || test "$ASTERISK_VER_GROUP" -gt "$MAX_ASTERISK_VERSION"],
+			[AC_MSG_ERROR([Supported Asterisk versions are 20 through 24])])
+
 		AC_DEFINE_UNQUOTED([ASTERISK_VERSION_NUMBER], ${ASTERISK_VERSION_NUMBER}, [ASTERISK Version Number])
 		AC_DEFINE_UNQUOTED([ASTERISK_VERSION_GROUP], ${ASTERISK_VER_GROUP}, [ASTERISK Version Group])
 		AC_DEFINE_UNQUOTED([ASTERISK_REPOS_LOCATION], ${ASTERISK_REPOS_LOCATION},[ASTERISK Source Location])
@@ -127,6 +130,8 @@ AC_DEFUN([AST_GET_VERSION], [
 							version_found=1
 							AC_MSG_RESULT([Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER} ($x)'])
 
+							AS_IF([test "$ASTERISK_VER_GROUP" -lt "$MIN_ASTERISK_VERSION" || test "$ASTERISK_VER_GROUP" -gt "$MAX_ASTERISK_VERSION"],
+								[AC_MSG_ERROR([Supported Asterisk versions are 20 through 24])])
 							AC_DEFINE_UNQUOTED([ASTERISK_VERSION_NUMBER],`echo ${ASTERISK_VERSION_NUMBER}`,[ASTERISK Version Number])
 							AC_SUBST([ASTERISK_VERSION_NUMBER])
 							AC_DEFINE_UNQUOTED([ASTERISK_VERSION_GROUP],`echo ${ASTERISK_VER_GROUP}`,[ASTERISK Version Group])
@@ -159,28 +164,7 @@ AC_DEFUN([AST_GET_VERSION], [
 									ASTERISK_INCOMPATIBLE=yes;;
 							esac
 
-							if [ test ${ASTERISK_VER_GROUP} -lt ${MIN_ASTERISK_VERSION} ]; then
-								echo ""
-								CONFIGURE_PART([Asterisk Version ${ASTERISK_VER} Not Supported])
-								echo ""
-								echo "This version of chan-sccp-b only has support for Asterisk 1.6.x and above."
-								echo ""
-								echo "Please install a higher version of asterisk"
-								echo ""
-								echo ""
-								exit 255
-							fi
-							if [ test ${ASTERISK_VER_GROUP} -gt ${MAX_ASTERISK_VERSION} ]; then
-								echo ""
-								CONFIGURE_PART([Asterisk Version ${ASTERISK_VER} Not Supported])
-								echo ""
-								echo "This version of chan-sccp-b only has support for Asterisk 1.12.x and below."
-								echo ""
-								echo "Please install a lower version of asterisk"
-								echo ""
-								echo ""
-								exit 255
-							fi
+
 						fi
 					fi 
 				done

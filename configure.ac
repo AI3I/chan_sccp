@@ -6,7 +6,7 @@ dnl NOTE: Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 AC_INIT([Chan_SCCP],m4_esyscmd([cat .version |tr -d '\n']),[https://github.com/chan-sccp/chan-sccp/issues],[Chan_SCCP])
 
-MIN_ASTERISK_VERSION=106
+MIN_ASTERISK_VERSION=120
 MAX_ASTERISK_VERSION=124
 
 AC_CONFIG_AUX_DIR([autoconf])
@@ -113,18 +113,15 @@ AC_SUBST(CPU_OPTIONS)
 AC_SUBST(prefix)
 
 CONFIGURE_PART([Generating Configuration and Makefiles])
-AC_CONFIG_COMMANDS([.revision],
-	output=`cd ${ac_abs_top_builddir};${ac_abs_top_srcdir}/tools/autorevision -t h -o ${ac_abs_top_srcdir}/.revision > ${ac_abs_top_builddir}/src/revision.h 2>/dev/null`
-)
 AC_CONFIG_COMMANDS([src/sccp_enum.h],
-	output=`cd ${ac_abs_top_builddir}/src/;awk -f "${ac_abs_top_srcdir}/tools/gen_sccp_enum.awk" < ${ac_abs_top_srcdir}/src/sccp_enum.in &>/dev/null`
+	output=`cd ${ac_abs_top_builddir}/src/;awk -f "${ac_abs_top_srcdir}/tools/gen_sccp_enum.awk" < ${ac_abs_top_srcdir}/src/sccp_enum.in >/dev/null 2>&1`
 )
-AC_CONFIG_FILES([Makefile doc/Makefile src/Makefile src/pbx_impl/Makefile src/pbx_impl/ast/Makefile src/pbx_impl/ast_announce/Makefile src/pbx_impl/ast${ASTERISK_VER_GROUP}/Makefile contrib/gen_sccpconf/Makefile])
+AC_CONFIG_FILES([Makefile doc/Makefile src/Makefile src/pbx_impl/Makefile src/pbx_impl/ast/Makefile src/pbx_impl/ast_announce/Makefile src/pbx_impl/ast116/Makefile src/pbx_impl/ast120/Makefile src/pbx_impl/ast121/Makefile src/pbx_impl/ast122/Makefile src/pbx_impl/ast123/Makefile src/pbx_impl/ast124/Makefile contrib/gen_sccpconf/Makefile])
 AST_SET_PBX_AMCONDITIONALS
 
-VERSION="`echo ${SCCP_VERSION}_${SCCP_BRANCH}`"
-PACKAGE_STRING="`echo Chan_SCCP_${VERSION}`"
-PACKAGE_TARNAME="`echo Chan_SCCP_${VERSION}`"
+VERSION="$SCCP_VERSION"
+PACKAGE_STRING="Chan_SCCP $VERSION"
+PACKAGE_TARNAME="chan-sccp"
 AC_SUBST([VERSION])
 AC_SUBST([PACKAGE_STRING])
 AC_SUBST([PACKAGE_TARNAME])

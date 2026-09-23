@@ -35,8 +35,8 @@ Real per-version support, not just "whatever happens to compile":
 | 21 | Supported (Standard) |
 | 22 | Supported (LTS) - what this fork is primarily developed/tested against |
 | 23 | Supported (Standard) |
-| 24 | Supported (LTS, released Oct 2026) |
-| 16-19 | Not actively maintained here; older `ast1xx` wrapper code is still present but unverified against current headers |
+| 24 | Supported target; included in the build matrix |
+| Before 20 | Unsupported; configure rejects these versions |
 
 ### Building from source
 
@@ -44,12 +44,25 @@ Real per-version support, not just "whatever happens to compile":
 git clone https://github.com/AI3I/chan_sccp.git
 cd chan_sccp
 ./configure
-make -j2 && make install && make reload
+make -j2
+make check
+# Install/reload only after checking the running PBX and retaining a backup.
+sudo make install
 ```
 
 Run `./configure --help` for the full list of configure flags. If you edit
 `configure.ac`, anything under `autoconf/`, or any `Makefile.am`, regenerate
-the build system with `autoreconf -fi` before rebuilding.
+the build system with `sh tools/bootstrap.sh` before rebuilding and commit the
+regenerated outputs alongside their inputs. Git checkouts and release archives
+both include `configure` and `Makefile.in`; neither requires Autotools to build.
+Do not copy configured build trees: rerun configure in the new location.
+
+`make check` (also `make test`) runs standalone regression tests; it does not
+exercise live calls or the optional embedded Asterisk test framework. For
+sanitizer coverage, run `TEST_CFLAGS="-fsanitize=address,undefined"
+TEST_LDFLAGS="-fsanitize=address,undefined" sh tools/run-tests.sh` on one line.
+CI builds default and optional-feature configurations against Asterisk 20–24
+and checks a source archive. It never installs the channel module into a live PBX.
 
 ### Required Asterisk modules
 

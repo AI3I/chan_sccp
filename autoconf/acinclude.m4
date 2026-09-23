@@ -498,9 +498,9 @@ AC_DEFUN([CS_GET_VERSION], [
 
   CURRENT=`pwd`
   BASE="$srcdir"
-  cd $BASE >/dev/null
+  cd "$BASE" >/dev/null
   . ./tools/versioncheck silent
-  cd $CURRENT >/dev/null
+  cd "$CURRENT" >/dev/null
 
   AC_DEFINE_UNQUOTED([SCCP_VERSION],  "${SCCP_VERSION}", [Define the SCCP Version])
   AC_DEFINE_UNQUOTED([SCCP_BRANCH],   "${SCCP_BRANCH}", [Define the SCCP Branch])
@@ -510,13 +510,8 @@ AC_DEFUN([CS_GET_VERSION], [
   AC_SUBST([SCCP_BRANCH])
   AC_SUBST([SCCP_REVISION])
   AC_SUBST([REPOS_TYPE])
-  if test "${SCCP_BRANCH}" = "TRUNK"; then
-    PACKAGE_NAME="Chan_SCCP_${SCCP_VERSION}_${SCCP_BRANCH}"
-    PACKAGE_VERSION="${SCCP_VERSION}_${SCCP_BRANCH}_r${SCCP_REVISION}"
-  else
-    PACKAGE_NAME="Chan_SCCP_${SCCP_VERSION}_(${SCCP_BRANCH})"
-    PACKAGE_VERSION="${SCCP_VERSION}_${SCCP_BRANCH}"
-  fi
+  PACKAGE_NAME="Chan_SCCP"
+  PACKAGE_VERSION="$SCCP_VERSION"
   AC_SUBST([PACKAGE_NAME])
 ])
 

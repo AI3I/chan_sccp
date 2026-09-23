@@ -1,1 +1,1 @@
-src/.indent.pro
+../../src/.indent.pro

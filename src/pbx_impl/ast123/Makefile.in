@@ -21,7 +21,7 @@
 # 			See the LICENSE file at the top of the source tree.
 # NOTE:			Process this file with automake to produce a makefile.in script.
 
-# FILE:			AutoMake Makefile for chan-sccp 
+# FILE:			AutoMake Makefile for chan-sccp
 # COPYRIGHT:		http://chan-sccp.github.io/chan-sccp/ group 2011
 # CREATED BY:		Diederik de Groot <ddegroot@sourceforge.net>
 # LICENSE: 		This program is free software and may be modified and distributed under the terms of the GNU Public License version 3.
@@ -106,7 +106,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = src/pbx_impl/ast
+subdir = src/pbx_impl/ast123
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/autoconf/acinclude.m4 \
 	$(top_srcdir)/autoconf/acx_pthread.m4 \
@@ -129,16 +129,16 @@ CONFIG_HEADER = $(top_builddir)/src/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libast_la_LIBADD =
-am_libast_la_OBJECTS = libast_la-ast.lo
-libast_la_OBJECTS = $(am_libast_la_OBJECTS)
+libast123_la_LIBADD =
+am_libast123_la_OBJECTS = libast123_la-ast123.lo
+libast123_la_OBJECTS = $(am_libast123_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
-am__v_lt_1 = 
-libast_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libast_la_CFLAGS) \
-	$(CFLAGS) $(libast_la_LDFLAGS) $(LDFLAGS) -o $@
+am__v_lt_1 =
+libast123_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libast123_la_CFLAGS) \
+	$(CFLAGS) $(libast123_la_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -146,15 +146,15 @@ am__v_P_1 = :
 AM_V_GEN = $(am__v_GEN_@AM_V@)
 am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
 am__v_GEN_0 = @echo "  GEN     " $@;
-am__v_GEN_1 = 
+am__v_GEN_1 =
 AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
-am__v_at_1 = 
-DEFAULT_INCLUDES = 
+am__v_at_1 =
+DEFAULT_INCLUDES =
 depcomp = $(SHELL) $(top_srcdir)/autoconf/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/libast_la-ast.Plo
+am__depfiles_remade = ./$(DEPDIR)/libast123_la-ast123.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -165,7 +165,7 @@ LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
+am__v_CC_1 =
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -173,9 +173,9 @@ LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
-SOURCES = $(libast_la_SOURCES)
-DIST_SOURCES = $(libast_la_SOURCES)
+am__v_CCLD_1 =
+SOURCES = $(libast123_la_SOURCES)
+DIST_SOURCES = $(libast123_la_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -467,7 +467,7 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AUTOMAKE_OPTIONS = gnu 
+AUTOMAKE_OPTIONS = gnu
 MOSTLYCLEANFILES = *.gcda *.gcno *.gcov
 #AM_CFLAGS 		+= -I${abs_builddir} -I$(top_builddir)/src/ -I$(top_srcdir)/src/ -I$(top_srcdir)/src/pbx_impl/ -I$(top_srcdir)/src/pbx_impl/ast/ -I$(top_srcdir)/src/$(PBX_COND_SUBDIR) -I$(top_srcdir)/src/$(PBXVER_COND_SUBDIR) -I$(top_srcdir)/src/$(PBXVER_COND_ANNOUNCE_SUBDIR)
 AM_CFLAGS = $(PBX_CFLAGS) $(GDB_FLAGS) $(PTHREAD_CFLAGS) \
@@ -485,11 +485,11 @@ AM_CXXFLAGS = -std=c++11 $(PBX_CFLAGS) $(GDB_FLAGS) $(PTHREAD_CFLAGS) \
 	-DAST_MODULE_SELF_SYM=__internal_chan_sccp_la_self \
 	-DAST_MODULE=\"chan_sccp\" $(AST_CLANG_BLOCKS) -D_REENTRANT \
 	-D_GNU_SOURCE -DCRYPTO -fPIC -pipe -Wall -fpermissive
-noinst_LTLIBRARIES = libast.la
-noinst_HEADERS = define.h ast.h include_asterisk_autoconfig.h
-libast_la_SOURCES = ast.c
-libast_la_CFLAGS = $(AM_CFLAGS)
-libast_la_LDFLAGS = $(AM_LDFLAGS)
+noinst_LTLIBRARIES = libast123.la
+noinst_HEADERS = ast123.h
+libast123_la_SOURCES = ast123.c
+libast123_la_CFLAGS = $(AM_CFLAGS)
+libast123_la_LDFLAGS = $(AM_LDFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -503,9 +503,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/pbx_impl/ast/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/pbx_impl/ast123/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src/pbx_impl/ast/Makefile
+	  $(AUTOMAKE) --gnu src/pbx_impl/ast123/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -534,8 +534,8 @@ clean-noinstLTLIBRARIES:
 	echo rm -f $${locs}; \
 	$(am__rm_f) $${locs}
 
-libast.la: $(libast_la_OBJECTS) $(libast_la_DEPENDENCIES) $(EXTRA_libast_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(libast_la_LINK)  $(libast_la_OBJECTS) $(libast_la_LIBADD) $(LIBS)
+libast123.la: $(libast123_la_OBJECTS) $(libast123_la_DEPENDENCIES) $(EXTRA_libast123_la_DEPENDENCIES)
+	$(AM_V_CCLD)$(libast123_la_LINK)  $(libast123_la_OBJECTS) $(libast123_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -543,7 +543,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libast_la-ast.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libast123_la-ast123.Plo@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -575,12 +575,12 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
-libast_la-ast.lo: ast.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libast_la_CFLAGS) $(CFLAGS) -MT libast_la-ast.lo -MD -MP -MF $(DEPDIR)/libast_la-ast.Tpo -c -o libast_la-ast.lo `test -f 'ast.c' || echo '$(srcdir)/'`ast.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libast_la-ast.Tpo $(DEPDIR)/libast_la-ast.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ast.c' object='libast_la-ast.lo' libtool=yes @AMDEPBACKSLASH@
+libast123_la-ast123.lo: ast123.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libast123_la_CFLAGS) $(CFLAGS) -MT libast123_la-ast123.lo -MD -MP -MF $(DEPDIR)/libast123_la-ast123.Tpo -c -o libast123_la-ast123.lo `test -f 'ast123.c' || echo '$(srcdir)/'`ast123.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libast123_la-ast123.Tpo $(DEPDIR)/libast123_la-ast123.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ast123.c' object='libast123_la-ast123.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libast_la_CFLAGS) $(CFLAGS) -c -o libast_la-ast.lo `test -f 'ast.c' || echo '$(srcdir)/'`ast.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libast123_la_CFLAGS) $(CFLAGS) -c -o libast123_la-ast123.lo `test -f 'ast123.c' || echo '$(srcdir)/'`ast123.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -713,7 +713,7 @@ clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-am
-	-rm -f ./$(DEPDIR)/libast_la-ast.Plo
+	-rm -f ./$(DEPDIR)/libast123_la-ast123.Plo
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -759,7 +759,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -f ./$(DEPDIR)/libast_la-ast.Plo
+	-rm -f ./$(DEPDIR)/libast123_la-ast123.Plo
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

@@ -82,8 +82,10 @@ Updated: 2026-09-22 (PBX clock crossed into September 23). Base commit: `20ea3fc
   and all four phones registered. No leading blank lines or rendering errors.
 - Installed module SHA-256:
   `a191cad78c4905dd2f9972a0708bcf5bb87345e01feb05c64f0486797645bb73`.
-- Changes are uncommitted and unpushed. Base/remote commit remains `20ea3fc1`.
-- Review this batch, then commit/push when requested.
+- CLI/tone changes checkpointed locally as `28aceacd`; not pushed.
+  New build/thread-pool work is tracked in [BUILD_AND_THREADPOOL_PROGRESS.md](BUILD_AND_THREADPOOL_PROGRESS.md).
+- This batch was committed locally as `28aceacd`; subsequent build and CLI
+  work is tracked in [BUILD_AND_THREADPOOL_PROGRESS.md](BUILD_AND_THREADPOOL_PROGRESS.md).
 - Resume the broader review using the ordered handoff below. None of that
   broader cleanup has been bundled into the CLI patch.
 
@@ -138,8 +140,9 @@ between sessions. Update these notes after each meaningful change, validation,
 deployment, or decision; distinguish completed work from proposed work.
 
 Current checkpoint: RTP fix committed/pushed at `20ea3fc1`; CLI/table/tone work
-is deployed and validated but still uncommitted locally. No broader review
-fixes have been implemented yet. Preserve this working tree when resuming.
+is deployed, validated, and checkpointed at `28aceacd`. Build/thread-pool fixes
+are now in progress; see `BUILD_AND_THREADPOOL_PROGRESS.md` for current status.
+Preserve the working tree when resuming.
 
 Next work, in the latest discussed order:
 

@@ -8,38 +8,31 @@
 include 		$(top_srcdir)/src/Makefile.inc.am
 
 SUBDIRS			= pbx_impl $(PBX_COND_SUBDIR) $(PBXVER_COND_SUBDIR) $(PBXVER_COND_ANNOUNCE_SUBDIR) .
-DIST_SUBDIRS		= pbx_impl pbx_impl/ast pbx_impl/ast106 pbx_impl/ast108 pbx_impl/ast110 pbx_impl/ast111 pbx_impl/ast112 pbx_impl/ast113 pbx_impl/ast114 pbx_impl/ast115 pbx_impl/ast116 pbx_impl/ast117 pbx_impl/ast118 pbx_impl/ast_announce .
-EXTRA_DIST 		= sccp_enum.in sccp_config_entries.hh sccp_cli_table_data.h
+DIST_SUBDIRS = pbx_impl pbx_impl/ast pbx_impl/ast116 pbx_impl/ast120 pbx_impl/ast121 pbx_impl/ast122 pbx_impl/ast123 pbx_impl/ast124 pbx_impl/ast_announce .
+EXTRA_DIST 		= .indent.pro sccp_enum.in sccp_config_entries.hh sccp_cli_table_data.h
 BUILT_SOURCES           = revision.h sccp_enum.h sccp_enum.c
 CLEANFILES              = revision.h sccp_enum.h sccp_enum.c stamp-g1
 .PHONY:			force
 
 force:
 
-# generated files
-revision.gen:
-	@echo "  REV      revision.h";
-	@@abs_top_srcdir@/tools/autorevision -t h -o @abs_top_srcdir@/.revision >@abs_top_builddir@/src/revision.h 2>/dev/null;
+# Regenerate provenance without changing the release version or touching an
+# unchanged header. Works for Git checkouts, worktrees and source archives.
+revision.h: force $(top_srcdir)/tools/write-revision.sh
+	$(SHELL) $(top_srcdir)/tools/write-revision.sh "$(top_srcdir)" "$@"
 
-revision.force: force
-	@if	[ ! -f @abs_top_builddir@/src/revision.h ] ||																	\
-	 	[ "x$(GIT)" != "xNo" -a @abs_top_builddir@/src/revision.h -ot @abs_top_srcdir@/.git/COMMIT_EDITMSG -a @abs_top_builddir@/src/revision.h -ot @abs_top_srcdir@/.git/HEAD ] ||	\
-		[ "x$(GIT)" == "xNo" -a @abs_top_builddir@/src/revision.h -ot @abs_top_builddir@/.revision ];											\
-	then																							\
-		$(MAKE) revision.gen;																				\
-	fi	
+# A single stamp serializes generation of the two outputs under parallel make.
+sccp_enum.h sccp_enum.c: stamp-g1
+	@test -f $@ || { rm -f stamp-g1; $(MAKE) stamp-g1; }
 
-revision.h: revision.force
+stamp-g1: $(srcdir)/sccp_enum.in $(top_srcdir)/tools/gen_sccp_enum.awk
+	$(AWK) -f "$(top_srcdir)/tools/gen_sccp_enum.awk" < "$(srcdir)/sccp_enum.in" >/dev/null
+	touch $@
 
-sccp_enum.h sccp_enum.c:sccp_enum.in @abs_top_srcdir@/tools/gen_sccp_enum.awk
-	@if [ sccp_enum.in -nt $@ ] || [ @abs_top_srcdir@/tools/gen_sccp_enum.awk -nt $@ ]; then							\
-		$(MAKE) gen_enum;															\
-	fi
-
-gen_enum:		sccp_enum.in @abs_top_srcdir@/tools/gen_sccp_enum.awk
-			@echo "  GEN      sccp_enum.h";
-			@echo "  GEN      sccp_enum.c";
-			@$(AWK) -f "@abs_top_srcdir@/tools/gen_sccp_enum.awk" < @abs_top_srcdir@/src/sccp_enum.in >/dev/null;
+.PHONY: gen_enum
+gen_enum:
+	rm -f stamp-g1
+	$(MAKE) stamp-g1
 
 #@$(AWK) -O -v out_header_file=sccp_enum.h -v out_source_file=sccp_enum.c -f "@abs_top_srcdir@/tools/gen_sccp_enum.awk" < @abs_top_srcdir@/src/sccp_enum.in >/dev/null;
 
@@ -47,7 +40,7 @@ gen_enum:		sccp_enum.in @abs_top_srcdir@/tools/gen_sccp_enum.awk
 noinst_LTLIBRARIES	= libsccp.la
 csmod_LTLIBRARIES	= chan_sccp.la
 
-noinst_HEADERS		= chan_sccp.h			sccp_actions.h			sccp_cli.h			sccp_devstate.h			\
+noinst_HEADERS		= forward_declarations.h sccp_globals.h sccp_xml_embedded.h  chan_sccp.h			sccp_actions.h			sccp_cli.h			sccp_devstate.h			\
 			  sccp_featureButton.h		sccp_line.h			sccp_linedevice.h		sccp_refcount.h			\
 			  common.h			sccp_appfunctions.h		sccp_cli_table.h		sccp_dllists.h			\
 			  sccp_feature.h		sccp_management.h		sccp_rtp.h			sccp_vector.h			\

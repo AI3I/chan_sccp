@@ -7,12 +7,12 @@
 include 		$(top_srcdir)/amdoxygen.am
 
 AUTOMAKE_OPTIONS	= gnu foreign
-EXTRA_DIST 		= .version tools conf contrib/gen_sccpconf .revision
+EXTRA_DIST 		= .version tools conf contrib/gen_sccpconf
 SUBDIRS 		= src doc
 ACLOCAL_AMFLAGS		= -I autoconf
 AM_CPPFLAGS		= $(LTDLINCL)
 
-distdir 		= $(PACKAGE)-$(SCCP_VERSION)_$(SCCP_BRANCH)_r$(SCCP_REVISION)
+distdir 		= $(PACKAGE)-$(VERSION)
 	
 # Update libtool if necessary	
 libtool: 		@LIBTOOL_DEPS@
@@ -22,8 +22,12 @@ libtool: 		@LIBTOOL_DEPS@
 FORCE:
 
 # Update ChangeLog file from SVN Log
-ChangeLog:		FORCE
-	@$(GIT) log v4.3.2-gamma...HEAD --pretty=medium >ChangeLog
+ChangeLog:
+	@if test -d "$(top_srcdir)/.git"; then \
+	  $(GIT) -C "$(top_srcdir)" log -100 --pretty=medium > $@; \
+	else \
+	  echo 'See NEWS and the repository history for changes.' > $@; \
+	fi
 
 # Update ChangeLog Files and Generate Doxygen Documentation
 doxygen: ChangeLog doxygen-doc
@@ -89,8 +93,12 @@ coverage: src/.libs/chan_sccp.so
 coverage-zero: rmcoverage
 	lcov --directory src/.libs -b src -z;
 
-test:
-	@echo "Success"
+check-local:
+	CC="$(CC)" $(SHELL) $(top_srcdir)/tools/run-tests.sh
+
+.PHONY: test
+test: check
+
 
 install-data-local: chan_sccp-en_US.xml
 	@test -d $(DESTDIR)$(PBX_ETC) || $(mkinstalldirs) $(DESTDIR)$(PBX_ETC);

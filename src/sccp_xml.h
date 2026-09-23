@@ -7,9 +7,6 @@
  */
 #pragma once
 
-//#if defined(HAVE_LIBXML2) && defined(HAVE_LIBXSLT) && defined(HAVE_LIBEXSLT_EXSLT_H)
-//#endif
-
 #include "forward_declarations.h"
 
 __BEGIN_C_EXTERN__
@@ -26,14 +23,11 @@ typedef struct {
 	void (* const setRootElement)(xmlDoc * const doc, xmlNode * const node);
 
 #if defined(HAVE_LIBXSLT) && defined(HAVE_LIBEXSLT_EXSLT_H)
-	//	int (*const setBaseDir)(const char * const baseDir);
-	//	const char * const (*const getBaseDir)(void);
-	boolean_t (* const applyStyleSheet)(xmlDoc * const doc, PBX_VARIABLE_TYPE * pbx_params);
-	boolean_t (* const applyStyleSheetByName)(xmlDoc * const doc, const char * const styleSheetFileName, PBX_VARIABLE_TYPE * pbx_params, char ** result);
+	boolean_t (* const applyStyleSheetByName)(xmlDoc * const doc, const char * const styleSheetFileName, char **result);
 #endif
 
 	char * (* const dump)(xmlDoc * const doc, boolean_t indent);
-	void (* const destroyDoc)(xmlDoc * const * doc);
+	void (* const destroyDoc)(xmlDoc **doc);
 } XMLInterface;
 
 extern const XMLInterface iXML;

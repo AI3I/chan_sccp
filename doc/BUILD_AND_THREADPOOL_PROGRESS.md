@@ -188,3 +188,19 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   Asterisk 22 headers. No module was installed and no phone/client test was
   run. The configured-script, parity, and live registration paths remain to be
   exercised later in the dedicated lab; the running module is unchanged.
+
+## XML ownership cleanup
+
+- Removed per-request and module-unload calls that clean up process-wide
+  libxml2/libxslt state. A request now frees only its own XML documents and
+  stylesheet. The EXSLT registration remains because shipped translation
+  stylesheets use it; the shared registry is left intact across module unload.
+- Removed the unused `applyStyleSheet` interface and commented call sites. It
+  could free a document without updating its caller. XML serialization now
+  copies the result into Asterisk-owned memory before releasing libxml's
+  buffer, matching the webservice's existing `sccp_free` ownership contract.
+  Document destruction now takes a mutable pointer and clears it without a
+  cast. Removed the process-wide external-DTD default assignment.
+- The optional XML configuration compiled against wadsworth's private
+  Asterisk 22 headers. No module was installed; concurrent HTTP requests,
+  stylesheet behavior, and unload/reload under XML traffic remain untested.

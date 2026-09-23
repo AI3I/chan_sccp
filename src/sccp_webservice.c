@@ -442,26 +442,6 @@ static int request_parser(struct ast_tcptls_session_instance * ser, enum ast_htt
 			    "Last-Modified: %s\r\n",
 			    outputfmt2contenttype[outputfmt], 1, cookie_timeout, timebuf);
 		// sccp_log(DEBUGCAT_WEBSERVICE) (VERBOSE_PREFIX_3 "SCCP: (request_parser) Returning Header:'%s'\n", pbx_str_buffer(http_header));
-		/*
-		if (handler->outputfmt == SCCP_XML_OUTPUTFMT_XML && handler->outputfmt != outputfmt && iXML.applyStyleSheet) {
-			addTranslation(request_params);
-			if (process_side == ServerSide) {
-				char *stylesheetFilename = findStylesheet(handler, outputfmt);
-				if (stylesheetFilename) {
-					xmlDoc *xmldoc = iXML.createDoc();
-					if (!iXML.applyStyleSheet(xmldoc, stylesheetFilename, locale, outputfmt, request_params)) {
-						ast_http_error(ser, 500, "Server Error", "Internal Server Error\n(sccp_webservice_parser) stylesheet could not be found\n");
-						break;
-					}
-					sccp_free(stylesheetFilename);
-				} else {
-					pbx_log(LOG_ERROR, "Stylesheet could not be found\n");
-					ast_http_error(ser, 500, "Server Error", "Internal Server Error\nstylesheet could not be found\n");
-					break;
-				}
-			}
-		}
-		*/
 
 		ast_http_send(ser, method, 200, NULL, http_header, out, 0, 0);
 		http_header = out = NULL;
@@ -688,11 +668,11 @@ static boolean_t xmlPostProcess(xmlDoc * const doc, const char * const uri, PBX_
 			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (xmlPostProcess) Processing xsl server-side\n");
 			char * stylesheetFilename = findStylesheet(uri, outputfmt);
 			if (stylesheetFilename) {
-				if (!iXML.applyStyleSheetByName(doc, stylesheetFilename, params, resultstr)) {
+				if (!iXML.applyStyleSheetByName(doc, stylesheetFilename, resultstr)) {
 					pbx_log(LOG_ERROR, "SCCP: (xmlPostProcess) handler '%s' matched stylesheet '%s', but applying it failed (see prior log line for the specific XSLT/parse error)\n", uri, stylesheetFilename);
 					res = FALSE;
 				}
-				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (xmlPostProcess) resultstr:%s\n", *resultstr);
+				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (xmlPostProcess) resultstr:%s\n", *resultstr ? *resultstr : "");
 				sccp_free(stylesheetFilename);
 			} else {
 				pbx_log(LOG_ERROR, "SCCP: (xmlPostProcess) no '%s2%s.xsl' stylesheet found under " PBX_VARLIB "/sccpxslt/ for handler '%s'\n",
@@ -702,6 +682,7 @@ static boolean_t xmlPostProcess(xmlDoc * const doc, const char * const uri, PBX_
 		} else {
 			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (xmlPostProcess) Processing xsl client-side\n");
 			*resultstr = iXML.dump(doc, TRUE);
+			res = *resultstr != NULL;
 		}
 	}
 	return res;
@@ -746,34 +727,12 @@ static boolean_t sccp_webservice_xmltest(const char * const uri, PBX_VARIABLE_TY
 		iXML.addProperty(val1, "type", "%s", "param");
 	}
 
-	/*
-		if (process_side == ServerSide) {
-			// <?xml-stylesheet type='text/xsl' href='/Styles/Contoso.xslt' media='all'?>
-			char *stylesheetFilename = findStylesheet(uri, outputfmt);
-			if (stylesheetFilename) {
-				xmlNode *templ= iXML.createNode("xslt-template");
-				iXML.addProperty(templ, "href", "%s", stylesheetFilename);
-				iXML.setRootElement(doc, templ);
-				sccp_free(stylesheetFilename);
-			}
-			if (!iXML.applyStyleSheet(doc, params)) {
-				pbx_log(LOG_ERROR, "Applying Stylesheet failed\n");
-				res = FALSE;
-			}
-		} else {
-			xmlNode *templ= iXML.createNode("xslt-template");
-			iXML.addProperty(templ, "href", "%s/%s.xsl", "path", "uri");
-			iXML.setRootElement(doc, templ);
-		}
-	*/
 	char * resultstr = NULL;
-	if ((res |= xmlPostProcess(doc, uri, params, headers, &resultstr))) {
-		// create a function for this
+	if (xmlPostProcess(doc, uri, params, headers, &resultstr) && resultstr) {
 		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "resultstr: %s\n", resultstr);
 		pbx_str_append(result, 0, "%s", resultstr);
 		sccp_free(resultstr);
-		//} else {
-		//	pbx_str_append(result, 0, "%s", iXML.dump(doc, TRUE));
+		res = TRUE;
 	}
 	iXML.destroyDoc(&doc);
 

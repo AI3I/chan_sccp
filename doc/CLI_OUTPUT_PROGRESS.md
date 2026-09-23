@@ -178,7 +178,7 @@ locations, evidence, limits, and proposed validation.
 |---|---|---|---|
 | R1 | High | Thread-pool teardown can free live-worker storage | Implemented; live call workload deferred |
 | R2 | High, conditional | Fallback-script output stack overflow | Implemented; compile-only validation, runtime deferred |
-| R3 | High, conditional | XML request/unload cleanup destroys global library state | Open |
+| R3 | High, conditional | XML request/unload cleanup destroys global library state | Implemented; optional XML compile passed, runtime deferred |
 | R4 | High | Generated build files and distribution lists contradict sources | Implemented; hosted 20–24 CI passed before legacy retirement |
 | R5 | Medium | Partial writes can interleave SCCP frames | Open |
 | R6 | Medium | Recoverable reads/full receive buffers cause disconnects | Open |

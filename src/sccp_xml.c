@@ -90,101 +90,24 @@ static void setRootElement(xmlDoc * const doc, xmlNode * const node)
 
 static __attribute__((malloc)) char * dump(xmlDoc * const doc, boolean_t indent)
 {
-	char * output     = NULL;
+	xmlChar *xml_output = NULL;
 	int    output_len = 0;
-	xmlDocDumpFormatMemoryEnc(doc, (xmlChar **)&output, &output_len, "UTF-8", indent ? 1 : 0);
+	xmlDocDumpFormatMemoryEnc(doc, &xml_output, &output_len, "UTF-8", indent ? 1 : 0);
+	char *output = xml_output ? pbx_strdup((const char *)xml_output) : NULL;
+	if (xml_output)
+		xmlFree(xml_output);
 
-	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_2 "SCCP: (dump) doc:%p -> XML:\n%s\n", doc, output);
+	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_2 "SCCP: (dump) doc:%p -> XML:\n%s\n", doc, output ? output : "");
 	return output;
 }
 
 #	if defined(HAVE_LIBXSLT) && defined(HAVE_LIBEXSLT_EXSLT_H)
-/*
-static const char * const outputfmt_ext[] = {
-	[SCCP_XML_OUTPUTFMT_NULL] = "",
-	[SCCP_XML_OUTPUTFMT_HTML] = "html",
-	[SCCP_XML_OUTPUTFMT_XML] =  "xml",
-	[SCCP_XML_OUTPUTFMT_CXML] = "cxml",
-	[SCCP_XML_OUTPUTFMT_AJAX] = "ajax",
-	[SCCP_XML_OUTPUTFMT_TXT] = "txt",
-};
 
-static __attribute__ ((malloc)) char * searchWebDirForFile(const char *filename, sccp_xml_outputfmt_t outputfmt, const char *extension)
+static boolean_t applyStyleSheetByName(xmlDoc * const doc, const char * const styleSheetFilename, char **result)
 {
-	char filepath[PATH_MAX] = "";
-	snprintf(filepath, sizeof(filepath), PBX_VARLIB "/%s_%s.%s", filename, outputfmt ? outputfmt_ext[outputfmt] : "", extension);
-	if (access(filepath, F_OK ) == -1) {
-		pbx_log(LOG_ERROR, "\nSCCP: (sccp_xml_searchWebDirForFile) file: '%s' could not be found\n", filepath);
-		filepath[0] = '\0';
-		return NULL;
-	}
-	return strdup(filepath);
-}
-*/
-
-static uint convertPbxVar2XsltParams(PBX_VARIABLE_TYPE * pbx_params, const char * params[17], int nbparams)
-{
-	PBX_VARIABLE_TYPE * v = pbx_params;
-	for (; v && nbparams <= 14; v = v->next) {
-		params[nbparams++] = v->name;
-		params[nbparams++] = v->value;
-		// params[*nbparams++] = strdup(v->name);
-		// params[*nbparams++] = strdup(v->value);
-	}
-	params[nbparams] = NULL;
-	return nbparams;
-}
-
-/* rework to easy unit testing, TO MUCH INTEGRATION */
-/* return allocated string */
-static boolean_t applyStyleSheet(xmlDoc * const doc, PBX_VARIABLE_TYPE * pbx_params)
-{
-	boolean_t    res        = FALSE;
-	const char * params[17] = { 0 };
-	uint         nbparams   = 0;
-
-	// params[nbparams++] = "locales";
-	// params[nbparams++] = language;
-	params[nbparams++] = "locales";
-	params[nbparams++] = "en";
-
-	/* process xinclude elements. */
-	if (xmlXIncludeProcess(doc) < 0) {
-		// xmlFreeDoc(doc);
-		return res;
-	}
-
-	xsltStylesheetPtr xslt = xsltLoadStylesheetPI(doc);
-	if (xslt) {
-		// xmlSubstituteEntitiesDefault(1);						/* coverity: CID 200164 (#1 of 1): unsafe_xml_parse_config (UNSAFE_XML_PARSE_CONFIG)unsafe_xml_parse_config: Passing 1 (value: 1)
-		// to xmlSubstituteEntitiesDefault(int) will allow entity substitution which can allow malicious entities to be substituted.*/
-		xmlLoadExtDtdDefaultValue = 1;
-		nbparams                  = convertPbxVar2XsltParams(pbx_params, params, nbparams);                                        // still needed ?
-		xmlDocPtr newdoc          = xsltApplyStylesheet(xslt, doc, params);
-		if (newdoc) {                                        // switch xml doc with newdoc which got the stylesheet applied, free original xml doc
-			xmlFreeDoc(doc);
-			*(xmlDoc **)&doc = newdoc;
-			res              = TRUE;
-		}
-		xsltFreeStylesheet(xslt);
-		xsltCleanupGlobals();
-	}
-
-	return res;
-}
-
-/* rework to easy unit testing, TO MUCH INTEGRATION */
-static boolean_t applyStyleSheetByName(xmlDoc * const doc, const char * const styleSheetFilename, PBX_VARIABLE_TYPE * pbx_params, char ** result)
-{
-	boolean_t    res        = FALSE;
-	const char * params[17] = { 0 };
-	int          nbparams   = 0;
-
-	// params[nbparams++] = "locales";
-	// params[nbparams++] = language;
-	params[nbparams++] = "locales";
-	params[nbparams++] = "en";
-	// convertPbxVar2XsltParams(pbx_params, params, &nbparams);
+	boolean_t res = FALSE;
+	const char *params[] = { "locales", "en", NULL };
+	*result = NULL;
 
 	/* process xinclude elements. */
 	if (xmlXIncludeProcess(doc) < 0) {
@@ -202,46 +125,37 @@ static boolean_t applyStyleSheetByName(xmlDoc * const doc, const char * const st
 		xmlDoc * const newdoc = xsltApplyStylesheet(xslt, doc, params);
 		if (newdoc) {                                        // switch xml doc with newdoc which got the stylesheet applied, free original xml doc
 			int output_len = 0;
-			xmlDocDumpFormatMemoryEnc(newdoc, (xmlChar **)result, &output_len, "UTF-8", 1);
-			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "applied Stylesheet newdoc: '%s'\n", *result);
+			xmlChar *xml_output = NULL;
+			xmlDocDumpFormatMemoryEnc(newdoc, &xml_output, &output_len, "UTF-8", 1);
+			if (xml_output) {
+				*result = pbx_strdup((const char *)xml_output);
+				xmlFree(xml_output);
+			}
+			if (*result)
+				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "applied Stylesheet newdoc: '%s'\n", *result);
 			xmlFreeDoc(newdoc);
-			res = TRUE;
+			res = *result != NULL;
 		}
-		// sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "applied Stylesheet doc: '%s'\n", dump(doc, TRUE));
 		xsltFreeStylesheet(xslt);
-		xsltCleanupGlobals();
 	}
 
 	return res;
 }
 #	endif
 
-static void destroyDoc(xmlDoc * const * doc)
+static void destroyDoc(xmlDoc **doc)
 {
 	if (doc && *doc) {
 		xmlFreeDoc(*doc);
-		*(xmlDoc **)doc = NULL;
+		*doc = NULL;
 	}
-	xmlCleanupParser();
-	xmlMemoryDump();
 }
 
 /* private functions */
 static void __attribute__((constructor)) init_xml(void)
 {
 	xmlInitParser();
-	// xmlSubstituteEntitiesDefault(1);	/* coverity: CID 200164 (#1 of 1): unsafe_xml_parse_config (UNSAFE_XML_PARSE_CONFIG)unsafe_xml_parse_config: Passing 1 (value: 1) to xmlSubstituteEntitiesDefault(int) will allow
-	// entity substitution which can allow malicious entities to be substituted. */
-	xmlLoadExtDtdDefaultValue = 1;
 	exsltRegisterAll();
-}
-
-static void __attribute__((destructor)) destroy_xml(void)
-{
-	xsltCleanupGlobals();
-	xmlCleanupParser();
-	xmlMemoryDump();
-	xmlCleanupGlobals();
 }
 
 /* Assign to interface */
@@ -255,9 +169,6 @@ const XMLInterface iXML = {
 	.setRootElement      = setRootElement,
 
 #	if defined(HAVE_LIBXSLT) && defined(HAVE_LIBEXSLT_EXSLT_H)
-	//.setBaseDir = setBaseDir,
-	//.getBaseDir = getBaseDir,
-	.applyStyleSheet       = applyStyleSheet,
 	.applyStyleSheetByName = applyStyleSheetByName,
 #	endif
 	.dump       = dump,

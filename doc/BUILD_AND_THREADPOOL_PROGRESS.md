@@ -317,6 +317,19 @@ test was run for this read-only audit.
   on big-endian hosts. The repeated version checks should share one decoded
   value. Review the v22 quality-statistics length handling in the same pass.
 
+**Repair checkpoint (`258191af`, 2026-09-23):** The missing-file returns in
+both conference playback branches now release the playback mutex. Phone text
+messages now accept the documented 1024/4000-character limits, initialize an
+empty title when the sender is absent, and reject a NULL body. The supported
+announcement request now rejects formats other than A-law instead of silently
+creating an A-law channel. Connection-statistics layout selection uses one
+decoded protocol version; all three quality-statistics copies clamp the wire
+length before adding space for a terminator, including the unaligned v22 path.
+The source diff passed `git diff --check`. The hosted
+[Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35893496608)
+and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35893496696)
+passed for the source commit. No live handset test was run.
+
 ## Media payload and test-surface cleanup (2026-09-23)
 
 - Changed RTP payload lookup through the PBX interface and SCCP helper to

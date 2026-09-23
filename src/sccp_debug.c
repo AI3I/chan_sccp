@@ -71,18 +71,13 @@ int32_t sccp_parse_debugline(char * arguments[], int startat, int argc, int32_t 
 	if (sscanf(arguments[startat], "%d", &new_debug_value) != 1) {
 		for (argi = startat; argi < argc; argi++) {
 			char * argument = arguments[argi];
-			if (!strncmp(argument, "none", 4) || !strncmp(argument, "off", 3)) {
+			if (!strcasecmp(argument, "none") || !strcasecmp(argument, "off")) {
 				new_debug_value = 0;
 				break;
-			} else if (!strncmp(argument, "no", 2)) {
+			} else if (!strcasecmp(argument, "no")) {
 				subtract = 1;
-			} else if (!strncmp(argument, "all", 3)) {
-				new_debug_value = 0;
-				for (i = 0; i < ARRAY_LEN(sccp_debug_categories); i++) {
-					if (!subtract) {
-						new_debug_value += sccp_debug_categories[i].category;
-					}
-				}
+			} else if (!strcasecmp(argument, "all")) {
+				new_debug_value = subtract ? 0 : DEBUGCAT_ALL;
 			} else {
 				// parse comma separated debug_var
 				boolean_t matched   = FALSE;

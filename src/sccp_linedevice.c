@@ -148,7 +148,7 @@ static void regcontext_exten(constLineDevicePtr ld, int onoff)
  */
 void sccp_linedevice_cfwd(lineDevicePtr ld, sccp_cfwd_t type, char * number)
 {
-	if(!ld || !ld->line) {
+	if (!ld || !ld->line || type < SCCP_CFWD_NONE || type >= SCCP_CFWD_SENTINEL) {
 		return;
 	}
 

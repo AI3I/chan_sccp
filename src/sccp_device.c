@@ -1711,7 +1711,7 @@ void sccp_dev_set_message(devicePtr d, const char *msg, const int timeout, const
 		char msgtimeout[10];
 
 		snprintf(msgtimeout, sizeof(msgtimeout), "%d", timeout);
-		iPbx.feature_addToDatabase("SCCP/message", "timeout", pbx_strdup(msgtimeout));
+		iPbx.feature_addToDatabase("SCCP/message", "timeout", msgtimeout);
 		iPbx.feature_addToDatabase("SCCP/message", "text", msg);
 	}
 	

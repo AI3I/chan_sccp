@@ -18,7 +18,7 @@
  *
  * how to use the cli macro's
  * /code
- * static char cli_message_device_usage[] = "Usage: sccp message device <deviceId> <message text> [beep] [timeout]\n" "Send a message to an SCCP Device + phone beep + timeout.\n";
+ * static char cli_message_device_usage[] = "Usage: sccp message device <device-id> <message text> [beep] [timeout]\n" "Send a message to an SCCP Device + phone beep + timeout.\n";
  * static char ami_message_device_usage[] = "Usage: SCCPMessageDevices\n" "Show All SCCP Softkey Sets.\n\n" "PARAMS: DeviceId, MessageText, Beep, Timeout\n";
  * \#define CLI_COMMAND "sccp", "message", "device"                                      // defines the cli command line before parameters
  * \#define AMI_COMMAND "SCCPMessageDevice"                                              // defines the ami command line before parameters
@@ -530,7 +530,7 @@ static char *sccp_complete_set(OLDCONST char *line, OLDCONST char *word, int pos
 					"park"
 #endif
 	};
-	char * properties_device[] = { "ringtone", "backgroundImage" };
+	char * properties_device[] = { "ringtone", "backgroundimage" };
 	char *properties_fallback[] = { "true", "false", "odd", "even", "path" };
 
 	char *values_hold[] = { "on", "off" };
@@ -765,7 +765,7 @@ static int sccp_show_globals(int fd, sccp_cli_totals_t *totals, struct mansessio
 	CLI_AMI_OUTPUT_BOOL("Direct RTP", CLI_AMI_LIST_WIDTH, GLOB(directrtp));
 	CLI_AMI_OUTPUT_PARAM("NAT", CLI_AMI_LIST_WIDTH, "%s", sccp_nat2str(GLOB(nat)));
 	CLI_AMI_OUTPUT_PARAM("Keepalive (s)", CLI_AMI_LIST_WIDTH, "%d", GLOB(keepalive));
-	CLI_AMI_OUTPUT_PARAM("Debug", CLI_AMI_LIST_WIDTH, "(%d) %s", GLOB(debug), debugcategories);
+	CLI_AMI_OUTPUT_PARAM("Debug", CLI_AMI_LIST_WIDTH, "(%d) %s", GLOB(debug), debugcategories ? debugcategories : "none");
 	CLI_AMI_OUTPUT_PARAM("Date format", CLI_AMI_LIST_WIDTH, "%s", GLOB(dateformat));
 	CLI_AMI_OUTPUT_PARAM("First digit timeout", CLI_AMI_LIST_WIDTH, "%d", GLOB(firstdigittimeout));
 	CLI_AMI_OUTPUT_PARAM("Digit timeout", CLI_AMI_LIST_WIDTH, "%d", GLOB(digittimeout));
@@ -1328,7 +1328,7 @@ static int sccp_show_device(int fd, sccp_cli_totals_t *totals, struct mansession
 	return RESULT_SUCCESS;
 }
 
-static char cli_device_usage[] = "Usage: sccp show device <deviceId>\n" "       Lists device settings for the SCCP subsystem.\n";
+static char cli_device_usage[] = "Usage: sccp show device <device-id>\n" "       Lists device settings for the SCCP subsystem.\n";
 static char ami_device_usage[] = "Usage: SCCPShowDevice\n" "Lists device settings for the SCCP subsystem.\n\n" "PARAMS: DeviceName\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -1921,11 +1921,11 @@ CLI_AMI_ENTRY(conference_command, sccp_cli_conference_command, "Conference Actio
 
 #endif														/* CS_SCCP_CONFERENCE */
     /* ---------------------------------------------------------------------------------------------SHOW_HINT LINESTATES - */
-static char cli_show_hint_lineStates_usage[] = "Usage: sccp show hint linestates\n" "	Show All SCCP HINT LineStates.\n";
+static char cli_show_hint_lineStates_usage[] = "Usage: sccp show hint linestates\n" "	Show SCCP hint line states.\n";
 static char ami_show_hint_lineStates_usage[] = "Usage: SCCPShowHintLineStates\n" "Show All SCCP Hint Line States.\n\n" "PARAMS: None\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-#define CLI_COMMAND "sccp", "show", "hint", "lineStates"
+#define CLI_COMMAND "sccp", "show", "hint", "linestates"
 #define AMI_COMMAND "SCCPShowHintLineStates"
 #define CLI_COMPLETE SCCP_CLI_NULL_COMPLETER
 #define CLI_AMI_PARAMS ""
@@ -2437,7 +2437,7 @@ static int sccp_show_softkeysets(int fd, sccp_cli_totals_t *totals, struct manse
 	return RESULT_SUCCESS;
 }
 
-static char cli_show_softkeysets_usage[] = "Usage: sccp show softkeysets\n" "	Show the configured SoftKeySets.\n";
+static char cli_show_softkeysets_usage[] = "Usage: sccp show softkeysets\n" "	Show the configured softkey sets.\n";
 static char ami_show_softkeysets_usage[] = "Usage: SCCPShowSoftKeySets\n" "Show All SCCP Softkey Sets.\n\n" "PARAMS: None\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -2452,26 +2452,7 @@ CLI_AMI_ENTRY(show_softkeysets, sccp_show_softkeysets, "Show configured SoftKeyS
 #undef CLI_COMMAND
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
 
-/* TODO: to be removed. temporary backward compatible version (2020-11-16) */
-static char * handle_backward_softkeysets(struct ast_cli_entry * e, int cmd, struct ast_cli_args * a)
-{
-	switch (cmd) {
-		case CLI_INIT:
-			e->command = "sccp show softkeyssets";
-			e->usage   = "Usage: sccp show softkeyssets\n"
-				   "       Backward compatible version.\n";
-			return NULL;
-		case CLI_GENERATE:
-			return NULL;
-	}
-	if (a->argc > 3) {
-		return CLI_SHOWUSAGE;
-	}
 
-	sccp_show_softkeysets(a->fd, NULL, NULL, NULL, 0, NULL);
-	return CLI_SUCCESS;
-}
-/* TODO: END */
 
 /* -----------------------------------------------------------------------------------------------------MESSAGE DEVICES- */
 /*!
@@ -2597,7 +2578,7 @@ static int sccp_message_device(int fd, sccp_cli_totals_t *totals, struct mansess
 	return res;
 }
 
-static char cli_message_device_usage[] = "Usage: sccp message device <deviceId> <message text> [beep] [timeout]\n" "       Send a message to an SCCP Device + phone beep + timeout.\n";
+static char cli_message_device_usage[] = "Usage: sccp message device <device-id> <message text> [beep] [timeout]\n" "       Send a message to an SCCP Device + phone beep + timeout.\n";
 static char ami_message_device_usage[] = "Usage: SCCPMessageDevice\n" "Send a message to an SCCP Device.\n\n" "PARAMS: DeviceId, MessageText, Beep, Timeout\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -2628,52 +2609,63 @@ static int sccp_system_message(int fd, sccp_cli_totals_t *totals, struct mansess
 {
 	sccp_device_t *d = NULL;
 	int timeout = 0;
-	char timeoutStr[5] = "";
-	boolean_t beep = FALSE;
 	int local_line_total = 0;
-	int res = RESULT_FAILURE;
+	int next = 4;
+	char timeout_text[4];
+	boolean_t beep = FALSE;
 
 	if (argc == 3) {
+		iPbx.feature_removeTreeFromDatabase("SCCP/message", "timeout");
+		iPbx.feature_removeTreeFromDatabase("SCCP/message", "text");
 		SCCP_RWLIST_RDLOCK(&GLOB(devices));
 		SCCP_RWLIST_TRAVERSE(&GLOB(devices), d, list) {
-			sccp_dev_clear_message(d, TRUE);
+			sccp_dev_clear_message(d, FALSE);
 		}
 		SCCP_RWLIST_UNLOCK(&GLOB(devices));
-		CLI_AMI_OUTPUT(fd, s, "Message Cleared\n");
+		CLI_AMI_OUTPUT(fd, s, "System message cleared.\n");
 		return RESULT_SUCCESS;
 	}
-
-	if (argc < 4 || argc > 6 || sccp_strlen_zero(argv[3])) {
-		return RESULT_SHOWUSAGE;
+	if (argc < 4 || argc > 6 || sccp_strlen_zero(argv[3])) return RESULT_SHOWUSAGE;
+	if (next < argc && sccp_strcaseequals(argv[next], "beep")) {
+		beep = TRUE;
+		next++;
 	}
-
-	if (argc > 4) {
-		if (!strcmp(argv[4], "beep")) {
-			beep = TRUE;
-			sscanf(argv[5], "%d", &timeout);
+	if (next < argc) {
+		const char *digit = argv[next++];
+		if (sccp_strlen_zero(digit)) return RESULT_SHOWUSAGE;
+		for (; *digit; digit++) {
+			if (*digit < '0' || *digit > '9') return RESULT_SHOWUSAGE;
+			timeout = timeout * 10 + (*digit - '0');
+			if (timeout > 255) return RESULT_SHOWUSAGE;
 		}
-		sscanf(argv[4], "%d", &timeout);
-	} else {
-		timeout = 0;
 	}
-
-	snprintf(timeoutStr, sizeof(timeoutStr), "%d", timeout);
-
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "Sending system message '%s' to all devices (beep: %d, timeout: %d)\n", argv[3], beep, timeout);
+	if (next != argc) return RESULT_SHOWUSAGE;
+	snprintf(timeout_text, sizeof(timeout_text), "%d", timeout);
+	if (!iPbx.feature_addToDatabase("SCCP/message", "timeout", timeout_text) ||
+	    !iPbx.feature_addToDatabase("SCCP/message", "text", argv[3])) {
+		CLI_AMI_RETURN_ERROR(fd, s, m, "%s", "Unable to save the system message.\n");
+	}
 	SCCP_RWLIST_RDLOCK(&GLOB(devices));
 	SCCP_RWLIST_TRAVERSE(&GLOB(devices), d, list) {
-		sccp_dev_set_message(d, argv[3], timeout, TRUE, beep);
-		res = RESULT_SUCCESS;
+		sccp_dev_set_message(d, argv[3], timeout, FALSE, beep);
+		local_line_total++;
 	}
 	SCCP_RWLIST_UNLOCK(&GLOB(devices));
-
-	if (s) {
-		totals->lines = local_line_total;
-	}
-	return res;
+	CLI_AMI_OUTPUT(fd, s, "System message saved; applied to %d configured device%s.\n",
+	               local_line_total, local_line_total == 1 ? "" : "s");
+	CLI_AMI_OUTPUT(fd, s, "Display requires a registered phone; higher-priority prompts may hide idle messages.\n");
+	if (s) totals->lines = local_line_total;
+	return RESULT_SUCCESS;
 }
 
-static char cli_system_message_usage[] = "Usage: sccp system message <message text> [beep] [timeout]\n" "       The default optional timeout is 0 (forever)\n" "       Example: sccp system message \"The boss is gone. Let's have some fun!\"  10\n";
+static char cli_system_message_usage[] =
+	"Usage: sccp system message \"<text>\" [beep] [timeout]\n"
+	"       Save a message for all devices, including future registrations.\n"
+	"       Timeout: 0 = idle message (default); 1-255 = notification seconds.\n"
+	"       Higher-priority prompts may hide idle messages.\n"
+	"       Optional 'beep' sounds a tone on connected phones.\n"
+	"       Run 'sccp system message' without arguments to clear it.\n"
+	"       Example: sccp system message \"Maintenance at 18:00\" 30\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "system", "message"
@@ -2747,7 +2739,7 @@ static int sccp_dnd_device(int fd, sccp_cli_totals_t *totals, struct mansession 
 	return res;
 }
 
-static char cli_dnd_device_usage[] = "Usage: sccp dnd <deviceId> [off|reject|silent]\n" "       Send a dnd to an SCCP Device. Optionally specifying new DND state  [off|reject|silent]\n";
+static char cli_dnd_device_usage[] = "Usage: sccp dnd device <device-id> [off|reject|silent]\n" "       Send a dnd to an SCCP Device. Optionally specifying new DND state  [off|reject|silent]\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "dnd", "device"
@@ -2775,69 +2767,78 @@ CLI_AMI_ENTRY(dnd_device, sccp_dnd_device, "Set/Unset DND on an SCCP Device", cl
      * \called_from_asterisk
      * 
      */
+/* Parse user input without the enum converter's error-log side effects. */
+static sccp_cfwd_t sccp_cli_forward_type(const char *value)
+{
+	if (sccp_strcaseequals(value, "none")) return SCCP_CFWD_NONE;
+	if (sccp_strcaseequals(value, "all")) return SCCP_CFWD_ALL;
+	if (sccp_strcaseequals(value, "busy")) return SCCP_CFWD_BUSY;
+	if (sccp_strcaseequals(value, "noanswer")) return SCCP_CFWD_NOANSWER;
+	return SCCP_CFWD_SENTINEL;
+}
+
 static int sccp_callforward(int fd, sccp_cli_totals_t *totals, struct mansession *s, const struct message *m, int argc, char *argv[])
 {
-	int res = RESULT_FAILURE;
 	int local_line_total = 0;
-	sccp_cfwd_t type = SCCP_CFWD_NONE;
+	int type_index = 3;
+	sccp_cfwd_t type;
 	char *dest = NULL;
-	AUTO_RELEASE(sccp_device_t, d , NULL);
+	AUTO_RELEASE(sccp_device_t, d, NULL);
 
-	if(3 > argc || argc > 6) {
+	if (argc < 4 || argc > 6) return RESULT_SHOWUSAGE;
+	type = sccp_cli_forward_type(argv[type_index]);
+	if (type == SCCP_CFWD_SENTINEL) {
+		type_index = 4;
+		if (argc <= type_index) return RESULT_SHOWUSAGE;
+		type = sccp_cli_forward_type(argv[type_index]);
+	}
+	if (type == SCCP_CFWD_SENTINEL || argc > type_index + 2 ||
+	    (type == SCCP_CFWD_NONE && argc != type_index + 1)) {
 		return RESULT_SHOWUSAGE;
 	}
+	if (argc == type_index + 2) dest = argv[type_index + 1];
 
-	AUTO_RELEASE(sccp_line_t, l , sccp_line_find_byname(argv[2], FALSE));
-	//CLI_AMI_OUTPUT(fd, s, "2:%s, 3:%s ,4:%s, 5:%s\n", argv[2], argv[3], argv[4], argv[5]);
-	if (l) {
-		if (argc == 6) {
-			d = sccp_device_find_byid(argv[3], FALSE) /*ref_replace*/;
-			type = sccp_cfwd_str2val(argv[4]);
-			dest = argv[5];
-		} else if (argc == 5) {
-			if (sccp_strcaseequals(argv[4], "none")) {
-				d = sccp_device_find_byid(argv[3], FALSE); /*ref_replace*/
-				type = sccp_cfwd_str2val(argv[4]);
-			} else if(sccp_cfwd_str2val(argv[4]) != SCCP_CFWD_SENTINEL) { /* line device all [number empty]*/
-				d = sccp_device_find_byid(argv[3], FALSE);            /*ref_replace*/
-				type = sccp_cfwd_str2val(argv[4]);
-				dest = "";
-			} else { /* line [nodevice] all number */
-				type = sccp_cfwd_str2val(argv[3]);
-				dest = argv[4];
-			}
-		} else {
-			type = SCCP_CFWD_NONE;
-		}
-	} else {
-		CLI_AMI_RETURN_ERROR(fd, s, m, "Can't find line %s\n", argv[2]);		/* explicit return */
+	AUTO_RELEASE(sccp_line_t, l, sccp_line_find_byname(argv[2], FALSE));
+	if (!l) {
+		CLI_AMI_RETURN_ERROR(fd, s, m, "Line '%s' not found.\n", argv[2]);
 	}
-
-	CLI_AMI_OUTPUT(fd, s, "Set/Unset CallForward to %s:\n", sccp_cfwd2str(type));
-	if (l && d) {
-		CLI_AMI_OUTPUT(fd, s, " - on line:%s and device:%s\r\n", l->name, d->id);
-		sccp_line_cfwd(l, d, type, dest);
-		local_line_total++;
+	if (type_index == 4) {
+		d = sccp_device_find_byid(argv[3], FALSE); /*ref_replace*/
+		if (!d) {
+			CLI_AMI_RETURN_ERROR(fd, s, m, "Device '%s' not found.\n", argv[3]);
+		}
+		AUTO_RELEASE(sccp_linedevice_t, ld, sccp_linedevice_find(d, l));
+		if (!ld) {
+			CLI_AMI_RETURN_ERROR(fd, s, m, "Line '%s' is not attached to device '%s'.\n", l->name, d->id);
+		}
+		sccp_linedevice_cfwd(ld, type, dest);
+		local_line_total = 1;
 	} else {
-		sccp_linedevice_t * ld = NULL;
+		sccp_linedevice_t *ld = NULL;
 		SCCP_LIST_LOCK(&l->devices);
 		SCCP_LIST_TRAVERSE(&l->devices, ld, list) {
-			CLI_AMI_OUTPUT(fd, s, " - on line:%s and device:%s\r\n", l->name, ld->device->id);
 			sccp_linedevice_cfwd(ld, type, dest);
 			local_line_total++;
 		}
 		SCCP_LIST_UNLOCK(&l->devices);
 	}
-	res = RESULT_SUCCESS;
-
-	if (s) {
-		totals->lines = local_line_total;
+	if (!local_line_total) {
+		CLI_AMI_RETURN_ERROR(fd, s, m, "Line '%s' has no attached devices.\n", l->name);
 	}
-	return res;
+	CLI_AMI_OUTPUT(fd, s, "Call forwarding %s on line '%s': %s (%d device%s).\n",
+	               sccp_cfwd2str(type), l->name, sccp_strlen_zero(dest) ? "disabled" : dest,
+	               local_line_total, local_line_total == 1 ? "" : "s");
+	if (s) totals->lines = local_line_total;
+	return RESULT_SUCCESS;
 }
 
-static char cli_callforward_usage[] = "Usage: sccp callforward <lineName> [deviceId] <none|all|busy|noanswer> [number]\n"
-				      "       Set/unset callforward on a line. required: line, type and number. Optionally specifying a device.\n";
+static char cli_callforward_usage[] =
+	"Usage: sccp callforward <line-name> [device-id] <all|busy|noanswer> [number]\n"
+	"       sccp callforward <line-name> [device-id] none\n"
+	"       Set forwarding to number; omit number to disable the selected mode.\n"
+	"       'none' disables all forwarding modes.\n"
+	"       Omit device-id to update every device attached to the line.\n"
+	"       Example: sccp callforward 2004 SEPB8621F6C90A2 all 2003\n";
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "callforward"
 #define AMI_COMMAND "SCCPCallForward"
@@ -2888,7 +2889,8 @@ static int sccp_remove_line_from_device(int fd, int argc, char *argv[])
 			sccp_device_check_update(d);
 			res = RESULT_SUCCESS;
 		} else {
-			pbx_log(LOG_ERROR, "Error: Line %s not found\n", argv[4]);
+			pbx_cli(fd, "Line %s not found\n", argv[4]);
+			return RESULT_FAILURE;
 		}
 	} else {
 		pbx_log(LOG_ERROR, "Error: Device %s not found\n", argv[3]);
@@ -2896,7 +2898,7 @@ static int sccp_remove_line_from_device(int fd, int argc, char *argv[])
 	return res;
 }
 
-static char remove_line_from_device_usage[] = "Usage: sccp remove line <deviceID> <lineID>\n" "       Remove a line from device.\n";
+static char remove_line_from_device_usage[] = "Usage: sccp remove line <device-id> <line-id>\n" "       Remove a line from device.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "remove", "line"
@@ -2929,7 +2931,8 @@ static int sccp_add_line_to_device(int fd, int argc, char *argv[])
 	if (d) {
 		AUTO_RELEASE(sccp_line_t, l , sccp_line_find_byname(argv[4], FALSE));
 		if (!l) {
-			pbx_log(LOG_ERROR, "Error: Line %s not found\n", argv[4]);
+			pbx_cli(fd, "Line %s not found\n", argv[4]);
+			return RESULT_FAILURE;
 		}
  		d->pendingUpdate = 1;
 		if (sccp_config_addButton(&d->buttonconfig, -1, LINE, l->name, NULL, NULL) == SCCP_CONFIG_CHANGE_CHANGED) {
@@ -2946,7 +2949,7 @@ static int sccp_add_line_to_device(int fd, int argc, char *argv[])
 	return res;
 }
 
-static char add_line_to_device_usage[] = "Usage: sccp add line <deviceID> <lineID>\n" "       Add a line to a device.\n";
+static char add_line_to_device_usage[] = "Usage: sccp add line <device-id> <line-id>\n" "       Add a line to a device.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "add", "line"
@@ -2976,9 +2979,9 @@ static int sccp_do_debug(int fd, int argc, char *argv[])
 	char *debugcategories = sccp_get_debugcategories(new_debug);
 
 	if (argc > 2) {
-		pbx_cli(fd, "SCCP new debug status: (%d -> %d) %s\n", GLOB(debug), new_debug, debugcategories);
+		pbx_cli(fd, "SCCP new debug status: (%d -> %d) %s\n", GLOB(debug), new_debug, debugcategories ? debugcategories : "none");
 	} else {
-		pbx_cli(fd, "SCCP debug status: (%d) %s\n", GLOB(debug), debugcategories);
+		pbx_cli(fd, "SCCP debug status: (%d) %s\n", GLOB(debug), debugcategories ? debugcategories : "none");
 	}
 	sccp_free(debugcategories);
 
@@ -2986,7 +2989,13 @@ static int sccp_do_debug(int fd, int argc, char *argv[])
 	return RESULT_SUCCESS;
 }
 
-static char do_debug_usage[] = "Usage: SCCP debug [no] <level or categories>\n" "       Where categories is one or more (separated by commas) of:\n" "       core, sccp, hint, rtp, device, line, action, channel, cli, config, feature, feature_button, softkey,\n" "       indicate, pbx, socket, mwi, event, adv_feature, conference, buttontemplate, speeddial, codec, realtime,\n" "       lock, newcode, high\n";
+static char do_debug_usage[] = "Usage: sccp debug [0|off|none|all|<mask>|[no] <categories>]\n"
+	"       Without arguments, show the current settings. Use 0 to disable debugging.\n"
+	"       Add categories by name; use no to remove them. Separate names with spaces or commas.\n"
+	"       Categories: core, hint, rtp, device, line, action, channel, config, feature,\n"
+	"       feature_button, softkey, indicate, pbx, socket, mwi, event, conference,\n"
+	"       buttontemplate, speeddial, codec, realtime, callinfo, refcount, message,\n"
+	"       parkinglot, webservice, threadpool, newcode, filelinefunc, high.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "debug"
@@ -2994,35 +3003,6 @@ static char do_debug_usage[] = "Usage: SCCP debug [no] <level or categories>\n" 
 CLI_ENTRY(cli_do_debug, sccp_do_debug, "Set SCCP Debugging Types", do_debug_usage, TRUE)
 #undef CLI_COMPLETE
 #undef CLI_COMMAND
-#endif														/* DOXYGEN_SHOULD_SKIP_THIS */
-    /* ------------------------------------------------------------------------------------------------------------NO DEBUG- */
-    /*!
-     * \brief No Debug
-     * \param fd Fd as int
-     * \param argc Argc as int
-     * \param argv[] Argv[] as char
-     * \return Result as int
-     * 
-     * \called_from_asterisk
-     */
-static int sccp_no_debug(int fd, int argc, char *argv[])
-{
-	if (argc < 3) {
-		return RESULT_SHOWUSAGE;
-	}
-	GLOB(debug) = 0;
-	pbx_cli(fd, "SCCP Debugging Disabled\n");
-	return RESULT_SUCCESS;
-}
-
-static char no_debug_usage[] = "Usage: SCCP no debug\n" "       Disables dumping of SCCP packets for debugging purposes\n";
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-#define CLI_COMMAND "sccp", "no", "debug"
-#define CLI_COMPLETE SCCP_CLI_NULL_COMPLETER
-CLI_ENTRY(cli_no_debug, sccp_no_debug, "Set SCCP Debugging Types", no_debug_usage, FALSE)
-#undef CLI_COMMAND
-#undef CLI_COMPLETE
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
 /* --------------------------------------------------------------------------------------------------------------RELOAD- */
 /*!
@@ -3297,7 +3277,7 @@ EXIT:
 	return returnval;
 }
 
-static char reload_usage[] = "Usage: SCCP reload [force|file filename|device devicename|line linename]\n" "       Reloads SCCP configuration from sccp.conf or filename [force|file filename|device devicename|line linename]\n" "       (It will send a reset to all device which have changed (when they have an active channel reset will be postponed until device goes onhook))\n";
+static char reload_usage[] = "Usage: sccp reload [force|file filename|device devicename|line linename]\n" "       Reloads SCCP configuration from sccp.conf or filename [force|file filename|device devicename|line linename]\n" "       (It will send a reset to all device which have changed (when they have an active channel reset will be postponed until device goes onhook))\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMPLETE SCCP_CLI_NULL_COMPLETER
@@ -3358,7 +3338,7 @@ static int sccp_cli_config_generate(int fd, int argc, char *argv[])
 	return returnval;
 }
 
-static char config_generate_usage[] = "Usage: SCCP config generate [filename] [option]\n"
+static char config_generate_usage[] = "Usage: sccp config generate [filename] [option]\n"
 				      "       Generates a new sccp.conf if none exists. Either creating sccp.conf or [filename] if specified\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -3384,7 +3364,7 @@ static int sccp_show_version(int fd, int argc, char *argv[])
 	return RESULT_SUCCESS;
 }
 
-static char show_version_usage[] = "Usage: SCCP show version\n" "       Show SCCP version details\n";
+static char show_version_usage[] = "Usage: sccp show version\n" "       Show SCCP version details\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "version"
@@ -3456,7 +3436,7 @@ static int sccp_reset_restart(int fd, int argc, char *argv[])
 }
 
 /* --------------------------------------------------------------------------------------------------------------RESET- */
-static char reset_usage[] = "Usage: SCCP reset\n" "       sccp reset <deviceId> [restart]\n";
+static char reset_usage[] = "Usage: sccp reset\n" "       sccp reset <device-id> [restart]\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "reset"
@@ -3466,7 +3446,7 @@ CLI_ENTRY(cli_reset, sccp_reset_restart, "Reset an SCCP Device", reset_usage, FA
 #undef CLI_COMPLETE
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
     /* -------------------------------------------------------------------------------------------------------------RESTART- */
-static char restart_usage[] = "Usage: SCCP restart\n" "       sccp restart <deviceId>\n";
+static char restart_usage[] = "Usage: sccp restart\n" "       sccp restart <device-id>\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "restart"
@@ -3477,7 +3457,7 @@ CLI_ENTRY(cli_restart, sccp_reset_restart, "Restart an SCCP device", restart_usa
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
 
     /* -------------------------------------------------------------------------------------------------------------APPLYCONFIG- */
-static char applyconfig_usage[] = "Usage: SCCP reset\n" "       sccp applyconfig <deviceId>\n";
+static char applyconfig_usage[] = "Usage: sccp reset\n" "       sccp applyconfig <device-id>\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "applyconfig"
@@ -3527,7 +3507,7 @@ static int sccp_unregister(int fd, int argc, char *argv[])
 	return RESULT_SUCCESS;
 }
 
-static char unregister_usage[] = "Usage: SCCP unregister <deviceId>\n" "       Unregister an SCCP device\n";
+static char unregister_usage[] = "Usage: sccp unregister <device-id>\n" "       Unregister an SCCP device\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "unregister"
@@ -3548,12 +3528,10 @@ CLI_ENTRY(cli_unregister, sccp_unregister, "Unregister an SCCP device", unregist
      */
 static int sccp_start_call(int fd, int argc, char *argv[])
 {
-	if (argc < 3) {
-		pbx_cli(fd, "argc is less then 2: %d\n", argc);
+	if (argc < 3 || argc > 5) {
 		return RESULT_SHOWUSAGE;
 	}
 	if (pbx_strlen_zero(argv[2])) {
-		pbx_cli(fd, "string length of argv[2] is zero\n");
 		return RESULT_SHOWUSAGE;
 	}
 	AUTO_RELEASE(sccp_device_t, d , sccp_device_find_byid(argv[2], FALSE));
@@ -3577,13 +3555,19 @@ static int sccp_start_call(int fd, int argc, char *argv[])
 	}
 
 	pbx_cli(fd, "Starting Call for Device: %s\n", argv[2]);
-	AUTO_RELEASE(sccp_channel_t, channel, sccp_channel_newcall(line, d, argv[3], SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));
+	AUTO_RELEASE(sccp_channel_t, channel, sccp_channel_newcall(line, d, argc > 3 ? argv[3] : NULL, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));
+	if (!channel) {
+		pbx_cli(fd, "Unable to start a call on device %s.\n", d->id);
+		return RESULT_FAILURE;
+	}
 	return RESULT_SUCCESS;
 }
 
-static char start_call_usage[] = "Usage: sccp call <deviceId> <phone_number> <linename>\n"
-				 "Call number <number> using device <deviceId>\nIf number is omitted, device will go off-Hook.\n"
-				 "if <linename> is supplied it will be used to dial out\n";
+static char start_call_usage[] =
+	"Usage: sccp call <device-id> [number [line-name]]\n"
+	"       Start an outgoing call on the device.\n"
+	"       Omit number to take the device off hook.\n"
+	"       Omit line-name to use its default or active line.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "call"
@@ -3658,7 +3642,10 @@ static int sccp_set_object(int fd, int argc, char *argv[])
 					}
 					char * dev = NULL;
 
-					if (sccp_strcaseequals("device", argv[6])) {				/* 'device' str is optional during 'hold off' (to match old behaviour) */
+					if (sccp_strcaseequals("device", argv[6])) {
+						if (argc < 8) {
+							return RESULT_SHOWUSAGE;
+						}				/* 'device' str is optional during 'hold off' (to match old behaviour) */
 						dev = pbx_strdupa(argv[7]);
 					} else {
 						dev = pbx_strdupa(argv[6]);
@@ -3714,7 +3701,7 @@ static int sccp_set_object(int fd, int argc, char *argv[])
 		if (!strcmp("ringtone", argv[4])) {
 			device->setRingTone(device, argv[5]);
 
-		} else if (!strcmp("backgroundImage", argv[4])) {
+		} else if (!strcasecmp("backgroundimage", argv[4])) {
 			if (argc==7) {
 				device->setBackgroundImage(device, argv[5], argv[6]);
 			} else {
@@ -3776,9 +3763,9 @@ static int sccp_set_object(int fd, int argc, char *argv[])
 		char *debugcategories = sccp_get_debugcategories(new_debug);
 
 		if (argc > 3) {
-			pbx_cli(fd, "SCCP new debug status: (%d -> %d) %s\n", GLOB(debug), new_debug, debugcategories);
+			pbx_cli(fd, "SCCP new debug status: (%d -> %d) %s\n", GLOB(debug), new_debug, debugcategories ? debugcategories : "none");
 		} else {
-			pbx_cli(fd, "SCCP debug status: (%d) %s\n", GLOB(debug), debugcategories);
+			pbx_cli(fd, "SCCP debug status: (%d) %s\n", GLOB(debug), debugcategories ? debugcategories : "none");
 		}
 		sccp_free(debugcategories);
 
@@ -3793,8 +3780,8 @@ static int sccp_set_object(int fd, int argc, char *argv[])
 }
 
 static char set_object_usage[] = "Usage: sccp set channel|device|variable|fallback|debug settings ...\n"
-				 " - sccp set channel <channelId> hold <on/off>.\n"
-				 " - sccp set device <deviceId> [ringtone <ringtone>|backgroundImage <url> [thumbnail-url].\n"
+				 " - sccp set channel <channel-id> hold <on/off>.\n"
+				 " - sccp set device <device-id> [ringtone <ringtone>|backgroundimage <url> [thumbnail-url].\n"
 				 " - sccp set variable <variable>].\n"
 				 " - sccp set fallback [true|false|odd|even|script path].\n"
 				 " - sccp set debug [[no] <debugcategory>|none].\n";
@@ -3894,7 +3881,7 @@ static int sccp_answercall(int fd, sccp_cli_totals_t *totals, struct mansession 
 	return res;
 }
 
-static char cli_answercall_usage[] = "Usage: sccp answer channelId [deviceId]\n"
+static char cli_answercall_usage[] = "Usage: sccp answer <channel-id> [deviceId]\n"
 				     "       Answer a ringing incoming channel on device.\n";
 // static char ami_answercall_usage[] = "Usage: SCCPAnswerCall1\n"
 //				     "Answer a ringing incoming channel on device.\n\n"
@@ -3949,7 +3936,7 @@ static int sccp_end_call(int fd, int argc, char *argv[])
 	return RESULT_SUCCESS;
 }
 
-static char end_call_usage[] = "Usage: sccp onhook <channelId>\n" "Hangup a channel\n";
+static char end_call_usage[] = "Usage: sccp onhook <channel-id>\n" "Hangup a channel\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "onhook"
@@ -4004,7 +3991,7 @@ static int sccp_tokenack(int fd, sccp_cli_totals_t *totals, struct mansession *s
 	return RESULT_SUCCESS;
 }
 
-static char cli_tokenack_usage[] = "Usage: sccp tokenack <deviceId>\n" "Send Token Acknowlegde. Makes a phone switch servers on demand (used in clustering)\n";
+static char cli_tokenack_usage[] = "Usage: sccp tokenack <device-id>\n" "Send Token Acknowlegde. Makes a phone switch servers on demand (used in clustering)\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "tokenack"
@@ -4067,7 +4054,7 @@ static int sccp_microphone(int fd, sccp_cli_totals_t * totals, struct mansession
 	return res;
 }
 
-static char cli_microphone_usage[] = "Usage: sccp microphone <deviceId> <on/off>\n"
+static char cli_microphone_usage[] = "Usage: sccp microphone <device-id> <on/off>\n"
 				     "       Turn microphone <on/off> on active call on <device>.\n";
 static char ami_microphone_usage[] = "Usage: SCCPMicrophone\n"
 				     "Turn microphone <on/off> on active call on <device>.\n\n"
@@ -4137,9 +4124,8 @@ static struct pbx_cli_entry cli_entries[] = {
 	AST_CLI_DEFINE(cli_add_line_to_device, "Add a line to a device."),
 	AST_CLI_DEFINE(cli_show_sessions, "Show All SCCP Sessions."),
 	AST_CLI_DEFINE(cli_dnd_device, "Set DND on a device"),
-	AST_CLI_DEFINE(cli_callforward, "Set CallForward on a line"),
-	AST_CLI_DEFINE(cli_do_debug, "Enable SCCP debugging."),
-	AST_CLI_DEFINE(cli_no_debug, "Disable SCCP debugging."),
+	AST_CLI_DEFINE(cli_callforward, "Set call forwarding on a line"),
+	AST_CLI_DEFINE(cli_do_debug, "Show or change SCCP debugging."),
 	AST_CLI_DEFINE(cli_config_generate, "SCCP generate config file."),
 	AST_CLI_DEFINE(cli_reload, "SCCP module reload."),
 	AST_CLI_DEFINE(cli_reload_file, "SCCP module reload file."),
@@ -4166,7 +4152,6 @@ static struct pbx_cli_entry cli_entries[] = {
 #endif
 	AST_CLI_DEFINE(cli_show_hint_lineStates, "Show hint line states."),
 	AST_CLI_DEFINE(cli_show_hint_subscriptions, "Show all hint subscriptions"),
-	AST_CLI_DEFINE(handle_backward_softkeysets, "Backward compatible version"),
 };
 
 static const char * answerCall1_command = "SCCPAnswerCall1";
@@ -4210,7 +4195,7 @@ int sccp_register_cli(void)
 	res |= pbx_manager_register("SCCPShowConference", _MAN_REP_FLAGS, manager_show_conference, "show conference", ami_conference_usage);
 	res |= pbx_manager_register("SCCPConference", _MAN_REP_FLAGS, manager_conference_command, "conference commands", ami_conference_command_usage);
 #endif
-	res |= pbx_manager_register("SCCPShowHintLineStates", _MAN_REP_FLAGS, manager_show_hint_lineStates, "show hint lineStates", ami_show_hint_lineStates_usage);
+	res |= pbx_manager_register("SCCPShowHintLineStates", _MAN_REP_FLAGS, manager_show_hint_lineStates, "show hint line states", ami_show_hint_lineStates_usage);
 	res |= pbx_manager_register("SCCPShowHintSubscriptions", _MAN_REP_FLAGS, manager_show_hint_subscriptions, "show hint subscriptions", ami_show_hint_subscriptions_usage);
 	res |= pbx_manager_register("SCCPShowRefcount", _MAN_REP_FLAGS, manager_show_refcount, "show refcount", ami_show_refcount_usage);
 

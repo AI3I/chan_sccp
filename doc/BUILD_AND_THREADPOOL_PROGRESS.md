@@ -582,6 +582,9 @@ passed for the source commit. No live handset test was run.
   and its unused headers/macros. Source `.c` and `.h` files now contain no
   `ASTERISK_VERSION_GROUP` or `ASTERISK_VERSION_NUMBER` guards; feature probes
   and the supported 20–24 adapter selection remain.
-- About 270 lines were removed. Build and static validation are pending. No
-  module installation or live handset test was run. Generated/autoconf files
-  still contain version handling for a later focused review.
+- Source commit `4432c6af` removed about 270 lines. `git diff --check`, the
+  hosted [Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35899849228),
+  and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35899849255)
+  passed. No module installation or live handset test was run.
+  Generated/autoconf files still contain version handling for a later focused
+  review.

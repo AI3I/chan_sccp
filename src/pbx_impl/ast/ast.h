@@ -26,42 +26,6 @@
 #include "define.h"
 #include "sccp_protocol.h"
 
-#ifdef ASTERISK_CONF_1_6
-#include "pbx_impl/ast106/ast106.h"
-#endif
-#ifdef ASTERISK_CONF_1_8
-#include "pbx_impl/ast108/ast108.h"
-#endif
-#ifdef ASTERISK_CONF_1_10
-#include "pbx_impl/ast110/ast110.h"
-#endif
-#ifdef ASTERISK_CONF_1_11
-#include "pbx_impl/ast111/ast111.h"
-#endif
-#ifdef ASTERISK_CONF_1_12
-#include "pbx_impl/ast112/ast112.h"
-#endif
-#ifdef ASTERISK_CONF_1_13
-#include "pbx_impl/ast113/ast113.h"
-#endif
-#ifdef ASTERISK_CONF_1_14
-#include "pbx_impl/ast114/ast114.h"
-#endif
-#ifdef ASTERISK_CONF_1_15
-#include "pbx_impl/ast115/ast115.h"
-#endif
-#ifdef ASTERISK_CONF_1_16
-#include "pbx_impl/ast116/ast116.h"
-#endif
-#ifdef ASTERISK_CONF_1_17
-#include "pbx_impl/ast117/ast117.h"
-#endif
-#ifdef ASTERISK_CONF_1_18
-#include "pbx_impl/ast118/ast118.h"
-#endif
-#ifdef ASTERISK_CONF_1_19
-#	include "pbx_impl/ast119/ast119.h"
-#endif
 #ifdef ASTERISK_CONF_1_20
 #	include "pbx_impl/ast120/ast120.h"
 #endif

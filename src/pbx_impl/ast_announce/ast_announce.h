@@ -1,5 +1,5 @@
 /*!
- * \file        ast112_announce.c
+ * \file        ast_announce.h
  * \brief       SCCP PBX Conference Announcement Channel Tech
  * \author      Diederik de Groot <ddegroot [at] users.sourceforge.net>
  * \note        Referencing ConfBridge Announcement Channel Created by Richard Mudgett <rmudgett@digium.com>

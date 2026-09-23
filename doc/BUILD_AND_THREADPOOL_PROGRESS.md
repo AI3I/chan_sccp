@@ -21,8 +21,8 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   hides errors or implicitly runs make in an existing configured directory.
 - Configure targets 20–24 and configures all supported adapter Makefiles plus
   the shared ast116 implementation for source distribution.
-- DIST_SUBDIRS includes modern wrappers and shared sources. Legacy source
-  retirement remains a later task; old adapters are not being deleted here.
+- DIST_SUBDIRS includes modern wrappers and shared sources. Legacy adapters
+  were retired in the later checkpoint below.
 - Serialize enum generation through a stamp; preserve actual source paths.
 - `make check`/`make test` run real standalone tests.
 - CI matrix uses actual Asterisk 20–24 branch headers, default and optional
@@ -32,7 +32,7 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - Asterisk 22 default build and `make check` pass. Clean 20 default and 24 optional
   source archives also compile and pass tests against private matching headers.
 - Generated files are checked in; final `src/Makefile.in` includes the archive
-  header and indent-file fixes. Full 20–24 CI matrix has not run on GitHub yet.
+  header and indent-file fixes. The full 20–24 CI matrix later passed on GitHub.
 
 ## Thread-pool work (R1/R9) — implemented, validation recorded below
 
@@ -75,8 +75,8 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   sanitizer, source archive, and bootstrap lanes.
 - [CodeQL run 35804033083](https://github.com/AI3I/chan_sccp/actions/runs/35804033083)
   passed both C/C++ and Python analysis jobs.
-- Next: validate a live SCCP call workload on a genuine test PBX, then retire
-  older adapters in a separate reviewable change.
+- A genuine Cisco handset call remains for later validation. The older
+  adapters were retired in the separate change documented below.
 
 ## Additional user decisions during this work
 
@@ -86,7 +86,7 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   Repeated configuration/builds must not rewrite or derive it from Git branches
   or tags. Git provenance is separate, optional diagnostic metadata.
 - Use `Reference Counts` as the refcount output title (command unchanged).
-- These changes are in progress and not yet deployed.
+- These changes were committed; they have not been deployed to production.
 
 ## Command-surface follow-up
 
@@ -125,8 +125,33 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   only to loopback. No production module or phone was changed. CLI assertion
   log: `/tmp/sccp-cli-smoke.log`; all checks and ten reloads passed.
 - Wadsworth (`192.168.0.62`) is reachable as `jdlewis` with passwordless sudo,
-  but currently has no Asterisk binary, process, or SCCP module. It can become
-  a dedicated integration host after Asterisk is installed there.
+  and now hosts a private Asterisk 22 build under
+  `/home/jdlewis/asterisk-lab/prefix`. The complete installation and removal
+  inventory is in `/root/asterisk.txt` on wadsworth. Its SCCP module was
+  copied only into that private prefix; production was not touched.
 - Current changes are not deployed to production. The isolated process was
   stopped after checks. Production remains at the previous CLI/tone hash noted
   above.
+
+## September 23 legacy retirement checkpoint
+
+- Asterisk 20–24 remains the supported range. Removed adapter directories
+  `ast106`, `ast108`, `ast110`–`ast115`, and `ast117`–`ast119`; the first eight
+  contain about 31,705 physical C/header lines. `ast116` stays because all
+  modern wrappers share its implementation. Removed obsolete adapter selectors
+  and version probing from the Autoconf inputs.
+- Wadsworth's private Asterisk 22 compiled the current cleanup source;
+  `make check` and `make dist` passed. A synthetic SCCP client also registered
+  and received 576 G.711 u-law RTP packets from local extension 701 on the
+  *previous* committed module. That probe is not a physical-handset test and
+  does not validate the current cleanup build at runtime.
+- The first automatic version-detection attempt found a bug in the rewritten
+  macro: `AC_COMPILE_IFELSE` removed `conftest.c` before the macro tried to
+  preprocess it. Asterisk's header also split the resulting value across a
+  preprocessor line marker. The corrected probe reads the final expansion;
+  configure without a manual version now detects 22 and selects group 122.
+  The earlier compile/check/archive used an explicit version; no compile or
+  runtime test was repeated after this probe correction.
+- User requested code work now and no per-change test cycle. Defer further
+  synthetic calls and physical Cisco handset checks. Keep lab cleanup details
+  in `/root/asterisk.txt`.

@@ -1204,7 +1204,6 @@ static int sccp_app_setmessage(PBX_CHANNEL_TYPE * chan, void * data)
 }
 static char * setmessage_name = "SCCPSetMessage";
 
-//#include "pbx_impl/ast113/ast113.h"
 int sccp_register_dialplan_functions(void)
 {
 	int result = 0;

@@ -379,7 +379,7 @@ AC_DEFUN([AST_SET_PBX_AMCONDITIONALS],[
 		PBX_COND_LIBADD=pbx_impl/ast/libast.la
 		PBXVER_COND_SUBDIR=pbx_impl/ast${ASTERISK_VER_GROUP}/
 		PBXVER_COND_LIBADD=pbx_impl/ast${ASTERISK_VER_GROUP}/libast${ASTERISK_VER_GROUP}.la
-		if test ${ASTERISK_VER_GROUP} -gt 111;then
+		if test ${ASTERISK_VER_GROUP} -ge 120;then
 			PBXVER_COND_ANNOUNCE_SUBDIR=pbx_impl/ast_announce
 			PBXVER_COND_ANNOUNCE_LIBADD=pbx_impl/ast_announce/libast_announce.la
 		fi
@@ -390,39 +390,11 @@ AC_DEFUN([AST_SET_PBX_AMCONDITIONALS],[
 	AC_SUBST([PBXVER_COND_LIBADD])
 	AC_SUBST([PBXVER_COND_ANNOUNCE_SUBDIR])
 	AC_SUBST([PBXVER_COND_ANNOUNCE_LIBADD])
-	AM_CONDITIONAL([ASTERISK_VER_GROUP_106], [test x${ASTERISK_VER_GROUP} = x106])
-	AM_CONDITIONAL([ASTERISK_VER_GROUP_108], [test x${ASTERISK_VER_GROUP} = x108])
-	AM_CONDITIONAL([ASTERISK_VER_GROUP_110], [test x${ASTERISK_VER_GROUP} = x110])
-	AM_CONDITIONAL([ASTERISK_VER_GROUP_111], [test x${ASTERISK_VER_GROUP} = x111])
-	AM_CONDITIONAL([ASTERISK_VER_GROUP_112], [test x${ASTERISK_VER_GROUP} = x112])
-	AM_CONDITIONAL([ASTERISK_VER_GROUP_113], [test x${ASTERISK_VER_GROUP} = x113])
-	AM_CONDITIONAL([ASTERISK_VER_GROUP_114], [test x${ASTERISK_VER_GROUP} = x114])
-	AM_CONDITIONAL([ASTERISK_VER_GROUP_115], [test x${ASTERISK_VER_GROUP} = x115])
-	AM_CONDITIONAL([ASTERISK_VER_GROUP_116], [test x${ASTERISK_VER_GROUP} = x116])
-	AM_CONDITIONAL([ASTERISK_VER_GROUP_117], [test x${ASTERISK_VER_GROUP} = x117])
-	AM_CONDITIONAL([ASTERISK_VER_GROUP_118], [test x${ASTERISK_VER_GROUP} = x118])
-	AM_CONDITIONAL([ASTERISK_VER_GROUP_119], [test x${ASTERISK_VER_GROUP} = x119])
 	AM_CONDITIONAL([ASTERISK_VER_GROUP_120], [test x${ASTERISK_VER_GROUP} = x120])
 	AM_CONDITIONAL([ASTERISK_VER_GROUP_121], [test x${ASTERISK_VER_GROUP} = x121])
 	AM_CONDITIONAL([ASTERISK_VER_GROUP_122], [test x${ASTERISK_VER_GROUP} = x122])
 	AM_CONDITIONAL([ASTERISK_VER_GROUP_123], [test x${ASTERISK_VER_GROUP} = x123])
 	AM_CONDITIONAL([ASTERISK_VER_GROUP_124], [test x${ASTERISK_VER_GROUP} = x124])
-	AM_COND_IF([ASTERISK_VER_GROUP_106],[AC_CONFIG_FILES([src/pbx_impl/ast106/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_108],[AC_CONFIG_FILES([src/pbx_impl/ast108/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_110],[AC_CONFIG_FILES([src/pbx_impl/ast110/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_111],[AC_CONFIG_FILES([src/pbx_impl/ast111/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_112],[AC_CONFIG_FILES([src/pbx_impl/ast112/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_113],[AC_CONFIG_FILES([src/pbx_impl/ast113/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_114],[AC_CONFIG_FILES([src/pbx_impl/ast114/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_115],[AC_CONFIG_FILES([src/pbx_impl/ast115/Makefile])])
-
-	AM_COND_IF([ASTERISK_VER_GROUP_117],[AC_CONFIG_FILES([src/pbx_impl/ast117/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_118],[AC_CONFIG_FILES([src/pbx_impl/ast118/Makefile])])
-	AM_COND_IF([ASTERISK_VER_GROUP_119],[AC_CONFIG_FILES([src/pbx_impl/ast119/Makefile])])
-
-
-
-
 
 ])
 
@@ -453,8 +425,6 @@ AC_DEFUN([CS_WITH_PBX], [
 		AC_DEFINE_UNQUOTED([PBX_TYPE],ASTERISK,[PBX Type])
 		AC_DEFINE([HAVE_ASTERISK], 1, [Uses Asterisk as PBX])
 		AST_GET_VERSION
-		AS_IF([test "$ASTERISK_VER_GROUP" -lt "$MIN_ASTERISK_VERSION" || test "$ASTERISK_VER_GROUP" -gt "$MAX_ASTERISK_VERSION"],
-			[AC_MSG_ERROR([Supported Asterisk versions are 20 through 24])])
 		AST_CHECK_HEADERS
 	elif test "${PBX_TYPE}" = "Callweaver"; then
 		AC_DEFINE_UNQUOTED([PBX_TYPE],CALLWEAVER,[PBX Type])
@@ -480,7 +450,7 @@ AC_DEFUN([CS_SETUP_DOXYGEN], [
 		[ac_cv_use_devdoc=$enableval], 
 		[ac_cv_use_devdoc=no]
 	)
-	AS_IF([test "_${ac_cv_use_devdoc}" == "_yes"], [DX_ENV_APPEND([INPUT],[. src src/pbx_impl src/pbx_impl/ast src/pbx_impl/ast116 src/pbx_impl/ast117 src/pbx_impl/ast118 src/pbx_impl/ast119 src/pbx_impl/ast120 src/pbx_impl/ast121 src/pbx_impl/ast122 src/pbx_impl/ast123 src/pbx_impl/ast124 src/pbx_impl/ast_announce])])
+	AS_IF([test "_${ac_cv_use_devdoc}" == "_yes"], [DX_ENV_APPEND([INPUT],[. src src/pbx_impl src/pbx_impl/ast src/pbx_impl/ast116 src/pbx_impl/ast120 src/pbx_impl/ast121 src/pbx_impl/ast122 src/pbx_impl/ast123 src/pbx_impl/ast124 src/pbx_impl/ast_announce])])
 	DX_HTML_FEATURE(ON)
 	DX_CHM_FEATURE(OFF)
 	DX_CHI_FEATURE(OFF)

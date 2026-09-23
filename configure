@@ -593,10 +593,6 @@ as_tr_sh="eval sed '$as_sed_sh'" # deprecated
 
 SHELL=${CONFIG_SHELL-/bin/sh}
 
-lt_ltdl_dir='libltdl'
-
-lt_dlopen_dir=$lt_ltdl_dir
-
 
 test -n "$DJDIR" || exec 7<&0 </dev/null
 exec 6>&1
@@ -659,10 +655,7 @@ ac_includes_default="\
 
 ac_header_c_list=
 ac_unique_file="src/chan_sccp.c"
-enable_option_checking=no
-ac_subst_vars='ltdl_LTLIBOBJS
-ltdl_LIBOBJS
-am__EXEEXT_FALSE
+ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
@@ -676,30 +669,6 @@ ASTERISK_VER_GROUP_121_FALSE
 ASTERISK_VER_GROUP_121_TRUE
 ASTERISK_VER_GROUP_120_FALSE
 ASTERISK_VER_GROUP_120_TRUE
-ASTERISK_VER_GROUP_119_FALSE
-ASTERISK_VER_GROUP_119_TRUE
-ASTERISK_VER_GROUP_118_FALSE
-ASTERISK_VER_GROUP_118_TRUE
-ASTERISK_VER_GROUP_117_FALSE
-ASTERISK_VER_GROUP_117_TRUE
-ASTERISK_VER_GROUP_116_FALSE
-ASTERISK_VER_GROUP_116_TRUE
-ASTERISK_VER_GROUP_115_FALSE
-ASTERISK_VER_GROUP_115_TRUE
-ASTERISK_VER_GROUP_114_FALSE
-ASTERISK_VER_GROUP_114_TRUE
-ASTERISK_VER_GROUP_113_FALSE
-ASTERISK_VER_GROUP_113_TRUE
-ASTERISK_VER_GROUP_112_FALSE
-ASTERISK_VER_GROUP_112_TRUE
-ASTERISK_VER_GROUP_111_FALSE
-ASTERISK_VER_GROUP_111_TRUE
-ASTERISK_VER_GROUP_110_FALSE
-ASTERISK_VER_GROUP_110_TRUE
-ASTERISK_VER_GROUP_108_FALSE
-ASTERISK_VER_GROUP_108_TRUE
-ASTERISK_VER_GROUP_106_FALSE
-ASTERISK_VER_GROUP_106_TRUE
 PBXVER_COND_ANNOUNCE_LIBADD
 PBXVER_COND_ANNOUNCE_SUBDIR
 PBXVER_COND_LIBADD
@@ -777,8 +746,8 @@ SANITIZE_CFLAGS
 HAVE_PBX_HTTP
 TEST_FRAMEWORK
 ASTERISK_REPOS_LOCATION
-ASTERISK_VERSION_NUMBER
 ASTERISK_VER_GROUP
+ASTERISK_VERSION_NUMBER
 PBX_SBINDIR
 PBX_LDFLAGS
 PBX_CFLAGS
@@ -797,27 +766,6 @@ PBX_PATH
 LTLIBICONV
 LIBICONV
 LIBTOOL_DEPS
-LTDLOPEN
-LT_CONFIG_H
-subdirs
-LTARGZH_EXISTS_FALSE
-LTARGZH_EXISTS_TRUE
-CONVENIENCE_LTDL_FALSE
-CONVENIENCE_LTDL_TRUE
-INSTALL_LTDL_FALSE
-INSTALL_LTDL_TRUE
-LT_ARGZ_H
-sys_symbol_underscore
-LIBADD_DL
-LT_DLPREOPEN
-LIBADD_DLD_LINK
-LIBADD_SHL_LOAD
-LIBADD_DLOPEN
-LT_DLLOADERS
-INCLTDL
-LTDLINCL
-LTDLDEPS
-LIBLTDL
 CCACHE
 HOST_CC
 PTHREAD_CFLAGS
@@ -1025,10 +973,6 @@ with_gnu_ld
 with_sysroot
 enable_libtool_lock
 with_ccache
-with_included_ltdl
-with_ltdl_include
-with_ltdl_lib
-enable_ltdl_install
 enable_rpath
 with_libiconv_prefix
 enable_tls
@@ -1087,7 +1031,7 @@ CPP
 LT_SYS_LIBRARY_PATH
 CXXCPP
 DOXYGEN_PAPER_SIZE'
-ac_subdirs_all='libltdl'
+
 
 # Initialize some variables set by options.
 ac_init_help=
@@ -1754,7 +1698,6 @@ Optional Features:
                           shared library versioning (aka "SONAME") variant to
                           provide on AIX, [default=aix].
   --disable-libtool-lock  avoid locking (might break parallel builds)
-  --enable-ltdl-install   install libltdl
   --disable-rpath         do not hardcode runtime library paths
   --disable-tls           disable Transport Layer Security (EXPERIMENTAL)
   --enable-devdoc         Generate developer documentation
@@ -1811,16 +1754,12 @@ Optional Packages:
   --with-sysroot[=DIR]    Search for dependent libraries within DIR (or the
                           compiler's sysroot if not specified).
   --with-ccache=PATH      use ccache during compile
-  --with-included-ltdl    use the GNU ltdl sources included here
-  --with-ltdl-include=DIR use the ltdl headers installed in DIR
-  --with-ltdl-lib=DIR     use the libltdl.la installed in DIR
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
   --with-libiconv-prefix[=DIR]  search for libiconv in DIR/include and DIR/lib
   --without-libiconv-prefix     don't search for libiconv in includedir and libdir
   --with-asterisk=PATH    Location of the Asterisk installation
-  --with-asterisk-version=PATH
-                          specify the asterisk_version manually
-                          (fmt=major.minor)
+  --with-asterisk-version=MAJOR.MINOR
+                          Asterisk 20 through 24 release version
   --with-libevent=yes|no  use garbage collector (libgc) as allocator
                           (experimental)
   --with-hash-size        to provide room for higher number of phones (>100),
@@ -3515,9 +3454,6 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-
-MIN_ASTERISK_VERSION=120
-MAX_ASTERISK_VERSION=124
 
 
 
@@ -6418,12 +6354,12 @@ _ACEOF
 then :
 
 		echo "Utility 'awk' is missing"
- 		echo "==================================="
+		echo "==================================="
 		echo "The awk programm is missing on your platform, this is required though."
 		echo "Please install awk / gnu-awk / mawk / nawk or some other Posix compatible version of AWK"
 		echo "And then rerun the configure process"
 		echo "==================================="
- 		echo "Exitting now."
+		echo "Exitting now."
 		exit
 
 fi
@@ -6673,11 +6609,11 @@ fi
 
 	LIBBFD=""
 	if test -n "${CPPFLAGS_saved}"; then
-	 	CPPFLAGS_saved="${CPPFLAGS_saved} -U_FORTIFY_SOURCE"
- 	else
- 		CPPFLAGS_saved="-U_FORTIFY_SOURCE"
- 	fi
- 	LDFLAGS_saved="${LDFLAGS}"
+		CPPFLAGS_saved="${CPPFLAGS_saved} -U_FORTIFY_SOURCE"
+	else
+		CPPFLAGS_saved="-U_FORTIFY_SOURCE"
+	fi
+	LDFLAGS_saved="${LDFLAGS}"
 
 	if test "X$enable_optimization" == "Xyes"
 then :
@@ -6689,7 +6625,7 @@ then :
 			CFLAGS_saved="${CFLAGS_saved} -O3 "
 
 fi
-	 	CPPFLAGS_saved="${CPPFLAGS_saved} -D_FORTIFY_SOURCE=2"
+		CPPFLAGS_saved="${CPPFLAGS_saved} -D_FORTIFY_SOURCE=2"
 		GDB_FLAGS=""
 		if test "x${GCC}" = "xyes"
 then :
@@ -6788,7 +6724,7 @@ fi
 
 else case e in #(
   e)
-	 	CFLAGS_saved="`echo ${CFLAGS_saved} |sed -e 's/\-O0-9\ \?//g' -e 's/^|\ \-g$|\ //g'`"
+		CFLAGS_saved="`echo ${CFLAGS_saved} |sed -e 's/\-O0-9\ \?//g' -e 's/^|\ \-g$|\ //g'`"
 		optimize_flag="-O0"
 		case "${CC}" in
 			*gcc*)
@@ -6852,7 +6788,7 @@ printf "%s\n" "#define DEBUG 1" >>confdefs.h
 		enable_do_crash="yes"
 		enable_debug_mutex="yes"
 
-	 			CFLAGS_saved="${CFLAGS_saved} -Wall"
+				CFLAGS_saved="${CFLAGS_saved} -Wall"
 		GDB_FLAGS="-g3 -ggdb3"
 
 		if test "x${GCC}" = "xyes"
@@ -9601,7 +9537,7 @@ fi
 if test "$sccp_cv_atomic_CAS32" = "yes" -a "x$sccp_cv_atomic_CASptr" = "xyes" -a "$sccp_cv_atomic_incr" = "yes"
 then :
 
-                 	using_atomic_buildin="yes"
+	using_atomic_buildin="yes"
 
 printf "%s\n" "#define SCCP_ATOMIC 1" >>confdefs.h
 
@@ -24718,838 +24654,6 @@ test -n "$CCACHE" || CCACHE="No"
 
 fi
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking what extension is used for runtime loadable modules" >&5
-printf %s "checking what extension is used for runtime loadable modules... " >&6; }
-if test ${libltdl_cv_shlibext+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e)
-module=yes
-eval libltdl_cv_shlibext=$shrext_cmds
-module=no
-eval libltdl_cv_shrext=$shrext_cmds
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $libltdl_cv_shlibext" >&5
-printf "%s\n" "$libltdl_cv_shlibext" >&6; }
-if test -n "$libltdl_cv_shlibext"; then
-
-printf "%s\n" "#define LT_MODULE_EXT \"$libltdl_cv_shlibext\"" >>confdefs.h
-
-fi
-if test "$libltdl_cv_shrext" != "$libltdl_cv_shlibext"; then
-
-printf "%s\n" "#define LT_SHARED_EXT \"$libltdl_cv_shrext\"" >>confdefs.h
-
-fi
-if test -n "$shared_archive_member_spec"; then
-
-printf "%s\n" "#define LT_SHARED_LIB_MEMBER \"($shared_archive_member_spec.o)\"" >>confdefs.h
-
-fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking what variable specifies run-time module search path" >&5
-printf %s "checking what variable specifies run-time module search path... " >&6; }
-if test ${lt_cv_module_path_var+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) lt_cv_module_path_var=$shlibpath_var ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $lt_cv_module_path_var" >&5
-printf "%s\n" "$lt_cv_module_path_var" >&6; }
-if test -n "$lt_cv_module_path_var"; then
-
-printf "%s\n" "#define LT_MODULE_PATH_VAR \"$lt_cv_module_path_var\"" >>confdefs.h
-
-fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for the default library search path" >&5
-printf %s "checking for the default library search path... " >&6; }
-if test ${lt_cv_sys_dlsearch_path+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) lt_cv_sys_dlsearch_path=$sys_lib_dlsearch_path_spec ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $lt_cv_sys_dlsearch_path" >&5
-printf "%s\n" "$lt_cv_sys_dlsearch_path" >&6; }
-if test -n "$lt_cv_sys_dlsearch_path"; then
-  sys_dlsearch_path=
-  for dir in $lt_cv_sys_dlsearch_path; do
-    if test -z "$sys_dlsearch_path"; then
-      sys_dlsearch_path=$dir
-    else
-      sys_dlsearch_path=$sys_dlsearch_path$PATH_SEPARATOR$dir
-    fi
-  done
-
-printf "%s\n" "#define LT_DLSEARCH_PATH \"$sys_dlsearch_path\"" >>confdefs.h
-
-fi
-
-
-LT_DLLOADERS=
-
-
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-lt_dlload_save_LIBS=$LIBS
-
-LIBADD_DLOPEN=
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for library containing dlopen" >&5
-printf %s "checking for library containing dlopen... " >&6; }
-if test ${ac_cv_search_dlopen+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char dlopen (void);
-int
-main (void)
-{
-return dlopen ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' dl
-do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_search_dlopen=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext
-  if test ${ac_cv_search_dlopen+y}
-then :
-  break
-fi
-done
-if test ${ac_cv_search_dlopen+y}
-then :
-
-else case e in #(
-  e) ac_cv_search_dlopen=no ;;
-esac
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_dlopen" >&5
-printf "%s\n" "$ac_cv_search_dlopen" >&6; }
-ac_res=$ac_cv_search_dlopen
-if test "$ac_res" != no
-then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-printf "%s\n" "#define HAVE_LIBDL 1" >>confdefs.h
-
-	if test "$ac_cv_search_dlopen" != "none required"; then
-	  LIBADD_DLOPEN=-ldl
-	fi
-	libltdl_cv_lib_dl_dlopen=yes
-	LT_DLLOADERS="$LT_DLLOADERS ${lt_dlopen_dir+$lt_dlopen_dir/}dlopen.la"
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#if HAVE_DLFCN_H
-#  include <dlfcn.h>
-#endif
-
-int
-main (void)
-{
-dlopen(0, 0);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-
-printf "%s\n" "#define HAVE_LIBDL 1" >>confdefs.h
-
-	    libltdl_cv_func_dlopen=yes
-	    LT_DLLOADERS="$LT_DLLOADERS ${lt_dlopen_dir+$lt_dlopen_dir/}dlopen.la"
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for dlopen in -lsvld" >&5
-printf %s "checking for dlopen in -lsvld... " >&6; }
-if test ${ac_cv_lib_svld_dlopen+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lsvld  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char dlopen (void);
-int
-main (void)
-{
-return dlopen ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_svld_dlopen=yes
-else case e in #(
-  e) ac_cv_lib_svld_dlopen=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_svld_dlopen" >&5
-printf "%s\n" "$ac_cv_lib_svld_dlopen" >&6; }
-if test "x$ac_cv_lib_svld_dlopen" = xyes
-then :
-
-printf "%s\n" "#define HAVE_LIBDL 1" >>confdefs.h
-
-	        LIBADD_DLOPEN=-lsvld libltdl_cv_func_dlopen=yes
-		LT_DLLOADERS="$LT_DLLOADERS ${lt_dlopen_dir+$lt_dlopen_dir/}dlopen.la"
-fi
- ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext ;;
-esac
-fi
-
-if test yes = "$libltdl_cv_func_dlopen" || test yes = "$libltdl_cv_lib_dl_dlopen"
-then
-  lt_save_LIBS=$LIBS
-  LIBS="$LIBS $LIBADD_DLOPEN"
-  ac_fn_c_check_func "$LINENO" "dlerror" "ac_cv_func_dlerror"
-if test "x$ac_cv_func_dlerror" = xyes
-then :
-  printf "%s\n" "#define HAVE_DLERROR 1" >>confdefs.h
-
-fi
-
-  LIBS=$lt_save_LIBS
-fi
-
-
-LIBADD_SHL_LOAD=
-ac_fn_c_check_func "$LINENO" "shl_load" "ac_cv_func_shl_load"
-if test "x$ac_cv_func_shl_load" = xyes
-then :
-
-printf "%s\n" "#define HAVE_SHL_LOAD 1" >>confdefs.h
-
-	LT_DLLOADERS="$LT_DLLOADERS ${lt_dlopen_dir+$lt_dlopen_dir/}shl_load.la"
-else case e in #(
-  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for shl_load in -ldld" >&5
-printf %s "checking for shl_load in -ldld... " >&6; }
-if test ${ac_cv_lib_dld_shl_load+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-ldld  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char shl_load (void);
-int
-main (void)
-{
-return shl_load ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_dld_shl_load=yes
-else case e in #(
-  e) ac_cv_lib_dld_shl_load=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dld_shl_load" >&5
-printf "%s\n" "$ac_cv_lib_dld_shl_load" >&6; }
-if test "x$ac_cv_lib_dld_shl_load" = xyes
-then :
-
-printf "%s\n" "#define HAVE_SHL_LOAD 1" >>confdefs.h
-
-	    LT_DLLOADERS="$LT_DLLOADERS ${lt_dlopen_dir+$lt_dlopen_dir/}shl_load.la"
-	    LIBADD_SHL_LOAD=-ldld
-fi
- ;;
-esac
-fi
-
-
-
-case $host_os in
-darwin[1567].*)
-# We only want this for pre-Mac OS X 10.4.
-  ac_fn_c_check_func "$LINENO" "_dyld_func_lookup" "ac_cv_func__dyld_func_lookup"
-if test "x$ac_cv_func__dyld_func_lookup" = xyes
-then :
-
-printf "%s\n" "#define HAVE_DYLD 1" >>confdefs.h
-
-	LT_DLLOADERS="$LT_DLLOADERS ${lt_dlopen_dir+$lt_dlopen_dir/}dyld.la"
-fi
-
-  ;;
-beos*)
-  LT_DLLOADERS="$LT_DLLOADERS ${lt_dlopen_dir+$lt_dlopen_dir/}load_add_on.la"
-  ;;
-cygwin* | mingw* | windows* | pw32*)
-  ac_fn_check_decl "$LINENO" "cygwin_conv_path" "ac_cv_have_decl_cygwin_conv_path" "#include <sys/cygwin.h>
-" "$ac_c_undeclared_builtin_options" "CFLAGS"
-if test "x$ac_cv_have_decl_cygwin_conv_path" = xyes
-then :
-  ac_have_decl=1
-else case e in #(
-  e) ac_have_decl=0 ;;
-esac
-fi
-printf "%s\n" "#define HAVE_DECL_CYGWIN_CONV_PATH $ac_have_decl" >>confdefs.h
-
-  LT_DLLOADERS="$LT_DLLOADERS ${lt_dlopen_dir+$lt_dlopen_dir/}loadlibrary.la"
-  ;;
-esac
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for dld_link in -ldld" >&5
-printf %s "checking for dld_link in -ldld... " >&6; }
-if test ${ac_cv_lib_dld_dld_link+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-ldld  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char dld_link (void);
-int
-main (void)
-{
-return dld_link ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_dld_dld_link=yes
-else case e in #(
-  e) ac_cv_lib_dld_dld_link=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dld_dld_link" >&5
-printf "%s\n" "$ac_cv_lib_dld_dld_link" >&6; }
-if test "x$ac_cv_lib_dld_dld_link" = xyes
-then :
-
-printf "%s\n" "#define HAVE_DLD 1" >>confdefs.h
-
-		LT_DLLOADERS="$LT_DLLOADERS ${lt_dlopen_dir+$lt_dlopen_dir/}dld_link.la"
-fi
-
-
-
-
-LT_DLPREOPEN=
-if test -n "$LT_DLLOADERS"
-then
-  for lt_loader in $LT_DLLOADERS; do
-    LT_DLPREOPEN="$LT_DLPREOPEN-dlpreopen $lt_loader "
-  done
-
-printf "%s\n" "#define HAVE_LIBDLLOADER 1" >>confdefs.h
-
-fi
-
-
-LIBADD_DL="$LIBADD_DLOPEN $LIBADD_SHL_LOAD"
-
-
-LIBS=$lt_dlload_save_LIBS
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for _ prefix in compiled symbols" >&5
-printf %s "checking for _ prefix in compiled symbols... " >&6; }
-if test ${lt_cv_sys_symbol_underscore+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) lt_cv_sys_symbol_underscore=no
-  cat > conftest.$ac_ext <<_LT_EOF
-void nm_test_func(){}
-int main(void){nm_test_func;return 0;}
-_LT_EOF
-  if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-    # Now try to grab the symbols.
-    ac_nlist=conftest.nm
-    if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$NM conftest.$ac_objext \| $lt_cv_sys_global_symbol_pipe \> $ac_nlist\""; } >&5
-  (eval $NM conftest.$ac_objext \| $lt_cv_sys_global_symbol_pipe \> $ac_nlist) 2>&5
-  ac_status=$?
-  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; } && test -s "$ac_nlist"; then
-      # See whether the symbols have a leading underscore.
-      if grep '^. _nm_test_func' "$ac_nlist" >/dev/null; then
-        lt_cv_sys_symbol_underscore=yes
-      else
-        if grep '^. nm_test_func ' "$ac_nlist" >/dev/null; then
-	  :
-        else
-	  echo "configure: cannot find nm_test_func in $ac_nlist" >&5
-        fi
-      fi
-    else
-      echo "configure: cannot run $lt_cv_sys_global_symbol_pipe" >&5
-    fi
-  else
-    echo "configure: failed program was:" >&5
-    cat conftest.c >&5
-  fi
-  rm -rf conftest*
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $lt_cv_sys_symbol_underscore" >&5
-printf "%s\n" "$lt_cv_sys_symbol_underscore" >&6; }
-  sys_symbol_underscore=$lt_cv_sys_symbol_underscore
-
-
-if test yes = "$lt_cv_sys_symbol_underscore"; then
-  if test yes = "$libltdl_cv_func_dlopen" || test yes = "$libltdl_cv_lib_dl_dlopen"; then
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether we have to add an underscore for dlsym" >&5
-printf %s "checking whether we have to add an underscore for dlsym... " >&6; }
-if test ${libltdl_cv_need_uscore+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) libltdl_cv_need_uscore=unknown
-      dlsym_uscore_save_LIBS=$LIBS
-      LIBS="$LIBS $LIBADD_DLOPEN"
-      libname=conftmod # stay within 8.3 filename limits!
-      cat >$libname.$ac_ext <<_LT_EOF
-#line $LINENO "configure"
-#include "confdefs.h"
-/* When -fvisibility=hidden is used, assume the code has been annotated
-   correspondingly for the symbols needed.  */
-#if defined __GNUC__ && (((__GNUC__ == 3) && (__GNUC_MINOR__ >= 3)) || (__GNUC__ > 3))
-int fnord () __attribute__((visibility("default")));
-#endif
-int fnord () { return 42; }
-_LT_EOF
-
-      # ltfn_module_cmds module_cmds
-      # Execute tilde-delimited MODULE_CMDS with environment primed for
-      # $module_cmds or $archive_cmds type content.
-      ltfn_module_cmds ()
-      {( # subshell avoids polluting parent global environment
-          module_cmds_save_ifs=$IFS; IFS='~'
-          for cmd in $1; do
-            IFS=$module_cmds_save_ifs
-            libobjs=$libname.$ac_objext; lib=$libname$libltdl_cv_shlibext
-            rpath=/not-exists; soname=$libname$libltdl_cv_shlibext; output_objdir=.
-            major=; versuffix=; verstring=; deplibs=
-            ECHO=echo; wl=$lt_prog_compiler_wl; allow_undefined_flag=
-            eval $cmd
-          done
-          IFS=$module_cmds_save_ifs
-      )}
-
-      # Compile a loadable module using libtool macro expansion results.
-      $CC $pic_flag -c $libname.$ac_ext
-      ltfn_module_cmds "${module_cmds:-$archive_cmds}"
-
-      # Try to fetch fnord with dlsym().
-      libltdl_dlunknown=0; libltdl_dlnouscore=1; libltdl_dluscore=2
-      cat >conftest.$ac_ext <<_LT_EOF
-#line $LINENO "configure"
-#include "confdefs.h"
-#if HAVE_DLFCN_H
-#include <dlfcn.h>
-#endif
-#include <stdio.h>
-#ifndef RTLD_GLOBAL
-#  ifdef DL_GLOBAL
-#    define RTLD_GLOBAL DL_GLOBAL
-#  else
-#    define RTLD_GLOBAL 0
-#  endif
-#endif
-#ifndef RTLD_NOW
-#  ifdef DL_NOW
-#    define RTLD_NOW DL_NOW
-#  else
-#    define RTLD_NOW 0
-#  endif
-#endif
-int main (void) {
-  void *handle = dlopen ("`pwd`/$libname$libltdl_cv_shlibext", RTLD_GLOBAL|RTLD_NOW);
-  int status = $libltdl_dlunknown;
-  if (handle) {
-    if (dlsym (handle, "fnord"))
-      status = $libltdl_dlnouscore;
-    else {
-      if (dlsym (handle, "_fnord"))
-        status = $libltdl_dluscore;
-      else
-	puts (dlerror ());
-    }
-    dlclose (handle);
-  } else
-    puts (dlerror ());
-  return status;
-}
-_LT_EOF
-      if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_link\""; } >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; } && test -s "conftest$ac_exeext" 2>/dev/null; then
-        (./conftest; exit; ) >&5 2>/dev/null
-        libltdl_status=$?
-        case x$libltdl_status in
-          x$libltdl_dlnouscore) libltdl_cv_need_uscore=no ;;
-	  x$libltdl_dluscore) libltdl_cv_need_uscore=yes ;;
-	  x*) libltdl_cv_need_uscore=unknown ;;
-        esac
-      fi
-      rm -rf conftest* $libname*
-      LIBS=$dlsym_uscore_save_LIBS
-     ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $libltdl_cv_need_uscore" >&5
-printf "%s\n" "$libltdl_cv_need_uscore" >&6; }
-  fi
-fi
-
-if test yes = "$libltdl_cv_need_uscore"; then
-
-printf "%s\n" "#define NEED_USCORE 1" >>confdefs.h
-
-fi
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether deplibs are loaded by dlopen" >&5
-printf %s "checking whether deplibs are loaded by dlopen... " >&6; }
-if test ${lt_cv_sys_dlopen_deplibs+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) # PORTME does your system automatically load deplibs for dlopen?
-  # or its logical equivalent (e.g. shl_load for HP-UX < 11)
-  # For now, we just catch OSes we know something about -- in the
-  # future, we'll try test this programmatically.
-  lt_cv_sys_dlopen_deplibs=unknown
-  case $host_os in
-  aix3*|aix4.1.*|aix4.2.*)
-    # Unknown whether this is true for these versions of AIX, but
-    # we want this 'case' here to explicitly catch those versions.
-    lt_cv_sys_dlopen_deplibs=unknown
-    ;;
-  aix[4-9]*)
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  amigaos*)
-    case $host_cpu in
-    powerpc)
-      lt_cv_sys_dlopen_deplibs=no
-      ;;
-    esac
-    ;;
-  darwin*)
-    # Assuming the user has installed a libdl from somewhere, this is true
-    # If you are looking for one http://www.opendarwin.org/projects/dlcompat
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  freebsd* | dragonfly* | midnightbsd*)
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  gnu* | linux* | k*bsd*-gnu | kopensolaris*-gnu)
-    # GNU and its variants, using gnu ld.so (Glibc)
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  hpux10*|hpux11*)
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  interix*)
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  irix[12345]*|irix6.[01]*)
-    # Catch all versions of IRIX before 6.2, and indicate that we don't
-    # know how it worked for any of those versions.
-    lt_cv_sys_dlopen_deplibs=unknown
-    ;;
-  irix*)
-    # The case above catches anything before 6.2, and it's known that
-    # at 6.2 and later dlopen does load deplibs.
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  *-mlibc)
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  netbsd* | netbsdelf*-gnu)
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  openbsd*)
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  osf[1234]*)
-    # dlopen did load deplibs (at least at 4.x), but until the 5.x series,
-    # it did *not* use an RPATH in a shared library to find objects the
-    # library depends on, so we explicitly say 'no'.
-    lt_cv_sys_dlopen_deplibs=no
-    ;;
-  osf5.0|osf5.0a|osf5.1)
-    # dlopen *does* load deplibs and with the right loader patch applied
-    # it even uses RPATH in a shared library to search for shared objects
-    # that the library depends on, but there's no easy way to know if that
-    # patch is installed.  Since this is the case, all we can really
-    # say is unknown -- it depends on the patch being installed.  If
-    # it is, this changes to 'yes'.  Without it, it would be 'no'.
-    lt_cv_sys_dlopen_deplibs=unknown
-    ;;
-  osf*)
-    # the two cases above should catch all versions of osf <= 5.1.  Read
-    # the comments above for what we know about them.
-    # At > 5.1, deplibs are loaded *and* any RPATH in a shared library
-    # is used to find them so we can finally say 'yes'.
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  qnx*)
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  solaris*)
-    lt_cv_sys_dlopen_deplibs=yes
-    ;;
-  sysv5* | sco3.2v5* | sco5v6* | unixware* | OpenUNIX* | sysv4*uw2*)
-    libltdl_cv_sys_dlopen_deplibs=yes
-    ;;
-  esac
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $lt_cv_sys_dlopen_deplibs" >&5
-printf "%s\n" "$lt_cv_sys_dlopen_deplibs" >&6; }
-if test yes != "$lt_cv_sys_dlopen_deplibs"; then
-
-printf "%s\n" "#define LTDL_DLOPEN_DEPLIBS 1" >>confdefs.h
-
-fi
-
-
-ac_fn_c_check_header_compile "$LINENO" "argz.h" "ac_cv_header_argz_h" "$ac_includes_default
-"
-if test "x$ac_cv_header_argz_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_ARGZ_H 1" >>confdefs.h
-
-fi
-
-
-ac_fn_c_check_type "$LINENO" "error_t" "ac_cv_type_error_t" "#if defined(HAVE_ARGZ_H)
-#  include <argz.h>
-#endif
-"
-if test "x$ac_cv_type_error_t" = xyes
-then :
-
-printf "%s\n" "#define HAVE_ERROR_T 1" >>confdefs.h
-
-
-else case e in #(
-  e)
-printf "%s\n" "#define error_t int" >>confdefs.h
-
-
-printf "%s\n" "#define __error_t_defined 1" >>confdefs.h
- ;;
-esac
-fi
-
-
-LT_ARGZ_H=
-
-  for ac_func in argz_add argz_append argz_count argz_create_sep argz_insert argz_next argz_stringify
-do :
-  as_ac_var=`printf "%s\n" "ac_cv_func_$ac_func" | sed "$as_sed_sh"`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"
-then :
-  cat >>confdefs.h <<_ACEOF
-#define `printf "%s\n" "HAVE_$ac_func" | sed "$as_sed_cpp"` 1
-_ACEOF
-
-else case e in #(
-  e) LT_ARGZ_H=lt__argz.h;
-
-  _LT_LIBOBJS="$_LT_LIBOBJS lt__argz.$ac_objext"
- ;;
-esac
-fi
-
-done
-
-if test -z "$LT_ARGZ_H"
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if argz actually works" >&5
-printf %s "checking if argz actually works... " >&6; }
-if test ${lt_cv_sys_argz_works+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) case $host_os in #(
-	 *cygwin*)
-	   lt_cv_sys_argz_works=no
-	   if test no != "$cross_compiling"; then
-	     lt_cv_sys_argz_works="guessing no"
-	   else
-	     lt_sed_extract_leading_digits='s/^\([0-9\.]*\).*/\1/'
-	     save_IFS=$IFS
-	     IFS=-.
-	     set x `uname -r | $SED -e "$lt_sed_extract_leading_digits"`
-	     IFS=$save_IFS
-	     lt_os_major=${2-0}
-	     lt_os_minor=${3-0}
-	     lt_os_micro=${4-0}
-	     if test 1 -lt "$lt_os_major" \
-		|| { test 1 -eq "$lt_os_major" \
-		  && { test 5 -lt "$lt_os_minor" \
-		    || { test 5 -eq "$lt_os_minor" \
-		      && test 24 -lt "$lt_os_micro"; }; }; }; then
-	       lt_cv_sys_argz_works=yes
-	     fi
-	   fi
-	   ;; #(
-	 *) lt_cv_sys_argz_works=yes ;;
-	 esac ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $lt_cv_sys_argz_works" >&5
-printf "%s\n" "$lt_cv_sys_argz_works" >&6; }
-     if test yes = "$lt_cv_sys_argz_works"
-then :
-
-printf "%s\n" "#define HAVE_WORKING_ARGZ 1" >>confdefs.h
-
-else case e in #(
-  e) LT_ARGZ_H=lt__argz.h
-
-
-  _LT_LIBOBJS="$_LT_LIBOBJS lt__argz.$ac_objext"
- ;;
-esac
-fi
-fi
-
-
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether libtool supports -dlopen/-dlpreopen" >&5
-printf %s "checking whether libtool supports -dlopen/-dlpreopen... " >&6; }
-if test ${libltdl_cv_preloaded_symbols+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) if test -n "$lt_cv_sys_global_symbol_pipe"; then
-    libltdl_cv_preloaded_symbols=yes
-  else
-    libltdl_cv_preloaded_symbols=no
-  fi
-   ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $libltdl_cv_preloaded_symbols" >&5
-printf "%s\n" "$libltdl_cv_preloaded_symbols" >&6; }
-if test yes = "$libltdl_cv_preloaded_symbols"; then
-
-printf "%s\n" "#define HAVE_PRELOADED_SYMBOLS 1" >>confdefs.h
-
-fi
-
-
-
 
 
 case $TERM in
@@ -25574,353 +24678,7 @@ printf "%s\n" "${T_MD}Checking Libtool:${T_ME}" >&6; }
 
 
 
-	# Set options
-
-
-
-
-
-
-
-
-
-
-
-
-# Check whether --with-included_ltdl was given.
-if test ${with_included_ltdl+y}
-then :
-  withval=$with_included_ltdl;
-fi
-
-
-if test yes != "$with_included_ltdl"; then
-  # We are not being forced to use the included libltdl sources, so
-  # decide whether there is a useful installed version we can use.
-  ac_fn_c_check_header_compile "$LINENO" "ltdl.h" "ac_cv_header_ltdl_h" "$ac_includes_default
-
-"
-if test "x$ac_cv_header_ltdl_h" = xyes
-then :
-  ac_fn_check_decl "$LINENO" "lt_dlinterface_register" "ac_cv_have_decl_lt_dlinterface_register" "$ac_includes_default
-	    #include <ltdl.h>
-" "$ac_c_undeclared_builtin_options" "CFLAGS"
-if test "x$ac_cv_have_decl_lt_dlinterface_register" = xyes
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for lt_dladvise_preload in -lltdl" >&5
-printf %s "checking for lt_dladvise_preload in -lltdl... " >&6; }
-if test ${ac_cv_lib_ltdl_lt_dladvise_preload+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lltdl  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char lt_dladvise_preload (void);
-int
-main (void)
-{
-return lt_dladvise_preload ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_ltdl_lt_dladvise_preload=yes
-else case e in #(
-  e) ac_cv_lib_ltdl_lt_dladvise_preload=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ltdl_lt_dladvise_preload" >&5
-printf "%s\n" "$ac_cv_lib_ltdl_lt_dladvise_preload" >&6; }
-if test "x$ac_cv_lib_ltdl_lt_dladvise_preload" = xyes
-then :
-  with_included_ltdl=no
-else case e in #(
-  e) with_included_ltdl=yes ;;
-esac
-fi
-
-else case e in #(
-  e) with_included_ltdl=yes ;;
-esac
-fi
-else case e in #(
-  e) with_included_ltdl=yes ;;
-esac
-fi
-
-fi
-
-
-
-
-
-
-
-
-# Check whether --with-ltdl_include was given.
-if test ${with_ltdl_include+y}
-then :
-  withval=$with_ltdl_include;
-fi
-
-
-if test -n "$with_ltdl_include"; then
-  if test -f "$with_ltdl_include/ltdl.h"; then :
-  else
-    as_fn_error $? "invalid ltdl include directory: '$with_ltdl_include'" "$LINENO" 5
-  fi
-else
-  with_ltdl_include=no
-fi
-
-
-# Check whether --with-ltdl_lib was given.
-if test ${with_ltdl_lib+y}
-then :
-  withval=$with_ltdl_lib;
-fi
-
-
-if test -n "$with_ltdl_lib"; then
-  if test -f "$with_ltdl_lib/libltdl.la"; then :
-  else
-    as_fn_error $? "invalid ltdl library directory: '$with_ltdl_lib'" "$LINENO" 5
-  fi
-else
-  with_ltdl_lib=no
-fi
-
-case ,$with_included_ltdl,$with_ltdl_include,$with_ltdl_lib, in
-  ,yes,no,no,)
-	case $enable_ltdl_convenience in
-  no) as_fn_error $? "this package needs a convenience libltdl" "$LINENO" 5 ;;
-  "") enable_ltdl_convenience=yes
-      ac_configure_args="$ac_configure_args --enable-ltdl-convenience" ;;
-esac
-LIBLTDL='$(top_build_prefix)'"${lt_ltdl_dir+$lt_ltdl_dir/}libltdlc.la"
-LTDLDEPS=$LIBLTDL
-LTDLINCL='-I$(top_srcdir)'"${lt_ltdl_dir+/$lt_ltdl_dir}"
-
-
-
-
-
-# For backwards non-gettext consistent compatibility...
-INCLTDL=$LTDLINCL
-
-
-	;;
-  ,no,no,no,)
-	# If the included ltdl is not to be used, then use the
-	# preinstalled libltdl we found.
-
-printf "%s\n" "#define HAVE_LTDL 1" >>confdefs.h
-
-	LIBLTDL=-lltdl
-	LTDLDEPS=
-	LTDLINCL=
-	;;
-  ,no*,no,*)
-	as_fn_error $? "'--with-ltdl-include' and '--with-ltdl-lib' options must be used together" "$LINENO" 5
-	;;
-  *)	with_included_ltdl=no
-	LIBLTDL="-L$with_ltdl_lib -lltdl"
-	LTDLDEPS=
-	LTDLINCL=-I$with_ltdl_include
-	;;
-esac
-INCLTDL=$LTDLINCL
-
-# Report our decision...
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking where to find libltdl headers" >&5
-printf %s "checking where to find libltdl headers... " >&6; }
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LTDLINCL" >&5
-printf "%s\n" "$LTDLINCL" >&6; }
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking where to find libltdl library" >&5
-printf %s "checking where to find libltdl library... " >&6; }
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $LIBLTDL" >&5
-printf "%s\n" "$LIBLTDL" >&6; }
-
-
-
-# Check whether --enable-ltdl-install was given.
-if test ${enable_ltdl_install+y}
-then :
-  enableval=$enable_ltdl_install;
-fi
-
-
-case ,$enable_ltdl_install,$enable_ltdl_convenience in
-  *yes*) ;;
-  *) enable_ltdl_convenience=yes ;;
-esac
-
- if test no != "${enable_ltdl_install-no}"; then
-  INSTALL_LTDL_TRUE=
-  INSTALL_LTDL_FALSE='#'
-else
-  INSTALL_LTDL_TRUE='#'
-  INSTALL_LTDL_FALSE=
-fi
-
-  if test no != "${enable_ltdl_convenience-no}"; then
-  CONVENIENCE_LTDL_TRUE=
-  CONVENIENCE_LTDL_FALSE='#'
-else
-  CONVENIENCE_LTDL_TRUE='#'
-  CONVENIENCE_LTDL_FALSE=
-fi
-
-  if test -n "$LT_ARGZ_H"; then
-  LTARGZH_EXISTS_TRUE=
-  LTARGZH_EXISTS_FALSE='#'
-else
-  LTARGZH_EXISTS_TRUE='#'
-  LTARGZH_EXISTS_FALSE=
-fi
-
-
-
-    subdirs="$subdirs libltdl"
-
-
-
-
-# In order that ltdl.c can compile, find out the first AC_CONFIG_HEADERS
-# the user used.  This is so that ltdl.h can pick up the parent projects
-# config.h file, The first file in AC_CONFIG_HEADERS must contain the
-# definitions required by ltdl.c.
-# FIXME: Remove use of undocumented AC_LIST_HEADERS (2.59 compatibility).
-
-
-
-ac_fn_c_check_header_compile "$LINENO" "unistd.h" "ac_cv_header_unistd_h" "$ac_includes_default
-"
-if test "x$ac_cv_header_unistd_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_UNISTD_H 1" >>confdefs.h
-
-fi
-ac_fn_c_check_header_compile "$LINENO" "dl.h" "ac_cv_header_dl_h" "$ac_includes_default
-"
-if test "x$ac_cv_header_dl_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_DL_H 1" >>confdefs.h
-
-fi
-ac_fn_c_check_header_compile "$LINENO" "sys/dl.h" "ac_cv_header_sys_dl_h" "$ac_includes_default
-"
-if test "x$ac_cv_header_sys_dl_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_SYS_DL_H 1" >>confdefs.h
-
-fi
-ac_fn_c_check_header_compile "$LINENO" "dld.h" "ac_cv_header_dld_h" "$ac_includes_default
-"
-if test "x$ac_cv_header_dld_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_DLD_H 1" >>confdefs.h
-
-fi
-ac_fn_c_check_header_compile "$LINENO" "mach-o/dyld.h" "ac_cv_header_mach_o_dyld_h" "$ac_includes_default
-"
-if test "x$ac_cv_header_mach_o_dyld_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_MACH_O_DYLD_H 1" >>confdefs.h
-
-fi
-ac_fn_c_check_header_compile "$LINENO" "dirent.h" "ac_cv_header_dirent_h" "$ac_includes_default
-"
-if test "x$ac_cv_header_dirent_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_DIRENT_H 1" >>confdefs.h
-
-fi
-
-
-
-  for ac_func in closedir opendir readdir
-do :
-  as_ac_var=`printf "%s\n" "ac_cv_func_$ac_func" | sed "$as_sed_sh"`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"
-then :
-  cat >>confdefs.h <<_ACEOF
-#define `printf "%s\n" "HAVE_$ac_func" | sed "$as_sed_cpp"` 1
-_ACEOF
-
-else case e in #(
-  e)
-
-  _LT_LIBOBJS="$_LT_LIBOBJS lt__dirent.$ac_objext"
- ;;
-esac
-fi
-
-done
-
-  for ac_func in strlcat strlcpy
-do :
-  as_ac_var=`printf "%s\n" "ac_cv_func_$ac_func" | sed "$as_sed_sh"`
-ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
-if eval test \"x\$"$as_ac_var"\" = x"yes"
-then :
-  cat >>confdefs.h <<_ACEOF
-#define `printf "%s\n" "HAVE_$ac_func" | sed "$as_sed_cpp"` 1
-_ACEOF
-
-else case e in #(
-  e)
-
-  _LT_LIBOBJS="$_LT_LIBOBJS lt__strl.$ac_objext"
- ;;
-esac
-fi
-
-done
-
-
-printf "%s\n" "#define LT_LIBEXT \"$libext\"" >>confdefs.h
-
-
-name=
-eval "lt_libprefix=\"$libname_spec\""
-
-printf "%s\n" "#define LT_LIBPREFIX \"$lt_libprefix\"" >>confdefs.h
-
-
-name=ltdl
-eval "LTDLOPEN=\"$libname_spec\""
-
-
-
-
-
-
-
-
-# Only expand once:
-
-
+	LTDL_INIT()
 	if test "x$with_included_ltdl" != "xyes"; then
 		save_CFLAGS="${CFLAGS}"
 		save_CPPFLAGS="${CPPFLAGS}"
@@ -28587,7 +27345,7 @@ fi
 	if test -z "$NEW_PBX_PATH" && test ! x"${PKGCONFIG}" = xNo; then
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking pkg-config asterisk" >&5
 printf %s "checking pkg-config asterisk... " >&6; }
-	 	if $(${PKGCONFIG} --exists asterisk); then
+		if $(${PKGCONFIG} --exists asterisk); then
 			PBX_TYPE="Asterisk"
 			PBX_ETC="$(${PKGCONFIG} --variable=etcdir asterisk)"
 			PBX_PREFIX="$(${PKGCONFIG} --variable=install_prefix asterisk)"
@@ -28605,8 +27363,8 @@ printf "%s\n" "$as_me: Fixed fauly asterisk.pc pkg-config file. Advise:You ought
 				PBX_CPPFLAGS="${PBX_CFLAGS}"
 				CFLAGS="${CFLAGS} ${PBX_CFLAGS}"
 				CPPFLAGS="${CPPFLAGS} ${PBX_CPPFLAGS}"
-	 			PBX_LIB="$(${PKGCONFIG} --variable=libdir asterisk)"
-		 		if test -f "${PBX_ETC}/asterisk.conf"; then
+				PBX_LIB="$(${PKGCONFIG} --variable=libdir asterisk)"
+				if test -f "${PBX_ETC}/asterisk.conf"; then
 					PBX_TEMPMODDIR="`${SED} -n 's/astmoddir\(.*\)$/\1/p' ${PBX_ETC}/asterisk.conf|${TR} -d ' \t=>'`"
 					if test -z "$PBX_TEMPMODDIR"; then
 						echo ""
@@ -28626,11 +27384,11 @@ printf "%s\n" "$as_me: astvarlibdir could not be found in ${PBX_ETC}/asterisk.co
 printf "%s\n" "$as_me: astsbindir could not be found in ${PBX_ETC}/asterisk.conf." >&6;}
 					fi
 					PBX_DATADIR="`${SED} -n 's/astdatadir\(.*\)$/\1/p' ${PBX_ETC}/asterisk.conf|${TR} -d ' \t=>'`"
-		 		else
-		 			PBX_TEMPMODDIR="$(${PKGCONFIG} --variable=moddir asterisk)"
-		 			PBX_VARLIB="$(${PKGCONFIG} --variable=varlibdir asterisk)"
+				else
+					PBX_TEMPMODDIR="$(${PKGCONFIG} --variable=moddir asterisk)"
+					PBX_VARLIB="$(${PKGCONFIG} --variable=varlibdir asterisk)"
 					PBX_SBINDIR="${PBX_PREFIX}/sbin/"
-		 		fi
+				fi
                 if test -z "$PBX_SDATADIR"; then
                         PBX_DATADIR="${PBX_VARLIB}"
                 fi
@@ -28643,7 +27401,7 @@ printf "%s\n" "found" >&6; }
 		else
 			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 printf "%s\n" "not found" >&6; }
-	 	fi
+		fi
 	fi
 	if test x_$HAVE_ASTERISK != x_yes; then
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking Search Path: $PBX_PATH" >&5
@@ -28727,7 +27485,7 @@ printf "%s\n" "Asterisk found in ${checkdir}" >&6; }
 						PBX_LIB="${checkdir}/lib"
 					fi
 				fi
-		 		if test -f "${PBX_ETC}/asterisk.conf"; then
+				if test -f "${PBX_ETC}/asterisk.conf"; then
 					PBX_TEMPMODDIR="`${SED} -n 's/astmoddir\(.*\)$/\1/p' ${PBX_ETC}/asterisk.conf|${TR} -d ' \t=>'`"
 					if test -z "$PBX_TEMPMODDIR"; then
 						echo ""
@@ -28747,7 +27505,7 @@ printf "%s\n" "$as_me: astvarlibdir could not be found in ${PBX_ETC}/asterisk.co
 printf "%s\n" "$as_me: astsbindir could not be found in ${PBX_ETC}/asterisk.conf." >&6;}
 					fi
 					PBX_DATADIR="`${SED} -n 's/astdatadir\(.*\)$/\1/p' ${PBX_ETC}/asterisk.conf|${TR} -d ' \t=>'`"
-		 		fi
+				fi
 				PBX_LDFLAGS="$LDFLAGS -L${checkdir}/lib"
 				case "${build_cpu}" in
 					x86_64|amd64|ppc64)
@@ -28850,755 +27608,99 @@ printf "%s\n" "" >&6; }
 printf "%s\n" "${T_MD}Checking Asterisk Version:${T_ME}" >&6; }
 
 	REALTIME_USEABLE=1
-	version_found=0
 
-
-# Check whether --with-asterisk_version was given.
+# Check whether --with-asterisk-version was given.
 if test ${with_asterisk_version+y}
 then :
-  withval=$with_asterisk_version; ac_cv_use_asterisk_version="${withval}"
+  withval=$with_asterisk_version; requested_asterisk_version=$withval
 else case e in #(
-  e) ac_cv_use_asterisk_version="no" ;;
+  e) requested_asterisk_version=auto ;;
 esac
 fi
 
-	if test "_${ac_cv_use_asterisk_version}" != "_no"
+
+	if test "$requested_asterisk_version" != auto
 then :
 
-		major=${ac_cv_use_asterisk_version%.*}
-		minor=${ac_cv_use_asterisk_version#*.}
-		combined=`printf "1%d%02d" $major $minor`
-
-		ASTERISK_VERSION_NUMBER="${combined}"
-		ASTERISK_VER_GROUP="1${major}"
-		ASTERISK_REPOS_LOCATION="TRUNK"
-
-		case "${ASTERISK_VER_GROUP}" in
-			102)
-printf "%s\n" "#define ASTERISK_CONF_1_2 1" >>confdefs.h
-;;
-			104)
-printf "%s\n" "#define ASTERISK_CONF_1_4 1" >>confdefs.h
-;;
-			106)
-printf "%s\n" "#define ASTERISK_CONF_1_6 1" >>confdefs.h
-;;
-			108)
-printf "%s\n" "#define ASTERISK_CONF_1_8 1" >>confdefs.h
-;;
-			110)
-printf "%s\n" "#define ASTERISK_CONF_1_10 1" >>confdefs.h
-;;
-			111)
-printf "%s\n" "#define ASTERISK_CONF_1_11 1" >>confdefs.h
-;;
-			112)
-printf "%s\n" "#define ASTERISK_CONF_1_12 1" >>confdefs.h
-;;
-			113)
-printf "%s\n" "#define ASTERISK_CONF_1_13 1" >>confdefs.h
-;;
-			114)
-printf "%s\n" "#define ASTERISK_CONF_1_14 1" >>confdefs.h
-;;
-			115)
-printf "%s\n" "#define ASTERISK_CONF_1_15 1" >>confdefs.h
-;;
-			116)
-printf "%s\n" "#define ASTERISK_CONF_1_16 1" >>confdefs.h
-;;
-			117)
-printf "%s\n" "#define ASTERISK_CONF_1_17 1" >>confdefs.h
-;;
-			118)
-printf "%s\n" "#define ASTERISK_CONF_1_18 1" >>confdefs.h
-;;
-			119)
-printf "%s\n" "#define ASTERISK_CONF_1_19 1" >>confdefs.h
-;;
-			120)
-printf "%s\n" "#define ASTERISK_CONF_1_20 1" >>confdefs.h
-;;
-			121)
-printf "%s\n" "#define ASTERISK_CONF_1_21 1" >>confdefs.h
-;;
-			122)
-printf "%s\n" "#define ASTERISK_CONF_1_22 1" >>confdefs.h
-;;
-			123)
-printf "%s\n" "#define ASTERISK_CONF_1_23 1" >>confdefs.h
-;;
-			124)
-printf "%s\n" "#define ASTERISK_CONF_1_24 1" >>confdefs.h
-;;
-			*)
-
-printf "%s\n" "#define ASTERISK_CONF 0" >>confdefs.h
-
-				ASTERISK_INCOMPATIBLE=yes;;
-		esac
-		if test "$ASTERISK_VER_GROUP" -lt "$MIN_ASTERISK_VERSION" || test "$ASTERISK_VER_GROUP" -gt "$MAX_ASTERISK_VERSION"
+		ASTERISK_MAJOR=${requested_asterisk_version%%.*}
+		ASTERISK_MINOR=${requested_asterisk_version#*.}
+		if test "$ASTERISK_MAJOR" = "$ASTERISK_MINOR" ||
+		       ! test "$ASTERISK_MINOR" -ge 0 2>/dev/null
 then :
-  as_fn_error $? "Supported Asterisk versions are 20 through 24" "$LINENO" 5
+  as_fn_error $? "Use --with-asterisk-version=MAJOR.MINOR (20 through 24)" "$LINENO" 5
 fi
-
-
-printf "%s\n" "#define ASTERISK_VERSION_NUMBER ${ASTERISK_VERSION_NUMBER}" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_GROUP ${ASTERISK_VER_GROUP}" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_REPOS_LOCATION ${ASTERISK_REPOS_LOCATION}" >>confdefs.h
-
-
-		version_found=1
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&5
-printf "%s\n" "Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&6; }
 
 else case e in #(
   e)
-		ac_fn_c_check_header_compile "$LINENO" "asterisk/version.h" "ac_cv_header_asterisk_version_h" "$ac_includes_default"
-if test "x$ac_cv_header_asterisk_version_h" = xyes
-then :
-
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking version in asterisk/version.h" >&5
-printf %s "checking version in asterisk/version.h... " >&6; }
-			cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-						#define AST_MODULE_SELF_SYM "__internal_chan_sccp_la_self"
-						#define AST_MODULE "chan_sccp"
-						#include <asterisk/version.h>
-
-int
-main (void)
-{
-
-						const char *test_src = ASTERISK_VERSION;
-
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-				{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: processing..." >&5
-printf "%s\n" "processing..." >&6; }
-				pbx_ver=$(eval "$ac_cpp conftest.$ac_ext" 2>/dev/null | $EGREP test_src |$EGREP -o '\".*\"')
-
-				# process tgz, branch, trunk
-				if echo $pbx_ver|grep -q "\"SVN-branch"; then
-					ASTERISK_REPOS_LOCATION=BRANCH
-					pbx_ver=${pbx_ver:12}						# remove head
-				elif echo $pbx_ver|grep -q "\"SVN-trunk"; then
-					ASTERISK_REPOS_LOCATION=TRUNK
-					pbx_ver=${pbx_ver:11}						# remove head
-					if test "${pbx_ver:0:1}" == "r" ; then
-						pbx_ver="1.10.1"					# default trunk without number
-					fi
-				else
-					ASTERISK_REPOS_LOCATION=TGZ
-				fi
-
-				# remove from pbx_ver
-				# remove from pbx_ver
-				pbx_ver=${pbx_ver%%-*}							# remove tail
-				#pbx_ver=${pbx_ver//\"/}						# remove '"'
-				pbx_ver=`echo ${pbx_ver} | sed 's/"//g'`
-
-				# process version number
-				for x in "1.2" "1.4" "1.6" "1.8" "1.10" "10" "11" "12" "13" "14" "15" "16" "17" "18" "19"; do
-					if test $version_found == 0; then
-						if echo $pbx_ver|grep -q "$x"; then
-							if test ${#x} -gt 3; then		# 1.10
-								ASTERISK_VER_GROUP="`echo $x|sed 's/\.//g'`"
-							elif test ${#x} -lt 3; then		# 1.10
-								ASTERISK_VER_GROUP="110"
-							else
-								ASTERISK_VER_GROUP="`echo $x|sed 's/\./0/g'`"
-							fi
-
-
-							if test "$ASTERISK_VER_GROUP" == "102"; then						# switch off realtime for 1.2
-								REALTIME_USEABLE=0
-							fi
-
-							#ASTERISK_MINOR_VER=${pbx_ver/$x\./}							# remove leading '1.x.'
-							ASTERISK_MINOR_VER=`echo $pbx_ver|sed "s/^$x.\(0-9*\)\(.*\)/\1/g"`			# remove leading and trailing .*
-							#ASTERISK_MINOR_VER1=${ASTERISK_MINOR_VER%%.*}						# remove trailing '.*'
-							#if test ${#ASTERISK_MINOR_VER1} -gt 1; then
-								#ASTERISK_VERSION_NUMBER="${ASTERISK_VER_GROUP}${ASTERISK_MINOR_VER1}"		# add only third version part
-							#else
-								#ASTERISK_VERSION_NUMBER="${ASTERISK_VER_GROUP}0${ASTERISK_MINOR_VER1}"		# add only third version part
-							#fi
-							#ASTERISK_STR_VER="${x}.${ASTERISK_MINOR_VER1}"
-
-							#ASTERISK_MINOR_VER=${pbx_ver/$x\./}							# remove leading '1.x.'
-							ASTERISK_MINOR_VER=`echo $pbx_ver|sed "s/^$x.\(0-9*\)\(.*\)/\1/g"`			# remove leading and trailing .*
-							ASTERISK_MINOR_VER1=${ASTERISK_MINOR_VER%%.*}						# remove trailing '.*'
-							#if test ${#ASTERISK_MINOR_VER1} -gt 1; then
-								#ASTERISK_VERSION_NUMBER="${ASTERISK_VER_GROUP}${ASTERISK_MINOR_VER1}"		# add only third version part
-							#else
-								ASTERISK_VERSION_NUMBER="${ASTERISK_VER_GROUP}0${ASTERISK_MINOR_VER1}"		# add only third version part
-							#fi
-
-							#ASTERISK_STR_VER="${x}.${ASTERISK_MINOR_VER1}"
-
-							version_found=1
-							{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER} ($x)'" >&5
-printf "%s\n" "Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER} ($x)'" >&6; }
-
-							if test "$ASTERISK_VER_GROUP" -lt "$MIN_ASTERISK_VERSION" || test "$ASTERISK_VER_GROUP" -gt "$MAX_ASTERISK_VERSION"
-then :
-  as_fn_error $? "Supported Asterisk versions are 20 through 24" "$LINENO" 5
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define ASTERISK_VERSION_NUMBER `echo ${ASTERISK_VERSION_NUMBER}`
-_ACEOF
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define ASTERISK_VERSION_GROUP `echo ${ASTERISK_VER_GROUP}`
-_ACEOF
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define ASTERISK_REPOS_LOCATION `echo ${ASTERISK_REPOS_LOCATION}`
-_ACEOF
-
-
-
-							case "${ASTERISK_VER_GROUP}" in
-								102)
-printf "%s\n" "#define ASTERISK_CONF_1_2 1" >>confdefs.h
-;;
-								104)
-printf "%s\n" "#define ASTERISK_CONF_1_4 1" >>confdefs.h
-;;
-								106)
-printf "%s\n" "#define ASTERISK_CONF_1_6 1" >>confdefs.h
-;;
-								108)
-printf "%s\n" "#define ASTERISK_CONF_1_8 1" >>confdefs.h
-;;
-								110)
-printf "%s\n" "#define ASTERISK_CONF_1_10 1" >>confdefs.h
-;;
-								111)
-printf "%s\n" "#define ASTERISK_CONF_1_11 1" >>confdefs.h
-;;
-								112)
-printf "%s\n" "#define ASTERISK_CONF_1_12 1" >>confdefs.h
-;;
-								113)
-printf "%s\n" "#define ASTERISK_CONF_1_13 1" >>confdefs.h
-;;
-								114)
-printf "%s\n" "#define ASTERISK_CONF_1_14 1" >>confdefs.h
-;;
-								115)
-printf "%s\n" "#define ASTERISK_CONF_1_15 1" >>confdefs.h
-;;
-								116)
-printf "%s\n" "#define ASTERISK_CONF_1_16 1" >>confdefs.h
-;;
-								117)
-printf "%s\n" "#define ASTERISK_CONF_1_17 1" >>confdefs.h
-;;
-								118)
-printf "%s\n" "#define ASTERISK_CONF_1_18 1" >>confdefs.h
-;;
-								119)
-printf "%s\n" "#define ASTERISK_CONF_1_19 1" >>confdefs.h
-;;
-								120)
-printf "%s\n" "#define ASTERISK_CONF_1_20 1" >>confdefs.h
-;;
-								121)
-printf "%s\n" "#define ASTERISK_CONF_1_21 1" >>confdefs.h
-;;
-								122)
-printf "%s\n" "#define ASTERISK_CONF_1_22 1" >>confdefs.h
-;;
-								123)
-printf "%s\n" "#define ASTERISK_CONF_1_23 1" >>confdefs.h
-;;
-								124)
-printf "%s\n" "#define ASTERISK_CONF_1_24 1" >>confdefs.h
-;;
-								*)
-
-printf "%s\n" "#define ASTERISK_CONF 0" >>confdefs.h
-
-									ASTERISK_INCOMPATIBLE=yes;;
-							esac
-
-
-						fi
-					fi
-				done
-				if test $version_found == 0; then
-					echo ""
-					echo ""
-					echo "PBX branch version could not be determined"
-					echo "==================================="
-					echo "Either install asterisk and asterisk-devel packages using your package manager."
-					echo "If you compiled asterisk manually, make sure you also run `make install-headers` so chan-sccp can find them."
-					echo "Or specify the location where asterisk can be found, using ./configure --with-asterisk=path"
-					exit 255
-				fi
-
-else case e in #(
-  e)
-				{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: 'ASTERISK_VERSION could not be established" >&5
-printf "%s\n" "'ASTERISK_VERSION could not be established" >&6; }
-			 ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-
-else case e in #(
-  e)
-																														ac_fn_c_check_header_compile "$LINENO" "asterisk/autoconfig.h" "ac_cv_header_asterisk_autoconfig_h" "$ac_includes_default"
+		ac_fn_c_check_header_compile "$LINENO" "asterisk/autoconfig.h" "ac_cv_header_asterisk_autoconfig_h" "$ac_includes_default"
 if test "x$ac_cv_header_asterisk_autoconfig_h" = xyes
 then :
 
-				{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for major version via asterisk/autoconfig.h PACKAGE_VERSION" >&5
-printf %s "checking for major version via asterisk/autoconfig.h PACKAGE_VERSION... " >&6; }
-				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+else case e in #(
+  e) as_fn_error $? "Asterisk build headers are required; pass --with-asterisk=PREFIX" "$LINENO" 5 ;;
+esac
+fi
+
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking major version in asterisk/autoconfig.h" >&5
+printf %s "checking major version in asterisk/autoconfig.h... " >&6; }
+		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-							#define AST_MODULE_SELF_SYM "__internal_chan_sccp_la_self"
-							#define AST_MODULE "chan_sccp"
-							#include <asterisk/autoconfig.h>
-
-int
-main (void)
-{
-
-							const char *test_src = PACKAGE_VERSION;
-
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-
-					pbx_major_ver=`eval "$ac_cpp conftest.$ac_ext" 2>/dev/null | $EGREP -A3 test_src | $EGREP -v '^#' | $EGREP -o '"[0-9][0-9]*"' | sed 's/"//g' | head -1`
-					if echo "$pbx_major_ver" | $EGREP -q '^[0-9][0-9]$' && test "$pbx_major_ver" -ge 20 2>/dev/null; then
-						ASTERISK_VER_GROUP="1${pbx_major_ver}"
-						ASTERISK_VERSION_NUMBER="${ASTERISK_VER_GROUP}00"
-						ASTERISK_REPOS_LOCATION=TRUNK
-
-
-printf "%s\n" "#define ASTERISK_VERSION_NUMBER ${ASTERISK_VERSION_NUMBER}" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_GROUP ${ASTERISK_VER_GROUP}" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_REPOS_LOCATION \"${ASTERISK_REPOS_LOCATION}\"" >>confdefs.h
-
-
-
-
-
-						case "${ASTERISK_VER_GROUP}" in
-							120)
-printf "%s\n" "#define ASTERISK_CONF_1_20 1" >>confdefs.h
-;;
-							121)
-printf "%s\n" "#define ASTERISK_CONF_1_21 1" >>confdefs.h
-;;
-							122)
-printf "%s\n" "#define ASTERISK_CONF_1_22 1" >>confdefs.h
-;;
-							123)
-printf "%s\n" "#define ASTERISK_CONF_1_23 1" >>confdefs.h
-;;
-							124)
-printf "%s\n" "#define ASTERISK_CONF_1_24 1" >>confdefs.h
-;;
-							*)
-printf "%s\n" "#define ASTERISK_CONF 0" >>confdefs.h
-
-							   ASTERISK_INCOMPATIBLE=yes;;
-						esac
-
-						version_found=1
-						{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}' (PACKAGE_VERSION=${pbx_major_ver})" >&5
-printf "%s\n" "Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}' (PACKAGE_VERSION=${pbx_major_ver})" >&6; }
-					else
-						{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: not a recognized modern major version ('${pbx_major_ver}')" >&5
-printf "%s\n" "not a recognized modern major version ('${pbx_major_ver}')" >&6; }
-					fi
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
-
-fi
-
-			HEADER_INCLUDE="
-	#define HAVE_ARPA_INET_H 1
-	#define AST_MODULE_SELF_SYM __internal_chan_sccp_la_self
-	#define AST_MODULE "chan_sccp"
-	#include <asterisk.h>
-	"
-			if test "$version_found" = "0"
-then :
-
-			ac_fn_c_check_header_compile "$LINENO" "asterisk/ast_version.h" "ac_cv_header_asterisk_ast_version_h" "$HEADER_INCLUDE
-"
-if test "x$ac_cv_header_asterisk_ast_version_h" = xyes
-then :
-
-				cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-					$HEADER_INCLUDE
-					#include <asterisk/manager.h>
-					#if defined AMI_VERSION
-					  AMI_VERSION
-					#endif
+			#define AST_MODULE_SELF_SYM "__internal_chan_sccp_la_self"
+			#define AST_MODULE "chan_sccp"
+			#include <asterisk/autoconfig.h>
+			PACKAGE_VERSION
 
 _ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP_TRADITIONAL "8.0.0" >/dev/null 2>&1
-then :
-
-					ASTERISK_VER_GROUP=119
-					ASTERISK_VERSION_NUMBER=11900
-					ASTERISK_REPOS_LOCATION=TRUNK
-
-
-printf "%s\n" "#define ASTERISK_CONF_1_19 1" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_NUMBER 11900" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_GROUP 119" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_REPOS_LOCATION \"TRUNK\"" >>confdefs.h
-
-
-					version_found=1
-					{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&5
-printf "%s\n" "Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&6; }
-
-else case e in #(
-  e)
-					ac_fn_c_check_header_compile "$LINENO" "asterisk/res_audiosocket.h" "ac_cv_header_asterisk_res_audiosocket_h" "$HEADER_INCLUDE
-"
-if test "x$ac_cv_header_asterisk_res_audiosocket_h" = xyes
-then :
-
-						ASTERISK_VER_GROUP=118
-						ASTERISK_VERSION_NUMBER=11800
-						ASTERISK_REPOS_LOCATION=TRUNK
-
-
-printf "%s\n" "#define ASTERISK_CONF_1_18 1" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_NUMBER 11800" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_GROUP 118" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_REPOS_LOCATION \"TRUNK\"" >>confdefs.h
-
-
-						version_found=1
-						{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&5
-printf "%s\n" "Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&6; }
-
-else case e in #(
-  e)
-						ac_fn_c_check_header_compile "$LINENO" "asterisk/iostream.h" "ac_cv_header_asterisk_iostream_h" "$HEADER_INCLUDE
-"
-if test "x$ac_cv_header_asterisk_iostream_h" = xyes
-then :
-
-							cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-								$HEADER_INCLUDE
-								#include <asterisk/module.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP_TRADITIONAL "enhances" >/dev/null 2>&1
-then :
-
-								cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-									$HEADER_INCLUDE
-									#include <asterisk/module.h>
-									#include <asterisk/iostream.h>
-									#include <asterisk/bridge.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP_TRADITIONAL "ast_bridges\(void\)" >/dev/null 2>&1
-then :
-
-									ASTERISK_VER_GROUP=117
-									ASTERISK_VERSION_NUMBER=11700
-									ASTERISK_REPOS_LOCATION=TRUNK
-
-
-printf "%s\n" "#define ASTERISK_CONF_1_17 1" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_NUMBER 11700" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_GROUP 117" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_REPOS_LOCATION \"branch-17\"" >>confdefs.h
-
-
-									version_found=1
-									{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&5
-printf "%s\n" "Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&6; }
-
-else case e in #(
-  e)
-									ASTERISK_VER_GROUP=116
-									ASTERISK_VERSION_NUMBER=11600
-									ASTERISK_REPOS_LOCATION=TRUNK
-
-
-printf "%s\n" "#define ASTERISK_CONF_1_16 1" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_NUMBER 11600" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_GROUP 116" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_REPOS_LOCATION \"branch-16\"" >>confdefs.h
-
-
-									version_found=1
-									{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&5
-printf "%s\n" "Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&6; }
-								 ;;
-esac
-fi
-rm -rf conftest*
-
-
-else case e in #(
-  e)
-								ASTERISK_VER_GROUP=115
-								ASTERISK_VERSION_NUMBER=11500
-								ASTERISK_REPOS_LOCATION=TRUNK
-
-
-printf "%s\n" "#define ASTERISK_CONF_1_15 1" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_NUMBER 11500" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_GROUP 115" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_REPOS_LOCATION \"branch-15\"" >>confdefs.h
-
-
-								version_found=1
-								{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&5
-printf "%s\n" "Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&6; }
-							 ;;
-esac
-fi
-rm -rf conftest*
-
-
-else case e in #(
-  e)
-							ac_fn_c_check_header_compile "$LINENO" "asterisk/media_cache.h" "ac_cv_header_asterisk_media_cache_h" "$ac_includes_default"
-if test "x$ac_cv_header_asterisk_media_cache_h" = xyes
-then :
-
-								ASTERISK_VER_GROUP=114
-								ASTERISK_VERSION_NUMBER=11400
-								ASTERISK_REPOS_LOCATION=TRUNK
-
-
-printf "%s\n" "#define ASTERISK_CONF_1_14 1" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_NUMBER 11400" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_GROUP 114" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_REPOS_LOCATION \"branch-14\"" >>confdefs.h
-
-
-								version_found=1
-								{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&5
-printf "%s\n" "Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&6; }
-
-else case e in #(
-  e)
-								ac_fn_c_check_header_compile "$LINENO" "asterisk/format_cache.h" "ac_cv_header_asterisk_format_cache_h" "$ac_includes_default"
-if test "x$ac_cv_header_asterisk_format_cache_h" = xyes
-then :
-
-									ASTERISK_VER_GROUP=113
-									ASTERISK_VERSION_NUMBER=11300
-									ASTERISK_REPOS_LOCATION=TRUNK
-
-
-printf "%s\n" "#define ASTERISK_CONF_1_13 1" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_NUMBER 11300" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_GROUP 113" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_REPOS_LOCATION \"branch-14\"" >>confdefs.h
-
-
-									version_found=1
-									{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&5
-printf "%s\n" "Found 'Asterisk Version ${ASTERISK_VERSION_NUMBER}'." >&6; }
-
-else case e in #(
-  e)
-									ac_fn_c_check_header_compile "$LINENO" "asterisk/uuid.h" "ac_cv_header_asterisk_uuid_h" "$ac_includes_default"
-if test "x$ac_cv_header_asterisk_uuid_h" = xyes
-then :
-
-										ASTERISK_VER_GROUP=112
-										ASTERISK_VERSION_NUMBER=11200
-										ASTERISK_REPOS_LOCATION=TRUNK
-
-
-printf "%s\n" "#define ASTERISK_CONF_1_12 1" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_NUMBER 11200" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_GROUP 112" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_REPOS_LOCATION \"branch-12\"" >>confdefs.h
-
-
-										version_found=1
-										{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: done" >&5
-printf "%s\n" "done" >&6; }
-
-else case e in #(
-  e)
-										ASTERISK_VER_GROUP=111
-										ASTERISK_VERSION_NUMBER=11100
-										ASTERISK_REPOS_LOCATION=BRANCH
-
-
-printf "%s\n" "#define ASTERISK_CONF_1_11 1" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_NUMBER 11100" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_VERSION_GROUP 111" >>confdefs.h
-
-
-printf "%s\n" "#define ASTERISK_REPOS_LOCATION \"branch-11\"" >>confdefs.h
-
-
-										version_found=1
-										{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: done" >&5
-printf "%s\n" "done" >&6; }
-										{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Found 'Asterisk Version 11'" >&5
-printf "%s\n" "Found 'Asterisk Version 11'" >&6; }
-									 ;;
-esac
-fi
-
-								 ;;
-esac
-fi
-
-							 ;;
-esac
-fi
-
-						 ;;
-esac
-fi
-
-					 ;;
-esac
-fi
-
-				 ;;
-esac
-fi
-rm -rf conftest*
-
-
-else case e in #(
-  e)
-				{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: 'ASTERISK_VERSION could not be established'" >&5
-printf "%s\n" "'ASTERISK_VERSION could not be established'" >&6; }
-			 ;;
-esac
-fi
-
-
-fi
-		 ;;
-esac
-fi
-
+		ASTERISK_MAJOR=`eval "$ac_cpp conftest.$ac_ext" 2>/dev/null |
+			tail -n 1 | cut -d '"' -f 2`
+		rm -f conftest.$ac_ext
+		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ${ASTERISK_MAJOR:-unknown}" >&5
+printf "%s\n" "${ASTERISK_MAJOR:-unknown}" >&6; }
+		ASTERISK_MINOR=0
 	 ;;
 esac
 fi
 
-	if test $version_found == 0; then
-		echo ""
-		echo ""
-		echo "PBX branch version could not be determined"
-		echo "==================================="
-		echo "Either install asterisk and asterisk-devel packages using your package manager."
-		echo "If you compiled asterisk manually, make sure you also run `make install-headers` so chan-sccp can find them."
-		echo "Or specify the location where asterisk can be found, using ./configure --with-asterisk=path"
-		echo ""
-		echo "=================================== config.log"
-		cat config.log
-		echo "=================================== config.log"
-		exit 255
-	fi
+	case "$ASTERISK_MAJOR" in
+		20|21|22|23|24) ;;
+		*) as_fn_error $? "Supported Asterisk versions are 20 through 24" "$LINENO" 5;;
+	esac
+	ASTERISK_VER_GROUP="1${ASTERISK_MAJOR}"
+	ASTERISK_VERSION_NUMBER=`printf '1%s%02d' "$ASTERISK_MAJOR" "$ASTERISK_MINOR"`
+	ASTERISK_REPOS_LOCATION=TRUNK
 
-		if test "$ASTERISK_VER_GROUP" -lt "$MIN_ASTERISK_VERSION" || test "$ASTERISK_VER_GROUP" -gt "$MAX_ASTERISK_VERSION"
-then :
-  as_fn_error $? "Supported Asterisk versions are 20 through 24" "$LINENO" 5
-fi
+printf "%s\n" "#define ASTERISK_VERSION_NUMBER ${ASTERISK_VERSION_NUMBER}" >>confdefs.h
+
+
+printf "%s\n" "#define ASTERISK_VERSION_GROUP ${ASTERISK_VER_GROUP}" >>confdefs.h
+
+
+printf "%s\n" "#define ASTERISK_REPOS_LOCATION \"TRUNK\"" >>confdefs.h
+
+
+
+
+	case "$ASTERISK_MAJOR" in
+		20)
+printf "%s\n" "#define ASTERISK_CONF_1_20 1" >>confdefs.h
+;;
+		21)
+printf "%s\n" "#define ASTERISK_CONF_1_21 1" >>confdefs.h
+;;
+		22)
+printf "%s\n" "#define ASTERISK_CONF_1_22 1" >>confdefs.h
+;;
+		23)
+printf "%s\n" "#define ASTERISK_CONF_1_23 1" >>confdefs.h
+;;
+		24)
+printf "%s\n" "#define ASTERISK_CONF_1_24 1" >>confdefs.h
+;;
+	esac
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: Asterisk ${ASTERISK_MAJOR}.${ASTERISK_MINOR} (group ${ASTERISK_VER_GROUP})" >&5
+printf "%s\n" "Asterisk ${ASTERISK_MAJOR}.${ASTERISK_MINOR} (group ${ASTERISK_VER_GROUP})" >&6; }
+
 
 
 case $TERM in
@@ -29908,14 +28010,14 @@ then :
 
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-	        	eval "ac_cv_type_$ac_lib_var=yes"
+		eval "ac_cv_type_$ac_lib_var=yes"
 
 else case e in #(
   e)
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-	        	eval "ac_cv_type_$ac_lib_var=no"
-		;;
+		eval "ac_cv_type_$ac_lib_var=no"
+		 ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
@@ -30730,14 +28832,14 @@ then :
 
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-	        	eval "ac_cv_type_$ac_lib_var=yes"
+		eval "ac_cv_type_$ac_lib_var=yes"
 
 else case e in #(
   e)
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-	        	eval "ac_cv_type_$ac_lib_var=no"
-		;;
+		eval "ac_cv_type_$ac_lib_var=no"
+		 ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
@@ -31101,14 +29203,14 @@ then :
 
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-	        	eval "ac_cv_type_$ac_lib_var=yes"
+		eval "ac_cv_type_$ac_lib_var=yes"
 
 else case e in #(
   e)
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
-	        	eval "ac_cv_type_$ac_lib_var=no"
-		;;
+		eval "ac_cv_type_$ac_lib_var=no"
+		 ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
@@ -34132,7 +32234,7 @@ fi
 
 	if test "_${ac_cv_use_devdoc}" == "_yes"
 then :
-  DX_ENV="$DX_ENV INPUT='. src src/pbx_impl src/pbx_impl/ast src/pbx_impl/ast116 src/pbx_impl/ast117 src/pbx_impl/ast118 src/pbx_impl/ast119 src/pbx_impl/ast120 src/pbx_impl/ast121 src/pbx_impl/ast122 src/pbx_impl/ast123 src/pbx_impl/ast124 src/pbx_impl/ast_announce'"
+  DX_ENV="$DX_ENV INPUT='. src src/pbx_impl src/pbx_impl/ast src/pbx_impl/ast116 src/pbx_impl/ast120 src/pbx_impl/ast121 src/pbx_impl/ast122 src/pbx_impl/ast123 src/pbx_impl/ast124 src/pbx_impl/ast_announce'"
 
 fi
 
@@ -37591,7 +35693,7 @@ fi
 		PBX_COND_LIBADD=pbx_impl/ast/libast.la
 		PBXVER_COND_SUBDIR=pbx_impl/ast${ASTERISK_VER_GROUP}/
 		PBXVER_COND_LIBADD=pbx_impl/ast${ASTERISK_VER_GROUP}/libast${ASTERISK_VER_GROUP}.la
-		if test ${ASTERISK_VER_GROUP} -gt 111;then
+		if test ${ASTERISK_VER_GROUP} -ge 120;then
 			PBXVER_COND_ANNOUNCE_SUBDIR=pbx_impl/ast_announce
 			PBXVER_COND_ANNOUNCE_LIBADD=pbx_impl/ast_announce/libast_announce.la
 		fi
@@ -37601,102 +35703,6 @@ fi
 
 
 
-
-	 if test x${ASTERISK_VER_GROUP} = x106; then
-  ASTERISK_VER_GROUP_106_TRUE=
-  ASTERISK_VER_GROUP_106_FALSE='#'
-else
-  ASTERISK_VER_GROUP_106_TRUE='#'
-  ASTERISK_VER_GROUP_106_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x108; then
-  ASTERISK_VER_GROUP_108_TRUE=
-  ASTERISK_VER_GROUP_108_FALSE='#'
-else
-  ASTERISK_VER_GROUP_108_TRUE='#'
-  ASTERISK_VER_GROUP_108_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x110; then
-  ASTERISK_VER_GROUP_110_TRUE=
-  ASTERISK_VER_GROUP_110_FALSE='#'
-else
-  ASTERISK_VER_GROUP_110_TRUE='#'
-  ASTERISK_VER_GROUP_110_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x111; then
-  ASTERISK_VER_GROUP_111_TRUE=
-  ASTERISK_VER_GROUP_111_FALSE='#'
-else
-  ASTERISK_VER_GROUP_111_TRUE='#'
-  ASTERISK_VER_GROUP_111_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x112; then
-  ASTERISK_VER_GROUP_112_TRUE=
-  ASTERISK_VER_GROUP_112_FALSE='#'
-else
-  ASTERISK_VER_GROUP_112_TRUE='#'
-  ASTERISK_VER_GROUP_112_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x113; then
-  ASTERISK_VER_GROUP_113_TRUE=
-  ASTERISK_VER_GROUP_113_FALSE='#'
-else
-  ASTERISK_VER_GROUP_113_TRUE='#'
-  ASTERISK_VER_GROUP_113_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x114; then
-  ASTERISK_VER_GROUP_114_TRUE=
-  ASTERISK_VER_GROUP_114_FALSE='#'
-else
-  ASTERISK_VER_GROUP_114_TRUE='#'
-  ASTERISK_VER_GROUP_114_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x115; then
-  ASTERISK_VER_GROUP_115_TRUE=
-  ASTERISK_VER_GROUP_115_FALSE='#'
-else
-  ASTERISK_VER_GROUP_115_TRUE='#'
-  ASTERISK_VER_GROUP_115_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x116; then
-  ASTERISK_VER_GROUP_116_TRUE=
-  ASTERISK_VER_GROUP_116_FALSE='#'
-else
-  ASTERISK_VER_GROUP_116_TRUE='#'
-  ASTERISK_VER_GROUP_116_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x117; then
-  ASTERISK_VER_GROUP_117_TRUE=
-  ASTERISK_VER_GROUP_117_FALSE='#'
-else
-  ASTERISK_VER_GROUP_117_TRUE='#'
-  ASTERISK_VER_GROUP_117_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x118; then
-  ASTERISK_VER_GROUP_118_TRUE=
-  ASTERISK_VER_GROUP_118_FALSE='#'
-else
-  ASTERISK_VER_GROUP_118_TRUE='#'
-  ASTERISK_VER_GROUP_118_FALSE=
-fi
-
-	 if test x${ASTERISK_VER_GROUP} = x119; then
-  ASTERISK_VER_GROUP_119_TRUE=
-  ASTERISK_VER_GROUP_119_FALSE='#'
-else
-  ASTERISK_VER_GROUP_119_TRUE='#'
-  ASTERISK_VER_GROUP_119_FALSE=
-fi
 
 	 if test x${ASTERISK_VER_GROUP} = x120; then
   ASTERISK_VER_GROUP_120_TRUE=
@@ -37737,55 +35743,6 @@ else
   ASTERISK_VER_GROUP_124_TRUE='#'
   ASTERISK_VER_GROUP_124_FALSE=
 fi
-
-	if test -z "$ASTERISK_VER_GROUP_106_TRUE"; then :
-  ac_config_files="$ac_config_files src/pbx_impl/ast106/Makefile"
-
-fi
-	if test -z "$ASTERISK_VER_GROUP_108_TRUE"; then :
-  ac_config_files="$ac_config_files src/pbx_impl/ast108/Makefile"
-
-fi
-	if test -z "$ASTERISK_VER_GROUP_110_TRUE"; then :
-  ac_config_files="$ac_config_files src/pbx_impl/ast110/Makefile"
-
-fi
-	if test -z "$ASTERISK_VER_GROUP_111_TRUE"; then :
-  ac_config_files="$ac_config_files src/pbx_impl/ast111/Makefile"
-
-fi
-	if test -z "$ASTERISK_VER_GROUP_112_TRUE"; then :
-  ac_config_files="$ac_config_files src/pbx_impl/ast112/Makefile"
-
-fi
-	if test -z "$ASTERISK_VER_GROUP_113_TRUE"; then :
-  ac_config_files="$ac_config_files src/pbx_impl/ast113/Makefile"
-
-fi
-	if test -z "$ASTERISK_VER_GROUP_114_TRUE"; then :
-  ac_config_files="$ac_config_files src/pbx_impl/ast114/Makefile"
-
-fi
-	if test -z "$ASTERISK_VER_GROUP_115_TRUE"; then :
-  ac_config_files="$ac_config_files src/pbx_impl/ast115/Makefile"
-
-fi
-
-	if test -z "$ASTERISK_VER_GROUP_117_TRUE"; then :
-  ac_config_files="$ac_config_files src/pbx_impl/ast117/Makefile"
-
-fi
-	if test -z "$ASTERISK_VER_GROUP_118_TRUE"; then :
-  ac_config_files="$ac_config_files src/pbx_impl/ast118/Makefile"
-
-fi
-	if test -z "$ASTERISK_VER_GROUP_119_TRUE"; then :
-  ac_config_files="$ac_config_files src/pbx_impl/ast119/Makefile"
-
-fi
-
-
-
 
 
 
@@ -37956,35 +35913,6 @@ if test -z "${ENABLE_RPMBUILD_TRUE}" && test -z "${ENABLE_RPMBUILD_FALSE}"; then
   as_fn_error $? "conditional \"ENABLE_RPMBUILD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${INSTALL_LTDL_TRUE}" && test -z "${INSTALL_LTDL_FALSE}"; then
-  as_fn_error $? "conditional \"INSTALL_LTDL\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${CONVENIENCE_LTDL_TRUE}" && test -z "${CONVENIENCE_LTDL_FALSE}"; then
-  as_fn_error $? "conditional \"CONVENIENCE_LTDL\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${LTARGZH_EXISTS_TRUE}" && test -z "${LTARGZH_EXISTS_FALSE}"; then
-  as_fn_error $? "conditional \"LTARGZH_EXISTS\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-LT_CONFIG_H=src/config.h
-
-    _ltdl_libobjs=
-    _ltdl_ltlibobjs=
-    if test -n "$_LT_LIBOBJS"; then
-      # Remove the extension.
-      _lt_sed_drop_objext='s/\.o$//;s/\.obj$//'
-      for i in `for i in $_LT_LIBOBJS; do echo "$i"; done | $SED "$_lt_sed_drop_objext" | sort -u`; do
-        _ltdl_libobjs="$_ltdl_libobjs $lt_libobj_prefix$i.$ac_objext"
-        _ltdl_ltlibobjs="$_ltdl_ltlibobjs $lt_libobj_prefix$i.lo"
-      done
-    fi
-    ltdl_LIBOBJS=$_ltdl_libobjs
-
-    ltdl_LTLIBOBJS=$_ltdl_ltlibobjs
-
-
 
 if test -z "${DX_COND_doc_TRUE}" && test -z "${DX_COND_doc_FALSE}"; then
   as_fn_error $? "conditional \"DX_COND_doc\" was never defined.
@@ -38084,54 +36012,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_AST_TRUE}" && test -z "${BUILD_AST_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_AST\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_106_TRUE}" && test -z "${ASTERISK_VER_GROUP_106_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_106\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_108_TRUE}" && test -z "${ASTERISK_VER_GROUP_108_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_108\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_110_TRUE}" && test -z "${ASTERISK_VER_GROUP_110_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_110\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_111_TRUE}" && test -z "${ASTERISK_VER_GROUP_111_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_111\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_112_TRUE}" && test -z "${ASTERISK_VER_GROUP_112_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_112\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_113_TRUE}" && test -z "${ASTERISK_VER_GROUP_113_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_113\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_114_TRUE}" && test -z "${ASTERISK_VER_GROUP_114_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_114\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_115_TRUE}" && test -z "${ASTERISK_VER_GROUP_115_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_115\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_116_TRUE}" && test -z "${ASTERISK_VER_GROUP_116_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_116\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_117_TRUE}" && test -z "${ASTERISK_VER_GROUP_117_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_117\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_118_TRUE}" && test -z "${ASTERISK_VER_GROUP_118_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_118\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${ASTERISK_VER_GROUP_119_TRUE}" && test -z "${ASTERISK_VER_GROUP_119_FALSE}"; then
-  as_fn_error $? "conditional \"ASTERISK_VER_GROUP_119\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${ASTERISK_VER_GROUP_120_TRUE}" && test -z "${ASTERISK_VER_GROUP_120_FALSE}"; then
@@ -39144,17 +37024,6 @@ do
     "src/pbx_impl/ast123/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast123/Makefile" ;;
     "src/pbx_impl/ast124/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast124/Makefile" ;;
     "contrib/gen_sccpconf/Makefile") CONFIG_FILES="$CONFIG_FILES contrib/gen_sccpconf/Makefile" ;;
-    "src/pbx_impl/ast106/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast106/Makefile" ;;
-    "src/pbx_impl/ast108/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast108/Makefile" ;;
-    "src/pbx_impl/ast110/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast110/Makefile" ;;
-    "src/pbx_impl/ast111/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast111/Makefile" ;;
-    "src/pbx_impl/ast112/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast112/Makefile" ;;
-    "src/pbx_impl/ast113/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast113/Makefile" ;;
-    "src/pbx_impl/ast114/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast114/Makefile" ;;
-    "src/pbx_impl/ast115/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast115/Makefile" ;;
-    "src/pbx_impl/ast117/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast117/Makefile" ;;
-    "src/pbx_impl/ast118/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast118/Makefile" ;;
-    "src/pbx_impl/ast119/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast119/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: '$ac_config_target'" "$LINENO" 5;;
   esac
@@ -40597,149 +38466,6 @@ if test "$no_create" != yes; then
   # would make configure fail if this is the last instruction.
   $ac_cs_success || as_fn_exit 1
 fi
-
-#
-# CONFIG_SUBDIRS section.
-#
-if test "$no_recursion" != yes; then
-
-  # Remove --cache-file, --srcdir, and --disable-option-checking arguments
-  # so they do not pile up.
-  ac_sub_configure_args=
-  ac_prev=
-  eval "set x $ac_configure_args"
-  shift
-  for ac_arg
-  do
-    if test -n "$ac_prev"; then
-      ac_prev=
-      continue
-    fi
-    case $ac_arg in
-    -cache-file | --cache-file | --cache-fil | --cache-fi \
-    | --cache-f | --cache- | --cache | --cach | --cac | --ca | --c)
-      ac_prev=cache_file ;;
-    -cache-file=* | --cache-file=* | --cache-fil=* | --cache-fi=* \
-    | --cache-f=* | --cache-=* | --cache=* | --cach=* | --cac=* | --ca=* \
-    | --c=*)
-      ;;
-    --config-cache | -C)
-      ;;
-    -srcdir | --srcdir | --srcdi | --srcd | --src | --sr)
-      ac_prev=srcdir ;;
-    -srcdir=* | --srcdir=* | --srcdi=* | --srcd=* | --src=* | --sr=*)
-      ;;
-    -prefix | --prefix | --prefi | --pref | --pre | --pr | --p)
-      ac_prev=prefix ;;
-    -prefix=* | --prefix=* | --prefi=* | --pref=* | --pre=* | --pr=* | --p=*)
-      ;;
-    --disable-option-checking)
-      ;;
-    *)
-      case $ac_arg in
-      *\'*) ac_arg=`printf "%s\n" "$ac_arg" | sed "s/'/'\\\\\\\\''/g"` ;;
-      esac
-      as_fn_append ac_sub_configure_args " '$ac_arg'" ;;
-    esac
-  done
-
-  # Always prepend --prefix to ensure using the same prefix
-  # in subdir configurations.
-  ac_arg="--prefix=$prefix"
-  case $ac_arg in
-  *\'*) ac_arg=`printf "%s\n" "$ac_arg" | sed "s/'/'\\\\\\\\''/g"` ;;
-  esac
-  ac_sub_configure_args="'$ac_arg' $ac_sub_configure_args"
-
-  # Pass --silent
-  if test "$silent" = yes; then
-    ac_sub_configure_args="--silent $ac_sub_configure_args"
-  fi
-
-  # Always prepend --disable-option-checking to silence warnings, since
-  # different subdirs can have different --enable and --with options.
-  ac_sub_configure_args="--disable-option-checking $ac_sub_configure_args"
-
-  ac_popdir=`pwd`
-  for ac_dir in : $subdirs; do test "x$ac_dir" = x: && continue
-
-    # Do not complain, so a configure script can configure whichever
-    # parts of a large source tree are present.
-    test -d "$srcdir/$ac_dir" || continue
-
-    ac_msg="=== configuring in $ac_dir (`pwd`/$ac_dir)"
-    printf "%s\n" "$as_me:${as_lineno-$LINENO}: $ac_msg" >&5
-    printf "%s\n" "$ac_msg" >&6
-    as_dir="$ac_dir"; as_fn_mkdir_p
-    ac_builddir=.
-
-case "$ac_dir" in
-.) ac_dir_suffix= ac_top_builddir_sub=. ac_top_build_prefix= ;;
-*)
-  ac_dir_suffix=/`printf "%s\n" "$ac_dir" | sed 's|^\.[\\/]||'`
-  # A ".." for each directory in $ac_dir_suffix.
-  ac_top_builddir_sub=`printf "%s\n" "$ac_dir_suffix" | sed 's|/[^\\/]*|/..|g;s|/||'`
-  case $ac_top_builddir_sub in
-  "") ac_top_builddir_sub=. ac_top_build_prefix= ;;
-  *)  ac_top_build_prefix=$ac_top_builddir_sub/ ;;
-  esac ;;
-esac
-ac_abs_top_builddir=$ac_pwd
-ac_abs_builddir=$ac_pwd$ac_dir_suffix
-# for backward compatibility:
-ac_top_builddir=$ac_top_build_prefix
-
-case $srcdir in
-  .)  # We are building in place.
-    ac_srcdir=.
-    ac_top_srcdir=$ac_top_builddir_sub
-    ac_abs_top_srcdir=$ac_pwd ;;
-  [\\/]* | ?:[\\/]* )  # Absolute name.
-    ac_srcdir=$srcdir$ac_dir_suffix;
-    ac_top_srcdir=$srcdir
-    ac_abs_top_srcdir=$srcdir ;;
-  *) # Relative name.
-    ac_srcdir=$ac_top_build_prefix$srcdir$ac_dir_suffix
-    ac_top_srcdir=$ac_top_build_prefix$srcdir
-    ac_abs_top_srcdir=$ac_pwd/$srcdir ;;
-esac
-ac_abs_srcdir=$ac_abs_top_srcdir$ac_dir_suffix
-
-
-    cd "$ac_dir"
-
-    # Check for configure.gnu first; this name is used for a wrapper for
-    # Metaconfig's "Configure" on case-insensitive file systems.
-    if test -f "$ac_srcdir/configure.gnu"; then
-      ac_sub_configure=$ac_srcdir/configure.gnu
-    elif test -f "$ac_srcdir/configure"; then
-      ac_sub_configure=$ac_srcdir/configure
-    else
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: no configuration information is in $ac_dir" >&5
-printf "%s\n" "$as_me: WARNING: no configuration information is in $ac_dir" >&2;}
-      ac_sub_configure=
-    fi
-
-    # The recursion is here.
-    if test -n "$ac_sub_configure"; then
-      # Make the cache file name correct relative to the subdirectory.
-      case $cache_file in
-      [\\/]* | ?:[\\/]* ) ac_sub_cache_file=$cache_file ;;
-      *) # Relative name.
-	ac_sub_cache_file=$ac_top_build_prefix$cache_file ;;
-      esac
-
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: running $SHELL $ac_sub_configure $ac_sub_configure_args --cache-file=$ac_sub_cache_file --srcdir=$ac_srcdir" >&5
-printf "%s\n" "$as_me: running $SHELL $ac_sub_configure $ac_sub_configure_args --cache-file=$ac_sub_cache_file --srcdir=$ac_srcdir" >&6;}
-      # The eval makes quoting arguments work.
-      eval "\$SHELL \"\$ac_sub_configure\" $ac_sub_configure_args \
-	   --cache-file=\"\$ac_sub_cache_file\" --srcdir=\"\$ac_srcdir\"" ||
-	as_fn_error $? "$ac_sub_configure failed for $ac_dir" "$LINENO" 5
-    fi
-
-    cd "$ac_popdir"
-  done
-fi
 if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: unrecognized options: $ac_unrecognized_opts" >&5
 printf "%s\n" "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
@@ -40773,17 +38499,6 @@ echo "     PBX_DATADIR : ${PBX_DATADIR}"
 echo "     PBX_INCLUDE : ${PBX_INCLUDE}"
 echo "Module Directory : ${PBX_MODDIR}"
 
-if test -n "$ASTERISK_INCOMPATIBLE"; then
-	tput setab 1
-	tput setaf 3
-	tput bold
-	tput smso
-	echo ""
-	echo -e "WARNING: The provided asterisk version is not compatible to current sources. Expects trouble !!"
-	echo ""
-	tput sgr0
-	echo ""
-fi
 if test CC_works = 0; then
 	tput setab 1
 	tput setaf 3

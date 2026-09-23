@@ -6,9 +6,6 @@ dnl NOTE: Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.64])
 AC_INIT([Chan_SCCP],m4_esyscmd([cat .version |tr -d '\n']),[https://github.com/chan-sccp/chan-sccp/issues],[Chan_SCCP])
 
-MIN_ASTERISK_VERSION=120
-MAX_ASTERISK_VERSION=124
-
 AC_CONFIG_AUX_DIR([autoconf])
 
 CFLAGS_saved="${CFLAGS}"
@@ -159,17 +156,6 @@ echo "     PBX_DATADIR : ${PBX_DATADIR}"
 echo "     PBX_INCLUDE : ${PBX_INCLUDE}"
 echo "Module Directory : ${PBX_MODDIR}"
 
-if test -n "$ASTERISK_INCOMPATIBLE"; then
-	tput setab 1
-	tput setaf 3
-	tput bold
-	tput smso
-	echo ""
-	echo -e "WARNING: The provided asterisk version is not compatible to current sources. Expects trouble !!"
-	echo ""
-	tput sgr0
-	echo ""
-fi
 if test CC_works = 0; then
 	tput setab 1
 	tput setaf 3

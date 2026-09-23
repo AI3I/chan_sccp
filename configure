@@ -33423,7 +33423,7 @@ printf "%s\n" "${T_MD}Generating Configuration and Makefiles${T_ME}" >&6; }
 
 ac_config_commands="$ac_config_commands src/sccp_enum.h"
 
-ac_config_files="$ac_config_files Makefile src/Makefile src/pbx_impl/Makefile src/pbx_impl/ast/Makefile src/pbx_impl/ast_announce/Makefile src/pbx_impl/ast116/Makefile src/pbx_impl/ast120/Makefile src/pbx_impl/ast121/Makefile src/pbx_impl/ast122/Makefile src/pbx_impl/ast123/Makefile src/pbx_impl/ast124/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/pbx_impl/Makefile src/pbx_impl/ast/Makefile src/pbx_impl/ast_announce/Makefile src/pbx_impl/ast120/Makefile src/pbx_impl/ast121/Makefile src/pbx_impl/ast122/Makefile src/pbx_impl/ast123/Makefile src/pbx_impl/ast124/Makefile"
 
 
 	 if test "$PBX_TYPE" == "Asterisk"; then
@@ -34676,7 +34676,6 @@ do
     "src/pbx_impl/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/Makefile" ;;
     "src/pbx_impl/ast/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast/Makefile" ;;
     "src/pbx_impl/ast_announce/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast_announce/Makefile" ;;
-    "src/pbx_impl/ast116/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast116/Makefile" ;;
     "src/pbx_impl/ast120/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast120/Makefile" ;;
     "src/pbx_impl/ast121/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast121/Makefile" ;;
     "src/pbx_impl/ast122/Makefile") CONFIG_FILES="$CONFIG_FILES src/pbx_impl/ast122/Makefile" ;;

@@ -19,8 +19,8 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   their inputs. Git checkouts and archives should build without bootstrapping.
 - Bootstrap script now fails on errors and only runs autoreconf; it no longer
   hides errors or implicitly runs make in an existing configured directory.
-- Configure targets 20–24 and configures all supported adapter Makefiles plus
-  the shared ast116 implementation for source distribution.
+- Configure targets 20–24 and configures all supported adapter Makefiles. The
+  shared implementation now lives in `ast120` (see relocation checkpoint).
 - DIST_SUBDIRS includes modern wrappers and shared sources. Legacy adapters
   were retired in the later checkpoint below.
 - Serialize enum generation through a stamp; preserve actual source paths.
@@ -277,9 +277,9 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   The signed RX/TX lookup and conservative mappings below are compile-only.
 - **High-value cleanup:** HTTP/CLI test handlers and `libpbximpl.la` were
   removed in the batch below.
-- **Structural cleanup:** rename the shared `ast116` adapter for its actual
-  20–24 role, consolidate small per-version wrappers, assess C++ scaffolding,
-  and remove unreachable `#if 0` implementations in reviewable batches.
+- **Structural cleanup:** the shared adapter was moved into `ast120` below.
+  Consolidate small per-version wrappers, assess C++ scaffolding, and remove
+  unreachable `#if 0` implementations in reviewable batches.
 - **Deferred validation:** physical Cisco call behavior and the compile-only
   R2/R3/R5/R6/R7/R11/R12 paths. The user requested code progress now and no
   test cycle after every change. Keep all lab actions recorded in wadsworth's
@@ -316,4 +316,20 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   and log paths are in `/root/asterisk.txt`; production remains unchanged.
 - Remaining: Asterisk 20–24 CI for this exact batch; real calls for dynamic
   RTP, video, codec changes, paging/early media, and bidirectional transcoding.
-  Structural adapter naming/wrappers and dead code are the next cleanup items.
+  Adapter wrapper consolidation and dead code remain cleanup items.
+
+## Shared adapter relocation (2026-09-23)
+
+- `ast120.c/.h` were symbolic links to the real `ast116.c/.h` files, not
+  duplicate implementations. Moved the real files into `ast120` and updated
+  the Asterisk 21–24 wrappers to include them. The Asterisk 20 build now uses
+  ordinary source files in its own adapter directory.
+- Removed the unselected `ast116` Makefile and configure/archive entries.
+  The source archive now contains the canonical `ast120.c/.h` files without an
+  obsolete version directory. This changes file placement, not adapter logic.
+- On wadsworth, private Asterisk 22 bootstrap, configure, compile, and
+  `make dist` passed. The generated `configure` and `src/Makefile.in` were
+  copied back and staged. Log paths and all lab actions are recorded in
+  `/root/asterisk.txt`. No module installation or live phone test was done.
+- Next: assess and remove unused C++ build scaffolding, then review disabled
+  code in small batches. Asterisk 20–24 CI is still needed for this relocation.

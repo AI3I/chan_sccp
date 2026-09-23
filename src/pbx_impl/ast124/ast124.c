@@ -1,5 +1,5 @@
 /*
- * Asterisk 20-24 compatibility wrapper around ast116.
+ * Asterisk 20-24 compatibility wrapper around ast120.
  * Provides stub macros for APIs removed in Asterisk 21+.
  */
 
@@ -9,4 +9,4 @@
 #define ast_channel_macrocontext(chan) ("")
 #define ast_channel_macrocontext_set(chan, val) ((void)0)
 
-#include "../ast116/ast116.c"
+#include "../ast120/ast120.c"

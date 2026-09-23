@@ -344,7 +344,6 @@ HAVE_ASTERISK = @HAVE_ASTERISK@
 HAVE_CALLWEAVER = @HAVE_CALLWEAVER@
 HAVE_PBX_HTTP = @HAVE_PBX_HTTP@
 HEAD = @HEAD@
-HG = @HG@
 HOST_CC = @HOST_CC@
 ID = @ID@
 INSTALL = @INSTALL@
@@ -416,7 +415,6 @@ PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
 REPOS_TYPE = @REPOS_TYPE@
-RPMBUILD = @RPMBUILD@
 SANITIZE_CFLAGS = @SANITIZE_CFLAGS@
 SANITIZE_LDFLAGS = @SANITIZE_LDFLAGS@
 SCCP_BRANCH = @SCCP_BRANCH@
@@ -429,8 +427,6 @@ SHELL = @SHELL@
 STRIP = @STRIP@
 SUPPORTED_CFLAGS = @SUPPORTED_CFLAGS@
 SUPPORTED_LDFLAGS = @SUPPORTED_LDFLAGS@
-SVN = @SVN@
-SVNVERSION = @SVNVERSION@
 TEST_FRAMEWORK = @TEST_FRAMEWORK@
 TR = @TR@
 UNAME = @UNAME@
@@ -1084,45 +1080,6 @@ ChangeLog:
 
 # Update ChangeLog Files and Generate Doxygen Documentation
 doxygen: ChangeLog doxygen-doc
-
-deb:
-	dpkg-buildpackage -rfakeroot -us -uc
-
-rpm:    release
-@ENABLE_RPMBUILD_TRUE@	@if [ ! -d ~/rpmbuild/BUILD ]; then mkdir -p ~/rpmbuild/BUILD;fi
-@ENABLE_RPMBUILD_TRUE@	@if [ ! -d ~/rpmbuild/SOURCES ]; then mkdir -p ~/rpmbuild/SOURCES;fi
-@ENABLE_RPMBUILD_TRUE@	@if [ ! -d ~/rpmbuild/SPECS ]; then mkdir -p ~/rpmbuild/SPECS;fi
-@ENABLE_RPMBUILD_TRUE@	@if [ ! -d ~/rpmbuild/RPMS ]; then mkdir -p ~/rpmbuild/RPMS;fi
-@ENABLE_RPMBUILD_TRUE@	@if [ ! -d ~/rpmbuild/SRPMS ]; then mkdir -p ~/rpmbuild/SRPMS;fi
-@ENABLE_RPMBUILD_TRUE@	@cp $(distdir).tar.gz ~/rpmbuild/SOURCES/;
-@ENABLE_RPMBUILD_TRUE@	@cp tools/chan-sccp.spec ~/rpmbuild/SOURCES/;
-@ENABLE_RPMBUILD_TRUE@	@if [ -f /etc/SuSE-release ]; then \
-@ENABLE_RPMBUILD_TRUE@		export ASTERISKVER="`echo $(ASTERISK_VER)|sed 's/\.//g'`"; \
-@ENABLE_RPMBUILD_TRUE@	fi;
-@ENABLE_RPMBUILD_TRUE@	@export RPMVERSION=$(SCCP_VERSION);
-@ENABLE_RPMBUILD_TRUE@	@export RPMBRANCH=$(SCCP_BRANCH);
-@ENABLE_RPMBUILD_TRUE@	@export RPMREVISION=$(SCCP_REVISION);
-@ENABLE_RPMBUILD_TRUE@	@cd /usr/src/packages/SOURCES/ && SOURCEDIR=$(distdir) rpmbuild -bb chan-sccp.spec --define="_usr ~/rpmbuild/";
-@ENABLE_RPMBUILD_FALSE@	@echo ""; \
-@ENABLE_RPMBUILD_FALSE@	echo "RPM Build on your platform not (yet) supported !"; \
-@ENABLE_RPMBUILD_FALSE@	echo "If you like you could send us the required package build file for your platform"; \
-@ENABLE_RPMBUILD_FALSE@	echo "";
-
-release:
-	@rm -f ChangeLog
-	@$(MAKE) ChangeLog
-	@if [ "`grep -i $(SCCP_VERSION)_$(SCCP_BRANCH) NEWS`" == "" ]; then \
-	  echo >>NEWS;\
-	  echo "Version: $(SCCP_VERSION)_$(SCCP_BRANCH)" >> NEWS; \
-	  echo "Please edit the NEWS file now..."; \
-	  /usr/bin/joe NEWS; \
-	  /usr/bin/debchange; \
-	  tools/autorevision -o .revision -t m4 2>&1 >/dev/null; \
-	else \
-	  echo "Could not find $(SCCP_VERSION)_$(SCCP_BRANCH) in NEWS file"; \
-	  exit; \
-	fi
-	@$(MAKE) dist-gzip
 
 gen_sccpconf:
 	cd contrib/gen_sccpconf && $(MAKE) $(AM_MAKEFLAGS) all

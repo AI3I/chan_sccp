@@ -139,12 +139,12 @@ The user explicitly requested ongoing Markdown records so context survives
 between sessions. Update these notes after each meaningful change, validation,
 deployment, or decision; distinguish completed work from proposed work.
 
-Current checkpoint: RTP fix committed/pushed at `20ea3fc1`; CLI/table/tone work
-is deployed, validated, and checkpointed at `28aceacd`. Build/thread-pool fixes
-are now in progress; see `BUILD_AND_THREADPOOL_PROGRESS.md` for current status.
-Preserve the working tree when resuming.
+Current checkpoint: CLI/table/tone work was deployed and validated at
+`28aceacd`. Build/thread-pool fixes and pre-20 adapter retirement were pushed
+through `126ede59`, but are not deployed to production. See
+`BUILD_AND_THREADPOOL_PROGRESS.md` for current status.
 
-Next work, in the latest discussed order:
+Original work order (items 1, 2, and 5 are complete):
 
 1. Checkpoint the CLI/tone batch, then address build reproducibility and real CI
    (review R4/R10): fresh checkouts and release archives, Asterisk 20–24,
@@ -171,35 +171,36 @@ four phone registrations, but did not include a new active-call audio test.
 
 ## Complete review finding tracker
 
-All findings remain open unless explicitly marked otherwise here. This table
-tracks implementation; the linked review contains locations, evidence, limits,
-and proposed validation. The short priority list is not the complete backlog.
+This table tracks implementation after `126ede59`; the linked review contains
+locations, evidence, limits, and proposed validation.
 
 | ID | Severity | Finding | Status |
 |---|---|---|---|
-| R1 | High | Thread-pool teardown can free live-worker storage | Open |
+| R1 | High | Thread-pool teardown can free live-worker storage | Implemented; live call workload deferred |
 | R2 | High, conditional | Fallback-script output stack overflow | Open |
 | R3 | High, conditional | XML request/unload cleanup destroys global library state | Open |
-| R4 | High | Generated build files and distribution lists contradict sources | Open; copied-build source-path issue corrected locally on PBX, repository policy still unresolved |
+| R4 | High | Generated build files and distribution lists contradict sources | Implemented; hosted 20–24 CI passed before legacy retirement |
 | R5 | Medium | Partial writes can interleave SCCP frames | Open |
 | R6 | Medium | Recoverable reads/full receive buffers cause disconnects | Open |
 | R7 | Medium | Read-format setter modifies write format; failures ignored | Open |
 | R8 | Medium, conditional | TLS handshake/accept and retry contracts are broken | Open |
-| R9 | Medium | Queue allocation exits Asterisk; rejected jobs report success | Open |
-| R10 | Medium | Fake-success test target and stale CI configuration | Open; standalone CLI tests added, general test/CI repair still pending |
+| R9 | Medium | Queue allocation exits Asterisk; rejected jobs report success | Implemented with R1 |
+| R10 | Medium | Fake-success test target and stale CI configuration | Implemented; hosted CI passed before legacy retirement |
 | R11 | Medium, conditional | Odd/even fallback policy does not enforce parity | Open |
 | R12 | Low | Send error paths leak owned messages | Open; include with session/ownership fixes |
 
 Additional recommendations remain tracked in the review's **What can reasonably
 be discarded** table and **Rework order and acceptance checks** section:
 
-- Legacy adapter/configure/packaging removal and modern wrapper consolidation.
+- Legacy adapter/configure removal completed in `126ede59`; modern wrapper
+  consolidation remains.
 - Ineffective answer-time RTP fallback; signed RTP lookup failure handling;
   audio/video API separation and dynamic-codec validation.
 - Dead/commented code, legacy XML stylesheet entry, test web handlers, and
   hazardous experimental CLI branches.
-- Empty adapter archive, conditional C++ scaffolding retirement, inherited CI
-  configuration, and obsolete backport patches.
+- Empty adapter archive and conditional C++ scaffolding retirement remain.
+  Inherited Travis/LGTM metadata, old packaging, and obsolete backport patches
+  were removed in the repository cleanup; active GitHub Actions remain.
 - Cheap CLI aliases: retain for now, per the review recommendation.
 
 These are recommendations, not completed removals or separately severity-rated

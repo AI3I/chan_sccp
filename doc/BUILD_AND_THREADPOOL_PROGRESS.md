@@ -155,3 +155,19 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 - User requested code work now and no per-change test cycle. Defer further
   synthetic calls and physical Cisco handset checks. Keep lab cleanup details
   in `/root/asterisk.txt`.
+
+## Repository metadata and packaging cleanup
+
+- Removed unused Mercurial, LGTM, and Travis metadata. The Travis file held
+  upstream Coverity settings and notification endpoints. Removed upstream
+  GitHub funding, contribution, issue, and pull-request templates that pointed
+  contributors to the old project. The active GitHub Actions build and CodeQL
+  workflows remain.
+- Removed stale Debian and RPM packaging, their `make deb`/`make rpm`/old
+  release recipes, old Asterisk patch files, and the SVN-era release helper.
+  Debian packaging still declared Asterisk 11 and hard-coded an old module
+  path, so retaining it would misrepresent current 20–24 support. Source
+  archive, build, and test targets remain.
+- Build templates were regenerated after removing the obsolete RPM configure
+  probe. Per user request, no new compile or live call test is planned for
+  this metadata-only cleanup; hosted CI can check the pushed commit.

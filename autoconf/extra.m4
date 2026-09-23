@@ -193,17 +193,13 @@ AC_DEFUN([CS_SETUP_ENVIRONMENT], [
 AC_DEFUN([CS_FIND_PROGRAMS], [
 	AC_LANG_SAVE
 	AC_LANG_C
-	dnl AC_PATH_PROGS([SVN],[svn],[echo Missing subversion],[${PATH}:/opt/csw/bin])
-	dnl AC_PATH_PROGS([SVNVERSION],[svnversion], [echo Missing subversion],[${PATH}:/opt/csw/bin])
 	AC_PATH_PROGS([GIT],[git],[No],[${PATH}:/opt/csw/bin])
-	dnl AC_PATH_PROGS([HG],[hg],[echo Missing mercurial],[${PATH}:/opt/csw/bin])
 	AC_PATH_PROGS([SHELL],[bash sh],[echo No compatible shell found])
 	AC_PATH_PROGS([SH],[bash sh],[echo No compatible shell found])
 	AC_PATH_PROGS([M4],[gm4 m4],[echo No m4 found, who will process my macros now ?])
 	AC_PATH_PROGS([GREP],[ggrep grep],[echo Missing grep so skipping but I doubt we will get anywhere])
 	AC_PATH_PROGS([CAT],[cat],[echo cat not found, Doh!])
 	AC_PATH_PROGS([UNAME],[uname],[echo uname not found so no version info will be available])
-	AC_PATH_PROGS([RPMBUILD],[rpmbuild],[echo rpmbuild not found so you cannot build rpm packages (no problem)])
 	AC_PATH_PROGS([OBJCOPY],[objcopy],[echo objcopy not found so we can not safe debug information (no problem)])
 	AC_PATH_PROGS([GDB],[gdb],[echo gdb not found so we can not generate backtraces (no problem)])
 	AC_PATH_PROGS([HEAD],[head],[No])
@@ -223,19 +219,14 @@ AC_DEFUN([CS_FIND_PROGRAMS], [
 	AC_C_CONST
 	AC_C_INLINE
 	AC_PROG_LIBTOOL
-	AC_SUBST([SVN])
-	AC_SUBST([SVNVERSION])
 	AC_SUBST([GIT])
-	AC_SUBST([HG])
 	AC_SUBST([GREP])
-	AC_SUBST([RPMBUILD])
 	AC_SUBST([OBJCOPY])
 	AC_SUBST([GDB])
 	AC_SUBST([HEAD])
 	AC_SUBST([CUT])
 	AC_SUBST([TR])
 	AC_SUBST([AWK])
-	AM_CONDITIONAL([ENABLE_RPMBUILD],[test "x${RPMBUILD}" != "xNo"])
 ])
 
 AC_DEFUN([CS_FIND_LIBRARIES], [

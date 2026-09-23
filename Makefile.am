@@ -32,48 +32,6 @@ ChangeLog:
 # Update ChangeLog Files and Generate Doxygen Documentation
 doxygen: ChangeLog doxygen-doc
 
-deb: 
-	dpkg-buildpackage -rfakeroot -us -uc
-
-rpm:    release
-if ENABLE_RPMBUILD
-	@if [ ! -d ~/rpmbuild/BUILD ]; then mkdir -p ~/rpmbuild/BUILD;fi
-	@if [ ! -d ~/rpmbuild/SOURCES ]; then mkdir -p ~/rpmbuild/SOURCES;fi
-	@if [ ! -d ~/rpmbuild/SPECS ]; then mkdir -p ~/rpmbuild/SPECS;fi
-	@if [ ! -d ~/rpmbuild/RPMS ]; then mkdir -p ~/rpmbuild/RPMS;fi
-	@if [ ! -d ~/rpmbuild/SRPMS ]; then mkdir -p ~/rpmbuild/SRPMS;fi
-	@cp $(distdir).tar.gz ~/rpmbuild/SOURCES/;
-	@cp tools/chan-sccp.spec ~/rpmbuild/SOURCES/;
-	@if [ -f /etc/SuSE-release ]; then \
-		export ASTERISKVER="`echo $(ASTERISK_VER)|sed 's/\.//g'`"; \
-	fi;
-	@export RPMVERSION=$(SCCP_VERSION);
-	@export RPMBRANCH=$(SCCP_BRANCH);
-	@export RPMREVISION=$(SCCP_REVISION);
-	@cd /usr/src/packages/SOURCES/ && SOURCEDIR=$(distdir) rpmbuild -bb chan-sccp.spec --define="_usr ~/rpmbuild/";
-else
-	@echo ""; \
-	echo "RPM Build on your platform not (yet) supported !"; \
-	echo "If you like you could send us the required package build file for your platform"; \
-	echo "";
-endif
-
-release:
-	@rm -f ChangeLog
-	@$(MAKE) ChangeLog
-	@if [ "`grep -i $(SCCP_VERSION)_$(SCCP_BRANCH) NEWS`" == "" ]; then \
-	  echo >>NEWS;\
-	  echo "Version: $(SCCP_VERSION)_$(SCCP_BRANCH)" >> NEWS; \
-	  echo "Please edit the NEWS file now..."; \
-	  /usr/bin/joe NEWS; \
-	  /usr/bin/debchange; \
-	  tools/autorevision -o .revision -t m4 2>&1 >/dev/null; \
-	else \
-	  echo "Could not find $(SCCP_VERSION)_$(SCCP_BRANCH) in NEWS file"; \
-	  exit; \
-	fi 
-	@$(MAKE) dist-gzip
-
 gen_sccpconf:
 	cd contrib/gen_sccpconf && $(MAKE) $(AM_MAKEFLAGS) all
 

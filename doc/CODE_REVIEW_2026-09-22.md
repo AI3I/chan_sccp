@@ -15,7 +15,8 @@ A wholesale rewrite of the call state machine would introduce unnecessary risk.
 
 Confirmed support policy from the user: keep Asterisk 20–24 and retire older
 versions. The removal recommendations below use that scope. These removals
-have not yet been implemented by this review.
+were implemented later in `126ede59`; this review's evidence and line numbers
+refer to the original revision.
 
 ## Findings, ordered by urgency
 
@@ -326,7 +327,21 @@ feature repairs. Keep that progress document updated as implementation proceeds.
 - R1/R9: joinable pool workers, admission stop, ownership handling, and failure
   returns are implemented. Sanitizer/standalone tests and ten isolated module
   unload/load cycles pass. Live SCCP call workload remains unverified.
-- The 31,705 lines of obsolete pre-20 adapters remain in Git for a separate,
-  reviewable retirement. Asterisk 20–24 are the supported build targets.
+- The 31,705 lines of obsolete pre-20 adapters were retired in `126ede59`.
+  Asterisk 20–24 remain the supported build targets; `ast116` is retained as
+  the shared implementation used by those versions.
 - See [BUILD_AND_THREADPOOL_PROGRESS.md](BUILD_AND_THREADPOOL_PROGRESS.md) for
   source and test details and for the CLI command audit.
+
+## Remaining findings after `126ede59`
+
+R1/R4/R9/R10 and the pre-20 adapter removal are implemented. R2/R3/R5/R6/R7/
+R8/R11/R12 remain. R2 (fallback-script output bounds) and R3 (XML global
+cleanup) are the conditional high-severity items. R5/R6 (session writes and
+reads) are the next core transport repair; R12 can share that ownership pass.
+R7 (read-format setter), R8 (TLS), and R11 (fallback parity) follow. The
+discard/consolidation candidates in the table above remain proposals unless
+explicitly called out as retired; obsolete packaging, upstream service
+metadata, and old Asterisk patches were also removed in the later repository
+cleanup. Physical Cisco call validation is deferred
+at the user's request; avoid a per-change live-test cycle.

@@ -542,6 +542,8 @@ passed for the source commit. No live handset test was run.
   repository, and no callers of the removed functions exist outside those
   disabled blocks. They included an unused extension-state map, a malformed
   cause map, and abandoned channel-walk, ACL, and extension-removal wrappers.
-- This removes about 210 lines. Hosted build and static validation are pending;
-  no live module or handset test was run. Other disabled blocks elsewhere in
-  the project remain for subsequent review.
+- Source commit `e956fa4d` removes about 210 lines. `git diff --check`, the
+  hosted [Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35897985288),
+  and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35897985379)
+  passed. No live module or handset test was run. Other disabled blocks
+  elsewhere in the project remain for subsequent review.

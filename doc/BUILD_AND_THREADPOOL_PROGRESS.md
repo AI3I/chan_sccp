@@ -463,3 +463,22 @@ passed for the source commit. No live handset test was run.
   [Asterisk 20–24 Build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35865377426)
   and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35865377415).
   These are build/static checks, not live TLS or handset validation.
+
+## Session send lifetime repair (2026-09-23)
+
+- Source commit `9f219ce7` makes device sends find a live session through the
+  global session list instead of dereferencing `device->session`. Direct
+  `send2` calls likewise validate the pointer against the list before using
+  it. Each send holds an in-flight reference from lookup through completion;
+  teardown removes the session from the list, waits for active sends, then
+  closes the socket and frees the session. The send path retains the associated
+  device while using its protocol and log identity.
+- Device/session detachment is synchronized with send lookup. Releasing an old
+  session no longer removes a newer session from the global list or cleans a
+  device that has re-registered onto the newer session. The device backpointer
+  is cleared when its owning session is released.
+- `git diff --check`, the hosted
+  [Asterisk 20–24 build and test matrix](https://github.com/AI3I/chan_sccp/actions/runs/35894774590),
+  and [CodeQL](https://github.com/AI3I/chan_sccp/actions/runs/35894774699)
+  passed. No module installation, reconnect/send stress test, or handset call
+  was run. Those runtime checks remain open.

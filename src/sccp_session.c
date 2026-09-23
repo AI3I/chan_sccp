@@ -408,15 +408,15 @@ static gcc_inline int process_buffer(sccp_session_t * s, sccp_msg_t * msg, unsig
 		uint32_t header_len;
 		memcpy(&header_len, buffer, 4);
 		uint32_t payload_len = letohl(header_len) + (SCCP_PACKET_HEADER - 4);
-		if (*len < payload_len) {
-			break;												// Too short - haven't received whole payload yet, go poll for more
-		}
-
 		if (dont_expect(payload_len < SCCP_PACKET_HEADER || payload_len > SCCP_MAX_PACKET)) {
 			pbx_log(LOG_ERROR, "%s: (process_buffer) Size of the data payload in the packet is bigger than max packet, close connection !\n", DEV_ID_LOG(s->device));
 			res = -1;
 			break;
 		}
+		if (*len < payload_len) {
+			break;												// Too short - haven't received whole payload yet, go poll for more
+		}
+
 		if (dont_expect(session_buffer2msg(s, buffer, payload_len, msg) != 0)) {
 			res = -2;
 			break;
@@ -804,14 +804,28 @@ void *sccp_session_device_thread(void *session)
 		} else if (res > 0) {										/* poll data processing */
 			if(fds[0].revents & POLLIN || fds[0].revents & POLLPRI) {                               /* POLLIN | POLLPRI */
 				// sccp_log_and((DEBUGCAT_SOCKET + DEBUGCAT_HIGH)) (VERBOSE_PREFIX_2 "%s: Session New Data Arriving at buffer position:%lu\n", DEV_ID_LOG(s->device), recv_len);
-				int result       = s->srvcontext->transport->recv(&s->sc, recv_buffer + recv_len, (ARRAY_LEN(recv_buffer) * sizeof(unsigned char)) - recv_len, 0);
-				s->lastKeepAlive = time(0);
-				if (result <= 0) {
-					if (result < 0 || (errno != EINTR || errno != EAGAIN)) {
-						socket_get_error(s, __FILE__, __LINE__, __PRETTY_FUNCTION__);
-						break;
+				int result;
+				if (recv_len == sizeof(recv_buffer)) {
+					pbx_log(LOG_ERROR, "%s: Receive buffer is full of an incomplete SCCP message\n", s->designator);
+					__sccp_session_stopthread(s, SKINNY_DEVICE_RS_FAILED);
+					break;
+				}
+				result = s->srvcontext->transport->recv(&s->sc, recv_buffer + recv_len, sizeof(recv_buffer) - recv_len, 0);
+				if (result < 0) {
+					if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+						continue;
 					}
-				} else if (!((recv_len += result) && ((ARRAY_LEN(recv_buffer) * sizeof(unsigned char)) - recv_len) && process_buffer(s, &msg, recv_buffer, &recv_len) == 0)) {
+					socket_get_error(s, __FILE__, __LINE__, __PRETTY_FUNCTION__);
+					__sccp_session_stopthread(s, SKINNY_DEVICE_RS_FAILED);
+					break;
+				}
+				if (result == 0) {
+					__sccp_session_stopthread(s, SKINNY_DEVICE_RS_NONE);
+					break;
+				}
+				recv_len += result;
+				s->lastKeepAlive = time(0);
+				if (process_buffer(s, &msg, recv_buffer, &recv_len) != 0 || recv_len == sizeof(recv_buffer)) {
 					pbx_log(LOG_ERROR, "%s: (netsock_device_thread) Received a packet or message (with result:%d) which we could not handle, giving up session: %p!\n", s->designator, result, s);
 					sccp_dump_msg(&msg);
 					if (s->device) {
@@ -820,7 +834,6 @@ void *sccp_session_device_thread(void *session)
 					__sccp_session_stopthread(s, SKINNY_DEVICE_RS_FAILED);
 					break;
 				}
-				s->lastKeepAlive = time(0);
 			} else { /* POLLHUP / POLLERR */
 				pbx_log(LOG_NOTICE, "%s: Closing session because we received POLLPRI/POLLHUP/POLLERR\n", s->designator);
 				__sccp_session_stopthread(s, SKINNY_DEVICE_RS_FAILED);
@@ -1181,10 +1194,7 @@ int sccp_session_send(constDevicePtr device, const sccp_msg_t * msg_in)
 	sccp_msg_t *msg = (sccp_msg_t *) msg_in;				/* discard const * const */
 	const sccp_session_t * const s = device && device->session ? device->session : NULL;
 
-	if (s && !s->session_stop) {
-		return sccp_session_send2(s, msg);
-	} 
-	return -1;
+	return sccp_session_send2(s, msg);
 }
 
 /*!
@@ -1200,12 +1210,17 @@ int sccp_session_send2(constSessionPtr session, sccp_msg_t * msg)
 {
 	sessionPtr s = (sessionPtr)session;										/* discard const */
 	ssize_t res = 0;
-	uint32_t msgid = letohl(msg->header.lel_messageId);
+	uint32_t msgid;
 	ssize_t bytesSent = 0;
 	ssize_t bufLen = 0;
 	uint8_t * bufAddr = NULL;
 
+	if (!msg) {
+		return -1;
+	}
+	msgid = letohl(msg->header.lel_messageId);
 	if (s && s->session_stop) {
+		sccp_free(msg);
 		return -2;
 	}
 
@@ -1233,6 +1248,7 @@ int sccp_session_send2(constSessionPtr session, sccp_msg_t * msg)
 	if(msginfo) {
 		if(msginfo->messageId != msgid) {
 			pbx_log(LOG_ERROR, "%s: (session_send2) messageId %d (0x%x) unknown. matched:0x%x discarding message.\n", DEV_ID_LOG(s->device), msgid, msgid, msginfo->messageId);
+			sccp_free(msg);
 			return -4;
 		}
 		if(msginfo->type == SKINNY_MSGTYPE_REQUEST) {
@@ -1244,25 +1260,28 @@ int sccp_session_send2(constSessionPtr session, sccp_msg_t * msg)
 			sccp_dump_msg(msg);
 		}
 	}
+	/* Keep the whole SCCP frame together even when the transport writes only part of it. */
+	pbx_mutex_lock(&s->write_lock);
 	do {
-		pbx_mutex_lock(&s->write_lock);									/* prevent two threads writing at the same time. That should happen in a synchronized way */
 		res = s->srvcontext->transport->send(&s->sc, bufAddr + bytesSent, bufLen - bytesSent, 0);
-		pbx_mutex_unlock(&s->write_lock);
 		if (res <= 0) {
 			if (errno == EINTR) {
 				usleep(backoff);								/* back off to give network/other threads some time */
-				backoff *= 2;
+				if (backoff < 8000) {
+					backoff *= 2;
+				}
 				continue;
 			}
 			socket_get_error(s, __FILE__, __LINE__, __PRETTY_FUNCTION__);
-			if (s) {
-				__sccp_session_stopthread(s, SKINNY_DEVICE_RS_FAILED);
-			}
 			res = -1;
 			break;
 		}
 		bytesSent += res;
 	} while(bytesSent < bufLen && s && !s->session_stop && s->sc.fd > 0);
+	pbx_mutex_unlock(&s->write_lock);
+	if (res == -1) {
+		__sccp_session_stopthread(s, SKINNY_DEVICE_RS_FAILED);
+	}
 
 	sccp_free(msg);
 	msg = NULL;

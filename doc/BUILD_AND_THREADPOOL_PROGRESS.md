@@ -230,3 +230,25 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   was run for this file/build metadata cleanup.
 - The test-tree sync, bootstrap, configure, and archive check were logged in
   wadsworth's `/root/asterisk.txt`. Production was untouched.
+
+## Session TCP framing and receive cleanup
+
+- Serialize a whole outbound SCCP frame with `write_lock`, including partial
+  writes and EINTR retries, so concurrent senders cannot interleave frames.
+  Cap retry backoff at 8 ms. Defer session-failure teardown until after
+  releasing that lock.
+- Enforce the send API's message ownership on stopped sessions, missing
+  sessions, and mismatched message metadata. The device wrapper now delegates
+  all paths to the owned-message sender. A NULL message returns an error.
+- Receive handling now distinguishes retryable EINTR/EAGAIN, peer EOF, and
+  fatal errors. It parses data before judging a completely filled buffer, so
+  valid coalesced messages are consumed. An unconsumable full buffer is still
+  rejected. Reject impossible payload lengths immediately after the header.
+- A single compile of the batch passed against wadsworth's private Asterisk
+  22 headers with experimental XML enabled. No module was installed, and no
+  live client/phone test was run. Wadsworth actions and build log location are
+  recorded in `/root/asterisk.txt` there.
+- The receive fix addresses the TCP/POSIX result contract. TLS still needs the
+  separate R8 review of `SSL_get_error`, handshake failure, and retry direction;
+  no TLS behavior claim is made here. Concurrent partial-write behavior and
+  fragmented/coalesced frames still need runtime or focused transport tests.

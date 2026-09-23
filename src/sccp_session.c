@@ -561,7 +561,7 @@ static devicePtr sccp_session_retainSendDevice(sessionPtr s)
  *      - socket_lock
  *      - Glob(sessions)
  */
-void sccp_session_terminateAll()
+void sccp_session_terminateAll(void)
 {
 	sccp_session_t *s = NULL;
 
@@ -813,15 +813,16 @@ void *sccp_session_device_thread(void *session)
 		return NULL;
 	}
 
+	pthread_cleanup_push(sccp_session_device_thread_exit, session);
+	pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+
+	/* declared after pthread_cleanup_push so they cannot be clobbered by its setjmp/longjmp */
 	boolean_t oncall = TRUE;
 	boolean_t tokenThread = FALSE;
 	unsigned char recv_buffer[SCCP_MAX_PACKET * 2] = "";
 	size_t recv_len = 0;
 	sccp_msg_t msg = { {0,} };
-
-	pthread_cleanup_push(sccp_session_device_thread_exit, session);
-	pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
-	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 
 	struct pollfd fds[1] = { { 0 } };
 	fds[0].events = POLLIN | POLLPRI;
@@ -864,7 +865,7 @@ void *sccp_session_device_thread(void *session)
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 		if (-1 == res) {										/* poll data processing */
 			if (errno > 0 && (errno != EAGAIN) && (errno != EINTR)) {
-				pbx_log(LOG_ERROR, "%s: poll() returned %d. errno: %s, (ip-address: %s)\n", DEV_ID_LOG(s->device), errno, strerror(errno), s->designator);
+				pbx_log(LOG_ERROR, "%s: poll() on the device connection failed (errno %d: %s, ip-address: %s); closing the session\n", DEV_ID_LOG(s->device), errno, strerror(errno), s->designator);
 				socket_get_error(s, __FILE__, __LINE__, __PRETTY_FUNCTION__);
 				__sccp_session_stopthread(s, SKINNY_DEVICE_RS_FAILED);
 				break;

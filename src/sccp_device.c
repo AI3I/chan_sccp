@@ -3148,21 +3148,84 @@ void sccp_device_featureChangedDisplay(const sccp_event_t * event)
 }
 
 /*!
+ * \brief Escape a URL for an XML attribute, keeping entities that are already escaped
+ *
+ * SendURL takes URLs from the dialplan, where query strings may already be written with &amp;.
+ * Bare '&', '<', '>', '"' and '\'' are escaped; an '&' that starts one of the five XML entities or a
+ * numeric character reference is kept.
+ *
+ * \retval 0 on success, -1 when outbuf is too small (outbuf is still terminated)
+ */
+static int sccp_device_escapeXmlUrl(const char *url, char *outbuf, size_t buflen)
+{
+	size_t used = 0;
+	for (const char *p = url; *p; p++) {
+		const char *entity = NULL;
+		char single[2] = { *p, '\0' };
+		switch (*p) {
+			case '&': {
+				static const char *const known[] = { "amp;", "lt;", "gt;", "quot;", "apos;" };
+				boolean_t isEntity = FALSE;
+				for (size_t i = 0; i < ARRAY_LEN(known) && !isEntity; i++) {
+					isEntity = !strncmp(p + 1, known[i], strlen(known[i]));
+				}
+				if (!isEntity && p[1] == '#') {
+					const char *digits = (p[2] == 'x' || p[2] == 'X') ? p + 3 : p + 2;
+					size_t len = strspn(digits, (digits == p + 2) ? "0123456789" : "0123456789abcdefABCDEF");
+					isEntity = len > 0 && digits[len] == ';';
+				}
+				entity = isEntity ? "&" : "&amp;";
+				break;
+			}
+			case '<':
+				entity = "&lt;";
+				break;
+			case '>':
+				entity = "&gt;";
+				break;
+			case '"':
+				entity = "&quot;";
+				break;
+			case '\'':
+				entity = "&apos;";
+				break;
+			default:
+				entity = single;
+				break;
+		}
+		size_t len = strlen(entity);
+		if (used + len >= buflen) {
+			outbuf[used] = '\0';
+			return -1;
+		}
+		memcpy(outbuf + used, entity, len);
+		used += len;
+	}
+	outbuf[used] = '\0';
+	return 0;
+}
+
+/*!
  * \brief Push a URL to an SCCP device
  */
 static sccp_push_result_t sccp_device_pushURL(constDevicePtr device, const char *url, uint8_t priority, skinny_tone_t tone)
 {
 	const char *xmlFormat = "<CiscoIPPhoneExecute><ExecuteItem Priority=\"0\" URL=\"%s\"/></CiscoIPPhoneExecute>";
-	size_t msg_length = strlen(xmlFormat) + sccp_strlen(url) - 2 /* for %s */  + 1 /* for terminator */ ;
 	unsigned int transactionID = sccp_random();
 
 	if (sccp_strlen(url) > 256) {
-		sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: (pushURL) url is to long (max 256 char).\n", DEV_ID_LOG(device));
+		sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: (pushURL) URL is %d characters; phones accept at most 256, so it was not sent.\n", DEV_ID_LOG(device), (int)sccp_strlen(url));
 		return SCCP_PUSH_RESULT_FAIL;
 	}
+	/* worst case every character becomes a 6-byte entity such as &quot; */
+	char escapedUrl[256 * 6 + 1];
+	if (sccp_device_escapeXmlUrl(url ? url : "", escapedUrl, sizeof(escapedUrl))) {
+		return SCCP_PUSH_RESULT_FAIL;
+	}
+	size_t msg_length = strlen(xmlFormat) - 2 /* for %s */ + strlen(escapedUrl) + 1 /* for terminator */;
 	char xmlData[msg_length];
 
-	snprintf(xmlData, msg_length, xmlFormat, url);
+	snprintf(xmlData, msg_length, xmlFormat, escapedUrl);
 	device->protocol->sendUserToDeviceDataVersionMessage(device, APPID_PUSH, 0, 1, transactionID, xmlData, priority);
 	if (SKINNY_TONE_SILENCE != tone) {
 		sccp_dev_starttone(device, tone, 0, 0, SKINNY_TONEDIRECTION_USER);
@@ -3184,7 +3247,7 @@ static sccp_push_result_t sccp_device_pushTextMessage(constDevicePtr device, con
 	const char *xmlTitleFormat = "<Title>%s</Title>";
 	size_t text_length = sccp_strlen(messageText);
 	size_t from_length = sccp_strlen(from);
-	char title[sizeof("<Title></Title>") + 32] = "";
+	char title[sizeof("<Title></Title>") + 32 * 6] = "";
 	unsigned int transactionID = sccp_random();
 
 	if (!messageText || from_length > 32) {
@@ -3197,15 +3260,38 @@ static sccp_push_result_t sccp_device_pushTextMessage(constDevicePtr device, con
 		return SCCP_PUSH_RESULT_FAIL;
 	}
 
+	/* the length limits above apply to the displayed text; escaping can grow each character to a 6-byte entity */
 	if (from_length) {
-		snprintf(title, sizeof(title), xmlTitleFormat, from);
+		char escapedFrom[32 * 6 + 1];
+		if (ast_xml_escape(from, escapedFrom, sizeof(escapedFrom))) {
+			return SCCP_PUSH_RESULT_FAIL;
+		}
+		snprintf(title, sizeof(title), xmlTitleFormat, escapedFrom);
 	}
 
-	size_t msg_length = strlen(xmlFormat) - 4 /* two %s placeholders */ + strlen(title) + text_length + 1;
-	char xmlData[msg_length];
+	size_t escaped_size = text_length * 6 + 1;
+	char *escapedText = sccp_malloc(escaped_size);
+	if (!escapedText) {
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
+		return SCCP_PUSH_RESULT_FAIL;
+	}
+	if (ast_xml_escape(messageText, escapedText, escaped_size)) {
+		sccp_free(escapedText);
+		return SCCP_PUSH_RESULT_FAIL;
+	}
 
-	snprintf(xmlData, msg_length, xmlFormat, title, messageText);
+	size_t msg_length = strlen(xmlFormat) - 4 /* two %s placeholders */ + strlen(title) + strlen(escapedText) + 1;
+	char *xmlData = sccp_malloc(msg_length);
+	if (!xmlData) {
+		sccp_free(escapedText);
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
+		return SCCP_PUSH_RESULT_FAIL;
+	}
+
+	snprintf(xmlData, msg_length, xmlFormat, title, escapedText);
+	sccp_free(escapedText);
 	device->protocol->sendUserToDeviceDataVersionMessage(device, APPID_PUSH, 0, 1, transactionID, xmlData, priority);
+	sccp_free(xmlData);
 
 	if (SKINNY_TONE_SILENCE != tone) {
 		sccp_dev_starttone(device, tone, 0, 0, SKINNY_TONEDIRECTION_USER);

@@ -95,7 +95,7 @@ const struct skinny_codec skinny_codecs[] = {
 	/* clang-format on */
 };
 
-uint8_t __CONST__ sccp_codec_getArrayLen()
+uint8_t __CONST__ sccp_codec_getArrayLen(void)
 {
 	return ARRAY_LEN(skinny_codecs);
 }

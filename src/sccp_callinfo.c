@@ -67,7 +67,8 @@ struct sccp_callinfo {
 struct callinfo_lookup {
 	const enum callinfo_groups group;
 	const enum callinfo_types type;
-} static const callinfo_lookup[] = {
+};
+static const struct callinfo_lookup callinfo_lookup[] = {
 	/* clang-format off */
 	[SCCP_CALLINFO_CALLEDPARTY_NAME]		= {CALLED_PARTY, NAME},
 	[SCCP_CALLINFO_CALLEDPARTY_NUMBER]		= {CALLED_PARTY, NUMBER},

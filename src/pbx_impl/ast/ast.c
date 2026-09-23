@@ -1113,9 +1113,10 @@ static int sccp_astwrap_doPickup(PBX_CHANNEL_TYPE * pbx_channel)
 {
 	pthread_t threadid;
 
-	if (!pbx_channel || !(pbx_channel_ref(pbx_channel) > 0)) {
+	if (!pbx_channel) {
 		return FALSE;
 	}
+	pbx_channel_ref(pbx_channel);										// released by sccp_astwrap_doPickupThread
 	if (ast_pthread_create_detached_background(&threadid, NULL, sccp_astwrap_doPickupThread, pbx_channel)) {
 		pbx_log(LOG_ERROR, "Unable to start Group pickup thread on channel %s\n", pbx_channel_name(pbx_channel));
 		pbx_channel_unref(pbx_channel);

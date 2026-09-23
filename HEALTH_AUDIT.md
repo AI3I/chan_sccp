@@ -1,5 +1,47 @@
 # chan_sccp-modern Health Audit
 
+## Fixed — findings from strict-warning and `-fanalyzer` builds (2026-09-23)
+
+Found by building with `-O2 -Wall -Wextra` plus extra checks and with GCC 14
+`-fanalyzer` on wadsworth.
+
+- **Crash on a DevState button without options.** A `feature = devstate`
+  button with no custom state name is never registered, so pressing it passed
+  NULL into `sccp_devstate_getNextDeviceState()` and dereferenced it. The
+  button handler now logs a warning and ignores the press, and the function
+  returns `AST_DEVICE_UNKNOWN` when no handler exists.
+- **Unescaped XML pushed to phones.** `pushTextMessage()` inserted the message
+  text and sender, and `pushURL()` (the `SendURL` application) the URL,
+  straight into `CiscoIPPhone*` XML. `<`, `&` or `"` broke the message, and
+  text from outside (e.g. SIP MESSAGE) could inject XML elements. Text and
+  sender now go through `ast_xml_escape()`. URLs use a local escaper that also
+  escapes bare `&`, `<`, `>`, `"` and `'` but keeps `&amp;`-style and numeric
+  entities, so dialplans that already wrote `&amp;` keep working. Length limits
+  still apply to the unescaped text; the escaped text is heap-allocated.
+- `sccp_dev_starttone()` was declared with `uint32_t timeout` but defined and
+  called with `skinny_toneDirection_t direction`; the header now matches.
+- `sccp_astwrap_doPickup()` compared the pointer returned by `ast_channel_ref()`
+  with `> 0` (always true); now takes the reference unconditionally.
+- Session thread locals are declared after `pthread_cleanup_push()` so they
+  cannot be clobbered by its `setjmp`; the `poll()` error log labelled
+  `errno` as the return value and now states that the session is closed.
+- Old-style `()` definitions (`sccp_codec_getArrayLen`,
+  `sccp_session_terminateAll`) and a misplaced `static` in `sccp_callinfo.c`.
+
+Reviewed and left as false positives: the analyzer's NULL `channel` in
+`ast120.c` request (a successful request always sets `channel` and
+`channel->owner`), fd leaks in the TCP/TLS bind paths (the fd belongs to the
+connection) and in the token script runner (every path closes both pipe ends).
+
+Validation on wadsworth against the lab Asterisk 22 prefix: default and
+`--disable-debug` builds pass `make check`; the default build has no warnings
+(previously 4); the strict build is clean apart from the `*const` return-type
+(`-Wignored-qualifiers`) and `SS_Memory_Allocation_Error`
+(`-Wformat-nonliteral`) noise; the URL escaper passed a standalone test of
+plain, pre-escaped, numeric, bogus and injected entities plus truncation.
+The 25 `-Wformat-truncation` warnings in `--disable-debug` builds remain.
+Not deployed; no handset test of text/URL push or DevState buttons.
+
 ## Fixed — libbfd backtrace support removed; `#ifdef DEBUG` guards (2026-09-23)
 
 `DEBUG` is always defined by configure (1 or 0), so every `#ifdef DEBUG` was

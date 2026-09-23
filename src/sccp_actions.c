@@ -2326,6 +2326,10 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 			sccp_log((DEBUGCAT_CORE + DEBUGCAT_FEATURE_BUTTON))(VERBOSE_PREFIX_3 "%s: Feature Change DevState: '%s', State: '%s'\n", DEV_ID_LOG(d),
 									    config->button.feature.options ? config->button.feature.options : "", config->button.feature.status ? "On" : "Off");
 			if (TRUE == toggleState) {
+				if (sccp_strlen_zero(config->button.feature.options)) {
+					pbx_log(LOG_WARNING, "%s: DevState feature button on instance %d has no custom device state name configured; button press ignored\n", DEV_ID_LOG(d), config->instance);
+					return;
+				}
 				enum ast_device_state newDeviceState = sccp_devstate_getNextDeviceState(d, config);
 				pbx_devstate_changed(newDeviceState, "Custom:%s", config->button.feature.options);
 				return;

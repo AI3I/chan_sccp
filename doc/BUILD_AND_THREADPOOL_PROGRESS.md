@@ -534,3 +534,14 @@ passed for the source commit. No live handset test was run.
   passed. No module installation or live handset test was run.
 - Dead `UNUSEDCODE` blocks and other PBX adapter files still contain retired
   branches and can be cleaned in later focused batches.
+
+### Disabled Asterisk adapter code
+
+- Removed all five `UNUSEDCODE` blocks from `src/pbx_impl/ast/ast.c` and their
+  four matching declarations in `ast.h`. The flag has no definition in the
+  repository, and no callers of the removed functions exist outside those
+  disabled blocks. They included an unused extension-state map, a malformed
+  cause map, and abandoned channel-walk, ACL, and extension-removal wrappers.
+- This removes about 210 lines. Hosted build and static validation are pending;
+  no live module or handset test was run. Other disabled blocks elsewhere in
+  the project remain for subsequent review.

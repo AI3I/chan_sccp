@@ -662,7 +662,7 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 		AUTO_RELEASE(sccp_device_t, tmpdevice , sccp_device_find_byid(deviceName, FALSE));
 		if (tmpdevice) {
 			skinny_registrationstate_t state = sccp_device_getRegistrationState(tmpdevice);
-			if (state == SKINNY_DEVICE_RS_TOKEN && tmpdevice->registrationTime < time(0) + token_backoff_time) {
+			if (state == SKINNY_DEVICE_RS_TOKEN && time(0) < tmpdevice->registrationTime + token_backoff_time) {
 				pbx_log(LOG_NOTICE, "%s: token request refused: the device already has a token request in progress (token %s, last attempt %d s ago); retry in %d seconds\n", deviceName,
 					sccp_tokenstate2str(tmpdevice->status.token), (int)(time(0) - tmpdevice->registrationTime), token_backoff_time);
 				tmpdevice->registrationTime = time(0);
@@ -687,7 +687,6 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 		device = sccp_device_createAnonymous(deviceName) /*ref_replace*/;
 		sccp_config_applyDeviceConfiguration(device, NULL);
 		sccp_config_addButton(&device->buttonconfig, 1, LINE, GLOB(hotline)->line ? GLOB(hotline)->line->name : "hotline", NULL, NULL);
-		//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: hotline name: %s\n", deviceName, GLOB(hotline)->line->name);
 		device->defaultLineInstance = SCCP_FIRST_LINEINSTANCE;
 		sccp_device_addToGlobals(device);
 	}
@@ -826,7 +825,7 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 		AUTO_RELEASE(sccp_device_t, tmpdevice , sccp_device_find_byid(deviceName, FALSE));
 		if (tmpdevice) {
 			skinny_registrationstate_t state = sccp_device_getRegistrationState(tmpdevice);
-			if (state == SKINNY_DEVICE_RS_TOKEN && tmpdevice->registrationTime < time(0) + token_backoff_time) {
+			if (state == SKINNY_DEVICE_RS_TOKEN && time(0) < tmpdevice->registrationTime + token_backoff_time) {
 				pbx_log(LOG_NOTICE, "%s: token request refused: the device already has a token request in progress (token %s, last attempt %d s ago); retry in %d seconds\n", deviceName,
 					sccp_tokenstate2str(tmpdevice->status.token), (int)(time(0) - tmpdevice->registrationTime), token_backoff_time);
 				tmpdevice->registrationTime = time(0);
@@ -851,7 +850,6 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 		device = sccp_device_createAnonymous(msg_in->data.SPCPRegisterTokenRequest.sId.deviceName) /*ref_replace*/;
 		sccp_config_applyDeviceConfiguration(device, NULL);
 		sccp_config_addButton(&device->buttonconfig, 1, LINE, GLOB(hotline)->line ? GLOB(hotline)->line->name : "hotline", NULL, NULL);
-		//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: hotline name: %s\n", msg_in->data.SPCPRegisterTokenRequest.sId.deviceName, GLOB(hotline)->line->name);
 		device->defaultLineInstance = SCCP_FIRST_LINEINSTANCE;
 		sccp_device_addToGlobals(device);
 	}
@@ -970,8 +968,7 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 		device = sccp_device_createAnonymous(deviceName) /*ref_replace*/;
 		if(device) {
 			sccp_config_applyDeviceConfiguration(device, NULL);
-			sccp_config_addButton(&device->buttonconfig, 1, LINE, GLOB(hotline)->line->name, NULL, NULL);
-			//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: hotline name: %s\n", deviceName, GLOB(hotline)->line->name);
+			sccp_config_addButton(&device->buttonconfig, 1, LINE, GLOB(hotline)->line ? GLOB(hotline)->line->name : "hotline", NULL, NULL);
 			device->defaultLineInstance = SCCP_FIRST_LINEINSTANCE;
 			sccp_device_addToGlobals(device);
 		} else {

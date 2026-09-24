@@ -2710,11 +2710,6 @@ boolean_t sccp_config_readDevicesLines(sccp_readingtype_t readingtype)
 			/* check minimum requirements for a line */
 			sccp_log((DEBUGCAT_CONFIG))(VERBOSE_PREFIX_2 "Parsing line [%s]\n", cat);
 
-			if ((!(!sccp_strlen_zero(pbx_variable_retrieve(GLOB(cfg), cat, "label"))) && (!sccp_strlen_zero(pbx_variable_retrieve(GLOB(cfg), cat, "cid_name")))
-			     && (!sccp_strlen_zero(pbx_variable_retrieve(GLOB(cfg), cat, "cid_num"))))) {
-				pbx_log(LOG_WARNING, "SCCP: line [%s] skipped: it sets cid_name and cid_num but has no label\n", cat);
-				continue;
-			}
 			line_count++;
 
 			v = ast_variable_browse(GLOB(cfg), cat);
@@ -2875,6 +2870,11 @@ sccp_configurationchange_t sccp_config_applyLineConfiguration(linePtr l, PBX_VAR
 
 	if (sccp_strlen_zero(l->id)) {
 		snprintf(l->id, sizeof(l->id), "%04d", SCCP_LIST_GETSIZE(&GLOB(lines)));
+	}
+	/* label is optional: the button shows cid_name, or else the line name */
+	if (sccp_strlen_zero(l->label)) {
+		sccp_free(l->label);
+		l->label = pbx_strdup(!sccp_strlen_zero(l->cid_name) ? l->cid_name : l->name);
 	}
 
 	return (sccp_configurationchange_t)res;

@@ -282,7 +282,7 @@ static const SCCPConfigOption sccpLineConfigOptions[] = {
 	{"type", 			0, 	0, 				TYPE_STRING,									SCCP_CONFIG_FLAG_IGNORE,					SCCP_CONFIG_NOUPDATENEEDED,		"line",				"used for line templates, value will be inherited.\n"},
 	{"id", 				L_OBJ_REF(id),				TYPE_STRING,									SCCP_CONFIG_FLAG_NONE,						SCCP_CONFIG_NOUPDATENEEDED,		NULL,				"id\n"},
 	{"pin", 			L_OBJ_REF(pin), 			TYPE_STRING,									SCCP_CONFIG_FLAG_NONE,						SCCP_CONFIG_NOUPDATENEEDED,		NULL,				"pin\n"},
-	{"label", 			L_OBJ_REF(label), 			TYPE_STRINGPTR,									SCCP_CONFIG_FLAG_REQUIRED, 					SCCP_CONFIG_NEEDDEVICERESET,		NULL,				"label\n"},
+	{"label", 			L_OBJ_REF(label), 			TYPE_STRINGPTR,									SCCP_CONFIG_FLAG_NONE, 						SCCP_CONFIG_NEEDDEVICERESET,		NULL,				"text shown next to the line button; defaults to cid_name, or the line name when cid_name is not set\n"},
 	{"description", 		L_OBJ_REF(description),			TYPE_STRINGPTR,									SCCP_CONFIG_FLAG_NONE,						SCCP_CONFIG_NOUPDATENEEDED,		NULL,				"description\n"},
 	{"context", 			L_OBJ_REF(context), 			TYPE_STRINGPTR,									SCCP_CONFIG_FLAG_GET_GLOBAL_DEFAULT | SCCP_CONFIG_FLAG_REQUIRED,SCCP_CONFIG_NOUPDATENEEDED,		NULL,				"pbx dialing context\n"},
 	{"cid_name", 			L_OBJ_REF(cid_name), 			TYPE_STRING,									SCCP_CONFIG_FLAG_REQUIRED,					SCCP_CONFIG_NOUPDATENEEDED,		NULL,				"callerid name\n"},

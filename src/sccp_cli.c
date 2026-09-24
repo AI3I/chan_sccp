@@ -3239,7 +3239,6 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 			}
 			goto EXIT;
 		} else if (sccp_strequals("force", argv[2]) && argc == 3) {
-			pbx_cli(fd, "Force Reading Config file '%s'\n", filename);
 			force_reload = TRUE;
 		} else if (sccp_strequals("file", argv[2])) {
 			if (argc == 4) {

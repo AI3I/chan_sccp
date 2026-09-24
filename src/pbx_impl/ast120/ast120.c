@@ -1151,7 +1151,11 @@ static boolean_t sccp_astwrap_allocPBXChannel(sccp_channel_t * channel, const vo
 	sccp_log(DEBUGCAT_CHANNEL)(VERBOSE_PREFIX_3 "SCCP: (allocPBXChannel) Create New Channel with name: SCCP/%s-%08X\n", line->name, channel->callid);
 	pbxDstChannel = ast_channel_alloc(1, AST_STATE_DOWN, line->cid_num, line->cid_name, line->accountcode, line->name, line->context, assignedids, pbxSrcChannel, line->amaflags, "%s", channel->designator);
 	if (pbxDstChannel == NULL) {
-		pbx_log(LOG_ERROR, "SCCP: Asterisk could not allocate a channel for call SCCP/%s-%08X; call not created\n", line->name, channel->callid);
+		if (ast_shutting_down()) {
+			pbx_log(LOG_NOTICE, "SCCP: call SCCP/%s-%08X not created: Asterisk is shutting down\n", line->name, channel->callid);
+		} else {
+			pbx_log(LOG_ERROR, "SCCP: Asterisk could not allocate a channel for call SCCP/%s-%08X; call not created\n", line->name, channel->callid);
+		}
 		ao2_cleanup(caps);
 		return FALSE;
 	}

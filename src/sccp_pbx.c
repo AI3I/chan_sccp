@@ -919,7 +919,9 @@ boolean_t sccp_pbx_channel_allocate(constChannelPtr channel, const void * ids, c
 	iPbx.alloc_pbxChannel(c, ids, parentChannel, &tmp);
 
 	if (!tmp || !c->owner) {
-		pbx_log(LOG_ERROR, "%s: Asterisk could not create a channel for line %s\n", c->designator, l->name);
+		if (!ast_shutting_down()) {							/* the shutdown refusal is reported by alloc_pbxChannel */
+			pbx_log(LOG_ERROR, "%s: Asterisk could not create a channel for line %s\n", c->designator, l->name);
+		}
 		goto error_exit;
 	}
 	iPbx.setChannelName(c, c->designator);
@@ -999,7 +1001,9 @@ boolean_t sccp_pbx_channel_allocate(constChannelPtr channel, const void * ids, c
 
 error_exit:
 	if(c) {
-		pbx_log(LOG_WARNING, "%s: call %s on line %s not set up; hanging it up\n", DEV_ID_LOG(d), c->designator, l->name);
+		if (!ast_shutting_down()) {
+			pbx_log(LOG_WARNING, "%s: call %s on line %s not set up; hanging it up\n", DEV_ID_LOG(d), c->designator, l->name);
+		}
 		if(c->owner) {
 			if(d) {
 				sccp_indicate(d, c, SCCP_CHANNELSTATE_CONGESTION);

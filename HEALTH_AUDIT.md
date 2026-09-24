@@ -1,15 +1,43 @@
 # chan_sccp-modern Health Audit
 
+## Fixed — graceful shutdown and the four open decisions (2026-09-24)
+
+Graceful shutdown (`core stop|restart gracefully`): Asterisk already waits
+until no channels are left, and every SCCP call state that matters has an
+Asterisk channel (off hook, dialing, ringing, connected, held — a held call
+keeps its channel after it is detached from the phone), so SCCP calls do
+hold the shutdown back. What was missing: a new call while the shutdown is
+pending failed deep in channel allocation with two ERRORs and two WARNINGs
+and no sign on the phone. Now `sccp_channel_getEmptyChannel()` checks
+`ast_shutting_down()` first: one NOTICE ("new call on line X refused:
+Asterisk is shutting down"), "Shutting down: no new calls" on the phone and
+the reject tone; calls Asterisk asks chan_sccp to create during the shutdown
+log one NOTICE instead of an ERROR. `core stop|restart when convenient` keeps
+accepting calls, as in Asterisk. Tested on wadsworth: held call + `core stop
+gracefully` → Asterisk kept running, a new call from the phone was refused
+cleanly, `core abort shutdown` cancelled; with the held call ended, chan_sccp
+unloaded and Asterisk exited.
+
+Decisions from the message pass, all taken as proposed:
+- Token backoff: `registrationTime < time(0) + backoff` was always true, so a
+  phone refused once was refused forever; now `time(0) < registrationTime +
+  backoff`.
+- Hotline: the anonymous-device registration path used
+  `GLOB(hotline)->line->name` without the NULL check the token paths have.
+- Lines: a line section with cid_name/cid_num but no label was skipped, and
+  one with no label at all got a "required option" warning. `label` is now
+  optional and falls back to cid_name, then the line name.
+- `pbx_channel_unref()` came before `pbx_channel_unlock()` on the same channel
+  in resume and both answer paths (unlocking a possibly freed channel); order
+  swapped.
+- `sccp reload force` no longer prints "Force Reading Config file".
+
+Validation: wadsworth, full `alltests.sh all` clean; label fallback checked
+with temporary label-less lines (sccp.conf restored); `make check` passes.
+Not deployed.
+
 ## To do (requested 2026-09-24)
 
-- **Graceful shutdown.** Like PJSIP, chan_sccp should take part in
-  `core stop gracefully` / `core restart when convenient`: Asterisk must not
-  exit (and the module must not unload) while SCCP calls are in progress,
-  held, or being set up (including held calls detached from any device and
-  calls still in the dialplan). Refuse new calls once shutdown is pending, let
-  existing calls finish, then close sessions cleanly. Today a held call keeps
-  a module reference, so `module unload` fails with "use count 1", but
-  nothing ties this to Asterisk's graceful shutdown state.
 - **Code comments.** Many `/* */` comments in the C files are meaningless,
   ungrammatical or wrong. Fix, update or add them where they carry real
   information; delete the rest.
@@ -301,16 +329,7 @@ Behavior bugs found and fixed along the way:
   error on the CLI instead. The reload path logged each config error three
   times; now once plus "devices and lines keep their current settings".
 
-Found, not changed (need a decision):
-- Token backoff: `registrationTime < time(0) + backoff` is always true, so a
-  device whose token was refused once keeps being refused; likely meant
-  `time(0) < registrationTime + backoff`.
-- Hotline registration path uses `GLOB(hotline)->line->name` without the NULL
-  check the token path has.
-- Line sections with cid_name and cid_num but no label are skipped (same
-  condition upstream); intent unclear.
-- `sccp_channel_resume()` calls `pbx_channel_unref()` before
-  `pbx_channel_unlock()` on the same channel.
+The four decisions found here were resolved on 2026-09-24 (see above).
 
 Validation so far: wadsworth build with `-Wall -Wformat=2` clean, `make
 check` passes. Not deployed.

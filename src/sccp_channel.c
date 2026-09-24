@@ -1697,6 +1697,13 @@ channelPtr sccp_channel_getEmptyChannel(constLinePtr l, constDevicePtr d, channe
 			}
 		}
 	}
+	if (ast_shutting_down()) {
+		/* "core stop/restart gracefully": Asterisk refuses new channels until it exits; say so on the phone */
+		pbx_log(LOG_NOTICE, "%s: new call on line %s refused: Asterisk is shutting down\n", d->id, l->name);
+		sccp_dev_displayprinotify(d, "Shutting down: no new calls", SCCP_MESSAGE_PRIORITY_TIMEOUT, 10);
+		sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
+		return NULL;
+	}
 	if (!channel && !(channel = sccp_channel_allocate(l, d))) {
 		pbx_log(LOG_WARNING, "%s: new call on line %s not started: the call could not be created (see the previous message)\n", d->id, l->name);
 		return NULL;
@@ -1733,7 +1740,9 @@ channelPtr sccp_channel_newcall(constLinePtr l, constDevicePtr device, const cha
 
 	sccp_channel_t * const channel = sccp_channel_getEmptyChannel(l, device, NULL, calltype, parentChannel, ids);
 	if (!channel) {
-		pbx_log(LOG_WARNING, "%s: new call on line %s not started: the call could not be created (see the previous message)\n", device->id, l->name);
+		if (!ast_shutting_down()) {
+			pbx_log(LOG_WARNING, "%s: new call on line %s not started: the call could not be created (see the previous message)\n", device->id, l->name);
+		}
 		return NULL;
 	}
 
@@ -1904,8 +1913,8 @@ static void channel_answer_completion(constChannelPtr channel)
 				pbx_log(LOG_NOTICE, "%s: call %s was not answered here: it was already answered elsewhere (Asterisk state %s)\n", DEV_ID_LOG(d), c->designator,
 					pbx_state2str(ast_channel_state(pbx_channel)));
 			}
-			pbx_channel_unref(pbx_channel);                                         // reffed by sccp_channel_lock_full
 			pbx_channel_unlock(pbx_channel);                                        // locked by sccp_channel_lock_full
+			pbx_channel_unref(pbx_channel);                                         // reffed by sccp_channel_lock_full; after the unlock, as it may be the last reference
 		}
 		sccp_channel_unlock(c);                                        // locked by sccp_channel_lock_full
 	}
@@ -1986,8 +1995,8 @@ void sccp_channel_answer(constDevicePtr device, channelPtr channel)
 			pbx_log(LOG_NOTICE, "%s: call %s was not answered here: it was already answered elsewhere (Asterisk state %s)\n", DEV_ID_LOG(device), channel->designator,
 				pbx_state2str(ast_channel_state(pbx_channel)));
 		}
-		pbx_channel_unref(pbx_channel);                                         // reffed by sccp_channel_lock_full
 		pbx_channel_unlock(pbx_channel);                                        // locked by sccp_channel_lock_full
+		pbx_channel_unref(pbx_channel);                                         // reffed by sccp_channel_lock_full; after the unlock, as it may be the last reference
 	}
 	sccp_channel_unlock(channel);							// locked by sccp_channel_lock_full
 }
@@ -2254,8 +2263,8 @@ int sccp_channel_resume(constDevicePtr device, channelPtr channel, boolean_t swa
 
 	if((pbx_channel = sccp_channel_lock_full(channel, FALSE))) {
 		instance = channel_resume_locked(d, l, channel, swap_channels);
-		pbx_channel_unref(pbx_channel);                                         // reffed by sccp_channel_lock_full
 		pbx_channel_unlock(pbx_channel);                                        // locked by sccp_channel_lock_full
+		pbx_channel_unref(pbx_channel);                                         // reffed by sccp_channel_lock_full; after the unlock, as it may be the last reference
 	} else {
 		pbx_log(LOG_WARNING, "%s: resume not done: the call's Asterisk channel is gone\n", c->designator);
 	}

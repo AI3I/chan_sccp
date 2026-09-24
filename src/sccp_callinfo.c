@@ -105,7 +105,7 @@ static sccp_callinfo_t * const callinfo_Constructor(uint8_t callInstance, const 
 	ci->content.callInstance = callInstance;
 	sccp_copy_string(ci->content.designator, designator, sizeof ci->content.designator);
 
-	sccp_log(DEBUGCAT_CALLINFO) (VERBOSE_PREFIX_1 "SCCP: callinfo constructor: %p\n", ci);
+	sccp_log(DEBUGCAT_CALLINFO) (VERBOSE_PREFIX_1 "SCCP: call info %p created\n", ci);
 	return ci;
 }
 
@@ -117,7 +117,7 @@ static sccp_callinfo_t * const callinfo_Destructor(sccp_callinfo_t * * const ci)
 	pbx_rwlock_destroy(&(*ci)->lock);
 	sccp_free(*ci);
 	*ci = NULL;
-	sccp_log(DEBUGCAT_CALLINFO) (VERBOSE_PREFIX_2 "SCCP: callinfo destructor\n");
+	sccp_log(DEBUGCAT_CALLINFO) (VERBOSE_PREFIX_2 "SCCP: call info destroyed\n");
 	return *ci;
 }
 
@@ -509,7 +509,7 @@ static int callinfo_Send(sccp_callinfo_t * const ci, const uint32_t callid, cons
 			return 1;
 		}
 	} else {
-		sccp_log(DEBUGCAT_CALLINFO) ("%p: (sccp_callinfo_send) ci has not changed since last send. Skipped sending\n", ci);
+		sccp_log(DEBUGCAT_CALLINFO) ("%p: call info unchanged since the last send; not sent\n", ci);
 	}
 
 	return 0;

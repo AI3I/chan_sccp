@@ -238,7 +238,7 @@ static int sccp_asterisk_managerHookHelper(int category, const char *event, char
 			struct message m = { 0 };
 
 			str = dupStr = pbx_strdupa(content); /** need a dup, because converter to message structure will modify the str */
-			sccp_log(DEBUGCAT_CORE)("SCCP: (managerHookHelper) MonitorStart/MonitorStop Received\ncontent:[%s]\n", content);	/* temp */
+			sccp_log(DEBUGCAT_CORE)("SCCP: AMI MonitorStart/MonitorStop received:\n[%s]\n", content);	/* temp */
 
 			sccp_asterisk_parseStrToAstMessage(str, &m); /** convert to message structure to use the astman_get_header function */
 			const char *channelName = astman_get_header(&m, "Channel");
@@ -258,10 +258,10 @@ static int sccp_asterisk_managerHookHelper(int category, const char *event, char
 			}
 
 			if (channel) {
-				sccp_log(DEBUGCAT_CORE)("%s: (managerHookHelper) MonitorStart/MonitorStop Received\n", channel->designator);	/* temp */
+				sccp_log(DEBUGCAT_CORE)("%s: AMI MonitorStart/MonitorStop received\n", channel->designator);	/* temp */
 				AUTO_RELEASE(sccp_device_t, d , sccp_channel_getDevice(channel));
 				if (d) {
-					sccp_log(DEBUGCAT_CORE)("%s: (managerHookHelper) MonitorStart/MonitorStop on Device: %s\n", channel->designator, d->id);	/* temp */
+					sccp_log(DEBUGCAT_CORE)("%s: AMI MonitorStart/MonitorStop for %s\n", channel->designator, d->id);	/* temp */
 					if (!strcasecmp("MonitorStart", event)) {
 						d->monitorFeature.status |= SCCP_FEATURE_MONITOR_STATE_ACTIVE;
 					} else {
@@ -282,7 +282,7 @@ static int sccp_asterisk_managerHookHelper(int category, const char *event, char
 #ifdef CS_SCCP_PARK
 		} else if (sccp_strcaseequals("ParkedCall", event) || sccp_strcaseequals("UnParkedCall", event) || sccp_strcaseequals("ParkedCallGiveUp", event) || sccp_strcaseequals("ParkedCallTimeout", event)) {
 			if (iParkingLot.addSlot && iParkingLot.removeSlot) {
-				sccp_log_and((DEBUGCAT_PARKINGLOT & DEBUGCAT_HIGH))("SCCP: (managerHookHelper) %s Received\ncontent:[%s]\n", event, content);
+				sccp_log_and((DEBUGCAT_PARKINGLOT & DEBUGCAT_HIGH))("SCCP: AMI event %s received:\n[%s]\n", event, content);
 
 				str = dupStr = pbx_strdupa(content);
 				struct message m = { 0 };
@@ -360,7 +360,7 @@ boolean_t sccp_manager_action2str(const char *manager_command, char **outStr)
 	struct manager_custom_hook hook = {__FILE__, __sccp_manager_hookresult};
         failure = ast_hook_send_action(&hook, manager_command);							/* "Action: ParkedCalls\r\n" */
         if (!failure) {
-		sccp_log(DEBUGCAT_CORE)("SCCP: Sending AMI Result String: %s\n", pbx_str_buffer(buf));
+		sccp_log(DEBUGCAT_CORE)("SCCP: AMI result: %s\n", pbx_str_buffer(buf));
         	*outStr = pbx_strdup(pbx_str_buffer(buf));
         }
        	ast_str_reset(buf);
@@ -384,7 +384,7 @@ char * sccp_manager_retrieve_parkedcalls_cxml(char ** out)
 		struct message m = {0};
 		const char *event = "";
 
-		sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_2 "SCCP: (sccp_manager_retrieve_parkedcalls_cxml) content=%s\n",  parkedcalls_messageStr);
+		sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_2 "SCCP: parked calls: %s\n",  parkedcalls_messageStr);
 		pbx_str_append(&tmpPbxStr, 0, "<?xml version=\"1.0\"?>");
 		pbx_str_append(&tmpPbxStr, 0, "<CiscoIPPhoneDirectory>");
 		pbx_str_append(&tmpPbxStr, 0, "<Title>Parked Calls</Title>");
@@ -394,7 +394,7 @@ char * sccp_manager_retrieve_parkedcalls_cxml(char ** out)
 		char *token = NULL;
 		char *rest = strptr;
 		while (sscanf(strptr, "%[^\r\n]\r\n\r\n%s", token, rest) && token) {
-			sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_2 "SCCP: (sccp_manager_retrieve_parkedcalls_cxml) token='%s', rest='%s'\n", token, rest);
+			sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_2 "SCCP: parked calls: token '%s', rest '%s'\n", token, rest);
 			usleep(500);
 
 			token = sccp_asterisk_parseStrToAstMessage(token, &m);
@@ -408,7 +408,7 @@ char * sccp_manager_retrieve_parkedcalls_cxml(char ** out)
 					astman_get_header((const struct message *)&m, "ConnectedLineName"),
 					astman_get_header((const struct message *)&m, "Exten")
 				);
-				sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_3 "SCCP: Found ParkedCall: %s on %s@%s\n", astman_get_header((const struct message *)&m, "Channel"), astman_get_header((const struct message *)&m, "Exten"), astman_get_header((const struct message *)&m, "ParkingLot"));
+				sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_3 "SCCP: parked call %s on %s@%s\n", astman_get_header((const struct message *)&m, "Channel"), astman_get_header((const struct message *)&m, "Exten"), astman_get_header((const struct message *)&m, "ParkingLot"));
 			}
 			memset(&m, 0, sizeof(m));
 			strptr = rest;
@@ -421,7 +421,7 @@ char * sccp_manager_retrieve_parkedcalls_cxml(char ** out)
 		sccp_free(tmpPbxStr);
 		sccp_free(parkedcalls_messageStr);
 	}
-	sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_2 "SCCP: (sccp_manager_retrieve_parkedcalls_cxml) cxml=%s\n", *out);
+	sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_2 "SCCP: parked calls XML: %s\n", *out);
 	return *out;
 }
 #endif

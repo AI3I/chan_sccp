@@ -57,8 +57,8 @@ void NotifyLine(constLinePtr line, int newmsgs, int oldmsgs);
 #if defined(CS_AST_HAS_EVENT)
 static void pbxMailboxGetCached(mwi_subscription_t *subscription)
 {
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s\n",
-		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: reading cached voicemail state of %s\n",
+		(subscription->line)->name, (subscription->mailbox)->uniqueid);
 
 	// split uniqueid
 	char *context, *mbox = NULL;
@@ -87,8 +87,8 @@ static void pbx_mwi_event(const pbx_event_t *event, void *data)
 		pbx_log(LOG_WARNING, "SCCP: MWI event ignored: its subscription, line or event data is missing\n");
 		return;
 	}
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s, event:%p\n", 
-		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid, event);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: voicemail event for %s (%p)\n", 
+		(subscription->line)->name, (subscription->mailbox)->uniqueid, event);
 
 	int newmsgs = pbx_event_get_ie_uint(event, AST_EVENT_IE_NEWMSGS);
 	int oldmsgs = pbx_event_get_ie_uint(event, AST_EVENT_IE_OLDMSGS);
@@ -96,8 +96,8 @@ static void pbx_mwi_event(const pbx_event_t *event, void *data)
 }
 static pbx_event_subscription_t *pbxMailboxSubscribe(mwi_subscription_t *subscription)
 {
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s\n",
-		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: subscribing to voicemail %s\n",
+		(subscription->line)->name, (subscription->mailbox)->uniqueid);
 
 	pbx_event_subscription_t *pbx_subscription = NULL;
 	
@@ -125,8 +125,8 @@ static void pbxMailboxUnsubscribe(mwi_subscription_t *subscription)
 #elif defined(CS_AST_HAS_STASIS)
 static void pbxMailboxGetCached(mwi_subscription_t *subscription)
 {
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s\n",
-		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: reading cached voicemail state of %s\n",
+		(subscription->line)->name, (subscription->mailbox)->uniqueid);
 	RAII(struct stasis_message *, mwi_message, NULL, ao2_cleanup);
 	mwi_message = stasis_cache_get(ast_mwi_state_cache(), ast_mwi_state_type(), (subscription->mailbox)->uniqueid);
 	if (mwi_message) {
@@ -143,8 +143,8 @@ static void pbx_mwi_event(void *data, struct stasis_subscription *sub, struct st
 		pbx_log(LOG_WARNING, "SCCP: MWI event %s ignored: its subscription or line is gone\n", stasis_message_type_name(stasis_message_type(msg)));
 		return;
 	}
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s, msgtype:%s\n", 
-		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid, stasis_message_type_name(stasis_message_type(msg)));
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: voicemail event for %s (%s)\n", 
+		(subscription->line)->name, (subscription->mailbox)->uniqueid, stasis_message_type_name(stasis_message_type(msg)));
 	if (pbx_mwi_state_type() == stasis_message_type(msg) && (mwi_state = (struct ast_mwi_state *) stasis_message_data(msg))) {
 		NotifyLine(subscription->line, mwi_state->new_msgs, mwi_state->old_msgs);
 	} else {
@@ -155,8 +155,8 @@ static void pbx_mwi_event(void *data, struct stasis_subscription *sub, struct st
 static pbx_event_subscription_t * pbxMailboxSubscribe(mwi_subscription_t *subscription)
 {
 	pbx_event_subscription_t *pbx_subscription = NULL;
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s\n",
-		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: subscribing to voicemail %s\n",
+		(subscription->line)->name, (subscription->mailbox)->uniqueid);
 
 	pbx_subscription = (pbx_event_subscription_t *)pbx_mwi_subscribe_pool(subscription->mailbox->uniqueid, pbx_mwi_event, subscription);
 	//pbxMailboxGetCached(subscription);
@@ -165,8 +165,8 @@ static pbx_event_subscription_t * pbxMailboxSubscribe(mwi_subscription_t *subscr
 
 static void pbxMailboxUnsubscribe(mwi_subscription_t *subscription)
 {
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s\n",
-		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: unsubscribing from voicemail %s\n",
+		(subscription->line)->name, (subscription->mailbox)->uniqueid);
 
 	if(subscription->pbx_subscription) {
 		pbx_mwi_unsubscribe_and_join((struct pbx_mwi_subscriber *)subscription->pbx_subscription);
@@ -177,8 +177,8 @@ static void pbxMailboxUnsubscribe(mwi_subscription_t *subscription)
 #else
 static void pbxMailboxGetCached(mwi_subscription_t *subscription)
 {
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s\n",
-		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: reading cached voicemail state of %s\n",
+		(subscription->line)->name, (subscription->mailbox)->uniqueid);
 	if (pbx_app_inboxcount(subscription->uniqueid, &(mailbox->newmsgs), &(mailbox->oldmsgs))) {
 		pbx_log(LOG_WARNING, "SCCP: could not read message counts for mailbox %s (is app_voicemail loaded?)\n", mailbox->uniqueid);
 	}
@@ -186,8 +186,8 @@ static void pbxMailboxGetCached(mwi_subscription_t *subscription)
 }
 static void pbxMailboxReschedule(mwi_subscription_t *subscription)
 {
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s\n",
-		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: rescheduling voicemail poll for %s\n",
+		(subscription->line)->name, (subscription->mailbox)->uniqueid);
 	if ((subscription->schedUpdate = iPbx.sched_add(interval * 1000, pbxMailboxGetCached, subscription)) < 0) {
 		pbx_log(LOG_ERROR, "SCCP: could not schedule the next check of mailbox %s; its message lamp will not update\n", (subscription->mailbox)->uniqueid);
 	}
@@ -198,22 +198,22 @@ static int pbx_mwi_event(const void *data)
 	if (!subscription) {
 		// error
 	}
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s\n",
-		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: polling voicemail %s\n",
+		(subscription->line)->name, (subscription->mailbox)->uniqueid);
 	pbxMailboxGetCached(subscription);
 	pbxMailboxReschedule(subscription);
 }
 
 static void pbxMailboxSubscribe(mwi_subscription_t *subscription)
 {
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s\n",
-		(subscription->line)->name, __PRETTY_FUNCTION__, (subscription->mailbox)->uniqueid);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: subscribing to voicemail %s\n",
+		(subscription->line)->name, (subscription->mailbox)->uniqueid);
 	pbx_mwi_event(subscription);
 }
 static void pbxMailboxUnsubscribe(mwi_subscription_t *subscription)
 {
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: (mwi::%s) uniqueid:%s\n",
-		(subscription->line)->name, __PRETTY_FUNCTION__,  (subscription->mailbox)->uniqueid);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_1 "%s: unsubscribing from voicemail %s\n",
+		(subscription->line)->name,  (subscription->mailbox)->uniqueid);
 	subscription->sched = SCCP_SCHED_DEL(subscription->schedUpdate);
 }
 */
@@ -224,8 +224,8 @@ static void pbxMailboxUnsubscribe(mwi_subscription_t *subscription)
  * =========================== */
 static void createSubscription(sccp_mailbox_t * mailbox, constLinePtr line)
 {
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_2 "%s: (mwi::%s) uniqueid:%s\n",
-		line->name, __PRETTY_FUNCTION__, mailbox->uniqueid);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_2 "%s: creating voicemail subscription %s\n",
+		line->name, mailbox->uniqueid);
 
 	mwi_subscription_t *subscription = (mwi_subscription_t *)sccp_calloc(sizeof *subscription,1);
 	if (!subscription) {
@@ -251,8 +251,8 @@ static void removeSubscription(sccp_mailbox_t * mailbox, constLinePtr line)
 {
 	mwi_subscription_t *removed = NULL;
 	boolean_t found_one = FALSE;
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_2 "%s: (mwi::%s) uniqueid:%s\n",
-		line->name, __PRETTY_FUNCTION__, mailbox->uniqueid);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_2 "%s: removing voicemail subscription %s\n",
+		line->name, mailbox->uniqueid);
 
 	do {
 		found_one = FALSE;
@@ -281,7 +281,7 @@ static void removeSubscription(sccp_mailbox_t * mailbox, constLinePtr line)
  */
 static void removeAllSubscriptions(void)
 {
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_2 "SCCP: (mwi::removeAllSubscriptions)\n");
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_2 "SCCP: removing all voicemail subscriptions\n");
 	for (uint32_t idx = 0; idx < SCCP_VECTOR_SIZE(&subscriptions); idx++) {
 		mwi_subscription_t *subscription = SCCP_VECTOR_GET(&subscriptions, idx);
 		if (subscription) {
@@ -304,7 +304,7 @@ static void handleLineCreationEvent(const sccp_event_t * event)
 	}
 	sccp_line_t *line = event->lineInstance.line;
 
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_2 "%s: (mwi::handleLineCreationEvent)\n", line->name);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_2 "%s: line created; subscribing its mailboxes\n", line->name);
 	sccp_mailbox_t *mailbox = NULL;
 	SCCP_LIST_TRAVERSE_SAFE_BEGIN(&(line->mailboxes), mailbox, list) {
 		createSubscription(mailbox, line);
@@ -320,7 +320,7 @@ static void handleLineDestructionEvent(const sccp_event_t * event)
 	}
 	sccp_line_t *line = event->lineInstance.line;
 
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_2 "%s: (mwi::handleLineDestructionEvent)\n", line->name);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_2 "%s: line destroyed; unsubscribing its mailboxes\n", line->name);
 
 	sccp_mailbox_t *mailbox = NULL;
 	SCCP_LIST_TRAVERSE_SAFE_BEGIN(&(line->mailboxes), mailbox, list) {
@@ -334,7 +334,7 @@ static void handleLineDestructionEvent(const sccp_event_t * event)
  * ================================== */
 void NotifyLine(constLinePtr l, int newmsgs, int oldmsgs)
 {
-	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_2 "%s: (mwi::NotifyLine) Notify newmsgs:%d oldmsgs:%d\n", l->name, newmsgs, oldmsgs);
+	sccp_log((DEBUGCAT_MWI)) (VERBOSE_PREFIX_2 "%s: voicemail: %d new, %d old\n", l->name, newmsgs, oldmsgs);
 
 	sccp_line_setMWI(l, newmsgs, oldmsgs);
 
@@ -421,7 +421,7 @@ static int showSubscriptions(int fd, sccp_cli_totals_t *totals, struct mansessio
  * ================================== */
 static void module_start(void)
 {
-	sccp_log((DEBUGCAT_MWI))(VERBOSE_PREFIX_3 "SCCP: MWI module started\n");
+	sccp_log((DEBUGCAT_MWI))(VERBOSE_PREFIX_3 "SCCP: voicemail (MWI) module started\n");
 	SCCP_VECTOR_INIT(&subscriptions,10);
 	pbx_mutex_init(&subscriptions_lock);
 
@@ -431,7 +431,7 @@ static void module_start(void)
 
 static void module_stop(void)
 {
-	sccp_log((DEBUGCAT_MWI))(VERBOSE_PREFIX_3 "SCCP: MWI module stopping\n");
+	sccp_log((DEBUGCAT_MWI))(VERBOSE_PREFIX_3 "SCCP: voicemail (MWI) module stopping\n");
 	sccp_event_unsubscribe(SCCP_EVENT_LINEINSTANCE_DESTROYED, handleLineDestructionEvent);
 	sccp_event_unsubscribe(SCCP_EVENT_LINEINSTANCE_CREATED, handleLineCreationEvent);
 

@@ -73,7 +73,7 @@ static void sccp_devstate_setASTDB(deviceState_t * deviceState)
 
 void sccp_devstate_module_start(void)
 {
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "SCCP: Starting devstate system\n");
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "SCCP: starting device state handling\n");
 	SCCP_LIST_HEAD_INIT(&deviceStates);
 	sccp_event_subscribe(SCCP_EVENT_DEVICE_REGISTERED, deviceRegisterListener, TRUE);
 	sccp_event_subscribe(SCCP_EVENT_DEVICE_UNREGISTERED, deviceRegisterListener, FALSE);
@@ -81,7 +81,7 @@ void sccp_devstate_module_start(void)
 
 void sccp_devstate_module_stop(void)
 {
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "SCCP: Stopping devstate system\n");
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "SCCP: stopping device state handling\n");
 	{
 		deviceState_t * deviceState = NULL;
 		SubscribingDevice_t * subscriber = NULL;
@@ -113,7 +113,7 @@ static void printStates(feature_state_t * states)
 {
 	for(uint x = 0; x < AST_DEVICE_TOTAL; x++) {
 		feature_state_t state = states[x];
-		sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "'%s'(%d): rythm:%d, color:%d, icon:%d, nextstate:%s(%d)\n", ast_devstate2str((enum ast_device_state)x), x, state.value.strct.rythm, state.value.strct.color, state.value.strct.icon,
+		sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "'%s' (%d): rhythm %d, color %d, icon %d, next state %s (%d)\n", ast_devstate2str((enum ast_device_state)x), x, state.value.strct.rythm, state.value.strct.color, state.value.strct.icon,
 			ast_devstate2str(state.nextstate), state.nextstate);
 	}
 }
@@ -150,7 +150,7 @@ static SubscribingDevice_t * addSubscriber(deviceState_t * deviceState, const sc
 {
 	SubscribingDevice_t * subscriber = (SubscribingDevice_t *)sccp_calloc(sizeof *subscriber, 1);
 	if(!subscriber) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "devstate::addSubscriber");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP: device state subscriber");
 		return NULL;
 	}
 	subscriber->device = sccp_device_retain((sccp_device_t *)device);
@@ -250,12 +250,12 @@ void deviceRegisterListener(const sccp_event_t * event)
 	switch (event->type) {
 		case SCCP_EVENT_DEVICE_REGISTERED:
 			device = event->deviceRegistered.device;
-			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: (devstate::deviceRegisterListener) device registered\n", DEV_ID_LOG(device));
+			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: device registered\n", DEV_ID_LOG(device));
 			deviceRegistered(device);
 			break;
 		case SCCP_EVENT_DEVICE_UNREGISTERED:
 			device = event->deviceRegistered.device;
-			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: (devstate::deviceRegisterListener) device unregistered\n", DEV_ID_LOG(device));
+			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: device unregistered\n", DEV_ID_LOG(device));
 			deviceUnRegistered(device);
 			break;
 		default:
@@ -287,11 +287,11 @@ deviceState_t * createDeviceStateHandler(const char * devstate)
 
 	char buf[256] = "";
 	snprintf(buf, 254, "Custom:%s", devstate);
-	sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_4 "%s: (devstate::createDeviceStateHandler) create handler for %s/%s\n", "SCCP", devstate, buf);
+	sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_4 "%s: creating device state handler for %s/%s\n", "SCCP", devstate, buf);
 
 	deviceState_t * deviceState = (deviceState_t *)sccp_calloc(sizeof *deviceState, 1);
 	if (!deviceState) {
-		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "devstate::createDeviceStateHandler");
+		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, "SCCP: device state handler");
 		return NULL;
 	}
 	SCCP_LIST_HEAD_INIT(&deviceState->subscribers);
@@ -384,7 +384,7 @@ void changed_cb(void * data, struct stasis_subscription * sub, struct stasis_mes
 	if(deviceState) {
 		deviceState->featureState = newState;
 		SCCP_LIST_TRAVERSE(&deviceState->subscribers, subscriber, list) {
-			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: (devstate::changed_cb) notify subscriber of state:'%s'(%d) change\n", DEV_ID_LOG(subscriber->device), ast_devstate2str(deviceState->featureState),
+			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: notifying subscriber of state '%s' (%d)\n", DEV_ID_LOG(subscriber->device), ast_devstate2str(deviceState->featureState),
 						  deviceState->featureState);
 			subscriber->buttonConfig->button.feature.status = (uint32_t)deviceState->featureState;
 			notifySubscriber(deviceState, subscriber);

@@ -61,11 +61,11 @@ int load_config(void)
 	GLOB(allowAnonymous) = TRUE;
 
 #if defined(SCCP_LITTLE_ENDIAN) && defined(SCCP_BIG_ENDIAN)
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "Platform byte order   : LITTLE/BIG ENDIAN\n");
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "platform byte order: little and big endian\n");
 #elif defined(SCCP_LITTLE_ENDIAN)
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "Platform byte order   : LITTLE ENDIAN\n");
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "platform byte order: little endian\n");
 #else
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "Platform byte order   : BIG ENDIAN\n");
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "platform byte order: big endian\n");
 #endif
 	if(sccp_config_getConfig(TRUE, "sccp.conf") > CONFIG_STATUS_FILE_OK) {
 		sccp_log((DEBUGCAT_CONFIG))(VERBOSE_PREFIX_3 "SCCP: sccp.conf could not be loaded\n");
@@ -207,14 +207,14 @@ boolean_t sccp_postPBX_load(void)
 	if(!GLOB(srvcontexts[SCCP_SERVERCONTEXT_TCP])) {
 		GLOB(srvcontexts[SCCP_SERVERCONTEXT_TCP]) = sccp_servercontext_create(&GLOB(bindaddr), SCCP_SERVERCONTEXT_TCP);
 		if(GLOB(srvcontexts[SCCP_SERVERCONTEXT_TCP])) {
-			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "bindaddr '%s'\n", sccp_netsock_stringify(sccp_servercontext_getBoundAddr(GLOB(srvcontexts[SCCP_SERVERCONTEXT_TCP]))));
+			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "bindaddr %s\n", sccp_netsock_stringify(sccp_servercontext_getBoundAddr(GLOB(srvcontexts[SCCP_SERVERCONTEXT_TCP]))));
 		}
 	}
 #ifdef HAVE_LIBSSL
 	if(!GLOB(srvcontexts[SCCP_SERVERCONTEXT_TLS])) {
 		GLOB(srvcontexts[SCCP_SERVERCONTEXT_TLS]) = sccp_servercontext_create(&GLOB(secbindaddr), SCCP_SERVERCONTEXT_TLS);
 		if(GLOB(srvcontexts[SCCP_SERVERCONTEXT_TLS])) {
-			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "secbindaddr '%s'\n", sccp_netsock_stringify(sccp_servercontext_getBoundAddr(GLOB(srvcontexts[SCCP_SERVERCONTEXT_TLS]))));
+			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "secbindaddr %s\n", sccp_netsock_stringify(sccp_servercontext_getBoundAddr(GLOB(srvcontexts[SCCP_SERVERCONTEXT_TLS]))));
 		}
 	}
 #endif
@@ -230,7 +230,7 @@ int sccp_preUnload(void)
 	sccp_device_t *d = NULL;
 	sccp_line_t *l = NULL;
 
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_1 "SCCP: Unloading Module\n");
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_1 "SCCP: unloading module\n");
 
 	/* copy some of the required global variables */
 	pbx_rwlock_wrlock(&GLOB(lock));
@@ -243,27 +243,27 @@ int sccp_preUnload(void)
 	sccp_event_unsubscribe(SCCP_EVENT_FEATURE_CHANGED, sccp_util_featureStorageBackend);
 
 	/* close accept thread by shutdown the socket descriptor read side -> interrupt polling and break accept loop */
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "SCCP: Closing Socket Accept Descriptor\n");
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "SCCP: closing the listening socket\n");
 	sccp_servercontext_stopListening(GLOB(srvcontexts[SCCP_SERVERCONTEXT_TCP]));
 #if HAVE_LIBSSL
 	sccp_servercontext_stopListening(GLOB(srvcontexts[SCCP_SERVERCONTEXT_TLS]));
 #endif
 	sccp_hint_module_stop();
 
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "SCCP: Hangup open channels\n");				//! \todo make this pbx independend
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "SCCP: hanging up open calls\n");				//! \todo make this pbx independend
 
 	/* removing devices */
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: Removing Devices\n");
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: removing devices\n");
 	SCCP_RWLIST_TRAVERSE_SAFE_BEGIN(&GLOB(devices), d, list) {
-		sccp_log((DEBUGCAT_CORE + DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "SCCP: Removing device %s\n", d->id);
+		sccp_log((DEBUGCAT_CORE + DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "SCCP: removing device %s\n", d->id);
 		d->realtime = TRUE;										// use realtime, to fully clear the device configuration
 		sccp_dev_clean_restart(d, TRUE);								// performs a device reset if it has a session
 	}
 	SCCP_RWLIST_TRAVERSE_SAFE_END;
 
 	/* hotline will be removed by line removing function */
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: Removing Lines\n");
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_4 "SCCP: Removing Hotline\n");
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: removing lines\n");
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_4 "SCCP: removing hotline\n");
 	if (GLOB(hotline)) {
 		if (GLOB(hotline)->line) {
 			sccp_line_removeFromGlobals(GLOB(hotline)->line);
@@ -276,7 +276,7 @@ int sccp_preUnload(void)
 
 	/* removing lines */
 	SCCP_RWLIST_TRAVERSE_SAFE_BEGIN(&GLOB(lines), l, list) {
-		sccp_log((DEBUGCAT_CORE + DEBUGCAT_LINE)) (VERBOSE_PREFIX_4 "SCCP: Removing line %s\n", l->name);
+		sccp_log((DEBUGCAT_CORE + DEBUGCAT_LINE)) (VERBOSE_PREFIX_4 "SCCP: removing line %s\n", l->name);
 		sccp_line_clean(l, TRUE);
 	}
 	SCCP_RWLIST_TRAVERSE_SAFE_END;
@@ -365,7 +365,7 @@ int sccp_reload(void)
 			returnval = 0;
 			break;
 		case CONFIG_STATUS_FILE_OK:
-			sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_3 "SCCP reloading configuration.\n");
+			sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_3 "SCCP: reloading configuration\n");
 			readingtype = SCCP_CONFIG_READRELOAD;
 			GLOB(reload_in_progress) = TRUE;
 			if (!sccp_config_general(readingtype)) {

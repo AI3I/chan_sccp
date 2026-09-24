@@ -47,12 +47,12 @@ static void __sccp_indicate_remote_device(constDevicePtr device, channelPtr c, l
 void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_channelstate_t state, boolean_t force, const uint8_t debug, const char * file, const int line, const char * pretty_function)
 {
 	if (debug) {
-		sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_1 "SCCP: [INDICATE] state '%d' in file '%s', on line %d (%s)\n", state, file, line, pretty_function);
+		sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_1 "SCCP: indicate state %d from %s:%d (%s)\n", state, file, line, pretty_function);
 	}
 
 	AUTO_RELEASE(sccp_device_t, d , (maybe_device) ? sccp_device_retain(maybe_device) : sccp_channel_getDevice(c));
 	if (!d) {
-		sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_1 "SCCP: The channel %d does not have a device\n", c->callid);
+		sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_1 "SCCP: call %d has no device\n", c->callid);
 		return;
 	}
 
@@ -64,7 +64,7 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 	uint16_t lineInstance = sccp_device_find_index_for_line(d, l->name);
 
 	/* all the check are ok. We can safely run all the dev functions with no more checks */
-	sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_DEVICE + DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: Indicate SCCP new state:%s, current channel state:%s on call:%s, lineInstance:%d (previous channelstate:%s)\n", d->id, sccp_channelstate2str(state), sccp_channelstate2str(c->state), c->designator, lineInstance, sccp_channelstate2str(c->previousChannelState));
+	sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_DEVICE + DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: indicating %s (call state %s) on %s, line instance %d (previous %s)\n", d->id, sccp_channelstate2str(state), sccp_channelstate2str(c->state), c->designator, lineInstance, sccp_channelstate2str(c->previousChannelState));
 	sccp_channel_setChannelstate(c, state);
 	sccp_callinfo_t * const ci = sccp_channel_getCallInfo(c);
 
@@ -90,7 +90,7 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 				sccp_dev_displayprompt(d, lineInstance, c->callid, SKINNY_DISP_ENTER_NUMBER, GLOB(digittimeout));
 				c->setTone(c, l->initial_dialtone_tone, SKINNY_TONEDIRECTION_USER);
 				if(!(d->hasMWILight()) && d->voicemailStatistic.newmsgs) {
-					sccp_log((DEBUGCAT_INDICATE | DEBUGCAT_MWI))(VERBOSE_PREFIX_2 "%s: Device does not have MWI-light and does have messages waiting -> stutter\n", d->id);
+					sccp_log((DEBUGCAT_INDICATE | DEBUGCAT_MWI))(VERBOSE_PREFIX_2 "%s: messages waiting and no message lamp; stutter dial tone\n", d->id);
 					c->setTone(c, SKINNY_TONE_PARTIALDIALTONE, SKINNY_TONEDIRECTION_USER); /* Add Stutter Pattern for ATA/Analog devices */
 				}
 			}
@@ -113,7 +113,7 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 				int lenDialed = sccp_strlen(c->dialedNumber);
 				int lenSecDialtoneDigits = sccp_strlen(l->secondary_dialtone_digits);
 				skinny_tone_t secondary_dialtone_tone = l->secondary_dialtone_tone;
-				sccp_log(DEBUGCAT_INDICATE)(VERBOSE_PREFIX_3 "%s: digitsfollow: dialed:%s, lenDialed:%d, secDialtoneDigits:%s, lenSecDialtoneDigits:%d, secondary_dialtine:%d\n", 
+				sccp_log(DEBUGCAT_INDICATE)(VERBOSE_PREFIX_3 "%s: second dial tone check: dialed %s (%d), trigger digits %s (%d), tone %d\n", 
 					c->designator,
 					c->dialedNumber,
 					lenDialed,
@@ -179,7 +179,7 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 				sccp_device_setLamp(d, SKINNY_STIMULUS_LINE, lineInstance, SKINNY_LAMP_BLINK);
 
 				if ((d->dndFeature.enabled && d->dndFeature.status == SCCP_DNDMODE_SILENT && c->ringermode != SKINNY_RINGTYPE_URGENT)) {
-					sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_CHANNEL)) (VERBOSE_PREFIX_3 "%s: DND is active on device\n", d->id);
+					sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_CHANNEL)) (VERBOSE_PREFIX_3 "%s: DND is on\n", d->id);
 					sccp_dev_set_ringer(d, SKINNY_RINGTYPE_SILENT, SKINNY_RINGDURATION_NORMAL, lineInstance, c->callid);
 					if (GLOB(dnd_tone) && d->dndFeature.status == SCCP_DNDMODE_SILENT) {
 						sccp_dev_starttone(d, GLOB(dnd_tone), 0, 0, SKINNY_TONEDIRECTION_USER);
@@ -192,13 +192,13 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 						remoteDevice = ownlinedevice->device;
 
 						if (d && remoteDevice && remoteDevice == d) {
-							sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_CHANNEL))(VERBOSE_PREFIX_3 "%s: Found matching ld. Aux parameter = %s\n", d->id, ownlinedevice->subscriptionId.aux);
+							sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_CHANNEL))(VERBOSE_PREFIX_3 "%s: matching line device; aux %s\n", d->id, ownlinedevice->subscriptionId.aux);
 							if (0 == strncmp(ownlinedevice->subscriptionId.aux, "silent", 6)) {
 								sccp_dev_set_ringer(d, SKINNY_RINGTYPE_SILENT, SKINNY_RINGDURATION_NORMAL, lineInstance, c->callid);
-								sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_CHANNEL))(VERBOSE_PREFIX_3 "%s: Forcing silent ring for specific device.\n", d->id);
+								sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_CHANNEL))(VERBOSE_PREFIX_3 "%s: silent ring forced for this device\n", d->id);
 							} else {
 								sccp_dev_set_ringer(d, c->ringermode, SKINNY_RINGDURATION_NORMAL, lineInstance, c->callid);
-								sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_CHANNEL)) (VERBOSE_PREFIX_3 "%s: Normal ring occurred.\n", d->id);
+								sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_CHANNEL)) (VERBOSE_PREFIX_3 "%s: normal ring\n", d->id);
 							}
 						}
 					}
@@ -238,7 +238,7 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 			}
 			break;
 		case SCCP_CHANNELSTATE_PROGRESS:
-			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s (%s) wantsEarlyRTP:%s, progressSent:%s\n", c->designator, __func__, c->wantsEarlyRTP() ? "yes" : "no", c->progressSent() ? "yes" : "no");
+			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: early RTP wanted %s, progress sent %s\n", c->designator, c->wantsEarlyRTP() ? "yes" : "no", c->progressSent() ? "yes" : "no");
 			if(!c->wantsEarlyRTP()) {
 				//  work around : FreePBX sometimes goes from DIALING->AST_CONTROL_PROGRESS skipping RINGING (for EarlyRTP=off)
 				if(c->previousChannelState == SCCP_CHANNELSTATE_DIALING) {
@@ -254,7 +254,7 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 		case SCCP_CHANNELSTATE_PROCEED:
 			{
 				if (c->previousChannelState == SCCP_CHANNELSTATE_CONNECTED) {		// this is a bug of asterisk 1.6 (it sends progress after a call is answered then diverted to some extensions with dial app)
-					sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_CHANNEL)) (VERBOSE_PREFIX_3 "SCCP: Asterisk requests to change state to (Progress) after (Connected). Ignoring\n");
+					sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_CHANNEL)) (VERBOSE_PREFIX_3 "SCCP: Asterisk asked for progress after the call was connected; ignored\n");
 					break;
 				}
 				d->indicate->proceed(d, lineInstance, c->callid, c->calltype, ci);
@@ -341,14 +341,14 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 				AUTO_RELEASE(sccp_channel_t, activeChannel, sccp_device_getActiveChannel(d));
 				if(activeChannel) {
 					if((sccp_strequals(iPbx.getChannelLinkedId(activeChannel), iPbx.getChannelLinkedId(c)))) {
-						sccp_log(DEBUGCAT_INDICATE)(VERBOSE_PREFIX_3 "%s: (SCCP_CHANNELSTATE_CALLWAITING) Already Own Part of the Call: Skipping\n", DEV_ID_LOG(d));
-						sccp_log_and(DEBUGCAT_INDICATE + DEBUGCAT_HIGH)(VERBOSE_PREFIX_3 "%s: LinkedId: %s / %s: LinkedId Remote: %s\n", DEV_ID_LOG(d), iPbx.getChannelLinkedId(c), DEV_ID_LOG(d),
+						sccp_log(DEBUGCAT_INDICATE)(VERBOSE_PREFIX_3 "%s: call waiting skipped: this device is already part of the call\n", DEV_ID_LOG(d));
+						sccp_log_and(DEBUGCAT_INDICATE + DEBUGCAT_HIGH)(VERBOSE_PREFIX_3 "%s: linked ID %s / %s: remote linked ID %s\n", DEV_ID_LOG(d), iPbx.getChannelLinkedId(c), DEV_ID_LOG(d),
 												iPbx.getChannelLinkedId(activeChannel));
 						break;
 					}
 					c->setTone(activeChannel, GLOB(callwaiting_tone), SKINNY_TONEDIRECTION_USER);
 				}
-				sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: SCCP_CHANNELSTATE_CALLWAITING (%s)\n", DEV_ID_LOG(d), sccp_channelstate2str(c->previousChannelState));
+				sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: call waiting (previous state %s)\n", DEV_ID_LOG(d), sccp_channelstate2str(c->previousChannelState));
 				// sccp_channel_callwaiting_tone_interval(d, c);
 				// c->setTone(c, GLOB(callwaiting_tone), SKINNY_TONEDIRECTION_USER);
 				sccp_device_sendcallstate(d, lineInstance, c->callid, SKINNY_CALLSTATE_RINGIN, SKINNY_CALLPRIORITY_LOW, SKINNY_CALLINFO_VISIBILITY_DEFAULT);
@@ -379,7 +379,7 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 			break;
 		case SCCP_CHANNELSTATE_BLINDTRANSFER:							// \todo SCCP_CHANNELSTATE_BLINDTRANSFER To be implemented
 			{
-				sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: SCCP_CHANNELSTATE_BLINDTRANSFER (%s)\n", d->id, sccp_channelstate2str(c->previousChannelState));
+				sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: blind transfer (previous state %s)\n", d->id, sccp_channelstate2str(c->previousChannelState));
 			}
 			break;
 		case SCCP_CHANNELSTATE_CALLCONFERENCE:
@@ -404,7 +404,7 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 		case SCCP_CHANNELSTATE_INVALIDCONFERENCE:
 			{
 				/*! \todo SCCP_CHANNELSTATE_INVALIDCONFERENCE To be implemented */
-				sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: SCCP_CHANNELSTATE_INVALIDCONFERENCE (%s)\n", d->id, sccp_channelstate2str(c->previousChannelState));
+				sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: invalid conference (previous state %s)\n", d->id, sccp_channelstate2str(c->previousChannelState));
 			}
 			break;
 		case SCCP_CHANNELSTATE_INVALIDNUMBER:
@@ -440,7 +440,7 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 			}
 			break;
 		default:										//! \todo SCCP_CHANNELSTATE:default To be implemented
-			sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: SCCP_CHANNELSTATE:default  %s (%d) -> %s (%d)\n", d->id, sccp_channelstate2str(c->previousChannelState), c->previousChannelState, sccp_channelstate2str(c->state), c->state);
+			sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: state %s (%d) changed to %s (%d)\n", d->id, sccp_channelstate2str(c->previousChannelState), c->previousChannelState, sccp_channelstate2str(c->state), c->state);
 			break;
 	}
 
@@ -466,7 +466,7 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 		}
 	}
 
-	sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_CHANNEL)) (VERBOSE_PREFIX_3 "%s: Finish to indicate channel state:%s on call:%s, lineInstance:%d. New channel state:%s\n", d->id, sccp_channelstate2str(state), c->designator, lineInstance, sccp_channelstate2str(c->state));
+	sccp_log((DEBUGCAT_INDICATE + DEBUGCAT_CHANNEL)) (VERBOSE_PREFIX_3 "%s: indicated %s on %s, line instance %d; call state now %s\n", d->id, sccp_channelstate2str(state), c->designator, lineInstance, sccp_channelstate2str(c->state));
 	//sccp_do_backtrace();
 }
 
@@ -492,7 +492,7 @@ static void __sccp_indicate_remote_device(constDevicePtr device, channelPtr c, l
 
 	/* do not propagate status of hotline */
 	if (line == GLOB(hotline)->line) {
-		sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "SCCP: (__sccp_indicate_remote_device) I'm a hotline, do not notify me!\n");
+		sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "SCCP: remote devices not notified: hotline\n");
 		return;
 	}
 	sccp_linedevice_t * ld = NULL;
@@ -504,7 +504,7 @@ static void __sccp_indicate_remote_device(constDevicePtr device, channelPtr c, l
 	sccp_copy_string(dialedNumber, c->dialedNumber, SCCP_MAX_EXTENSION);
 	sccp_callinfo_t * ci = iCallInfo.CopyConstructor(sccp_channel_getCallInfo(c));
 
-	sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: Remote Indicate state %s (%d) with reason: %s (%d) on remote devices for channel %s\n", DEV_ID_LOG(device), sccp_channelstate2str(state), state, sccp_channelstatereason2str(c->channelStateReason), c->channelStateReason, c->designator);
+	sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: indicating %s (%d, reason %s (%d)) on the other devices for %s\n", DEV_ID_LOG(device), sccp_channelstate2str(state), state, sccp_channelstatereason2str(c->channelStateReason), c->channelStateReason, c->designator);
 	SCCP_LIST_TRAVERSE(&line->devices, ld, list) {
 		if(!ld->device) {
 			pbx_log(LOG_WARNING, "%s: line %s has a device link without a device; skipped while updating other phones\n", c->designator, line->name);
@@ -529,7 +529,7 @@ static void __sccp_indicate_remote_device(constDevicePtr device, channelPtr c, l
 				AUTO_RELEASE(sccp_channel_t, activeChannel , sccp_device_getActiveChannel(remoteDevice));
 
 				if (activeChannel && (sccp_strequals(iPbx.getChannelLinkedId(activeChannel), iPbx.getChannelLinkedId(c)) || (activeChannel->conference_id && activeChannel->conference_id == c->conference_id))) {
-					sccp_log(DEBUGCAT_INDICATE) (VERBOSE_PREFIX_3 "%s: (indicate_remote_device) Already Own Part of the Call: Skipped\n", DEV_ID_LOG(device));
+					sccp_log(DEBUGCAT_INDICATE) (VERBOSE_PREFIX_3 "%s: remote indication skipped: this device is part of the call\n", DEV_ID_LOG(device));
 					//sccp_log_and(DEBUGCAT_INDICATE + DEBUGCAT_HIGH) (VERBOSE_PREFIX_3 "%s: LinkedId: %s / %s: LinkedId Remote: %s\n", DEV_ID_LOG(device), iPbx.getChannelLinkedId(c), DEV_ID_LOG(remoteDevice), iPbx.getChannelLinkedId(activeChannel));
 					continue;
 				}
@@ -541,7 +541,7 @@ static void __sccp_indicate_remote_device(constDevicePtr device, channelPtr c, l
 			switch (state) {
 				case SCCP_CHANNELSTATE_DOWN:
 				case SCCP_CHANNELSTATE_ONHOOK:
-					sccp_log(DEBUGCAT_INDICATE) (VERBOSE_PREFIX_3 "%s -> %s: indicate remote onhook (lineInstance: %d, callid: %d %s)\n", DEV_ID_LOG(device), DEV_ID_LOG(remoteDevice), lineInstance, c->callid, c->answered_elsewhere ? ", answered elsewhere" :"");
+					sccp_log(DEBUGCAT_INDICATE) (VERBOSE_PREFIX_3 "%s to %s: remote on hook (line instance %d, call %d%s)\n", DEV_ID_LOG(device), DEV_ID_LOG(remoteDevice), lineInstance, c->callid, c->answered_elsewhere ? ", answered elsewhere" :"");
 					if (SKINNY_CALLTYPE_INBOUND == c->calltype && c->answered_elsewhere && remoteDevice->indicate->callhistory) {
 						remoteDevice->indicate->callhistory(remoteDevice, lineInstance, c->callid, remoteDevice->callhistory_answered_elsewhere);
 					}
@@ -550,7 +550,7 @@ static void __sccp_indicate_remote_device(constDevicePtr device, channelPtr c, l
 
 				case SCCP_CHANNELSTATE_CONNECTEDCONFERENCE:
 				case SCCP_CHANNELSTATE_CONNECTED:
-					sccp_log(DEBUGCAT_INDICATE) (VERBOSE_PREFIX_3 "%s -> %s: indicate remote connected (lineInstance: %d, callid: %d %s)\n", DEV_ID_LOG(device), DEV_ID_LOG(remoteDevice), lineInstance, c->callid, c->answered_elsewhere ? ", answered elsewhere" : "");
+					sccp_log(DEBUGCAT_INDICATE) (VERBOSE_PREFIX_3 "%s to %s: remote connected (line instance %d, call %d%s)\n", DEV_ID_LOG(device), DEV_ID_LOG(remoteDevice), lineInstance, c->callid, c->answered_elsewhere ? ", answered elsewhere" : "");
 					if (SKINNY_CALLTYPE_INBOUND == c->calltype && remoteDevice->indicate->callhistory) {
 						//remoteDevice->indicate->callhistory(remoteDevice, lineInstance, c->callid, remoteDevice->callhistory_answered_elsewhere);
 						remoteDevice->indicate->callhistory(remoteDevice, lineInstance, c->callid, SKINNY_CALL_HISTORY_DISPOSITION_IGNORE);
@@ -575,7 +575,7 @@ static void __sccp_indicate_remote_device(constDevicePtr device, channelPtr c, l
 						remoteDevice->indicate->remoteHold(remoteDevice, lineInstance, callid, SKINNY_CALLPRIORITY_NORMAL, stateVisibility);
 						iCallInfo.Send(ci, callid, calltype, lineInstance, remoteDevice, TRUE);
 					} else {
-						sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: Skipped Remote Hold Indication for reason: %s\n", DEV_ID_LOG(device), sccp_channelstatereason2str(c->channelStateReason));
+						sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: remote hold indication skipped (reason %s)\n", DEV_ID_LOG(device), sccp_channelstatereason2str(c->channelStateReason));
 					}
 					break;
 
@@ -590,7 +590,7 @@ static void __sccp_indicate_remote_device(constDevicePtr device, channelPtr c, l
 					break;
 
 			}
-			sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: Finish Indicating state %s (%d) with reason: %s (%d) on remote device %s for channel %s\n", DEV_ID_LOG(device), sccp_channelstate2str(state), state, sccp_channelstatereason2str(c->channelStateReason), c->channelStateReason, DEV_ID_LOG(remoteDevice), c->designator);
+			sccp_log((DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: indicated %s (%d, reason %s (%d)) on remote device %s for %s\n", DEV_ID_LOG(device), sccp_channelstate2str(state), state, sccp_channelstatereason2str(c->channelStateReason), c->channelStateReason, DEV_ID_LOG(remoteDevice), c->designator);
 		}
 	}
 	iCallInfo.Destructor(&ci);

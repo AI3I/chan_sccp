@@ -1371,7 +1371,7 @@ static int sccp_show_globals(int fd, sccp_cli_totals_t *totals, struct mansessio
 	return RESULT_SUCCESS;
 }
 
-static char cli_globals_usage[] = "Usage: sccp show globals\n" "       Lists global settings for the SCCP subsystem.\n";
+static char cli_globals_usage[] =  "Usage: sccp show globals\n       Show the SCCP settings from the [general] section of sccp.conf.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "globals"
@@ -2266,7 +2266,7 @@ static int sccp_show_lines(int fd, sccp_cli_totals_t *totals, struct mansession 
 	return RESULT_SUCCESS;
 }
 
-static char cli_lines_usage[] = "Usage: sccp show lines\n" "       Lists all lines known to the SCCP subsystem.\n";
+static char cli_lines_usage[] =  "Usage: sccp show lines\n       List all SCCP lines with their devices and calls.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "lines"
@@ -2469,7 +2469,7 @@ static int sccp_show_line(int fd, sccp_cli_totals_t *totals, struct mansession *
 	return RESULT_SUCCESS;
 }
 
-static char cli_line_usage[] = "Usage: sccp show line <lineId>\n" "       List defined SCCP line settings.\n";
+static char cli_line_usage[] =  "Usage: sccp show line <line>\n       Show a line's settings and state.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "line"
@@ -2571,7 +2571,7 @@ static int sccp_show_channels(int fd, sccp_cli_totals_t *totals, struct mansessi
 	return RESULT_SUCCESS;
 }
 
-static char cli_channels_usage[] = "Usage: sccp show channels\n" "       Lists active channels for the SCCP subsystem.\n";
+static char cli_channels_usage[] =  "Usage: sccp show channels\n       List SCCP calls.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "channels"
@@ -2583,7 +2583,7 @@ SCCP_AMI_ACTION(show_channels, sccp_show_channels, "SCCPShowChannels", TRUE, "sc
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
 
 /* -------------------------------------------------------------------------------------------------------SHOW SESSIONS- */
-static char cli_sessions_usage[] = "Usage: sccp show sessions [all]\n" "	Show [All] SCCP Sessions.\n";
+static char cli_sessions_usage[] =  "Usage: sccp show sessions [all]\n       List phone connections with a registered device; all also lists the others.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "sessions"
@@ -2595,7 +2595,7 @@ SCCP_AMI_ACTION(show_sessions, sccp_cli_show_sessions, "SCCPShowSessions", TRUE,
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
     /* ---------------------------------------------------------------------------------------------SHOW_MWI_SUBSCRIPTIONS- */
     // sccp_show_mwi_subscriptions implementation moved to sccp_mwi.c, because of access to private struct
-static char cli_mwi_subscriptions_usage[] = "Usage: sccp show mwi subscriptions\n" "	Show All SCCP MWI Subscriptions.\n";
+static char cli_mwi_subscriptions_usage[] =  "Usage: sccp show mwi subscriptions\n       List voicemail (MWI) mailbox subscriptions.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "mwi", "subscriptions"
@@ -2608,7 +2608,7 @@ SCCP_AMI_ACTION(show_mwi_subscriptions, iVoicemail.showSubscriptions, "SCCPShowM
 
     /* ---------------------------------------------------------------------------------------------CONFERENCE FUNCTIONS- */
 #ifdef CS_SCCP_CONFERENCE
-static char cli_conferences_usage[] = "Usage: sccp show conferences\n" "       Lists running SCCP conferences.\n";
+static char cli_conferences_usage[] =  "Usage: sccp show conferences\n       List running SCCP conferences.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "conferences"
@@ -2618,7 +2618,7 @@ SCCP_AMI_ACTION(show_conferences, sccp_cli_show_conferences, "SCCPShowConference
 #undef CLI_COMPLETE
 #undef CLI_COMMAND
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
-static char cli_conference_usage[] = "Usage: sccp show conference\n" "       Lists running SCCP conference.\n";
+static char cli_conference_usage[] =  "Usage: sccp show conference <conference>\n       Show a conference and its participants.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "conference"
@@ -2629,7 +2629,7 @@ SCCP_AMI_ACTION(show_conference, sccp_cli_show_conference, "SCCPShowConference",
 #undef CLI_COMMAND
 #endif
     /* DOXYGEN_SHOULD_SKIP_THIS */
-static char cli_conference_command_usage[] = "Usage: sccp conference [conference_id]\n" "	Conference [EndConf | Kick | Mute | Invite | Moderate] [conference_id] [participant_id].\n";
+static char cli_conference_command_usage[] =  "Usage: sccp conference <EndConf|Kick|Mute|Invite|Moderate> <conference> [participant]\n       End a conference, or act on one of its participants (every action but\n       EndConf needs a participant).\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "conference"
@@ -2642,7 +2642,7 @@ SCCP_AMI_ACTION(conference_command, sccp_cli_conference_command, "SCCPConference
 
 #endif														/* CS_SCCP_CONFERENCE */
     /* ---------------------------------------------------------------------------------------------SHOW_HINT LINESTATES - */
-static char cli_show_hint_lineStates_usage[] = "Usage: sccp show hint linestates\n" "	Show SCCP hint line states.\n";
+static char cli_show_hint_lineStates_usage[] =  "Usage: sccp show hint line states\n       List the line states SCCP reports to Asterisk hints.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "hint", "line", "states"
@@ -2653,7 +2653,7 @@ SCCP_AMI_ACTION(show_hint_lineStates, sccp_show_hint_lineStates, "SCCPShowHintLi
 #undef CLI_COMMAND
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
     /* ---------------------------------------------------------------------------------------------SHOW_HINT LINESTATES - */
-static char cli_show_hint_subscriptions_usage[] = "Usage: sccp show hint subscriptions\n" "	Show SCCP hint subscriptions.\n";
+static char cli_show_hint_subscriptions_usage[] =  "Usage: sccp show hint subscriptions\n       List the phone buttons (BLF speeddials) subscribed to hints.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "hint", "subscriptions"
@@ -2664,7 +2664,7 @@ SCCP_AMI_ACTION(show_hint_subscriptions, sccp_show_hint_subscriptions, "SCCPShow
 #undef CLI_COMMAND
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
     /* ---------------------------------------------------------------------------------------------SHOW_REFCOUNT - */
-static char cli_show_refcount_usage[] = "Usage: sccp show refcount [show|suppress]\n" "	Show All SCCP Refcount Entries.\n";
+static char cli_show_refcount_usage[] =  "Usage: sccp show references [show|suppress]\n       List reference-counted objects. show adds an in-use column; suppress also\n       hides the objects in use.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "references"
@@ -2728,7 +2728,7 @@ static int sccp_show_softkeysets(int fd, sccp_cli_totals_t *totals, struct manse
 	return RESULT_SUCCESS;
 }
 
-static char cli_show_softkeysets_usage[] = "Usage: sccp show softkeysets\n" "	Show the configured softkey sets.\n";
+static char cli_show_softkeysets_usage[] =  "Usage: sccp show softkey sets\n       List the softkey sets and their keys for each call state.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "softkey", "sets"
@@ -3121,13 +3121,13 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 				if (v) {
 					SCCP_LIST_LOCK(&device->buttonconfig);
 					SCCP_LIST_TRAVERSE(&device->buttonconfig, config, list) {
-						sccp_log((DEBUGCAT_CONFIG + DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_4 "%s: Setting Button at Index:%d to pendingDelete\n", device->id, config->index);
+						sccp_log((DEBUGCAT_CONFIG + DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_4 "%s: button %d marked for removal\n", device->id, config->index);
 						config->pendingDelete = 1;
 					}
 					SCCP_LIST_UNLOCK(&device->buttonconfig);
 
 					change = sccp_config_applyDeviceConfiguration(device, v);
-					sccp_log((DEBUGCAT_CORE)) ("%s: device has %s\n", device->id, change ? "major changes -> restarting device" : "no major changes -> skipping restart (minor changes applied)");
+					sccp_log((DEBUGCAT_CORE)) ("%s: reloaded; %s\n", device->id, change ? "restarting it to apply the changes" : "changes applied without a restart");
 					pbx_cli(fd, "Device %s reloaded%s\n", device->id, change ? "; restarting it to apply the changes" : "");
 					if (change == SCCP_CONFIG_NEEDDEVICERESET) {
 						device->pendingUpdate = 1;
@@ -3183,7 +3183,7 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 				}
 				if (v) {
 					change = sccp_config_applyLineConfiguration(line, v);
-					sccp_log((DEBUGCAT_CORE)) ("%s: line has %s\n", line->name, change ? "major changes -> restarting attached devices" : "no major changes -> skipping restart (minor changes applied)");
+					sccp_log((DEBUGCAT_CORE)) ("%s: reloaded; %s\n", line->name, change ? "restarting its devices to apply the changes" : "changes applied without a restart");
 					pbx_cli(fd, "Line %s reloaded%s\n", line->name, change ? "; restarting its devices to apply the changes" : "");
 					if (change == SCCP_CONFIG_NEEDDEVICERESET) {
 						sccp_linedevice_t * lineDevice = NULL;
@@ -3194,7 +3194,7 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 							if (device) {
 								SCCP_LIST_LOCK(&device->buttonconfig);
 								SCCP_LIST_TRAVERSE(&device->buttonconfig, config, list) {
-									sccp_log((DEBUGCAT_CONFIG + DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_4 "%s: Setting Button at Index:%d to pendingDelete\n", device->id, config->index);
+									sccp_log((DEBUGCAT_CONFIG + DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_4 "%s: button %d marked for removal\n", device->id, config->index);
 									config->pendingDelete = 1;
 								}
 								SCCP_LIST_UNLOCK(&device->buttonconfig);
@@ -3259,13 +3259,11 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 					goto EXIT;
 				}
 
-				// load new config file
-				pbx_cli(fd, "Using config file '%s' (previous config file: '%s')\n", argv[3], GLOB(config_file_name));
 				if(!sccp_strequals(GLOB(config_file_name), filename)) {
 					force_reload = TRUE;
 				}
 			} else {
-				pbx_cli(fd, "Usage: sccp reload file [filename], filename is required\n");
+				returnval = RESULT_SHOWUSAGE;
 				goto EXIT;
 			}
 		} else {
@@ -3552,7 +3550,7 @@ static int sccp_show_version(int fd, int argc, char *argv[])
 	return RESULT_SUCCESS;
 }
 
-static char show_version_usage[] = "Usage: sccp show version\n" "       Show SCCP version details\n";
+static char show_version_usage[] =  "Usage: sccp show version\n       Show the chan_sccp version.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "version"
@@ -4314,8 +4312,7 @@ static int sccp_show_tones(int fd, int argc, char *argv[])
 	return RESULT_SUCCESS;
 }
 
-static char cli_show_tones_usage[] = "Usage: sccp show tones\n"
-	"List SCCP tone identifiers in hexadecimal, including call progress and DTMF tones.\n";
+static char cli_show_tones_usage[] =  "Usage: sccp show tones\n       List the SCCP tones with their hexadecimal codes, including call progress\n       and DTMF tones.\n";
 #define CLI_COMMAND "sccp", "show", "tones"
 #define CLI_COMPLETE SCCP_CLI_NULL_COMPLETER
 CLI_ENTRY(cli_show_tones, sccp_show_tones, "Show SCCP tone identifiers", cli_show_tones_usage, FALSE)

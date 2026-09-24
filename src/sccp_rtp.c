@@ -124,7 +124,7 @@ boolean_t sccp_rtp_createServer(constDevicePtr d, channelPtr c, sccp_rtp_type_t 
 
 	if (rtp->instance) {
 		if (rtp->instance_active) {
-			sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: we already have a %s server, we use this one\n", c->designator, sccp_rtp_type2str(type));
+			sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: reusing the existing %s RTP instance\n", c->designator, sccp_rtp_type2str(type));
 			return TRUE;
 		} else {
 			sccp_rtp_destroy(c);
@@ -158,8 +158,8 @@ boolean_t sccp_rtp_createServer(constDevicePtr d, channelPtr c, sccp_rtp_type_t 
 	char buf[NI_MAXHOST + NI_MAXSERV];
 	sccp_copy_string(buf, sccp_netsock_stringify(phone_remote), sizeof(buf));
 	boolean_t isMappedIPv4 = sccp_netsock_ipv4_mapped(phone_remote, phone_remote);
-	sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: (sccp_rtp_createRtpServer) setting new phone %s destination to: %s, family:%s, mapped: %s\n", c->designator, sccp_rtp_type2str(type), buf,
-			       sccp_netsock_is_IPv4(phone_remote) ? "IPv4" : "IPv6", isMappedIPv4 ? "True" : "False");
+	sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: phone %s destination set to %s (family %s, mapped %s)\n", c->designator, sccp_rtp_type2str(type), buf,
+			       sccp_netsock_is_IPv4(phone_remote) ? "IPv4" : "IPv6", isMappedIPv4 ? "yes" : "no");
 
 	return rtp->instance_active;
 }
@@ -171,12 +171,12 @@ int sccp_rtp_requestRTPPorts(constDevicePtr device, channelPtr channel)
 {
 	pbx_assert(device != NULL && channel != NULL);
 
-	sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: (requestRTPPort) request rtp port from phone\n", device->id);
+	sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: asking the phone for its RTP port\n", device->id);
 	device->protocol->sendPortRequest(device, channel, SKINNY_MEDIA_TRANSPORT_TYPE_RTP, SKINNY_MEDIA_TYPE_AUDIO);
 
 #ifdef CS_SCCP_VIDEO
 	if (sccp_channel_getVideoMode(channel) != SCCP_VIDEO_MODE_OFF && sccp_device_isVideoSupported(device)) {
-		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: (requestRTPPort) request vrtp port from phone\n", device->id);
+		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: asking the phone for its video RTP port\n", device->id);
 		if (channel->rtp.video.instance || sccp_rtp_createServer(device, channel, SCCP_RTP_VIDEO)) {
 			device->protocol->sendPortRequest(device, channel, SKINNY_MEDIA_TRANSPORT_TYPE_RTP, SKINNY_MEDIA_TYPE_MAIN_VIDEO);
 		}
@@ -197,13 +197,13 @@ void sccp_rtp_stop(constChannelPtr channel)
 	if (iPbx.rtp_stop) {
 		sccp_rtp_t * const audio = (sccp_rtp_t *)&(channel->rtp.audio);                                        // discard const
 		if (audio->instance && audio->instance_active) {
-			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_4 "%s: Stopping PBX audio rtp transmission on channel %s\n", channel->currentDeviceId, channel->designator);
+			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_4 "%s: stopping Asterisk audio RTP for %s\n", channel->currentDeviceId, channel->designator);
 			iPbx.rtp_stop(audio->instance);
 			audio->instance_active = FALSE;
 		}
 		sccp_rtp_t * const video = (sccp_rtp_t *)&(channel->rtp.video);                                        // discard const
 		if (video->instance && video->instance_active) {
-			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_4 "%s: Stopping PBX video rtp transmission on channel %s\n", channel->currentDeviceId, channel->designator);
+			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_4 "%s: stopping Asterisk video RTP for %s\n", channel->currentDeviceId, channel->designator);
 			iPbx.rtp_stop(video->instance);
 			video->instance_active = FALSE;
 		}
@@ -222,7 +222,7 @@ void sccp_rtp_destroy(constChannelPtr c)
 	sccp_rtp_t * video = (sccp_rtp_t *)&(c->rtp.video);
 
 	if (audio->instance) {
-		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: destroying PBX rtp server on channel %s\n", c->currentDeviceId, c->designator);
+		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: destroying Asterisk audio RTP instance of %s\n", c->currentDeviceId, c->designator);
 		if (audio->instance_active) {
 			iPbx.rtp_stop(audio->instance);
 		}
@@ -231,7 +231,7 @@ void sccp_rtp_destroy(constChannelPtr c)
 	}
 
 	if (video->instance) {
-		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: destroying PBX vrtp server on channel %s\n", c->currentDeviceId, c->designator);
+		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: destroying Asterisk video RTP instance of %s\n", c->currentDeviceId, c->designator);
 		if (video->instance_active) {
 			iPbx.rtp_stop(video->instance);
 		}
@@ -315,13 +315,13 @@ void sccp_rtp_set_peer(constChannelPtr c, rtpPtr rtp, struct sockaddr_storage * 
 {
 	/* validate socket */
 	if (sccp_netsock_getPort(new_peer) == 0) {
-		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_2 "%s: ( sccp_rtp_set_peer ) remote information are invalid, don't change anything\n", c->currentDeviceId);
+		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_2 "%s: RTP peer not changed: the new address is not valid\n", c->currentDeviceId);
 		return;
 	}
 
 	/* check if we have new information, which requires us to update */
 	if (sccp_netsock_equals(new_peer, &rtp->phone_remote)) {
-		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_2 "%s: (sccp_rtp_set_peer) remote information is equal to the current info, ignore change\n", c->currentDeviceId);
+		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_2 "%s: RTP peer unchanged\n", c->currentDeviceId);
 		return;
 	}
 
@@ -331,7 +331,7 @@ void sccp_rtp_set_peer(constChannelPtr c, rtpPtr rtp, struct sockaddr_storage * 
 	if (sccp_rtp_getState(rtp, SCCP_RTP_TRANSMISSION)) {
 		/* Shutdown any early-media or previous media on re-invite */
 		/*! \todo we should wait for the acknowledgement to get back. We don't have a function/procedure in place to do this at this moment in time (sccp_dev_send_wait) */
-		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_2 "%s: (sccp_rtp_set_peer) Restart media transmission on channel %d\n", c->currentDeviceId, c->callid);
+		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_2 "%s: restarting media transmission for call %d\n", c->currentDeviceId, c->callid);
 
 		/*! \todo we should check if this is a video or audio rtp */
 		sccp_channel_updateMediaTransmission(c);
@@ -348,7 +348,7 @@ void sccp_rtp_set_phone(constChannelPtr c, rtpPtr rtp, struct sockaddr_storage *
 {
 	/* validate socket */
 	if (sccp_netsock_getPort(new_peer) == 0) {
-		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_2 "%s: (sccp_rtp_set_phone) remote information are invalid, don't change anything\n", c->currentDeviceId);
+		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_2 "%s: phone RTP address not changed: the new address is not valid\n", c->currentDeviceId);
 		return;
 	}
 
@@ -371,7 +371,7 @@ void sccp_rtp_set_phone(constChannelPtr c, rtpPtr rtp, struct sockaddr_storage *
 		/*! \todo if we enable this, we get an audio issue when resume on the same device, so we need to force asterisk to update -MC */
 		/*
 		if (sccp_netsock_equals(new_peer, &c->rtp.audio.phone)) {
-			sccp_log((DEBUGCAT_RTP)) (VERBOSE_PREFIX_2 "%s: (sccp_rtp_set_phone) remote information are equal to the current one, ignore change\n", c->currentDeviceId);
+			sccp_log((DEBUGCAT_RTP)) (VERBOSE_PREFIX_2 "%s: phone RTP address unchanged\n", c->currentDeviceId);
 			return;
 		}
 		*/
@@ -386,9 +386,9 @@ void sccp_rtp_set_phone(constChannelPtr c, rtpPtr rtp, struct sockaddr_storage *
 		sccp_copy_string(remoteIpStr, sccp_netsock_stringify(&rtp->phone_remote), sizeof(remoteIpStr));
 		sccp_copy_string(phoneIpStr, sccp_netsock_stringify(&rtp->phone), sizeof(phoneIpStr));
 		if (device->nat >= SCCP_NAT_ON) {
-			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: Tell PBX   to send RTP/UDP media from %s to %s (NAT:%s)\n", DEV_ID_LOG(device), remoteIpStr, phoneIpStr, peerIpStr);
+			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: Asterisk sends RTP from %s to %s (NAT %s)\n", DEV_ID_LOG(device), remoteIpStr, phoneIpStr, peerIpStr);
 		} else {
-			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: Tell PBX   to send RTP/UDP media from %s to %s (NoNat)\n", DEV_ID_LOG(device), remoteIpStr, phoneIpStr);
+			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: Asterisk sends RTP from %s to %s (no NAT)\n", DEV_ID_LOG(device), remoteIpStr, phoneIpStr);
 		}
 	}
 }
@@ -406,19 +406,19 @@ int sccp_rtp_updateNatRemotePhone(constChannelPtr c, rtpPtr rtp)
 		uint16_t usFamily     = (sccp_netsock_is_IPv6(&sus) && !sccp_netsock_is_mapped_IPv4(&sus)) ? AF_INET6 : AF_INET;
 		uint16_t remoteFamily = (sccp_netsock_is_IPv6(phone_remote) && !sccp_netsock_is_mapped_IPv4(phone_remote)) ? AF_INET6 : AF_INET;
 
-		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: checkNat us: %s, usFamily: %s\n", d->id, sccp_netsock_stringify(&sus), (usFamily == AF_INET6) ? "IPv6" : "IPv4");
-		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: checkNat remote: %s, remoteFamily: %s\n", d->id, sccp_netsock_stringify(phone_remote), (remoteFamily == AF_INET6) ? "IPv6" : "IPv4");
+		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: NAT check: local %s (%s)\n", d->id, sccp_netsock_stringify(&sus), (usFamily == AF_INET6) ? "IPv6" : "IPv4");
+		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: NAT check: remote %s (%s)\n", d->id, sccp_netsock_stringify(phone_remote), (remoteFamily == AF_INET6) ? "IPv6" : "IPv4");
 		if (d->nat >= SCCP_NAT_ON) {
 			uint16_t port = sccp_rtp_getServerPort(rtp);                                                            // get rtp server port
 			if (!sccp_netsock_getExternalAddr(phone_remote, remoteFamily)) {                                        // get externip/externhost ip-address (PBX behind NAT Firewall)
-				sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_2 "%s: no externip/externhost set, falling back to using incoming interface address:%s\n", d->id, sccp_netsock_stringify(&sus));
+				sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_2 "%s: externip/externhost not set; using the incoming interface address %s\n", d->id, sccp_netsock_stringify(&sus));
 				memcpy(phone_remote, &sus, sizeof(struct sockaddr_storage));
 			}
 			if (usFamily != remoteFamily) {
 				sccp_netsock_ipv4_mapped(phone_remote, phone_remote);                                        // we need this to convert mapped IPv4 to real IPv4 address
 			}
 			sccp_netsock_setPort(phone_remote, port);
-			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: (updateNatRemotePhone) new remote: %s, new remoteFamily: %s\n", d->id, sccp_netsock_stringify(phone_remote), (remoteFamily == AF_INET6) ? "IPv6" : "IPv4");
+			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: remote address now %s (%s)\n", d->id, sccp_netsock_stringify(phone_remote), (remoteFamily == AF_INET6) ? "IPv6" : "IPv4");
 			res = 1;
 		}
 	}

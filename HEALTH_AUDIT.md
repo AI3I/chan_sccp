@@ -1,5 +1,37 @@
 # chan_sccp-modern Health Audit
 
+## Changed — second sweep of log and CLI text (2026-09-24)
+
+Every `sccp_log` debug message (about 1,300) was rewritten, not just the
+`pbx_log` ones from the first pass: no function-name tags ("(handle_keypad)",
+"(%s)" + `__func__`/`__PRETTY_FUNCTION__`), "->"/"=>" arrows, "###",
+"Handle X Stimulus", ALL-CAPS state words or made-up compound words;
+lower-case facts in the form "<device/call>: <what happened>". A script checked
+that every rewrite keeps the same printf conversions in the same order, and
+argument order was checked by hand; the compiler checks the types.
+
+All 635 `pbx_log` messages were read again; the leftovers fixed include
+"SCCP Handle Message … bytes length", "Unhandled SCCP Message", "You need at
+least 2 participant", "Call from … rejected because", the refcount self-test
+output and `SS_Memory_Allocation_Error` ("%s: out of memory; operation not
+done"). CLI usage texts that still named old commands (`show hint
+linestates`, `show softkeysets`, `show refcount`) or used tab indentation
+were rewritten, and `sccp reload file` no longer prints its own usage line.
+
+Bugs found in the message arguments:
+- The OpenReceiveChannel debug line labelled the codec number "payload"; a
+  literal rewrite would have added a conversion with no argument.
+- The RTP peer debug line printed the direct-media flag in the "ACL allows"
+  slot; the connected-line debug line printed call direction and channel name
+  swapped; the session-close line printed a string with %p.
+- The `CS_ASTOBJ_REFCOUNT` refcount trace used an undefined debug category,
+  a misspelled variable and wrong arguments (that variant did not compile).
+- Phone prompts were printed raw in debug output (label codes showed as
+  garbage); they are now rendered as "[Hold]" etc.
+
+Validation: wadsworth, full `alltests.sh all` with most debug categories on;
+build clean with `-Wall -Wformat=2`; `make check` passes.
+
 ## Fixed — graceful shutdown and the four open decisions (2026-09-24)
 
 Graceful shutdown (`core stop|restart gracefully`): Asterisk already waits

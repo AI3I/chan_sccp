@@ -292,9 +292,9 @@ static void log_hangup_info(const char * hanguptype, constChannelPtr c, PBX_CHAN
 			       " - runningPbxThread: %s\n"
 			       " - pbx_channel_is_bridged: %s\n"
 			       " - pbx_channel_pbx: %s\n",
-			       c->designator, hanguptype, pbx_channel ? pbx_channel_name(pbx_channel) : "", pbx_channel ? pbx_test_flag(pbx_channel_flags(pbx_channel), AST_FLAG_ZOMBIE) ? "YES" : "NO" : "",
-			       pbx_channel ? pbx_test_flag(pbx_channel_flags(pbx_channel), AST_FLAG_BLOCKING) ? "YES" : "NO" : "", pbx_channel ? pbx_check_hangup_locked(pbx_channel) ? "YES" : "NO" : "",
-			       c->isRunningPbxThread ? "YES" : "NO", iPbx.channel_is_bridged((channelPtr)c) ? "YES" : "NO", pbx_channel ? pbx_channel_pbx(pbx_channel) ? "YES" : "NO" : "");
+			       c->designator, hanguptype, pbx_channel ? pbx_channel_name(pbx_channel) : "", pbx_channel ? pbx_test_flag(pbx_channel_flags(pbx_channel), AST_FLAG_ZOMBIE) ? "yes" : "no" : "",
+			       pbx_channel ? pbx_test_flag(pbx_channel_flags(pbx_channel), AST_FLAG_BLOCKING) ? "yes" : "no" : "", pbx_channel ? pbx_check_hangup_locked(pbx_channel) ? "yes" : "no" : "",
+			       c->isRunningPbxThread ? "yes" : "no", iPbx.channel_is_bridged((channelPtr)c) ? "yes" : "no", pbx_channel ? pbx_channel_pbx(pbx_channel) ? "yes" : "no" : "");
 #if CS_REFCOUNT_DEBUG
 	AUTO_RELEASE(sccp_device_t, d, sccp_channel_getDevice(c));
 	if(d) {
@@ -324,12 +324,12 @@ static boolean_t sccp_astgenwrap_handleHangup(constChannelPtr channel, const cha
 				AUTO_RELEASE(sccp_device_t, d, sccp_channel_getDevice(c));
 				if(d) {
 					sccp_indicate(d, c, SCCP_CHANNELSTATE_ONHOOK);
-					sccp_log(DEBUGCAT_PBX)("%s: (%s): Onhook Only\n", c->designator, hanguptype);
+					sccp_log(DEBUGCAT_PBX)("%s: %s: on hook only\n", c->designator, hanguptype);
 				}
 				if (iPbx.dumpchan) {
 					char * buf = sccp_alloca(sizeof(char) * 2048);
 					iPbx.dumpchan(pbx_channel, buf, 2048);
-					sccp_log(DEBUGCAT_PBX)("SCCP: (dumpchan) %s", buf);
+					sccp_log(DEBUGCAT_PBX)("SCCP: channel dump: %s", buf);
 				}
 				res = TRUE;
 				break;
@@ -337,13 +337,13 @@ static boolean_t sccp_astgenwrap_handleHangup(constChannelPtr channel, const cha
 			pbx_channel_lock(pbx_channel);
 			if(pbx_check_hangup(pbx_channel)) {
 				// already being hungup
-				sccp_log(DEBUGCAT_PBX)("%s: (%s): Already being hungup, giving up\n", c->designator, hanguptype);
+				sccp_log(DEBUGCAT_PBX)("%s: %s: already hanging up\n", c->designator, hanguptype);
 				res = FALSE;
 				break;
 			}
 			if(c->isRunningPbxThread || pbx_channel_pbx(pbx_channel)) {
 				// outbound / call initiator (running pbx_pbx_start)
-				sccp_log(DEBUGCAT_PBX)("%s: (%s): Hangup Queued\n", c->designator, hanguptype);
+				sccp_log(DEBUGCAT_PBX)("%s: %s: hangup queued\n", c->designator, hanguptype);
 				pbx_channel_unlock(pbx_channel);
 				res = ast_queue_hangup(pbx_channel) ? FALSE : TRUE;
 				res = TRUE;
@@ -351,7 +351,7 @@ static boolean_t sccp_astgenwrap_handleHangup(constChannelPtr channel, const cha
 			}
 			if(SCCP_CHANNELSTATE_IsSettingUp(c->state) || SCCP_CHANNELSTATE_IsConnected(c->state) || iPbx.channel_is_bridged(c)) {
 				// inbound / receiving call
-				sccp_log(DEBUGCAT_PBX)("%s: (%s): Softhangup\n", c->designator, hanguptype);
+				sccp_log(DEBUGCAT_PBX)("%s: %s: soft hangup\n", c->designator, hanguptype);
 				ast_softhangup(pbx_channel, AST_SOFTHANGUP_DEV);
 				pbx_channel_unlock(pbx_channel);
 				res = TRUE;
@@ -359,7 +359,7 @@ static boolean_t sccp_astgenwrap_handleHangup(constChannelPtr channel, const cha
 			}
 			if(pbx_test_flag(pbx_channel_flags(pbx_channel), AST_FLAG_BLOCKING)) { /* not sure if required */
 				// blocking while being the initiator of the call, strange
-				sccp_log(DEBUGCAT_PBX)("%s: (%s): Blocker detected, SIGURG signal sent\n", c->designator, hanguptype);
+				sccp_log(DEBUGCAT_PBX)("%s: %s: blocked thread found; SIGURG sent\n", c->designator, hanguptype);
 				pthread_kill(pbx_channel_blocker(pbx_channel), SIGURG);
 				sched_yield();
 				pbx_safe_sleep(pbx_channel, 1000);
@@ -369,7 +369,7 @@ static boolean_t sccp_astgenwrap_handleHangup(constChannelPtr channel, const cha
 			}
 			if(SCCP_CHANNELSTATE_Idling(c->state) || SCCP_CHANNELSTATE_IsDialing(c->state) || SCCP_CHANNELSTATE_IsTerminating(c->state)) {
 				/* hard hangup for all partially started calls */
-				sccp_log(DEBUGCAT_PBX)("%s: (%s): Hard Hangup\n", c->designator, hanguptype);
+				sccp_log(DEBUGCAT_PBX)("%s: %s: hard hangup\n", c->designator, hanguptype);
 				pbx_channel_unlock(pbx_channel);
 				ast_hangup(pbx_channel);
 				res = TRUE;
@@ -497,7 +497,7 @@ void sccp_astwrap_redirectedUpdate(sccp_channel_t * channel, const void *data, s
 	struct ast_party_id redirecting_from = pbx_channel_redirecting_effective_from(ast);
 	struct ast_party_id redirecting_to = pbx_channel_redirecting_effective_to(ast);
 
-	sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_3 "%s: Got redirecting update. From %s<%s>; To %s<%s>\n", pbx_channel_name(ast),
+	sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_3 "%s: redirecting update from %s <%s> to %s <%s>\n", pbx_channel_name(ast),
 				(redirecting_from.name.valid && redirecting_from.name.str) ? redirecting_from.name.str : "", 
 				(redirecting_from.number.valid && redirecting_from.number.str) ? redirecting_from.number.str : "", 
 				(redirecting_to.name.valid && redirecting_to.name.str) ? redirecting_to.name.str : "",
@@ -528,11 +528,11 @@ void sccp_astwrap_connectedline(sccp_channel_t * channel, const void *data, size
 	int changes = 0;
 	sccp_callinfo_t *const callInfo = sccp_channel_getCallInfo(channel);
 
-	sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_3 "%s: %s call Got connected line update, connected.id.number=%s, connected.id.name=%s, source=%s\n",
-		channel->calltype == SKINNY_CALLTYPE_INBOUND ? "INBOUND" : "OUTBOUND",
+	sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_3 "%s call %s: connected line update, number %s, name %s, source %s\n",
+		channel->calltype == SKINNY_CALLTYPE_INBOUND ? "inbound" : "outbound",
 		pbx_channel_name(ast), 
-		pbx_channel_connected_id(ast).number.str ? pbx_channel_connected_id(ast).number.str : "(nil)", 
-		pbx_channel_connected_id(ast).name.str ? pbx_channel_connected_id(ast).name.str : "(nil)", 
+		pbx_channel_connected_id(ast).number.str ? pbx_channel_connected_id(ast).number.str : "(none)", 
+		pbx_channel_connected_id(ast).name.str ? pbx_channel_connected_id(ast).name.str : "(none)", 
 		pbx_connected_line_source_name(pbx_channel_connected_source(ast))
 	);
 
@@ -633,7 +633,7 @@ void sccp_astwrap_sendRedirectedUpdate(const sccp_channel_t * channel, const cha
 	struct ast_party_redirecting redirecting;
 	struct ast_set_party_redirecting update_redirecting;
 
-	sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_3 "%s: Send Redirected Update. From %s<%s>, To: %s<%s>\n", channel->designator, fromName, fromNumber, toName, toNumber);
+	sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_3 "%s: sending redirecting update from %s <%s> to %s <%s>\n", channel->designator, fromName, fromNumber, toName, toNumber);
 
 	ast_party_redirecting_init(&redirecting);
 	memset(&update_redirecting, 0, sizeof(update_redirecting));
@@ -674,7 +674,7 @@ int sccp_parse_alertinfo(PBX_CHANNEL_TYPE *pbx_channel, skinny_ringtype_t *ringe
 	int res = 0;
 	const char *alert_info = pbx_builtin_getvar_helper(pbx_channel, "ALERT_INFO");
 	if (alert_info && !sccp_strlen_zero(alert_info)) {
-		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Found ALERT_INFO=%s\n", pbx_channel_name(pbx_channel), alert_info);
+		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: ALERT_INFO=%s\n", pbx_channel_name(pbx_channel), alert_info);
 		if (!strncasecmp(alert_info, "bellcore-dr", 11) && strlen(alert_info) >= 12) {
 			switch(alert_info[11]) {
 				case '1': 
@@ -713,7 +713,7 @@ int sccp_parse_auto_answer(PBX_CHANNEL_TYPE * pbx_channel, sccp_autoanswer_t * a
 	int res = 0;
 	const char * auto_answer = pbx_builtin_getvar_helper(pbx_channel, "AUTO_ANSWER");
 	if (auto_answer && !sccp_strlen_zero(auto_answer)) {
-		sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: Found AUTO_ANSWER=%s\n", pbx_channel_name(pbx_channel), auto_answer);
+		sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: AUTO_ANSWER=%s\n", pbx_channel_name(pbx_channel), auto_answer);
 		if (sccp_strcaseequals(auto_answer, "1way") || sccp_strcaseequals(auto_answer, "1w")) {
 			*autoanswer_type = SCCP_AUTOANSWER_1W;
 		} else if (sccp_strcaseequals(auto_answer, "2way") || sccp_strcaseequals(auto_answer, "2w")) {
@@ -1070,11 +1070,11 @@ int sccp_wrapper_sendDigits(const sccp_channel_t * channel, const char *digits)
 	PBX_CHANNEL_TYPE *pbx_channel = channel->owner;
 	PBX_FRAME_TYPE f = ast_null_frame;
 
-	sccp_log((DEBUGCAT_HIGH)) (VERBOSE_PREFIX_3 "%s: Sending digits '%s'\n", (char *) channel->currentDeviceId, digits);
+	sccp_log((DEBUGCAT_HIGH)) (VERBOSE_PREFIX_3 "%s: sending digits '%s'\n", (char *) channel->currentDeviceId, digits);
 	// We don't just call sccp_pbx_senddigit due to potential overhead, and issues with locking
 	f.src = "SCCP";
 	while (maxdigits-- && *digits != '\0') {
-		sccp_log((DEBUGCAT_HIGH)) (VERBOSE_PREFIX_3 "%s: Sending digit %c\n", (char *) channel->currentDeviceId, *digits);
+		sccp_log((DEBUGCAT_HIGH)) (VERBOSE_PREFIX_3 "%s: sending digit %c\n", (char *) channel->currentDeviceId, *digits);
 
 		f.frametype = AST_FRAME_DTMF_END;								// Sending only the dmtf will force asterisk to start with DTMF_BEGIN and schedule the DTMF_END
 		f.subclass.integer = *digits;
@@ -1090,7 +1090,7 @@ int sccp_wrapper_sendDigits(const sccp_channel_t * channel, const char *digits)
 int sccp_wrapper_sendDigit(const sccp_channel_t * channel, const char digit)
 {
 	const char digits[] = { digit, '\0' };
-	sccp_log((DEBUGCAT_HIGH)) (VERBOSE_PREFIX_3 "%s: got a single digit '%c' -> '%s'\n", channel->currentDeviceId, digit, digits);
+	sccp_log((DEBUGCAT_HIGH)) (VERBOSE_PREFIX_3 "%s: single digit '%c' as '%s'\n", channel->currentDeviceId, digit, digits);
 	return sccp_wrapper_sendDigits(channel, digits);
 }
 
@@ -1187,7 +1187,7 @@ enum ast_pbx_result pbx_pbx_start(PBX_CHANNEL_TYPE * pbx_channel)
 			} while (!pbx_channel_pbx(pbx_channel) && !pbx_check_hangup(pbx_channel));
 
 			if (pbx_channel_pbx(pbx_channel) && !pbx_check_hangup(pbx_channel)) {
-				sccp_log(DEBUGCAT_PBX) (VERBOSE_PREFIX_3 "%s: (pbx_pbx_start) autoloop has started, set requestHangup = requestQueueHangup\n", channel->designator);
+				sccp_log(DEBUGCAT_PBX) (VERBOSE_PREFIX_3 "%s: dialplan loop started; hangups are now queued\n", channel->designator);
 				channel->isRunningPbxThread = TRUE;
 				channel->hangupRequest = sccp_astgenwrap_requestQueueHangup;
 			} else {

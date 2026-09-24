@@ -48,7 +48,7 @@ void sccp_dump_packet(const unsigned char * const messagebuffer, int len)
 	static const int numcolumns = 16;									// number output columns
 
 	if (len <= 0 || !messagebuffer || !sccp_strlen((const char *) messagebuffer)) {				// safe quard
-		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_1 "SCCP: messagebuffer is not valid. exiting sccp_dump_packet\n");
+		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_1 "SCCP: packet dump skipped: no message buffer\n");
 		return;
 	}
 	int col = 0;
@@ -254,7 +254,7 @@ void sccp_util_featureStorageBackend(const sccp_event_t * const event)
 		return;
 	}
 
-	sccp_log((DEBUGCAT_EVENT + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: StorageBackend got Feature Change Event: %s(%d)\n", DEV_ID_LOG(device), sccp_feature_type2str(event->featureChanged.featureType), event->featureChanged.featureType);
+	sccp_log((DEBUGCAT_EVENT + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: saving feature change %s (%d) to the Asterisk database\n", DEV_ID_LOG(device), sccp_feature_type2str(event->featureChanged.featureType), event->featureChanged.featureType);
 	snprintf(family, sizeof(family), "SCCP/%s", device->id);
 
 	switch (event->featureChanged.featureType) {
@@ -277,7 +277,7 @@ void sccp_util_featureStorageBackend(const sccp_event_t * const event)
 						res |= iPbx.feature_removeFromDatabase(cfwdDeviceLineStore, cfwdstr);
 						res |= iPbx.feature_removeFromDatabase(cfwdLineDeviceStore, cfwdstr);
 					}
-					sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: all cfwd cleared from db (res:%d)\n", DEV_ID_LOG(device), res);
+					sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: all call forwards removed from the database (result %d)\n", DEV_ID_LOG(device), res);
 				} else {
 					sccp_cfwd_t cfwd = sccp_feature2cfwd(event->featureChanged.featureType);
 					// const char * cfwdstr = sccp_cfwd2str(cfwd);
@@ -285,11 +285,11 @@ void sccp_util_featureStorageBackend(const sccp_event_t * const event)
 					snprintf(cfwdstr, 14, "cfwd%s", sccp_cfwd2str(cfwd));
 					res |= iPbx.feature_removeFromDatabase(cfwdDeviceLineStore, cfwdstr);
 					res |= iPbx.feature_removeFromDatabase(cfwdLineDeviceStore, cfwdstr);
-					sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: db clear %s %s (res:%d))\n", DEV_ID_LOG(device), cfwdDeviceLineStore, cfwdstr, res);
+					sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: database delete %s %s (result %d)\n", DEV_ID_LOG(device), cfwdDeviceLineStore, cfwdstr, res);
 					if(ld->cfwd[cfwd].enabled) {
 						res |= iPbx.feature_addToDatabase(cfwdDeviceLineStore, cfwdstr, ld->cfwd[cfwd].number);
 						res |= iPbx.feature_addToDatabase(cfwdLineDeviceStore, cfwdstr, ld->cfwd[cfwd].number);
-						sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: db put %s %s (res:%d)\n", DEV_ID_LOG(device), cfwdDeviceLineStore, cfwdstr, res);
+						sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: database put %s %s (result %d)\n", DEV_ID_LOG(device), cfwdDeviceLineStore, cfwdstr, res);
 					}
 				}
 			}
@@ -298,14 +298,14 @@ void sccp_util_featureStorageBackend(const sccp_event_t * const event)
 			// sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: change dnd to %s\n", DEV_ID_LOG(device), device->dndFeature.status ? "on" : "off");
 			if (device->dndFeature.previousStatus != device->dndFeature.status) {
 				if (!device->dndFeature.status) {
-					sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: change dnd to off\n", DEV_ID_LOG(device));
+					sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: DND off saved\n", DEV_ID_LOG(device));
 					iPbx.feature_removeFromDatabase(family, "dnd");
 				} else {
 					if (device->dndFeature.status == SCCP_DNDMODE_SILENT) {
-						sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: change dnd to silent\n", DEV_ID_LOG(device));
+						sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: DND silent saved\n", DEV_ID_LOG(device));
 						iPbx.feature_addToDatabase(family, "dnd", "silent");
 					} else {
-						sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: change dnd to reject\n", DEV_ID_LOG(device));
+						sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: DND reject saved\n", DEV_ID_LOG(device));
 						iPbx.feature_addToDatabase(family, "dnd", "reject");
 					}
 				}
@@ -734,7 +734,7 @@ static int apply_netmask(const struct sockaddr_storage *netaddr, const struct so
 	char *straddr = pbx_strdupa(sccp_netsock_stringify_addr(netaddr));
 	char *strmask = pbx_strdupa(sccp_netsock_stringify_addr(netmask));
 
-	sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: (apply_netmask) applying netmask to %s/%s\n", straddr, strmask);
+	sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: applying netmask %s/%s\n", straddr, strmask);
 
 	if (netaddr->ss_family == AF_INET) {
 		struct sockaddr_in result4 = { 0, };
@@ -760,7 +760,7 @@ static int apply_netmask(const struct sockaddr_storage *netaddr, const struct so
 		/* Unsupported address scheme */
 		res = -1;
 	}
-	sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: (apply_netmask) result applied netmask %s\n", sccp_netsock_stringify_addr(result));
+	sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: netmask result %s\n", sccp_netsock_stringify_addr(result));
 
 	return res;
 }
@@ -917,7 +917,7 @@ int sccp_sockaddr_storage_parse(struct sockaddr_storage *addr, const char *str, 
 
 	if (addr) {
 		memcpy(addr, res->ai_addr, (res->ai_family == AF_INET6) ? sizeof(struct sockaddr_in6) : sizeof(struct sockaddr_in));
-		sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: (sccp_sockaddr_storage_parse) addr:%s\n", sccp_netsock_stringify_addr(addr));
+		sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: parsed address %s\n", sccp_netsock_stringify_addr(addr));
 	}
 
 	freeaddrinfo(res);
@@ -1036,7 +1036,7 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 		return ret;
 	}
 	/*
-	   sccp_log(DEBUGCAT_HIGH)(VERBOSE_PREFIX_2 "SCCP: (sccp_append_ha) netaddr:%s\n", sccp_netsock_stringify_addr(&ha->netaddr));
+	   sccp_log(DEBUGCAT_HIGH)(VERBOSE_PREFIX_2 "SCCP: deny/permit address %s\n", sccp_netsock_stringify_addr(&ha->netaddr));
 	 */
 	/* If someone specifies an IPv4-mapped IPv6 address,
 	 * we just convert this to an IPv4 ACL
@@ -1053,7 +1053,7 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 		int mask_is_v4 = 0;
 
 		/* Mask is of x.x.x.x or x:x:x:x:x:x:x:x variety */
-		sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: (sccp_append_ha) mask:%s\n", mask);
+		sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: deny/permit mask %s\n", mask);
 		if (!sccp_sockaddr_storage_parse(&ha->netmask, mask, PARSE_PORT_FORBID)) {
 			pbx_log(LOG_WARNING, "SCCP: deny/permit entry %s: '%s' is not a valid netmask; entry ignored\n", address, mask);
 			sccp_free_ha(ha);
@@ -1062,7 +1062,7 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 			}
 			return ret;
 		}
-		sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: (sccp_append_ha) strmask:%s, netmask:%s\n", mask, sccp_netsock_stringify_addr(&ha->netmask));
+		sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: deny/permit mask %s = %s\n", mask, sccp_netsock_stringify_addr(&ha->netmask));
 		/* If someone specifies an IPv4-mapped IPv6 netmask,
 		 * we just convert this to an IPv4 ACL
 		 */
@@ -1110,7 +1110,7 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 		ret = ha;
 	}
 
-	sccp_log (DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "%s/%s sense %d appended to acl for peer\n", sccp_netsock_stringify_addr (&ha->netaddr), sccp_netsock_stringify_addr (&ha->netmask), ha->sense);
+	sccp_log (DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "%s/%s (sense %d) added to the access list\n", sccp_netsock_stringify_addr (&ha->netaddr), sccp_netsock_stringify_addr (&ha->netmask), ha->sense);
 
 	return ret;
 }

@@ -111,7 +111,7 @@ static int tls_error_result(int ssl_error, int saved_errno)
 
 static SSL_CTX * create_context(void)
 {
-	sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport create context...\n");
+	sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS: creating context\n");
 	// const SSL_METHOD * method = TLS_server_method();
 	const SSL_METHOD * method = SSLv23_method();
 	SSL_CTX *          ctx    = SSL_CTX_new(method);
@@ -128,7 +128,7 @@ static SSL_CTX * create_context(void)
 static boolean_t configure_context(SSL_CTX * ctx)
 {
 	SSL_CTX_set_ecdh_auto(ctx, 1);
-	sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport configure context...\n");
+	sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS: configuring context\n");
 
 	char * cert_file = NULL;
 	if (GLOB(cert_file)) {
@@ -160,7 +160,7 @@ static boolean_t configure_context(SSL_CTX * ctx)
 }
 const sccp_transport_t * const tls_init(void)
 {
-	sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport Initializing...\n");
+	sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS: initializing\n");
 	if (sslctx) {
 		return &tlstransport;
 	}
@@ -356,7 +356,7 @@ static int tls_close(sccp_socket_connection_t * sc)
 
 static const sccp_transport_t * const tls_destroy(uint8_t h)
 {
-	sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport destroy...\n");
+	sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS: destroying\n");
 	SSL_CTX_free(sslctx);
 	sslctx = NULL;
 	return NULL;

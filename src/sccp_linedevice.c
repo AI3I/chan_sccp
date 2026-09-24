@@ -38,7 +38,7 @@ static int __sccp_lineDevice_destroy(const void * ptr)
 {
 	sccp_linedevice_t * ld = (sccp_linedevice_t *)ptr;
 
-	sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_LINE + DEBUGCAT_CONFIG))(VERBOSE_PREFIX_1 "%s: LineDevice FREE %p\n", DEV_ID_LOG(ld->device), ld);
+	sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_LINE + DEBUGCAT_CONFIG))(VERBOSE_PREFIX_1 "%s: line device %p freed\n", DEV_ID_LOG(ld->device), ld);
 	if(ld->line) {
 		sccp_line_release(&ld->line); /* explicit release of line retained in ld */
 	}
@@ -96,7 +96,7 @@ static void regcontext_exten(constLineDevicePtr ld, int onoff)
 				/* register */
 
 				if(!pbx_exists_extension(NULL, context, ext, 1, NULL) && pbx_add_extension(context, 0, ext, 1, NULL, NULL, "Noop", pbx_strdup(l->name), sccp_free_ptr, "SCCP")) {
-					sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG))(VERBOSE_PREFIX_1 "Registered RegContext: %s, Extension: %s, Line: %s\n", context, ext, l->name);
+					sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG))(VERBOSE_PREFIX_1 "registered in context %s: extension %s for line %s\n", context, ext, l->name);
 				}
 
 				/* register extension + subscriptionId */
@@ -104,7 +104,7 @@ static void regcontext_exten(constLineDevicePtr ld, int onoff)
 				   snprintf(extension, sizeof(extension), "%s@%s", ext, subscriptionId->number);
 				   snprintf(name, sizeof(name), "%s%s", l->name, subscriptionId->name);
 				   if (!pbx_exists_extension(NULL, context, extension, 2, NULL) && pbx_add_extension(context, 0, extension, 2, NULL, NULL, "Noop", pbx_strdup(name), sccp_free_ptr, "SCCP")) {
-				   sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG)) (VERBOSE_PREFIX_1 "Registered RegContext: %s, Extension: %s, Line: %s\n", context, extension, name);
+				   sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG)) (VERBOSE_PREFIX_1 "registered in context %s: extension %s for line %s\n", context, extension, name);
 				   }
 				   } */
 			} else {
@@ -113,7 +113,7 @@ static void regcontext_exten(constLineDevicePtr ld, int onoff)
 				if(SCCP_LIST_GETSIZE(&l->devices) == 1) {                                        // only remove entry if it is the last one (shared line)
 					if(pbx_find_extension(NULL, NULL, &q, context, ext, 1, NULL, "", E_MATCH)) {
 						ast_context_remove_extension(context, ext, 1, NULL);
-						sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG))(VERBOSE_PREFIX_1 "Unregistered RegContext: %s, Extension: %s\n", context, ext);
+						sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG))(VERBOSE_PREFIX_1 "unregistered from context %s: extension %s\n", context, ext);
 					}
 				}
 
@@ -123,7 +123,7 @@ static void regcontext_exten(constLineDevicePtr ld, int onoff)
 				   // if (pbx_exists_extension(NULL, context, extension, 2, NULL)) {
 				   if (pbx_find_extension(NULL, NULL, &q, context, extension, 2, NULL, "", E_MATCH)) {
 				   ast_context_remove_extension(context, extension, 2, NULL);
-				   sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG)) (VERBOSE_PREFIX_1 "Unregistered RegContext: %s, Extension: %s\n", context, extension);
+				   sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG)) (VERBOSE_PREFIX_1 "unregistered from context %s: extension %s\n", context, extension);
 				   }
 				   } */
 			}
@@ -157,16 +157,16 @@ void sccp_linedevice_cfwd(lineDevicePtr ld, sccp_cfwd_t type, char * number)
 			ld->cfwd[x].enabled = FALSE;
 			ld->cfwd[x].number[0] = '\0';
 		}
-		sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: all Call Forwards have been disabled on line %s\n", DEV_ID_LOG(ld->device), ld->line->name);
+		sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: all call forwards turned off on line %s\n", DEV_ID_LOG(ld->device), ld->line->name);
 	} else {
 		if(!number || sccp_strlen_zero(number)) {
 			ld->cfwd[type].enabled = FALSE;
 			ld->cfwd[type].number[0] = '\0';
-			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: Call Forward to an empty number. Invalid. Cfwd Disabled\n", DEV_ID_LOG(ld->device));
+			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: call forward not set: no number\n", DEV_ID_LOG(ld->device));
 		} else {
 			ld->cfwd[type].enabled = TRUE;
 			sccp_copy_string(ld->cfwd[type].number, number, sizeof(ld->cfwd[type].number));
-			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: Call Forward %s enabled on line %s to number %s\n", DEV_ID_LOG(ld->device), sccp_cfwd2str(type), ld->line->name, number);
+			sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: call forward %s on line %s to %s\n", DEV_ID_LOG(ld->device), sccp_cfwd2str(type), ld->line->name, number);
 		}
 	}
 	sccp_feat_changed(ld->device, ld, sccp_cfwd2feature(type));
@@ -204,12 +204,12 @@ void sccp_linedevice_create(constDevicePtr d, constLinePtr l, uint8_t lineInstan
 	sccp_linedevice_t * ld = NULL;
 
 	if((ld = sccp_linedevice_find(device, l))) {
-		sccp_log((DEBUGCAT_LINE))(VERBOSE_PREFIX_3 "%s: device already registered for line '%s'\n", DEV_ID_LOG(device), l->name);
+		sccp_log((DEBUGCAT_LINE))(VERBOSE_PREFIX_3 "%s: already registered on line %s\n", DEV_ID_LOG(device), l->name);
 		sccp_linedevice_release(&ld); /* explicit release of found ld */
 		return;
 	}
 
-	sccp_log((DEBUGCAT_LINE))(VERBOSE_PREFIX_3 "%s: add device to line %s\n", DEV_ID_LOG(device), line->name);
+	sccp_log((DEBUGCAT_LINE))(VERBOSE_PREFIX_3 "%s: adding device to line %s\n", DEV_ID_LOG(device), line->name);
 #if CS_REFCOUNT_DEBUG
 	sccp_refcount_addRelationship(device, line);
 #endif
@@ -249,7 +249,7 @@ void sccp_linedevice_create(constDevicePtr d, constLinePtr l, uint8_t lineInstan
 		sccp_event_fire(event);
 	}
 	regcontext_exten(ld, 1);
-	sccp_log((DEBUGCAT_LINE))(VERBOSE_PREFIX_3 "%s: added ld: %p with device: %s\n", line->name, ld, DEV_ID_LOG(device));
+	sccp_log((DEBUGCAT_LINE))(VERBOSE_PREFIX_3 "%s: line device %p added for %s\n", line->name, ld, DEV_ID_LOG(device));
 }
 
 /*!
@@ -270,7 +270,7 @@ void sccp_linedevice_remove(constDevicePtr d, linePtr l)
 	if(!l) {
 		return;
 	}
-	sccp_log_and((DEBUGCAT_HIGH + DEBUGCAT_LINE))(VERBOSE_PREFIX_3 "%s: remove device from line %s\n", DEV_ID_LOG(d), l->name);
+	sccp_log_and((DEBUGCAT_HIGH + DEBUGCAT_LINE))(VERBOSE_PREFIX_3 "%s: removing device from line %s\n", DEV_ID_LOG(d), l->name);
 
 	SCCP_LIST_LOCK(&l->devices);
 	SCCP_LIST_TRAVERSE_SAFE_BEGIN(&l->devices, ld, list) {
@@ -310,7 +310,7 @@ void sccp_linedevice_indicateMWI(constLineDevicePtr ld)
 	AUTO_RELEASE(sccp_device_t, d, sccp_device_retain(ld->device));
 	AUTO_RELEASE(sccp_line_t, l, sccp_line_retain(ld->line));
 	if(l && d) {
-		sccp_log((DEBUGCAT_MWI))(VERBOSE_PREFIX_3 "%s: (sccp_line_indicateMWI) Set voicemail lamp:%s on device:%s\n", l->name, l->voicemailStatistic.newmsgs ? "on" : "off", d->id);
+		sccp_log((DEBUGCAT_MWI))(VERBOSE_PREFIX_3 "%s: message lamp %s on %s\n", l->name, l->voicemailStatistic.newmsgs ? "on" : "off", d->id);
 		sccp_device_setLamp(d, SKINNY_STIMULUS_VOICEMAIL, ld->lineInstance, l->voicemailStatistic.newmsgs ? d->mwilamp : SKINNY_LAMP_OFF);
 	}
 }
@@ -350,7 +350,7 @@ lineDevicePtr __sccp_linedevice_find(constDevicePtr device, constLinePtr line, c
 	SCCP_LIST_UNLOCK(&l->devices);
 
 	if(!ld) {
-		sccp_log_and((DEBUGCAT_LINE + DEBUGCAT_HIGH))(VERBOSE_PREFIX_3 "%s: [%s:%d]->linedevice_find: ld for line %s could not be found. Returning NULL\n", DEV_ID_LOG(device), filename, lineno, line->name);
+		sccp_log_and((DEBUGCAT_LINE + DEBUGCAT_HIGH))(VERBOSE_PREFIX_3 "%s: (%s:%d) no line device for line %s\n", DEV_ID_LOG(device), filename, lineno, line->name);
 	}
 	return ld;
 }
@@ -373,7 +373,7 @@ lineDevicePtr __sccp_linedevice_findByLineinstance(constDevicePtr device, uint16
 	}
 
 	if(!ld) {
-		sccp_log_and((DEBUGCAT_LINE + DEBUGCAT_HIGH))(VERBOSE_PREFIX_3 "%s: [%s:%d]->linedevice_find: ld for lineinstance %d could not be found. Returning NULL\n", DEV_ID_LOG(device), filename, lineno, instance);
+		sccp_log_and((DEBUGCAT_LINE + DEBUGCAT_HIGH))(VERBOSE_PREFIX_3 "%s: (%s:%d) no line device for line instance %d\n", DEV_ID_LOG(device), filename, lineno, instance);
 	}
 	return ld;
 }

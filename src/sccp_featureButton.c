@@ -65,7 +65,7 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 	SCCP_LIST_LOCK(&(((devicePtr)device)->buttonconfig));
 	SCCP_LIST_TRAVERSE(&device->buttonconfig, config, list) {
 		if (config->type == FEATURE && config->button.feature.id == featureType) {
-			sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: (sccp_featButton_changed) FeatureID = %d, Option: %s\n", DEV_ID_LOG(device), config->button.feature.id, (config->button.feature.options) ? config->button.feature.options : "(none)");
+			sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: feature button %d changed (options %s)\n", DEV_ID_LOG(device), config->button.feature.id, (config->button.feature.options) ? config->button.feature.options : "(none)");
 			sccp_copy_string(label_text, config->label, sizeof(label_text));
 			instance = config->instance;
 
@@ -75,17 +75,17 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 						config->button.feature.status = 0;
 					}
 
-					sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: device->privacyFeature.status=%d\n", DEV_ID_LOG(device), device->privacyFeature.status);
+					sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: privacy status %d\n", DEV_ID_LOG(device), device->privacyFeature.status);
 					if (sccp_strcaseequals(config->button.feature.options, "callpresent")) {
 						uint32_t result = device->privacyFeature.status & SCCP_PRIVACYFEATURE_CALLPRESENT;
 
-						sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: result is %d\n", device->id, result);
+						sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: result %d\n", device->id, result);
 						config->button.feature.status = (result) ? 1 : 0;
 					}
 					if (sccp_strcaseequals(config->button.feature.options, "hint")) {
 						uint32_t result = device->privacyFeature.status & SCCP_PRIVACYFEATURE_HINT;
 
-						sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: result is %d\n", device->id, result);
+						sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: result %d\n", device->id, result);
 						config->button.feature.status = (result) ? 1 : 0;
 					}
 					break;
@@ -105,7 +105,7 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 								AUTO_RELEASE(sccp_linedevice_t, ld, sccp_linedevice_find(device, line));
 
 								if(ld) {
-									sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: SCCP_CFWD_ALL on line: %s is %s\n", DEV_ID_LOG(device), line->name,
+									sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: call forward all on line %s is %s\n", DEV_ID_LOG(device), line->name,
 															       (ld->cfwd[SCCP_CFWD_ALL].enabled) ? "on" : "off");
 
 									/* set this button active, only if all lines are fwd -requesting issue #3081549 */
@@ -172,7 +172,7 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 					break;
 				case SCCP_FEATURE_MONITOR:
 					{
-						sccp_log((DEBUGCAT_FEATURE_BUTTON)) (VERBOSE_PREFIX_3 "%s: (sccp_featButton_changed) monitor featureButton new state:%s (%d)\n", DEV_ID_LOG(device), sccp_feature_monitor_state2str(device->monitorFeature.status), device->monitorFeature.status);
+						sccp_log((DEBUGCAT_FEATURE_BUTTON)) (VERBOSE_PREFIX_3 "%s: recording button state %s (%d)\n", DEV_ID_LOG(device), sccp_feature_monitor_state2str(device->monitorFeature.status), device->monitorFeature.status);
 						// coverity[MIXED_ENUMS]
 						uint8_t status = (sccp_feature_monitor_state_t) device->monitorFeature.status;
 						if(device->inuseprotocolversion <= 15 || device->skinny_type == SKINNY_DEVICETYPE_CISCO8941
@@ -282,7 +282,7 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 
 					case SCCP_FEATURE_PARKINGLOT:
 #ifdef CS_SCCP_PARK
-					sccp_log((DEBUGCAT_FEATURE_BUTTON)) (VERBOSE_PREFIX_3 "%s: (sccp_featButton_changed) parkinglot state:%d\n", DEV_ID_LOG(device), config->button.feature.status);
+					sccp_log((DEBUGCAT_FEATURE_BUTTON)) (VERBOSE_PREFIX_3 "%s: parking lot button state %d\n", DEV_ID_LOG(device), config->button.feature.status);
 					if (device->inuseprotocolversion > 15) {
 						buttonID = SKINNY_BUTTONTYPE_MULTIBLINKFEATURE;
 					}
@@ -339,7 +339,7 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 				sccp_copy_string(msg->data.FeatureStatMessage.textLabel, label_text, sizeof(msg->data.FeatureStatMessage.textLabel));
 			}
 			sccp_dev_send(device, msg);
-			sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: (sccp_featButton_changed) Got Feature Status Request. Instance = %d, Label: '%s', Status: %d\n", DEV_ID_LOG(device), instance, config->label, config->button.feature.status);
+			sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: feature status request: instance %d, label '%s', status %d\n", DEV_ID_LOG(device), instance, config->label, config->button.feature.status);
 		}
 	}
 EXIT_FUNC:

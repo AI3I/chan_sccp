@@ -199,51 +199,51 @@ static Process_XSLT_t parse_useragent(PBX_VARIABLE_TYPE * request_headers)
 	Process_XSLT_t res        = ServerSide;
 	char *         pos        = NULL;
 	const char *   user_agent = sccp_retrieve_str_variable_byKey(request_headers, "User-Agent");
-	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (parse_useragent) User-Agent:%s\n", user_agent);
+	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: web user agent %s\n", user_agent);
 	do {
-		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (parse_useragent) Trying to match UserAgents\n");
+		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: matching the user agent\n");
 		if (sccp_strlen_zero(user_agent)) {
-			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (parse_useragent) No useragent\n");
+			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: no user agent\n");
 			break;
 		}
 		if (strcasestr(user_agent, "Allegro") || strcasestr(user_agent, "XSI-HTTPClient") || strcasestr(user_agent, "Cisco/SPA")) {
-			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (parse_useragent) Cisco VOIP Phone\n");
+			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: user agent is a Cisco phone\n");
 			break;
 		}
 		if (strcasestr(user_agent, "Firefox/") || strcasestr(user_agent, "SeaMonkey/")) {
-			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (parse_useragent) Firefox/ / SeaMonkey/\n");
+			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: user agent is Firefox or SeaMonkey\n");
 			res = ClientSide;
 			break;
 		}
 		if ((pos = strcasestr(user_agent, "MSIE"))) {
-			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (parse_useragent) MSIE\n");
+			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: user agent is Internet Explorer\n");
 			pos += 4;
 			if (pos[0] == '/' && !(pos[1] == '1' || pos[1] == '2' || pos[1] == '3' || pos[1] == '4' || pos[1] == '5')) {
-				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (parse_useragent) But new enough\n");
+				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: Internet Explorer version is new enough\n");
 				res = ClientSide;
 			}
 			break;
 		}
 		if ((pos = strcasestr(user_agent, "Safari/"))) {
-			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (parse_useragent) MSIE\n");
+			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: user agent is Internet Explorer\n");
 			pos += 7;
 			if (!(pos[1] == '1' || pos[1] == '2' || pos[1] == '3')) {
-				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (parse_useragent) But new enough\n");
+				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: Internet Explorer version is new enough\n");
 				res = ClientSide;
 			}
 			break;
 		}
 		if ((pos = strcasestr(user_agent, "Opera"))) {
-			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (parse_useragent) MSIE\n");
+			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: user agent is Internet Explorer\n");
 			pos += 5;
 			if ((pos[0] == '/' || pos[0] == ' ') && !(pos[1] > '8')) {
-				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (parse_useragent) But new enough\n");
+				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: Internet Explorer version is new enough\n");
 				res = ClientSide;
 			}
 			break;
 		}
 	} while (0);
-	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (parse_useragent) User-Agent:%s -> %s\n", user_agent, res == ServerSide ? "ServerSide" : "ClientSide");
+	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: user agent %s: stylesheets applied on the %s\n", user_agent, res == ServerSide ? "server" : "client");
 	return res;
 }
 
@@ -339,7 +339,7 @@ static __attribute__((malloc)) char * searchWebDirForFile(const char * filename,
 	} else {
 		snprintf(filepath, sizeof(filepath), PBX_VARLIB "/sccpxslt/%s.%s", filename, extension);
 	}
-	sccp_log(DEBUGCAT_WEBSERVICE)("SCCP: (searchWebDirForFile) Looking for '%s'\n", filepath);
+	sccp_log(DEBUGCAT_WEBSERVICE)("SCCP: looking for %s\n", filepath);
 	if (access(filepath, F_OK) == -1) {
 		pbx_log(LOG_NOTICE, "SCCP: web file '%s' does not exist\n", filepath);
 		filepath[0] = '\0';
@@ -372,7 +372,7 @@ static int request_parser(struct ast_tcptls_session_instance * ser, enum ast_htt
 	int         result      = 0;
 	pbx_str_t * http_header = NULL;
 	pbx_str_t * out         = NULL;
-	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_1 "SCCP: (request_parser) Handling Callback\n");
+	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_1 "SCCP: handling web request\n");
 
 	handler_t handler;
 	if (!get_request_handler(request_params, &handler)) {
@@ -399,15 +399,15 @@ static int request_parser(struct ast_tcptls_session_instance * ser, enum ast_htt
 	PBX_VARIABLE_TYPE * header = NULL;
 	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "request headers:\n");
 	for (header = request_headers; header; header = header->next) {
-		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (request_parser) key: %s, value: %s\n", header->name, header->value);
+		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: header %s: %s\n", header->name, header->value);
 	}
 	PBX_VARIABLE_TYPE * param = NULL;
 	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "request parameters:\n");
 	for (param = request_params; param; param = param->next) {
-		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (request_parser) key: %s, value: %s\n", param->name, param->value);
+		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: parameter %s: %s\n", param->name, param->value);
 	}
 	//}
-	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: handler:%p, result:%d\n", handler, result);
+	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: handler %p, result %d\n", handler, result);
 	do {
 		http_header = pbx_str_create(80);
 		out         = pbx_str_create(4196);
@@ -429,7 +429,7 @@ static int request_parser(struct ast_tcptls_session_instance * ser, enum ast_htt
 			ast_http_error(ser, 500, "Server Error", "The matched SCCP XML service handler failed while building its response.\n");
 			break;
 		}
-		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (request_parser) Handling Callback: %s, remote-address: %s\n", request_uri, ast_sockaddr_stringify(&ser->remote_address));
+		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: handling %s from %s\n", request_uri, ast_sockaddr_stringify(&ser->remote_address));
 		char           timebuf[80];
 		struct timeval nowtv = ast_tvnow();
 		struct ast_tm  now;
@@ -595,7 +595,7 @@ static int sccp_webservice_xslt_callback(struct ast_tcptls_session_instance * se
 		    mtype, etag, timebuf);
 
 	/* ast_http_send() frees http_header, so we don't need to do it before returning */
-	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "Service '%s' => '%s' (%s)\n", uri, path, mtype);
+	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "service %s = %s (%s)\n", uri, path, mtype);
 	if (not_modified) {
 		ast_http_send(ser, method, 304, "Not Modified", http_header, NULL, 0, 1);
 	} else {
@@ -638,14 +638,14 @@ static boolean_t xmlPostProcess(xmlDoc * const doc, const char * const uri, PBX_
 		// addTranslation(params);
 		// sccp_append_variable(params, "locales", locale ? pbx_strdup(locale) : "en");
 		if (process_side == ServerSide) {
-			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (xmlPostProcess) Processing xsl server-side\n");
+			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: applying stylesheet on the server\n");
 			char * stylesheetFilename = findStylesheet(uri, outputfmt);
 			if (stylesheetFilename) {
 				if (!iXML.applyStyleSheetByName(doc, stylesheetFilename, resultstr)) {
 					pbx_log(LOG_ERROR, "SCCP: web handler '%s': applying stylesheet '%s' failed (details in the previous message)\n", uri, stylesheetFilename);
 					res = FALSE;
 				}
-				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (xmlPostProcess) resultstr:%s\n", *resultstr ? *resultstr : "");
+				sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: result %s\n", *resultstr ? *resultstr : "");
 				sccp_free(stylesheetFilename);
 			} else {
 				pbx_log(LOG_ERROR, "SCCP: web handler '%s': stylesheet %s2%s.xsl not found in " PBX_VARLIB "/sccpxslt/\n",
@@ -653,7 +653,7 @@ static boolean_t xmlPostProcess(xmlDoc * const doc, const char * const uri, PBX_
 				res = FALSE;
 			}
 		} else {
-			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (xmlPostProcess) Processing xsl client-side\n");
+			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: stylesheet left to the client\n");
 			*resultstr = iXML.dump(doc, TRUE);
 			res = *resultstr != NULL;
 		}
@@ -675,7 +675,7 @@ static boolean_t xmlPostProcess(xmlDoc * const doc, const char * const uri, PBX_
  */
 static boolean_t sccp_webservice_parkedcalls(const char * const uri, PBX_VARIABLE_TYPE * params, PBX_VARIABLE_TYPE * headers, pbx_str_t ** result)
 {
-	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: (sccp_webservice_parkedcalls) Parked Calls Webservice\n");
+	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: parked calls web service\n");
 
 	xmlDoc *  doc  = iXML.createDoc();
 	xmlNode * root = iXML.createNode("response");
@@ -774,7 +774,7 @@ static boolean_t removeHandler(const char * const uri)
 	boolean_t result = FALSE;
 	SCCP_VECTOR_RW_WRLOCK(&handlers);
 	if (SCCP_VECTOR_REMOVE_CMP_UNORDERED(&handlers, uri, HANDLER_CB_CMP, SCCP_VECTOR_ELEM_CLEANUP_NOOP) == 0) {
-		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_1 "SCCP: (sccp_webservice) removed handler for uri: '%s'\n", uri);
+		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_1 "SCCP: web handler for %s removed\n", uri);
 		result = TRUE;
 	}
 	SCCP_VECTOR_RW_UNLOCK(&handlers);

@@ -83,10 +83,10 @@ void sccp_feat_handle_callforward(constLinePtr l, constDevicePtr d, sccp_cfwd_t 
 	if (c) {
 		sccp_softswitch_t ss_action = c->softswitch_action ? c->softswitch_action : SCCP_SOFTSWITCH_GETFORWARDEXTEN;
 		if((ld->cfwd[SCCP_CFWD_ALL].enabled && type == SCCP_CFWD_ALL) || (ld->cfwd[SCCP_CFWD_BUSY].enabled && type == SCCP_CFWD_BUSY) || (ld->cfwd[SCCP_CFWD_NOANSWER].enabled && type == SCCP_CFWD_NOANSWER)) {
-			sccp_log(DEBUGCAT_PBX)("%s: Removing Call Forward\n", d->id);
+			sccp_log(DEBUGCAT_PBX)("%s: removing call forward\n", d->id);
 			ss_action = SCCP_SOFTSWITCH_ENDCALLFORWARD;
 		} else {
-			sccp_log(DEBUGCAT_PBX)("%s: Adding Call Forward\n", d->id);
+			sccp_log(DEBUGCAT_PBX)("%s: adding call forward\n", d->id);
 		}
 
 		if (ss_action == SCCP_SOFTSWITCH_GETFORWARDEXTEN) {							// we already have an active channel
@@ -187,7 +187,7 @@ static int sccp_feat_perform_pickup(constDevicePtr d, channelPtr c, PBX_CHANNEL_
 	res = ast_do_pickup(original, target);
 	pbx_channel_unlock(target);
 	if(!res) {                                        // directed pickup succeeded
-		sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: (perform_pickup) pickup succeeded on call: %s\n", DEV_ID_LOG(d), c->designator);
+		sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: pickup of %s succeeded\n", DEV_ID_LOG(d), c->designator);
 		/* disconnect from masquaraded zombie channel */
 		sccp_channel_setDevice(c, NULL, FALSE);
 		pbx_channel_set_hangupcause(original, AST_CAUSE_ANSWERED_ELSEWHERE);
@@ -213,7 +213,7 @@ static int sccp_feat_perform_pickup(constDevicePtr d, channelPtr c, PBX_CHANNEL_
 			event->lineStatusChanged.state = SCCP_CHANNELSTATE_PROCEED;
 			sccp_event_fire(event);
 		}
-		sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: (perform_pickup) channel:%s, modeanser: %s\n", DEV_ID_LOG(d), c->designator, answer ? "yes" : "no");
+		sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: picking up %s (answer: %s)\n", DEV_ID_LOG(d), c->designator, answer ? "yes" : "no");
 		if(answer) {
 			/* emulate previous indications, before signalling connected */
 			sccp_device_sendcallstate(d, lineInstance, c->callid, SKINNY_CALLSTATE_RINGIN, SKINNY_CALLPRIORITY_LOW, SKINNY_CALLINFO_VISIBILITY_DEFAULT);
@@ -232,7 +232,7 @@ static int sccp_feat_perform_pickup(constDevicePtr d, channelPtr c, PBX_CHANNEL_
 			pbx_hangup(original);
 		}
 	} else {                                        // pickup failed
-		sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "SCCP: (perform_pickup) Giving Up\n");
+		sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "SCCP: pickup not done\n");
 		sccp_dev_displayprompt(d, lineInstance, c->callid, SKINNY_DISP_TEMP_FAIL " " SKINNY_DISP_OPICKUP, SCCP_DISPLAYSTATUS_TIMEOUT);
 		c->setTone(c, SKINNY_TONE_BEEPBONK, SKINNY_TONEDIRECTION_USER);
 		sccp_channel_schedule_hangup(c, 5000);
@@ -299,7 +299,7 @@ int sccp_feat_directed_pickup(constDevicePtr d, channelPtr c, uint32_t lineInsta
 	    && sccp_strlen_zero(c->line->namedpickupgroup)
 #endif
 	    ) {
-		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: (directedpickup) pickupgroup not configured in sccp.conf\n", d->id);
+		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: directed pickup not done: pickupgroup is not set in sccp.conf\n", d->id);
 		return -1;
 	}
 
@@ -337,7 +337,7 @@ int sccp_feat_directed_pickup(constDevicePtr d, channelPtr c, uint32_t lineInsta
 
 		pbx_str_t * buf = pbx_str_alloca(DEFAULT_PBX_STR_BUFFERSIZE);
 		ast_print_namedgroups(&buf, ast_channel_named_pickupgroups(original));
-		sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: %s searching with pickupgroup %lld, namedpickupgroup '%s'\n", d->id, c->designator, ast_channel_pickupgroup(original), pbx_str_buffer(buf));
+		sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: %s looking for calls with pickupgroup %lld, namedpickupgroup '%s'\n", d->id, c->designator, ast_channel_pickupgroup(original), pbx_str_buffer(buf));
 
 		// make sure the new channel does not participate in the potential pickup candidates
 		if (iPbx.set_callgroup) {
@@ -413,7 +413,7 @@ int sccp_feat_grouppickup(constDevicePtr d, constLinePtr l, uint32_t lineInstanc
 	    && sccp_strlen_zero(l->namedpickupgroup)
 #endif
 	    ) {
-		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: (grouppickup) pickupgroup not configured in sccp.conf\n", d->id);
+		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: group pickup not done: pickupgroup is not set in sccp.conf\n", d->id);
 		return -1;
 	}
 	/* end assertions */
@@ -438,7 +438,7 @@ int sccp_feat_grouppickup(constDevicePtr d, constLinePtr l, uint32_t lineInstanc
 		if (pbx_channel_ref(original)) {
 			pbx_str_t * buf = pbx_str_alloca(DEFAULT_PBX_STR_BUFFERSIZE);
 			ast_print_namedgroups(&buf, ast_channel_named_pickupgroups(original));
-			sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: %s (%s@%s) searching with pickupgroup %lld, namedpickupgroup '%s'\n", d->id, c->designator, pbx_channel_exten(original), pbx_channel_context(original),
+			sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: %s (%s@%s) looking for calls with pickupgroup %lld, namedpickupgroup '%s'\n", d->id, c->designator, pbx_channel_exten(original), pbx_channel_context(original),
 				ast_channel_pickupgroup(original), pbx_str_buffer(buf));
 			sccp_channel_stop_schedule_digittimout(c);
 			if ((target = iPbx.findPickupChannelByGroupLocked(c->owner))) {
@@ -482,14 +482,14 @@ int sccp_feat_grouppickup(constDevicePtr d, constLinePtr l, uint32_t lineInstanc
  */
 void sccp_feat_voicemail(constDevicePtr d, uint8_t lineInstance)
 {
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Voicemail Button pressed on line (%d)\n", d->id, lineInstance);
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: voicemail button pressed on line %d\n", d->id, lineInstance);
 
 	{
 		AUTO_RELEASE(sccp_channel_t, c , sccp_device_getActiveChannel(d));
 
 		if (c) {
 			if (!c->line || sccp_strlen_zero(c->line->vmnum)) {
-				sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: No voicemail number configured on line %d\n", d->id, lineInstance);
+				sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: no voicemail number set on line %d\n", d->id, lineInstance);
 				return;
 			}
 			if (c->state == SCCP_CHANNELSTATE_OFFHOOK || c->state == SCCP_CHANNELSTATE_DIALING) {
@@ -515,7 +515,7 @@ void sccp_feat_voicemail(constDevicePtr d, uint8_t lineInstance)
 	AUTO_RELEASE(sccp_line_t, l , sccp_line_find_byid(d, lineInstance));
 
 	if (!l) {
-		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: No line with instance %d found.\n", d->id, lineInstance);
+		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: no line with instance %d\n", d->id, lineInstance);
 
 		// TODO(dkgroot): workaround to solve the voicemail button issue with old hint style and speeddials before first line -MC
 		if (d->defaultLineInstance) {
@@ -524,13 +524,13 @@ void sccp_feat_voicemail(constDevicePtr d, uint8_t lineInstance)
 	}
 	if (l) {
 		if (!sccp_strlen_zero(l->vmnum)) {
-			sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Dialing voicemail %s\n", d->id, l->vmnum);
+			sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: dialing voicemail %s\n", d->id, l->vmnum);
 			AUTO_RELEASE(sccp_channel_t, new_channel, sccp_channel_newcall(l, d, l->vmnum, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));                                        // implicit release
 		} else {
-			sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: No voicemail number configured on line %d\n", d->id, lineInstance);
+			sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: no voicemail number set on line %d\n", d->id, lineInstance);
 		}
 	} else {
-		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: No line with defaultLineInstance %d found. Not Dialing Voicemail Extension.\n", d->id, d->defaultLineInstance);
+		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: voicemail not dialed: no line with the default instance %d\n", d->id, d->defaultLineInstance);
 	}
 }
 
@@ -545,26 +545,26 @@ void sccp_feat_idivert(constDevicePtr d, constLinePtr l, constChannelPtr c)
 	int instance = 0;
 
 	if (!l) {
-		sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: TRANSVM pressed but no line found\n", d->id);
+		sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: TrnsfVM pressed, but no line found\n", d->id);
 		sccp_dev_displayprompt(d, 0, 0, SKINNY_DISP_TRANSVM_WITH_NO_LINE, SCCP_DISPLAYSTATUS_TIMEOUT);
 		return;
 	}
 	if (!l->trnsfvm) {
-		sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: TRANSVM pressed but not configured in sccp.conf\n", d->id);
+		sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: TrnsfVM pressed, but trnsfvm is not set in sccp.conf\n", d->id);
 		return;
 	}
 	if (!c || !c->owner) {
-		sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: TRANSVM with no channel active\n", d->id);
+		sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: TrnsfVM pressed with no active call\n", d->id);
 		sccp_dev_displayprompt(d, 0, 0, SKINNY_DISP_TRANSVM_WITH_NO_CHANNEL, SCCP_DISPLAYSTATUS_TIMEOUT);
 		return;
 	}
 
 	if (c->state != SCCP_CHANNELSTATE_RINGING && c->state != SCCP_CHANNELSTATE_CALLWAITING) {
-		sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: TRANSVM pressed in no ringing state\n", d->id);
+		sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: TrnsfVM pressed on a call that is not ringing\n", d->id);
 		return;
 	}
 
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: TRANSVM to %s\n", d->id, l->trnsfvm);
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: transferring to voicemail %s\n", d->id, l->trnsfvm);
 	iPbx.setChannelCallForward(c, l->trnsfvm);
 	instance = sccp_device_find_index_for_line(d, l->name);
 	sccp_device_sendcallstate(d, instance, c->callid, SKINNY_CALLSTATE_PROCEED, SKINNY_CALLPRIORITY_LOW, SKINNY_CALLINFO_VISIBILITY_DEFAULT);	/* send connected, so it is not listed as missed call */
@@ -603,7 +603,7 @@ void sccp_feat_handle_conference(constDevicePtr d, constLinePtr l, uint8_t lineI
 
 /*	if (sccp_device_numberOfChannels(d) < 2) {
 		sccp_dev_displayprompt(d, lineInstance, channel->callid, SKINNY_DISP_CAN_NOT_COMPLETE_CONFERENCE, SCCP_DISPLAYSTATUS_TIMEOUT);
-		pbx_log(LOG_NOTICE, "%s: You need at least 2 participant to start a conference\n", DEV_ID_LOG(d));
+		pbx_log(LOG_NOTICE, "%s: conference not started: it needs at least two calls\n", DEV_ID_LOG(d));
 		return;
 	}*/
 
@@ -651,7 +651,7 @@ void sccp_feat_conference_start(constDevicePtr device, const uint32_t lineInstan
 	uint8_t num = sccp_device_numberOfChannels(d);
 	//int instance = sccp_device_find_index_for_line(d, l->name);
 
-	sccp_log_and((DEBUGCAT_CONFERENCE + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: sccp_device_numberOfChannels %d.\n", DEV_ID_LOG(d), num);
+	sccp_log_and((DEBUGCAT_CONFERENCE + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: %d calls on the device\n", DEV_ID_LOG(d), num);
 
 	if (d->conference /* && num > 3 */ ) {
 		/* if we have selected channels, add this to conference */
@@ -662,7 +662,7 @@ void sccp_feat_conference_start(constDevicePtr device, const uint32_t lineInstan
 			if (channel && channel != c) {
 				if (channel != d->active_channel && channel->state == SCCP_CHANNELSTATE_HOLD) {
 					if ((bridged_channel = iPbx.get_bridged_channel(channel->owner))) {
-						sccp_log((DEBUGCAT_CONFERENCE + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: sccp conference: channel %s, state: %s.\n", DEV_ID_LOG(d), pbx_channel_name(bridged_channel), sccp_channelstate2str(channel->state));
+						sccp_log((DEBUGCAT_CONFERENCE + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: conference: call %s, state %s\n", DEV_ID_LOG(d), pbx_channel_name(bridged_channel), sccp_channelstate2str(channel->state));
 						if (!sccp_conference_addParticipatingChannel(d->conference, c, channel, bridged_channel)) {
 							sccp_dev_displayprompt(device, lineInstance, c->callid, SKINNY_DISP_INVALID_CONFERENCE_PARTICIPANT, SCCP_DISPLAYSTATUS_TIMEOUT);
 						}
@@ -671,7 +671,7 @@ void sccp_feat_conference_start(constDevicePtr device, const uint32_t lineInstan
 						pbx_log(LOG_WARNING, "%s: call %s not added to the conference: it is not bridged to another party\n", DEV_ID_LOG(d), pbx_channel_name(channel->owner));
 					}
 				} else {
-					sccp_log(DEBUGCAT_CONFERENCE) (VERBOSE_PREFIX_3 "%s: sccp conference: Channel %s is Active on Shared Line on Other Device... Skipping.\n", DEV_ID_LOG(d), channel->designator);
+					sccp_log(DEBUGCAT_CONFERENCE) (VERBOSE_PREFIX_3 "%s: conference: %s is active on the shared line on another device; skipped\n", DEV_ID_LOG(d), channel->designator);
 				}
 				selectedFound = TRUE;
 			}
@@ -693,7 +693,7 @@ void sccp_feat_conference_start(constDevicePtr device, const uint32_t lineInstan
 						SCCP_LIST_TRAVERSE(&line->channels, channel, list) {
 							if (channel != d->active_channel && channel->state == SCCP_CHANNELSTATE_HOLD) {
 								if ((bridged_channel = iPbx.get_bridged_channel(channel->owner))) {
-									sccp_log((DEBUGCAT_CONFERENCE + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: sccp conference: channel %s, state: %s.\n", DEV_ID_LOG(d), pbx_channel_name(bridged_channel), sccp_channelstate2str(channel->state));
+									sccp_log((DEBUGCAT_CONFERENCE + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: conference: call %s, state %s\n", DEV_ID_LOG(d), pbx_channel_name(bridged_channel), sccp_channelstate2str(channel->state));
 									if (!sccp_conference_addParticipatingChannel(d->conference, c, channel, bridged_channel)) {
 										sccp_dev_displayprompt(device, lineInstance, c->callid, SKINNY_DISP_INVALID_CONFERENCE_PARTICIPANT, SCCP_DISPLAYSTATUS_TIMEOUT);
 									}
@@ -702,7 +702,7 @@ void sccp_feat_conference_start(constDevicePtr device, const uint32_t lineInstan
 									pbx_log(LOG_WARNING, "%s: call %s not added to the conference: it is not bridged to another party\n", DEV_ID_LOG(d), pbx_channel_name(channel->owner));
 								}
 							} else {
-								sccp_log(DEBUGCAT_CONFERENCE) (VERBOSE_PREFIX_3 "%s: sccp conference: Channel %s is Active on Shared Line on Other Device...Skipping.\n", DEV_ID_LOG(d), channel->designator);
+								sccp_log(DEBUGCAT_CONFERENCE) (VERBOSE_PREFIX_3 "%s: conference: %s is active on the shared line on another device; skipped\n", DEV_ID_LOG(d), channel->designator);
 							}
 						}
 						SCCP_LIST_UNLOCK(&line->channels);
@@ -717,7 +717,7 @@ void sccp_feat_conference_start(constDevicePtr device, const uint32_t lineInstan
 		pbx_log(LOG_WARNING, "%s: conference not started: the conference bridge could not be created\n", DEV_ID_LOG(d));
 	}
 #else
-	sccp_log((DEBUGCAT_CONFERENCE + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: conference not enabled\n", DEV_ID_LOG(d));
+	sccp_log((DEBUGCAT_CONFERENCE + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: conference is off for this device\n", DEV_ID_LOG(d));
 	sccp_dev_displayprompt(d, lineInstance, c->callid, SKINNY_DISP_KEY_IS_NOT_ACTIVE, SCCP_DISPLAYSTATUS_TIMEOUT);
 #endif
 }
@@ -772,7 +772,7 @@ void sccp_feat_join(constDevicePtr device, constLinePtr l, uint8_t lineInstance,
 				sccp_channel_hold(newparticipant_channel);
 				sccp_log((DEBUGCAT_CONFERENCE))(VERBOSE_PREFIX_3 "%s: adding %s to the conference\n", DEV_ID_LOG(d), newparticipant_channel->designator);
 				if ((bridged_channel = iPbx.get_bridged_channel(newparticipant_channel->owner))) {
-					sccp_log((DEBUGCAT_CONFERENCE + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: sccp conference: channel %s, state: %s.\n", DEV_ID_LOG(d), pbx_channel_name(bridged_channel), sccp_channelstate2str(newparticipant_channel->state));
+					sccp_log((DEBUGCAT_CONFERENCE + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: conference: call %s, state %s\n", DEV_ID_LOG(d), pbx_channel_name(bridged_channel), sccp_channelstate2str(newparticipant_channel->state));
 					if (!sccp_conference_addParticipatingChannel(conference, moderator_channel, newparticipant_channel, bridged_channel)) {
 						sccp_dev_displayprompt(device, lineInstance, c->callid, SKINNY_DISP_INVALID_CONFERENCE_PARTICIPANT, SCCP_DISPLAYSTATUS_TIMEOUT);
 					}
@@ -937,7 +937,7 @@ static void *sccp_feat_meetme_thread(void *data)
 	for(uint32_t i = 0; i < sizeof(meetmeApps) / sizeof(struct meetmeAppConfig); i++) {
 		if (pbx_findapp(meetmeApps[i].appName)) {
 			app = &(meetmeApps[i]);
-			sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: using '%s' for meetme\n", meetmeApps[i].appName);
+			sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: using %s for meetme\n", meetmeApps[i].appName);
 			break;
 		}
 	}
@@ -977,7 +977,7 @@ static void *sccp_feat_meetme_thread(void *data)
 
 		if (!pbx_exists_extension(NULL, context, ext, 1, NULL)) {
 			pbx_add_extension(context, 1, ext, 1, NULL, NULL, app->appName, meetmeopts, NULL, "sccp_feat_meetme_thread");
-			sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: added temporary extension %s@%s => %s(%s)\n", c->designator, ext, context, app->appName, meetmeopts);
+			sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: temporary extension %s@%s runs %s(%s)\n", c->designator, ext, context, app->appName, meetmeopts);
 		}
 		// sccp_copy_string(c->owner->exten, ext, sizeof(c->owner->exten));
 		iPbx.setChannelExten(c, ext);
@@ -1030,7 +1030,7 @@ static void *cleanupTempExtensionContext(void *ptr)
 	sccp_channel_t *bdc = barge_info->bargedChannel;
 	sccp_channel_t *bgc = barge_info->bargingChannel;
 	
-	sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "SCCP: destroy temp context:%p\n", barge_info->context);
+	sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "SCCP: destroying temporary context %p\n", barge_info->context);
 	pbx_context_destroy(barge_info->context, BASE_REGISTRAR);
 
 	// restore previous barged channel state
@@ -1038,7 +1038,7 @@ static void *cleanupTempExtensionContext(void *ptr)
 	if (bdc) {
 		bdc->isBarged = FALSE;
 		bdc->channelStateReason = SCCP_CHANNELSTATEREASON_NORMAL;
-		sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: Reindicate CONNECTED to re-set remote-indication\n", bdc->designator);
+		sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: sending connected again to reset the remote display\n", bdc->designator);
 		bdc->state = bdc->previousChannelState;
 		sccp_indicate(NULL, bdc, SCCP_CHANNELSTATE_CONNECTED);
 		sccp_channel_release(&barge_info->bargedChannel);
@@ -1059,7 +1059,7 @@ static sccp_barge_info_t * createTempExtensionContext(channelPtr c, const char *
 				pbx_add_extension(context_name, /*replace*/1, ext, /*prio*/1, /*label*/NULL, /*cidmatch*/NULL, "Answer", NULL, NULL, BASE_REGISTRAR);
 				pbx_add_extension(context_name, /*replace*/1, ext, /*prio*/2, /*label*/NULL, /*cidmatch*/NULL, app, pbx_strdup(opts), sccp_free_ptr, BASE_REGISTRAR);
 				pbx_add_extension(context_name, /*replace*/1, ext, /*prio*/3, /*label*/NULL, /*cidmatch*/NULL, "Hangup", NULL, NULL, BASE_REGISTRAR);
-				sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "SCCP: created temp context:%s and extension:%s to call %s, with options:'%s'\n", context_name, ext, app, opts);
+				sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "SCCP: temporary context %s, extension %s runs %s with options '%s'\n", context_name, ext, app, opts);
 				sccp_channel_addCleanupJob(c, &cleanupTempExtensionContext, barge_info);
 				return barge_info;
 			}
@@ -1088,7 +1088,7 @@ void sccp_feat_handle_barge(constLinePtr l, uint8_t lineInstance, constDevicePtr
 		AUTO_RELEASE(sccp_device_t, remoted, maybe_c->getDevice(maybe_c));
 		if (l->isShared && d != remoted) {							// we are peering at a remote shared line
 			/* use the channel pointed to on the screen */
-			sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: handling barge on shared line\n", maybe_c->designator);
+			sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: barge on a shared line\n", maybe_c->designator);
 			AUTO_RELEASE(sccp_channel_t, bargedChannel, sccp_channel_retain(maybe_c));
 			AUTO_RELEASE(sccp_linedevice_t, bargingLineDevice, sccp_linedevice_find(d, l));
 			if (!sccp_feat_sharedline_barge(bargingLineDevice, bargedChannel)) {
@@ -1100,7 +1100,7 @@ void sccp_feat_handle_barge(constLinePtr l, uint8_t lineInstance, constDevicePtr
 	}
 	AUTO_RELEASE(sccp_channel_t, c, sccp_channel_getEmptyChannel(l, d, maybe_c, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));
 	if (c) {
-		sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: handling barge on single line:%s\n", d->id, l->name);
+		sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: barge on line %s\n", d->id, l->name);
 		c->softswitch_action = SCCP_SOFTSWITCH_GETBARGEEXTEN;					/* SoftSwitch will catch a number to be dialed */
 		c->ss_data = 0;										/* not needed here */
 		sccp_indicate(d, c, SCCP_CHANNELSTATE_GETDIGITS);
@@ -1145,7 +1145,7 @@ int sccp_feat_singleline_barge(channelPtr c, const char * const exten)
 	AUTO_RELEASE(sccp_line_t, l, sccp_line_retain(bargingLD->line));
 	uint16_t lineInstance = bargingLD->lineInstance;
 	
-	sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: is barging in on:%s\n", c->designator, /*pbx_channel_name(pbxchannel)*/exten);
+	sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: barging in on %s\n", c->designator, /*pbx_channel_name(pbxchannel)*/exten);
 	char ext[SCCP_MAX_EXTENSION];
 	char context[SCCP_MAX_CONTEXT];
 	char opts[SCCP_MAX_CONTEXT];
@@ -1196,7 +1196,7 @@ int sccp_feat_singleline_barge(channelPtr c, const char * const exten)
 			}
 		}
 		*/
-		sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: is barged in on:%s\n", c->designator, /*pbx_channel_name(pbxchannel)*/ exten);
+		sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: barged in on by %s\n", c->designator, /*pbx_channel_name(pbxchannel)*/ exten);
 	} else {
 		pbx_log(LOG_ERROR, "SCCP: barge not done: could not find or create dialplan context "
 			"'%s'\n", context);
@@ -1247,7 +1247,7 @@ int sccp_feat_sharedline_barge(constLineDevicePtr bargingLD, channelPtr bargedCh
 
 	AUTO_RELEASE(sccp_channel_t, c , sccp_channel_getEmptyChannel(l, d, NULL, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));
 	if (c) {
-		sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: is barging in on:%s\n", c->designator, bargedChannel->designator);
+		sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: barging in on %s\n", c->designator, bargedChannel->designator);
 		char ext[SCCP_MAX_EXTENSION];
 		char context[SCCP_MAX_CONTEXT];
 		char opts[SCCP_MAX_CONTEXT];
@@ -1291,7 +1291,7 @@ int sccp_feat_sharedline_barge(constLineDevicePtr bargingLD, channelPtr bargedCh
 			sccp_dev_set_message(d, statusmsg, SCCP_DISPLAYSTATUS_TIMEOUT, FALSE, FALSE);
 			bargedChannel->setTone(bargedChannel, SKINNY_TONE_ZIP, SKINNY_TONEDIRECTION_BOTH);
 
-			sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: is barged in on:%s\n", c->designator, bargedChannel->designator);
+			sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_2 "%s: barged in on by %s\n", c->designator, bargedChannel->designator);
 		} else {
 			pbx_log(LOG_ERROR, "SCCP: barge not done: could not find or create dialplan context "
 				"'%s'\n", context);
@@ -1403,7 +1403,7 @@ void sccp_feat_adhocDial(constDevicePtr d, constLinePtr line)
 	if (!d || !d->session || !line) {
 		return;
 	}
-	sccp_log((DEBUGCAT_FEATURE + DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: handling hotline\n", d->id);
+	sccp_log((DEBUGCAT_FEATURE + DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: hotline call\n", d->id);
 
 	AUTO_RELEASE(sccp_channel_t, c , sccp_device_getActiveChannel(d));
 
@@ -1445,7 +1445,7 @@ void sccp_feat_changed(constDevicePtr device, constLineDevicePtr maybe_ld, sccp_
 			event->featureChanged.featureType = featureType;
 			sccp_event_fire(event);
 		}
-		sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_3 "%s: Feature %s Change Event Scheduled\n", device->id, sccp_feature_type2str(featureType));
+		sccp_log(DEBUGCAT_FEATURE)(VERBOSE_PREFIX_3 "%s: feature %s change scheduled\n", device->id, sccp_feature_type2str(featureType));
 	}
 }
 
@@ -1489,7 +1489,7 @@ void sccp_feat_monitor(constDevicePtr device, constLinePtr no_line, uint32_t no_
 				sccp_strequals(outStr, "Response: Success\r\nMessage: Started monitoring channel\r\n\r\n") ||
 				sccp_strequals(outStr, "Response: Success\r\nMessage: Stopped monitoring channel\r\n\r\n")
 			) {
-				sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: (sccp_feat_monitor) AMI monitor request sent successfully.\n", DEV_ID_LOG(device));
+				sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: recording request sent to Asterisk\n", DEV_ID_LOG(device));
 				// sccp_asterisk_managerHookHelper will catch the result and update the softkey / featureButton accordingly.
 			} else {
 				sccp_dev_displayprinotify(device, SKINNY_DISP_RECORDING_FAILED, SCCP_MESSAGE_PRIORITY_MONITOR, SCCP_DISPLAYSTATUS_TIMEOUT*3);
@@ -1502,6 +1502,6 @@ void sccp_feat_monitor(constDevicePtr device, constLinePtr no_line, uint32_t no_
 			monitorFeature->status = SCCP_FEATURE_MONITOR_STATE_DISABLED;
 		}
 	}
-	sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: (sccp_feat_monitor) new monitor status:%s (%d)\n", device->id, sccp_feature_monitor_state2str(monitorFeature->status), monitorFeature->status);
+	sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: recording state now %s (%d)\n", device->id, sccp_feature_monitor_state2str(monitorFeature->status), monitorFeature->status);
 }
 // kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

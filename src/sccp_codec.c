@@ -227,14 +227,14 @@ int sccp_codec_parseAllowDisallow(skinny_codec_t * skinny_codec_prefs, const cha
 	while ((token = pbx_strip(strsep(&parse, ",")))) {
 		if (!sccp_strlen_zero(token)) {
 			if (token[0] == '!') {
-				sccp_log((DEBUGCAT_CODEC))(VERBOSE_PREFIX_1 "matched !, token=%s\n", token);
+				sccp_log((DEBUGCAT_CODEC))(VERBOSE_PREFIX_1 "codec token %s matched\n", token);
 				allow = !allowing;
 				token++;                                        // consume !
 			}
 			all = sccp_strcaseequals(token, "all") ? TRUE : FALSE;
 			if (all && !allow) {                                        // disallowing all
 				memset(skinny_codec_prefs, 0, sizeof(skinny_codec_t) * SKINNY_MAX_CAPABILITIES);
-				sccp_log((DEBUGCAT_CODEC))("SCCP: disallow=all => reset codecs\n");
+				sccp_log((DEBUGCAT_CODEC))("SCCP: disallow=all: codec list cleared\n");
 				allow = allowing;
 				continue;
 			}
@@ -243,10 +243,10 @@ int sccp_codec_parseAllowDisallow(skinny_codec_t * skinny_codec_prefs, const cha
 					codec = skinny_codecs[x].codec;
 					found = TRUE;
 					if (allow) {
-						sccp_log((DEBUGCAT_CODEC))(VERBOSE_PREFIX_1 "appending codec '%s'\n", codec2name(codec));
+						sccp_log((DEBUGCAT_CODEC))(VERBOSE_PREFIX_1 "adding codec %s\n", codec2name(codec));
 						codec_pref_append(skinny_codec_prefs, codec);
 					} else {
-						sccp_log((DEBUGCAT_CODEC))(VERBOSE_PREFIX_1 "removing codec '%s'\n", codec2name(codec));
+						sccp_log((DEBUGCAT_CODEC))(VERBOSE_PREFIX_1 "removing codec %s\n", codec2name(codec));
 						codec_pref_remove(skinny_codec_prefs, codec);
 					}
 				}
@@ -393,10 +393,10 @@ skinny_codec_t sccp_codec_findBestJoint(constChannelPtr c, const skinny_codec_t 
 
 EXIT:
 	if (res == SKINNY_CODEC_NONE && fallback) {
-		sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_3 "%s, Could not find a common preferred codec (yet), using %s (%d)\n", c->designator, codec2name(ourPreferences[0]), ourPreferences[0]);
+		sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_3 "%s: no common preferred codec yet; using %s (%d)\n", c->designator, codec2name(ourPreferences[0]), ourPreferences[0]);
 		res = ourPreferences[0];
 	}
-	sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_3 "%s: (findBestJoint) returning preferred codec %s (%d)\n", c->designator, codec2name(res), res);
+	sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_3 "%s: preferred codec %s (%d)\n", c->designator, codec2name(res), res);
 	return res;
 }
 

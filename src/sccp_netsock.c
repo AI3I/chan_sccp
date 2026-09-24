@@ -191,7 +191,7 @@ boolean_t sccp_netsock_getExternalAddr(struct sockaddr_storage *sockAddrStorage,
 			sccp_log(DEBUGCAT_SOCKET) (VERBOSE_PREFIX_3 "SCCP: %s resolved to %s\n", GLOB(externhost), sccp_netsock_stringify_addr(sockAddrStorage));
 			result = TRUE;
 		} else {
-			sccp_log(DEBUGCAT_CORE) (VERBOSE_PREFIX_3 "SCCP: No externip/externhost set in sccp.conf.\nWhen you are running your PBX on a separate host behind a NAT-TING Firewall you need to set externip/externhost.\n");
+			sccp_log(DEBUGCAT_CORE) (VERBOSE_PREFIX_3 "SCCP: externip and externhost are not set; no external address for phones behind NAT\n");
 		}
 	} else {
 		memcpy(sockAddrStorage, &GLOB(externip), sizeof(struct sockaddr_storage));
@@ -322,7 +322,7 @@ int sccp_netsock_cmp_port(const struct sockaddr_storage *a, const struct sockadd
 	uint16_t a_port = sccp_netsock_getPort(a);
 	uint16_t b_port = sccp_netsock_getPort(b);
 
-	sccp_log(DEBUGCAT_HIGH)(VERBOSE_PREFIX_2 "SCCP: sccp_netsock_cmp_port(%d, %d) returning %d\n", a_port, b_port, (a_port < b_port) ? -1 : (a_port == b_port) ? 0 : 1);
+	sccp_log(DEBUGCAT_HIGH)(VERBOSE_PREFIX_2 "SCCP: port compare %d with %d: %d\n", a_port, b_port, (a_port < b_port) ? -1 : (a_port == b_port) ? 0 : 1);
 
 	return (a_port < b_port) ? -1 : (a_port == b_port) ? 0 : 1;
 }
@@ -349,7 +349,7 @@ int sccp_netsock_split_hostport(char *str, char **host, char **port, int flags)
 	char *orig_str = str;											/* Original string in case the port presence is incorrect. */
 	char *host_end = NULL;											/* Delay terminating the host in case the port presence is incorrect. */
 
-	sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_4 "Splitting '%s' into...\n", str);
+	sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_4 "splitting '%s'\n", str);
 	*host = NULL;
 	*port = NULL;
 	if (*s == '[') {
@@ -402,7 +402,7 @@ int sccp_netsock_split_hostport(char *str, char **host, char **port, int flags)
 	if (host_end) {
 		*host_end = '\0';
 	}
-	sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_4 "...host '%s' and port '%s'.\n", *host, *port ? *port : "");
+	sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_4 "host '%s', port '%s'\n", *host, *port ? *port : "");
 	return 1;
 }
 
@@ -433,7 +433,7 @@ char *__netsock_stringify_fmt(const struct sockaddr_storage *sockAddrStorage, in
 	}
 
 	if ((e = getnameinfo((struct sockaddr *) sockAddrStorage_tmp, sccp_netsock_sizeof(sockAddrStorage_tmp), format & SCCP_SOCKADDR_STR_ADDR ? host : NULL, format & SCCP_SOCKADDR_STR_ADDR ? sizeof(host) : 0, format & SCCP_SOCKADDR_STR_PORT ? port : 0, format & SCCP_SOCKADDR_STR_PORT ? sizeof(port) : 0, NI_NUMERICHOST | NI_NUMERICSERV))) {
-		sccp_log(DEBUGCAT_SOCKET) (VERBOSE_PREFIX_3 "SCCP: getnameinfo(): %s \n", gai_strerror(e));
+		sccp_log(DEBUGCAT_SOCKET) (VERBOSE_PREFIX_3 "SCCP: getnameinfo failed: %s\n", gai_strerror(e));
 		return "";
 	}
 

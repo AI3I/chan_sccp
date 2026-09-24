@@ -109,7 +109,7 @@ void sccp_event_destroy(sccp_event_t * event)
 
 #if CS_TEST_FRAMEWORK
 		case SCCP_EVENT_TEST:
-			pbx_log(LOG_NOTICE, "SCCP: TestEvent Destroy Event\n");
+			pbx_log(LOG_NOTICE, "SCCP: test event destroyed\n");
 			if (event->TestEvent.str) {
 				sccp_free(event->TestEvent.str);
 			}
@@ -130,7 +130,7 @@ void sccp_event_module_start(void)
 {
 	uint _idx = 0;
 	if (!sccp_event_running) {
-		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "Starting event system\n");
+		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "starting the event system\n");
 		for (_idx = 0; _idx < NUMBER_OF_EVENT_TYPES; _idx++) {
 			if (SCCP_VECTOR_RW_INIT(&event_subscriptions[_idx].subscribers, SCCP_EVENT_EXPECTED_SUBSCRIPTIONS) != 0) {
 				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
@@ -146,7 +146,7 @@ void sccp_event_module_stop(void)
 {
 	uint _idx = 0;
 	if (sccp_event_running) {
-		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "Stopping event system\n");
+		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "stopping the event system\n");
 		sccp_event_running = FALSE;
 		for (_idx = 0; _idx < NUMBER_OF_EVENT_TYPES; _idx++) {
 			SCCP_VECTOR_RW_FREE(&event_subscriptions[_idx].subscribers);
@@ -230,7 +230,7 @@ static gcc_inline boolean_t __execute_callback_helper(const sccp_event_t *event,
 		for (n = 0; n < SCCP_VECTOR_SIZE(subs_vector) && sccp_event_running; n++) {
 			sccp_event_subscriber_t subscriber = SCCP_VECTOR_GET(subs_vector, n);
 			if (subscriber.callback_function != NULL) {
-				sccp_log((DEBUGCAT_EVENT)) (VERBOSE_PREFIX_3 "Processing Event %p of Type %s via %d callback:%p\n", event, sccp_event_type2str(event->type), n, subscriber.callback_function);
+				sccp_log((DEBUGCAT_EVENT)) (VERBOSE_PREFIX_3 "event %p of type %s to callback %d (%p)\n", event, sccp_event_type2str(event->type), n, subscriber.callback_function);
 				subscriber.callback_function(event);
 				res = TRUE;
 			}
@@ -378,12 +378,12 @@ static char *_sccp_event_TestStr = "^YTHnjMK<MJHBgF";
 static uint32_t _sccp_event_TestEventReceived = 0;
 
 static void sccp_event_testListener(const sccp_event_t * event) {
-	pbx_log(LOG_NOTICE, "SCCP: Test Event Listener, received event: %p, with type:%s, payload:[value:%d, str:%s]\n", event, sccp_event_type2str(event->type), event->TestEvent.value, event->TestEvent.str);
+	pbx_log(LOG_NOTICE, "SCCP: test listener received event %p, type %s, value %d, text %s\n", event, sccp_event_type2str(event->type), event->TestEvent.value, event->TestEvent.str);
 	if (event->TestEvent.value == _sccp_event_TestValue && sccp_strequals(event->TestEvent.str, _sccp_event_TestStr)) {
-		pbx_log(LOG_NOTICE, "SCCP: Test Event Listener, Received Content validated: Returning: %d\n", ++_sccp_event_TestEventReceived);
+		pbx_log(LOG_NOTICE, "SCCP: test listener: content correct (%d received)\n", ++_sccp_event_TestEventReceived);
 		return;
 	}
-	pbx_log(LOG_NOTICE, "SCCP: Test Event Listener, Received Content incorrect\n");
+	pbx_log(LOG_NOTICE, "SCCP: test listener: content incorrect\n");
 }
 
 AST_TEST_DEFINE(sccp_event_test_subscribe_single)

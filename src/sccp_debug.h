@@ -20,7 +20,9 @@
 
 #define sccp_log2(...)                                                                                                                                                                                                          \
 	{                                                                                                                                                                                                                       \
-		if ((sccp_globals->debug & (DEBUGCAT_FILELINEFUNC)) == DEBUGCAT_FILELINEFUNC) {                                                                                                                                 \
+		if (sccp_debug_filter_active) {                                                                                                                                                                                 \
+			sccp_debug_log_filtered(__FILE__, __LINE__, __PRETTY_FUNCTION__, __VA_ARGS__);                                                                                                                          \
+		} else if ((sccp_globals->debug & (DEBUGCAT_FILELINEFUNC)) == DEBUGCAT_FILELINEFUNC) {                                                                                                                          \
 			pbx_log(AST_LOG_NOTICE, __VA_ARGS__);                                                                                                                                                                   \
 		} else {                                                                                                                                                                                                        \
 			pbx_log(NO_FILE_LINE_FUNC_DEBUG, __VA_ARGS__);                                                                                                                                                          \
@@ -85,5 +87,16 @@ extern const struct sccp_debug_category sccp_debug_categories[32];
 SCCP_API int32_t SCCP_CALL sccp_parse_debugline(char * arguments[], int startat, int argc, int32_t new_debug_value);
 SCCP_API char * SCCP_CALL  sccp_get_debugcategories(int32_t debugvalue);
 SCCP_API boolean_t SCCP_CALL sccp_debug_is_category(const char * name);
+
+/* per-device debug: while any device is marked, debug output is limited to messages that mention one of
+ * the match strings registered for the marked devices (the device name, "SCCP/<line>-" of its lines) */
+#define SCCP_DEBUG_FILTER_MAX_MATCHES 16
+extern volatile int sccp_debug_filter_active;
+SCCP_API void SCCP_CALL sccp_debug_log_filtered(const char * file, int line, const char * function, const char * fmt, ...) __attribute__((format(printf, 4, 5)));
+SCCP_API boolean_t SCCP_CALL sccp_debug_filter_set(const char * device, const char * const matches[], int nmatches);
+SCCP_API boolean_t SCCP_CALL sccp_debug_filter_remove(const char * device);
+SCCP_API void SCCP_CALL sccp_debug_filter_clear(void);
+SCCP_API boolean_t SCCP_CALL sccp_debug_filter_has(const char * device);
+SCCP_API char * SCCP_CALL sccp_debug_filter_devices(void);
 __END_C_EXTERN__
 // kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

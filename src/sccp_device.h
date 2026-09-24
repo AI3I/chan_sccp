@@ -99,6 +99,24 @@ enum sccp_privacyfeature {
 };
 
 /*!
+ * \brief Quality of one finished call, as the phone reported it (sccp show device <device> calls)
+ */
+#define SCCP_CALL_HISTORY_SIZE 20
+typedef struct {
+	time_t   ended;
+	uint32_t callid;
+	uint32_t packets_sent;
+	uint32_t packets_received;
+	uint32_t packets_lost;
+	uint32_t jitter;
+	uint32_t latency;
+	float    mos_average;
+	float    mos_minimum;
+	uint32_t concealed_seconds;
+	uint32_t severely_concealed_seconds;
+} sccp_call_quality_t;
+
+/*!
  * \brief SCCP Call Statistics Structure
  */
 struct sccp_call_statistics {
@@ -284,6 +302,11 @@ struct sccp_device {
 	} messageStack;
 	
 	sccp_call_statistics_t call_statistics[2];								/*!< Call statistics */
+	struct {
+		sccp_call_quality_t entry[SCCP_CALL_HISTORY_SIZE];					/*!< last calls' quality, a ring */
+		uint8_t next;										/*!< slot the next call goes into */
+		uint8_t count;										/*!< valid entries */
+	} call_history;
 	char *softkeyDefinition;										/*!< requested softKey configuration */
 	sccp_softKeySetConfiguration_t *softkeyset;								/*!< Allow for a copy of the softkeyset, if any of the softkeys needs to be redefined, for example for urihook/uriaction */
 

@@ -93,9 +93,43 @@ void sccp_cli_table_print(sccp_cli_table_data_t *table, int fd, const char *titl
 		<synopsis>List SCCP devices.</synopsis>
 		<syntax>
 			<xi:include href="../core-en_US.xml" parse="xml" xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
+			<parameter name="Filter">
+				<para>Only list some devices.</para>
+				<enumlist>
+					<enum name="registered"/>
+					<enum name="unregistered"/>
+					<enum name="model"><para>Model name contains Value.</para></enum>
+					<enum name="line"><para>Device has line Value.</para></enum>
+					<enum name="firmware"><para>Reported firmware contains Value.</para></enum>
+				</enumlist>
+			</parameter>
+			<parameter name="Value">
+				<para>Text for the model, line and firmware filters.</para>
+			</parameter>
 		</syntax>
 		<description>
-			<para>Returns one SCCPDeviceEntry event per configured device, with its address, registration state and model, followed by SCCPShowDevicesComplete.</para>
+			<para>Returns one SCCPDeviceEntry event per matching device, with its address, registration state, model and firmware, followed by SCCPShowDevicesComplete.</para>
+		</description>
+	</manager>
+	<manager name="SCCPShowDeviceCalls" language="en_US">
+		<synopsis>Show the quality of a device's last calls.</synopsis>
+		<syntax>
+			<xi:include href="../core-en_US.xml" parse="xml" xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
+			<parameter name="Device" required="true">
+				<para>Device name.</para>
+			</parameter>
+		</syntax>
+		<description>
+			<para>Returns one SCCPDeviceCallEntry event per call, newest first (the last 20 calls since the module loaded), with the packet counts, loss, jitter, latency, MOS and concealment the phone reported at the end of the call, followed by SCCPShowDeviceCallsComplete.</para>
+		</description>
+	</manager>
+	<manager name="SCCPShowFirmware" language="en_US">
+		<synopsis>List phone firmware.</synopsis>
+		<syntax>
+			<xi:include href="../core-en_US.xml" parse="xml" xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
+		</syntax>
+		<description>
+			<para>Returns one SCCPFirmwareEntry event per model and firmware pair, with Model, Firmware (empty when the phone has not reported one), Devices (count) and DeviceNames, followed by SCCPShowFirmwareComplete.</para>
 		</description>
 	</manager>
 	<manager name="SCCPShowDevice" language="en_US">
@@ -297,7 +331,7 @@ void sccp_cli_table_print(sccp_cli_table_data_t *table, int fd, const char *titl
 				<para>Device name.</para>
 			</parameter>
 			<parameter name="Option" required="true">
-				<para>Any sccp.conf device option, or ringtone / backgroundimage (value is a URL).</para>
+				<para>Any sccp.conf device option; ringtone or backgroundimage (value is a URL); or debug (on/off: limit SCCP debug output to marked devices).</para>
 			</parameter>
 			<parameter name="Value" required="true">
 				<para>New value.</para>
@@ -1303,6 +1337,55 @@ SCCP_AMI_ACTION(show_globals, sccp_show_globals, "SCCPShowGlobals", FALSE, "sccp
 #undef CLI_COMPLETE
 #undef CLI_COMMAND
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
+/* sccp show devices filters: registered | unregistered | model <text> | line <line> | firmware <text> */
+static boolean_t sccp_cli_device_matches(constDevicePtr d, const char * filter, const char * value)
+{
+	if (sccp_strlen_zero(filter)) {
+		return TRUE;
+	}
+	boolean_t registered = d->session && sccp_device_getRegistrationState(d) == SKINNY_DEVICE_RS_OK;
+	if (sccp_strcaseequals(filter, "registered")) {
+		return registered;
+	}
+	if (sccp_strcaseequals(filter, "unregistered")) {
+		return !registered;
+	}
+	if (sccp_strlen_zero(value)) {
+		return FALSE;
+	}
+	if (sccp_strcaseequals(filter, "model")) {
+		return strcasestr(skinny_devicetype2str(d->skinny_type), value) || strcasestr(d->config_type, value);
+	}
+	if (sccp_strcaseequals(filter, "firmware")) {
+		return strcasestr(d->loadedimageversion, value) != NULL;
+	}
+	if (sccp_strcaseequals(filter, "line")) {
+		boolean_t              found  = FALSE;
+		sccp_buttonconfig_t * config = NULL;
+		SCCP_LIST_LOCK(&((devicePtr)d)->buttonconfig);
+		SCCP_LIST_TRAVERSE(&d->buttonconfig, config, list) {
+			if (config->type == LINE && sccp_strcaseequals(config->button.line.name, value)) {
+				found = TRUE;
+				break;
+			}
+		}
+		SCCP_LIST_UNLOCK(&((devicePtr)d)->buttonconfig);
+		return found;
+	}
+	return FALSE;
+}
+
+static boolean_t sccp_cli_device_filter_valid(const char * filter, const char * value)
+{
+	if (sccp_strlen_zero(filter)) {
+		return TRUE;
+	}
+	if (sccp_strcaseequals(filter, "registered") || sccp_strcaseequals(filter, "unregistered")) {
+		return sccp_strlen_zero(value);
+	}
+	return (sccp_strcaseequals(filter, "model") || sccp_strcaseequals(filter, "line") || sccp_strcaseequals(filter, "firmware")) && !sccp_strlen_zero(value);
+}
+
     /* --------------------------------------------------------------------------------------------------------SHOW DEVICES- */
     /*!
      * \brief Show Devices
@@ -1322,6 +1405,13 @@ static int sccp_show_devices(int fd, sccp_cli_totals_t *totals, struct mansessio
 {
 	char regtime[32];
 	int local_line_total = 0;
+	const char * filter = argc > 3 ? argv[3] : "";
+	const char * value  = argc > 4 ? argv[4] : "";
+	if (argc > 5 || !sccp_cli_device_filter_valid(filter, value)) {
+		return RESULT_SHOWUSAGE;
+	}
+	CLI_AMI_LIST_START(s, m, "SCCPShowDevices");
+	int shown = 0, registered = 0;
 	char addrStr[INET6_ADDRSTRLEN + 8];
 	struct ast_tm tm;
 
@@ -1337,7 +1427,11 @@ static int sccp_show_devices(int fd, sccp_cli_totals_t *totals, struct mansessio
 #define CLI_AMI_TABLE_BEFORE_ITERATION                                                                       \
 	{                                                                                                    \
 		AUTO_RELEASE (sccp_device_t, d, sccp_device_retain (list_dev));                              \
-		if (d) {                                                                                     \
+		if (d && sccp_cli_device_matches(d, filter, value)) {                                        \
+			shown++;                                                                             \
+			if (d->session && sccp_device_getRegistrationState(d) == SKINNY_DEVICE_RS_OK) {     \
+				registered++;                                                                \
+			}                                                                                    \
 			if (d->session) {                                                                    \
 				struct sockaddr_storage sas = { 0 };                                         \
 				struct timeval when = { d->registrationTime, 0 };                            \
@@ -1346,9 +1440,7 @@ static int sccp_show_devices(int fd, sccp_cli_totals_t *totals, struct mansessio
 				sccp_session_getSas (d->session, &sas);                                      \
 				sccp_copy_string (addrStr, sccp_netsock_stringify (&sas), sizeof (addrStr)); \
 			} else {                                                                             \
-				addrStr[0] = '-';                                                            \
-				addrStr[1] = '-';                                                            \
-				addrStr[2] = '\0';                                                           \
+				addrStr[0] = '\0';                                                           \
 				regtime[0] = '\0';                                                           \
 			}
 
@@ -1359,41 +1451,207 @@ static int sccp_show_devices(int fd, sccp_cli_totals_t *totals, struct mansessio
 
 // Human-readable CLI headings are separate from the AMI field identifiers.
 #define CLI_AMI_TABLE_FIELDS 																	\
+		CLI_AMI_TABLE_FIELD_NAMED(MACAddress,	"Device",	"-16.16",	s,	16,	d->id)								\
 		CLI_AMI_TABLE_UTF8_FIELD_NAMED(Description, "Description",	"-25.25",	s,	25,	d->description ? d->description : "")		\
-		CLI_AMI_TABLE_FIELD_NAMED(IPAddress,	"IP Address",	"44.44",	s,	44,	addrStr)							\
-		CLI_AMI_TABLE_FIELD_NAMED(MACAddress,	"MAC Address",	"-16.16",	s,	16,	d->id)								\
+		CLI_AMI_TABLE_FIELD_NAMED(IPAddress,	"Address",	"44.44",	s,	44,	addrStr[0] || s ? addrStr : "(not connected)")			\
 		CLI_AMI_TABLE_FIELD(Status,		"-10.10",	s,	10, 	skinny_registrationstate2str(sccp_device_getRegistrationState(d)))		\
 		CLI_AMI_TABLE_FIELD(Token,		"-5.5",		s,	5,	sccp_tokenstate2str(d->status.token)) 					\
-		CLI_AMI_TABLE_FIELD(Registered,		"25.25",	s,	25, 	regtime[0] ? regtime : "None")						\
-		CLI_AMI_TABLE_FIELD(Active,		"6.6",		s,	6, 	(d->active_channel) ? "Yes" : "No")					\
+		CLI_AMI_TABLE_FIELD(Registered,		"25.25",	s,	25, 	regtime[0] || s ? regtime : "(never)")					\
+		CLI_AMI_TABLE_FIELD_NAMED(Active, "In Call",	"6.6",		s,	6, 	(d->active_channel) ? "yes" : "no")					\
 		CLI_AMI_TABLE_FIELD(Lines, 		"-5",		d,	5, 	d->configurationStatistic.numberOfLines)				\
 		CLI_AMI_TABLE_FIELD(NAT,		"9.9",		s, 	9,	sccp_nat2str(d->nat))							\
-		CLI_AMI_TABLE_FIELD(Model,		"10.10",	s, 	10,	d->skinny_type == SKINNY_DEVICETYPE_UNDEFINED ? "Unknown" : skinny_devicetype2str(d->skinny_type))					\
-		CLI_AMI_TABLE_FIELD_NAMED(TypeID, "Type ID",		"6.6",		d, 	6,	d->skinny_type)
-// TypeID doesn't actually carry firmware/load-file info despite the column existing for that
-// reason historically (it prints d->skinny_type, the same raw device-type enum "Model" already
-// shows as a readable string). Nothing in this codebase tracks the phone's actual reported
-// firmware/load ID at all - that's a real, separate feature gap, not something invented here.
+		CLI_AMI_TABLE_FIELD(Model,		"10.10",	s, 	10,	d->skinny_type == SKINNY_DEVICETYPE_UNDEFINED ? (d->config_type[0] ? d->config_type : "Unknown") : skinny_devicetype2str(d->skinny_type))	\
+		CLI_AMI_TABLE_FIELD(Firmware,		"-20.20",	s, 	20,	d->loadedimageversion)
 #include "sccp_cli_table.h"
 
 	// end of table definition
 	if (s) {
 		totals->lines = local_line_total;
 		totals->tables = 1;
+	} else {
+		pbx_cli(fd, "%d device%s, %d registered, %d not registered\n", shown, shown == 1 ? "" : "s", registered, shown - registered);
 	}
 	return RESULT_SUCCESS;
 }
 
-static char cli_devices_usage[] = "Usage: sccp show devices\n" "       Lists defined SCCP devices.\n";
+static char cli_devices_usage[] = "Usage: sccp show devices [registered | unregistered | model <text> | line <line> | firmware <text>]\n"
+				  "       List SCCP devices, optionally only those registered, not registered, of a\n"
+				  "       model, with a line, or running a firmware (model and firmware match part of\n"
+				  "       the name).\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "devices"
 #define CLI_COMPLETE SCCP_CLI_NULL_COMPLETER
 CLI_AMI_ENTRY(show_devices, sccp_show_devices, "List defined SCCP devices", cli_devices_usage, FALSE, TRUE)
-SCCP_AMI_ACTION(show_devices, sccp_show_devices, "SCCPShowDevices", TRUE, "sccp", "show", "devices")
+SCCP_AMI_ACTION(show_devices, sccp_show_devices, "SCCPShowDevices", SCCP_AMI_LIST_BY_HANDLER, "sccp", "show", "devices", "$Filter", "$Value")
 #undef CLI_COMPLETE
 #undef CLI_COMMAND
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
+
+/* ------------------------------------------------------------------------------------------------------ SHOW FIRMWARE - */
+/* sccp show firmware: which firmware each model runs, with how many devices and which */
+typedef struct {
+	char   model[40];
+	char   firmware[StationMaxImageVersionSize];
+	int    count;
+	char   devices[160];
+	size_t more;
+} sccp_cli_firmware_row_t;
+
+static int sccp_cli_firmware_row_cmp(const void * a, const void * b)
+{
+	const sccp_cli_firmware_row_t * ra = (const sccp_cli_firmware_row_t *)a;
+	const sccp_cli_firmware_row_t * rb = (const sccp_cli_firmware_row_t *)b;
+	int res = strcasecmp(ra->model, rb->model);
+	return res ? res : strcasecmp(ra->firmware, rb->firmware);
+}
+
+static int sccp_show_firmware(int fd, sccp_cli_totals_t * totals, struct mansession * s, const struct message * m, int argc, char * argv[])
+{
+	if (argc != 3) {
+		return RESULT_SHOWUSAGE;
+	}
+	sccp_cli_firmware_row_t * rows  = NULL;
+	size_t                    nrows = 0;
+	sccp_device_t *           d     = NULL;
+	int                       local_line_total = 0;
+
+	SCCP_RWLIST_RDLOCK(&GLOB(devices));
+	SCCP_RWLIST_TRAVERSE(&GLOB(devices), d, list) {
+		char model[40];
+		snprintf(model, sizeof(model), "%s", d->skinny_type != SKINNY_DEVICETYPE_UNDEFINED ? skinny_devicetype2str(d->skinny_type) : (d->config_type[0] ? d->config_type : "Unknown"));
+		const char * firmware = d->loadedimageversion[0] ? d->loadedimageversion : "";
+		size_t       r        = 0;
+		for (r = 0; r < nrows; r++) {
+			if (!strcasecmp(rows[r].model, model) && !strcmp(rows[r].firmware, firmware)) {
+				break;
+			}
+		}
+		if (r == nrows) {
+			sccp_cli_firmware_row_t * tmp = (sccp_cli_firmware_row_t *)sccp_realloc(rows, (nrows + 1) * sizeof(*rows));
+			if (!tmp) {
+				break;
+			}
+			rows = tmp;
+			memset(&rows[r], 0, sizeof(rows[r]));
+			sccp_copy_string(rows[r].model, model, sizeof(rows[r].model));
+			sccp_copy_string(rows[r].firmware, firmware, sizeof(rows[r].firmware));
+			nrows++;
+		}
+		rows[r].count++;
+		size_t used = strlen(rows[r].devices);
+		if (used + strlen(d->id) + 3 < sizeof(rows[r].devices)) {
+			snprintf(rows[r].devices + used, sizeof(rows[r].devices) - used, "%s%s", used ? ", " : "", d->id);
+		} else {
+			rows[r].more++;
+		}
+	}
+	SCCP_RWLIST_UNLOCK(&GLOB(devices));
+	if (nrows) {
+		qsort(rows, nrows, sizeof(*rows), sccp_cli_firmware_row_cmp);
+	}
+
+	CLI_AMI_LIST_START(s, m, "SCCPShowFirmware");
+	const char * actionid = s ? astman_get_header(m, "ActionID") : "";
+	const char * const headers[] = { "Model", "Firmware", "Devices", "Device names" };
+	sccp_cli_table_data_t table = { .headers = headers, .columns = ARRAY_LEN(headers) };
+	for (size_t r = 0; r < nrows; r++) {
+		char names[200];
+		if (rows[r].more) {
+			snprintf(names, sizeof(names), "%s and %zu more", rows[r].devices, rows[r].more);
+		} else {
+			snprintf(names, sizeof(names), "%s", rows[r].devices);
+		}
+		if (!s) {
+			sccp_cli_table_add(&table, "%s", rows[r].model);
+			sccp_cli_table_add(&table, "%s", rows[r].firmware[0] ? rows[r].firmware : "(not reported)");
+			sccp_cli_table_add(&table, "%d", rows[r].count);
+			sccp_cli_table_add(&table, "%s", names);
+		} else {
+			astman_append(s, "Event: SCCPFirmwareEntry\r\n");
+			if (!sccp_strlen_zero(actionid)) {
+				astman_append(s, "ActionID: %s\r\n", actionid);
+			}
+			astman_append(s, "Model: %s\r\nFirmware: %s\r\nDevices: %d\r\nDeviceNames: %s\r\n\r\n", rows[r].model, rows[r].firmware, rows[r].count, names);
+			local_line_total += 6;
+		}
+	}
+	sccp_free(rows);
+	if (!s) {
+		sccp_cli_table_print(&table, fd, "Firmware");
+	} else {
+		totals->lines  = local_line_total;
+		totals->tables = 1;
+	}
+	return RESULT_SUCCESS;
+}
+
+static char cli_show_firmware_usage[] = "Usage: sccp show firmware\n"
+					"       List the firmware each phone model reports, with the devices running it.\n";
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+#define CLI_COMMAND "sccp", "show", "firmware"
+#define CLI_COMPLETE SCCP_CLI_NULL_COMPLETER
+CLI_AMI_ENTRY(show_firmware, sccp_show_firmware, "List phone firmware", cli_show_firmware_usage, FALSE, TRUE)
+SCCP_AMI_ACTION(show_firmware, sccp_show_firmware, "SCCPShowFirmware", SCCP_AMI_LIST_BY_HANDLER, "sccp", "show", "firmware")
+#undef CLI_COMPLETE
+#undef CLI_COMMAND
+#endif														/* DOXYGEN_SHOULD_SKIP_THIS */
+/* sccp show device <device> calls: quality of the last calls, newest first */
+static int sccp_show_device_calls(int fd, sccp_cli_totals_t * totals, struct mansession * s, const struct message * m, constDevicePtr d)
+{
+	int          local_line_total = 0;
+	const char * actionid         = s ? astman_get_header(m, "ActionID") : "";
+	const char * const headers[]  = { "Ended", "Call", "Sent", "Received", "Lost", "Loss", "Jitter (ms)", "Latency (ms)", "MOS", "Min MOS", "Concealed (s)", "Severe (s)" };
+	sccp_cli_table_data_t table   = { .headers = headers, .columns = ARRAY_LEN(headers) };
+
+	CLI_AMI_LIST_START(s, m, "SCCPShowDeviceCalls");
+	for (int i = 0; i < d->call_history.count; i++) {
+		const sccp_call_quality_t * q = &d->call_history.entry[(d->call_history.next + SCCP_CALL_HISTORY_SIZE - 1 - i) % SCCP_CALL_HISTORY_SIZE];
+		char                        ended[32];
+		struct ast_tm               tm;
+		struct timeval              when = { q->ended, 0 };
+		ast_localtime(&when, &tm, NULL);
+		ast_strftime(ended, sizeof(ended), "%Y-%m-%d %H:%M:%S", &tm);
+		uint32_t expected = q->packets_received + q->packets_lost;
+		double   loss     = expected ? 100.0 * q->packets_lost / expected : 0.0;
+		if (!s) {
+			sccp_cli_table_add(&table, "%s", ended);
+			sccp_cli_table_add(&table, "%u", q->callid);
+			sccp_cli_table_add(&table, "%u", q->packets_sent);
+			sccp_cli_table_add(&table, "%u", q->packets_received);
+			sccp_cli_table_add(&table, "%u", q->packets_lost);
+			sccp_cli_table_add(&table, "%.1f%%", loss);
+			sccp_cli_table_add(&table, "%u", q->jitter);
+			sccp_cli_table_add(&table, "%u", q->latency);
+			sccp_cli_table_add(&table, "%.2f", q->mos_average);
+			sccp_cli_table_add(&table, "%.2f", q->mos_minimum);
+			sccp_cli_table_add(&table, "%u", q->concealed_seconds);
+			sccp_cli_table_add(&table, "%u", q->severely_concealed_seconds);
+		} else {
+			astman_append(s, "Event: SCCPDeviceCallEntry\r\n");
+			if (!sccp_strlen_zero(actionid)) {
+				astman_append(s, "ActionID: %s\r\n", actionid);
+			}
+			astman_append(s,
+				      "Device: %s\r\nEnded: %s\r\nCallID: %u\r\nPacketsSent: %u\r\nPacketsReceived: %u\r\nPacketsLost: %u\r\nLossPercent: %.1f\r\n"
+				      "Jitter: %u\r\nLatency: %u\r\nMOS: %.2f\r\nMinMOS: %.2f\r\nConcealedSeconds: %u\r\nSeverelyConcealedSeconds: %u\r\n\r\n",
+				      d->id, ended, q->callid, q->packets_sent, q->packets_received, q->packets_lost, loss, q->jitter, q->latency, q->mos_average, q->mos_minimum,
+				      q->concealed_seconds, q->severely_concealed_seconds);
+			local_line_total += 16;
+		}
+	}
+	if (!s) {
+		char title[64];
+		snprintf(title, sizeof(title), "Calls on %s (newest first, last %d kept)", d->id, SCCP_CALL_HISTORY_SIZE);
+		sccp_cli_table_print(&table, fd, title);
+	} else {
+		totals->lines  = local_line_total;
+		totals->tables = 1;
+	}
+	return RESULT_SUCCESS;
+}
+
     /* --------------------------------------------------------------------------------------------------------SHOW DEVICE- */
     /*!
      * \brief Show Device
@@ -1434,6 +1692,12 @@ static int sccp_show_device(int fd, sccp_cli_totals_t *totals, struct mansession
 
 	if (!d) {
 		CLI_AMI_RETURN_ERROR(fd, s, m, "Device %s does not exist\n", dev);		/* explicit return */
+	}
+	if (argc > 5 || (argc == 5 && !sccp_strcaseequals(argv[4], "calls"))) {
+		return RESULT_SHOWUSAGE;
+	}
+	if (argc == 5) {
+		return sccp_show_device_calls(fd, totals, s, m, d);
 	}
 	CLI_AMI_LIST_START(s, m, "SCCPShowDevice");
 	char apref_buf[256];
@@ -1765,13 +2029,16 @@ static int sccp_show_device(int fd, sccp_cli_totals_t *totals, struct mansession
 	return RESULT_SUCCESS;
 }
 
-static char cli_device_usage[] = "Usage: sccp show device <device-id>\n" "       Lists device settings for the SCCP subsystem.\n";
+static char cli_device_usage[] = "Usage: sccp show device <device> [calls]\n"
+				 "       Show a device's settings and state, or with calls, the quality the phone\n"
+				 "       reported for its last calls.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "show", "device"
 #define CLI_COMPLETE SCCP_CLI_DEVICE_COMPLETER
 CLI_AMI_ENTRY(show_device, sccp_show_device, "Lists device settings", cli_device_usage, FALSE, TRUE)
 SCCP_AMI_ACTION(show_device, sccp_show_device, "SCCPShowDevice", SCCP_AMI_LIST_BY_HANDLER, "sccp", "show", "device", "$Device")
+SCCP_AMI_ACTION(show_device_calls, sccp_show_device, "SCCPShowDeviceCalls", SCCP_AMI_LIST_BY_HANDLER, "sccp", "show", "device", "$Device", "calls")
 #undef CLI_COMPLETE
 #undef CLI_COMMAND
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
@@ -1932,7 +2199,7 @@ static int sccp_show_lines(int fd, sccp_cli_totals_t *totals, struct mansession 
 	if (!s) {
 		sccp_cli_table_print(&table, fd, "Lines");
 		if (details.cells || details.failed) {
-			sccp_cli_table_print(&details, fd, "Line Settings");
+			sccp_cli_table_print(&details, fd, "Line settings");
 		}
 	} else {
 		astman_append(s, "Event: TableEnd\r\n");
@@ -2711,6 +2978,11 @@ static int sccp_do_debug(int fd, int argc, char *argv[])
 	} else {
 		pbx_cli(fd, "SCCP debug: %s\n", old_categories ? old_categories : "none");
 	}
+	char * devices = sccp_debug_filter_devices();
+	if (devices) {
+		pbx_cli(fd, "Limited to devices: %s\n", devices);
+		sccp_free(devices);
+	}
 	sccp_free(old_categories);
 	sccp_free(new_categories);
 
@@ -3161,6 +3433,43 @@ static int sccp_set_device(int fd, sccp_cli_totals_t * totals, struct mansession
 		sccp_dev_check_displayprompt(d);
 		CLI_AMI_RETURN_DONE(fd, s, m, "DND on %s set to %s", d->id, sccp_dndmode2str(state));
 	}
+	if (sccp_strcaseequals(what, "debug")) {
+		if (!sccp_true(value) && !sccp_false(value)) {
+			return RESULT_SHOWUSAGE;
+		}
+		if (sccp_false(value)) {
+			if (!sccp_debug_filter_remove(d->id)) {
+				CLI_AMI_RETURN_DONE(fd, s, m, "Debug for %s was not on", d->id);
+			}
+			CLI_AMI_RETURN_DONE(fd, s, m, "Debug for %s turned off%s", d->id, sccp_debug_filter_active ? "" : "; debug output is no longer limited to marked devices");
+		}
+		/* match the device name and the call names (SCCP/<line>-) of its lines */
+		const char *          matches[SCCP_DEBUG_FILTER_MAX_MATCHES];
+		char                  names[SCCP_DEBUG_FILTER_MAX_MATCHES][96];
+		int                   nmatches = 0;
+		sccp_buttonconfig_t * config   = NULL;
+		SCCP_LIST_LOCK(&d->buttonconfig);
+		SCCP_LIST_TRAVERSE(&d->buttonconfig, config, list) {
+			if (config->type == LINE && !sccp_strlen_zero(config->button.line.name) && nmatches < SCCP_DEBUG_FILTER_MAX_MATCHES - 1) {
+				snprintf(names[nmatches], sizeof(names[nmatches]), "SCCP/%s-", config->button.line.name);
+				matches[nmatches] = names[nmatches];
+				nmatches++;
+			}
+		}
+		SCCP_LIST_UNLOCK(&d->buttonconfig);
+		if (!sccp_debug_filter_set(d->id, matches, nmatches)) {
+			CLI_AMI_RETURN_ERROR(fd, s, m, "Debug for %s not turned on: too many devices are already marked", d->id);
+		}
+		if (!GLOB(debug)) {
+			GLOB(debug) = DEBUGCAT_CORE | DEBUGCAT_DEVICE | DEBUGCAT_LINE | DEBUGCAT_ACTION | DEBUGCAT_CHANNEL | DEBUGCAT_INDICATE | DEBUGCAT_SOFTKEY;
+			CLI_AMI_RETURN_DONE(fd, s, m, "Debug for %s turned on with categories core, device, line, action, channel, indicate, softkey; other devices' debug output is suppressed", d->id);
+		}
+		char * categories = sccp_get_debugcategories(GLOB(debug));
+		char   msg[512];
+		snprintf(msg, sizeof(msg), "Debug for %s turned on with categories %s; other devices' debug output is suppressed", d->id, categories ? categories : "none");
+		sccp_free(categories);
+		CLI_AMI_RETURN_DONE(fd, s, m, "%s", msg);
+	}
 	if (sccp_strcaseequals(what, "microphone")) {
 		if (!sccp_true(value) && !sccp_false(value)) {
 			return RESULT_SHOWUSAGE;
@@ -3355,6 +3664,7 @@ static int sccp_set_object(int fd, sccp_cli_totals_t * totals, struct mansession
 
 static char cli_set_usage[] =
 	"Usage: sccp set device <device> dnd <off|reject|silent>\n"
+	"       sccp set device <device> debug <on|off>\n"
 	"       sccp set device <device> microphone <on|off>\n"
 	"       sccp set device <device> ringtone <url>\n"
 	"       sccp set device <device> backgroundimage <url> [thumbnail-url]\n"
@@ -3667,6 +3977,7 @@ static struct pbx_cli_entry cli_entries[] = {
 	AST_CLI_DEFINE(cli_show_globals, "Show global SCCP settings"),
 	AST_CLI_DEFINE(cli_show_devices, "List SCCP devices"),
 	AST_CLI_DEFINE(cli_show_device, "Show one SCCP device"),
+	AST_CLI_DEFINE(cli_show_firmware, "List phone firmware"),
 	AST_CLI_DEFINE(cli_show_lines, "List SCCP lines"),
 	AST_CLI_DEFINE(cli_show_line, "Show one SCCP line"),
 	AST_CLI_DEFINE(cli_show_channels, "List SCCP calls"),
@@ -3720,6 +4031,8 @@ static const struct {
 	{ "SCCPShowGlobals", _MAN_SHOW, manager_show_globals },
 	{ "SCCPShowDevices", _MAN_SHOW, manager_show_devices },
 	{ "SCCPShowDevice", _MAN_SHOW, manager_show_device },
+	{ "SCCPShowDeviceCalls", _MAN_SHOW, manager_show_device_calls },
+	{ "SCCPShowFirmware", _MAN_SHOW, manager_show_firmware },
 	{ "SCCPShowLines", _MAN_SHOW, manager_show_lines },
 	{ "SCCPShowLine", _MAN_SHOW, manager_show_line },
 	{ "SCCPShowChannels", _MAN_SHOW, manager_show_channels },

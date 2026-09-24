@@ -164,3 +164,124 @@ char * sccp_get_debugcategories(int32_t debugvalue)
 }
 
 // kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;
+
+/* ------------------------------------------------------------------------------------------------ per-device debug - */
+#define SCCP_DEBUG_FILTER_MAX_DEVICES 32
+typedef struct {
+	char device[StationMaxDeviceNameSize];
+	char matches[SCCP_DEBUG_FILTER_MAX_MATCHES][96];
+	int  nmatches;
+} sccp_debug_filter_t;
+
+volatile int                sccp_debug_filter_active = 0;
+static sccp_debug_filter_t  debug_filters[SCCP_DEBUG_FILTER_MAX_DEVICES];
+static int                  debug_nfilters = 0;
+static ast_rwlock_t         debug_filter_lock = AST_RWLOCK_INIT_VALUE;
+
+void sccp_debug_log_filtered(const char * file, int line, const char * function, const char * fmt, ...)
+{
+	char    buf[1024];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+
+	boolean_t match = FALSE;
+	ast_rwlock_rdlock(&debug_filter_lock);
+	for (int f = 0; f < debug_nfilters && !match; f++) {
+		for (int i = 0; i < debug_filters[f].nmatches && !match; i++) {
+			match = strstr(buf, debug_filters[f].matches[i]) != NULL;
+		}
+	}
+	ast_rwlock_unlock(&debug_filter_lock);
+	if (!match) {
+		return;
+	}
+	if ((sccp_globals->debug & DEBUGCAT_FILELINEFUNC) == DEBUGCAT_FILELINEFUNC) {
+		ast_log(__LOG_NOTICE, file, line, function, "%s", buf);
+	} else {
+		ast_log(__LOG_VERBOSE, "", 0, "", "%s", buf);
+	}
+}
+
+/* mark device (or update its match strings); FALSE when the table is full */
+boolean_t sccp_debug_filter_set(const char * device, const char * const matches[], int nmatches)
+{
+	boolean_t res = FALSE;
+	ast_rwlock_wrlock(&debug_filter_lock);
+	int f = 0;
+	for (f = 0; f < debug_nfilters; f++) {
+		if (!strcasecmp(debug_filters[f].device, device)) {
+			break;
+		}
+	}
+	if (f < SCCP_DEBUG_FILTER_MAX_DEVICES) {
+		sccp_debug_filter_t * filter = &debug_filters[f];
+		memset(filter, 0, sizeof(*filter));
+		snprintf(filter->device, sizeof(filter->device), "%s", device);
+		snprintf(filter->matches[0], sizeof(filter->matches[0]), "%s", device);
+		filter->nmatches = 1;
+		for (int i = 0; i < nmatches && filter->nmatches < SCCP_DEBUG_FILTER_MAX_MATCHES; i++) {
+			snprintf(filter->matches[filter->nmatches++], sizeof(filter->matches[0]), "%s", matches[i]);
+		}
+		if (f == debug_nfilters) {
+			debug_nfilters++;
+		}
+		res = TRUE;
+	}
+	sccp_debug_filter_active = debug_nfilters > 0;
+	ast_rwlock_unlock(&debug_filter_lock);
+	return res;
+}
+
+boolean_t sccp_debug_filter_remove(const char * device)
+{
+	boolean_t res = FALSE;
+	ast_rwlock_wrlock(&debug_filter_lock);
+	for (int f = 0; f < debug_nfilters; f++) {
+		if (!strcasecmp(debug_filters[f].device, device)) {
+			debug_filters[f] = debug_filters[--debug_nfilters];
+			res = TRUE;
+			break;
+		}
+	}
+	sccp_debug_filter_active = debug_nfilters > 0;
+	ast_rwlock_unlock(&debug_filter_lock);
+	return res;
+}
+
+void sccp_debug_filter_clear(void)
+{
+	ast_rwlock_wrlock(&debug_filter_lock);
+	debug_nfilters           = 0;
+	sccp_debug_filter_active = 0;
+	ast_rwlock_unlock(&debug_filter_lock);
+}
+
+boolean_t sccp_debug_filter_has(const char * device)
+{
+	boolean_t res = FALSE;
+	ast_rwlock_rdlock(&debug_filter_lock);
+	for (int f = 0; f < debug_nfilters && !res; f++) {
+		res = !strcasecmp(debug_filters[f].device, device);
+	}
+	ast_rwlock_unlock(&debug_filter_lock);
+	return res;
+}
+
+/* marked devices, comma separated (caller frees), or NULL when none */
+char * sccp_debug_filter_devices(void)
+{
+	char * res = NULL;
+	ast_rwlock_rdlock(&debug_filter_lock);
+	if (debug_nfilters) {
+		size_t size = debug_nfilters * (StationMaxDeviceNameSize + 2) + 1;
+		res = (char *)sccp_calloc(1, size);
+		for (int f = 0; res && f < debug_nfilters; f++) {
+			size_t used = strlen(res);
+			snprintf(res + used, size - used, "%s%s", f ? ", " : "", debug_filters[f].device);
+		}
+	}
+	ast_rwlock_unlock(&debug_filter_lock);
+	return res;
+}

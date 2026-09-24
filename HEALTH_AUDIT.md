@@ -1,5 +1,32 @@
 # chan_sccp-modern Health Audit
 
+## Added — provisioning and support commands (2026-09-24)
+
+- `sccp show devices [registered | unregistered | model <text> | line <line> |
+  firmware <text>]`, AMI `SCCPShowDevices` Filter/Value: filtered list and a
+  "N devices, N registered, N not registered" summary. The Type ID column
+  (the model again, as a number) is replaced by the firmware the phone
+  reports; unregistered devices show "(not connected)" / "(never)".
+- `sccp show firmware`, AMI `SCCPShowFirmware`: firmware per model with the
+  device count and names.
+- `sccp set device <device> debug on|off` (also AMI `SCCPSetDeviceOption`
+  Option: debug): while any device is marked, SCCP debug output is limited to
+  messages naming a marked device or a call on one of its lines
+  (`SCCP/<line>-`). Turning a device on while debug is off enables core,
+  device, line, action, channel, indicate and softkey. `sccp debug` lists the
+  marked devices. Implemented in `sccp_log2` (`sccp_debug_log_filtered`), so
+  there is no cost while no device is marked.
+- `sccp show device <device> calls`, AMI `SCCPShowDeviceCalls`: the phone's
+  own end-of-call report (packets, loss, jitter, latency, MOS, minimum MOS,
+  concealed seconds) for the last 20 calls, newest first. The statistics
+  debug dump in `handle_ConnectionStatistics` is two plain lines now.
+
+Validation: wadsworth lab with the simulated phone, which now answers
+ConnectionStatisticsReq; every filter, invalid filters (usage / AMI error),
+firmware list, debug limited to the marked device during a call (only
+non-SCCP Asterisk lines otherwise), history after a call on CLI and AMI.
+Build clean with `-Wall -Wformat=2`; `make check` passes. Not deployed.
+
 ## Changed — console formatting of the SCCP CLI screens (2026-09-24)
 
 Key/value screens (`sccp show globals`, `show device`, `show line`) now use

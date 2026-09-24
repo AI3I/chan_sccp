@@ -3947,10 +3947,6 @@ void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessa
 				sccp_copy_string(QualityStats, msg_in->data.ConnectionStatisticsRes.v22.QualityStats, QualityStatsSize);
 			}
 		}
-		pbx_str_append(&output_buf, buffersize, "%s: Call Statistics:\n", d->id);
-		pbx_str_append(&output_buf, buffersize, "       [\n");
-
-		pbx_str_append(&output_buf, buffersize, "         Last Call        : CallID: %d Packets sent: %d rcvd: %d lost: %d jitter: %d latency: %d\n", call_stats[SCCP_CALLSTATISTIC_LAST].num, call_stats[SCCP_CALLSTATISTIC_LAST].packets_sent, call_stats[SCCP_CALLSTATISTIC_LAST].packets_received, call_stats[SCCP_CALLSTATISTIC_LAST].packets_lost, call_stats[SCCP_CALLSTATISTIC_LAST].jitter, call_stats[SCCP_CALLSTATISTIC_LAST].latency);
 		sccp_log(DEBUGCAT_CORE) (VERBOSE_PREFIX_3 "QualityStats: %s\n", QualityStats);
 		if (!sccp_strlen_zero(QualityStats)) {
 			if (protocol_version < 20) {
@@ -3973,10 +3969,26 @@ void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessa
 				       &call_stats[SCCP_CALLSTATISTIC_LAST].interval_concealement_ratio, &call_stats[SCCP_CALLSTATISTIC_LAST].cumulative_concealement_ratio, &call_stats[SCCP_CALLSTATISTIC_LAST].max_concealement_ratio, &call_stats[SCCP_CALLSTATISTIC_LAST].concealed_seconds, &call_stats[SCCP_CALLSTATISTIC_LAST].severely_concealed_seconds, &call_stats[SCCP_CALLSTATISTIC_LAST].variance_opinion_score_listening_quality);
 			}
 		}
-		pbx_str_append(&output_buf, buffersize, "         Last Quality     : MLQK=%.4f;MLQKav=%.4f;MLQKmn=%.4f;MLQKmx=%.4f;MLQKvr=%.2f|ICR=%.4f;CCR=%.4f;ICRmx=%.4f|CS=%d;SCS=%d\n",
-			       call_stats[SCCP_CALLSTATISTIC_LAST].opinion_score_listening_quality, call_stats[SCCP_CALLSTATISTIC_LAST].avg_opinion_score_listening_quality,
-			       call_stats[SCCP_CALLSTATISTIC_LAST].mean_opinion_score_listening_quality, call_stats[SCCP_CALLSTATISTIC_LAST].max_opinion_score_listening_quality, call_stats[SCCP_CALLSTATISTIC_LAST].variance_opinion_score_listening_quality, call_stats[SCCP_CALLSTATISTIC_LAST].interval_concealement_ratio, call_stats[SCCP_CALLSTATISTIC_LAST].cumulative_concealement_ratio, call_stats[SCCP_CALLSTATISTIC_LAST].max_concealement_ratio,
-			       (int) call_stats[SCCP_CALLSTATISTIC_LAST].concealed_seconds, (int) call_stats[SCCP_CALLSTATISTIC_LAST].severely_concealed_seconds);
+		/* keep this call in the device's quality history (MLQKmn / minMos is stored in mean_opinion_score_listening_quality) */
+		sccp_call_quality_t * entry = &d->call_history.entry[d->call_history.next];
+		entry->ended                      = time(NULL);
+		entry->callid                     = call_stats[SCCP_CALLSTATISTIC_LAST].num;
+		entry->packets_sent               = call_stats[SCCP_CALLSTATISTIC_LAST].packets_sent;
+		entry->packets_received           = call_stats[SCCP_CALLSTATISTIC_LAST].packets_received;
+		entry->packets_lost               = call_stats[SCCP_CALLSTATISTIC_LAST].packets_lost;
+		entry->jitter                     = call_stats[SCCP_CALLSTATISTIC_LAST].jitter;
+		entry->latency                    = call_stats[SCCP_CALLSTATISTIC_LAST].latency;
+		entry->mos_average                = call_stats[SCCP_CALLSTATISTIC_LAST].avg_opinion_score_listening_quality;
+		entry->mos_minimum                = call_stats[SCCP_CALLSTATISTIC_LAST].mean_opinion_score_listening_quality;
+		entry->concealed_seconds          = call_stats[SCCP_CALLSTATISTIC_LAST].concealed_seconds;
+		entry->severely_concealed_seconds = call_stats[SCCP_CALLSTATISTIC_LAST].severely_concealed_seconds;
+		d->call_history.next              = (d->call_history.next + 1) % SCCP_CALL_HISTORY_SIZE;
+		if (d->call_history.count < SCCP_CALL_HISTORY_SIZE) {
+			d->call_history.count++;
+		}
+		pbx_str_append(&output_buf, buffersize, "%s: call %d: sent %d, received %d, lost %d packets; jitter %d ms, latency %d ms; MOS %.2f (min %.2f); concealed %d s (severely %d s)\n", d->id,
+			       entry->callid, entry->packets_sent, entry->packets_received, entry->packets_lost, entry->jitter, entry->latency, entry->mos_average, entry->mos_minimum,
+			       (int)entry->concealed_seconds, (int)entry->severely_concealed_seconds);
 
 		// update avg_call_statistics
 		call_stats[SCCP_CALLSTATISTIC_AVG].packets_sent = CALC_AVG(call_stats[SCCP_CALLSTATISTIC_LAST].packets_sent, call_stats[SCCP_CALLSTATISTIC_AVG].packets_sent, call_stats[SCCP_CALLSTATISTIC_AVG].num);
@@ -4000,13 +4012,8 @@ void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessa
 		call_stats[SCCP_CALLSTATISTIC_AVG].variance_opinion_score_listening_quality = CALC_AVG(call_stats[SCCP_CALLSTATISTIC_LAST].variance_opinion_score_listening_quality, call_stats[SCCP_CALLSTATISTIC_AVG].variance_opinion_score_listening_quality, call_stats[SCCP_CALLSTATISTIC_AVG].num);
 
 		call_stats[SCCP_CALLSTATISTIC_AVG].num++;
-		pbx_str_append(&output_buf, buffersize, "         Mean Statistics  : #Calls: %d Packets sent: %d rcvd: %d lost: %d jitter: %d latency: %d\n", call_stats[SCCP_CALLSTATISTIC_AVG].num, call_stats[SCCP_CALLSTATISTIC_AVG].packets_sent, call_stats[SCCP_CALLSTATISTIC_AVG].packets_received, call_stats[SCCP_CALLSTATISTIC_AVG].packets_lost, call_stats[SCCP_CALLSTATISTIC_AVG].jitter, call_stats[SCCP_CALLSTATISTIC_AVG].latency);
-
-		pbx_str_append(&output_buf, buffersize, "         Mean Quality     : MLQK=%.4f;MLQKav=%.4f;MLQKmn=%.4f;MLQKmx=%.4f;MLQKvr=%.2f|ICR=%.4f;CCR=%.4f;ICRmx=%.4f|CS=%d;SCS=%d\n",
-			       call_stats[SCCP_CALLSTATISTIC_AVG].opinion_score_listening_quality, call_stats[SCCP_CALLSTATISTIC_AVG].avg_opinion_score_listening_quality,
-			       call_stats[SCCP_CALLSTATISTIC_AVG].mean_opinion_score_listening_quality, call_stats[SCCP_CALLSTATISTIC_AVG].max_opinion_score_listening_quality, call_stats[SCCP_CALLSTATISTIC_AVG].variance_opinion_score_listening_quality, call_stats[SCCP_CALLSTATISTIC_AVG].interval_concealement_ratio, call_stats[SCCP_CALLSTATISTIC_AVG].cumulative_concealement_ratio, call_stats[SCCP_CALLSTATISTIC_AVG].max_concealement_ratio,
-			       (int) call_stats[SCCP_CALLSTATISTIC_AVG].concealed_seconds, (int) call_stats[SCCP_CALLSTATISTIC_AVG].severely_concealed_seconds);
-		pbx_str_append(&output_buf, buffersize, "       ]\n");
+		pbx_str_append(&output_buf, buffersize, "%s: average over %d calls: lost %d packets; jitter %d ms, latency %d ms; MOS %.2f\n", d->id, call_stats[SCCP_CALLSTATISTIC_AVG].num,
+			       call_stats[SCCP_CALLSTATISTIC_AVG].packets_lost, call_stats[SCCP_CALLSTATISTIC_AVG].jitter, call_stats[SCCP_CALLSTATISTIC_AVG].latency, call_stats[SCCP_CALLSTATISTIC_AVG].avg_opinion_score_listening_quality);
 		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s", pbx_str_buffer(output_buf));
 	}
 }

@@ -1122,7 +1122,8 @@ sccp_value_changed_t sccp_config_parse_privacyFeature(void * const dest, const s
 	if (sccp_strcaseequals(value, "full")) {
 		privacyFeature.status  = ~0;
 		privacyFeature.enabled = TRUE;
-	} else if (sccp_true(value) || sccp_false(value)) {
+	} else if (sccp_strlen_zero(value) || sccp_true(value) || sccp_false(value)) {
+		/* empty means the option is not set (it has no default value): privacy off */
 		privacyFeature.status  = 0;
 		privacyFeature.enabled = sccp_true(value);
 	} else {
@@ -2272,10 +2273,20 @@ sccp_value_changed_t sccp_config_addButton(sccp_buttonconfig_list_t * buttonconf
 	}
 	*/
 
-	SCCP_LIST_LOCK(buttonconfigList);
 	if (!(config = (sccp_buttonconfig_t *)sccp_calloc(1, sizeof(sccp_buttonconfig_t)))) {
 		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return SCCP_CONFIG_CHANGE_ERROR;
+	}
+	SCCP_LIST_LOCK(buttonconfigList);
+	if (buttonindex < 0) {
+		/* append after the last configured button */
+		sccp_buttonconfig_t * existing = NULL;
+		buttonindex = 0;
+		SCCP_LIST_TRAVERSE(buttonconfigList, existing, list) {
+			if (existing->index >= buttonindex) {
+				buttonindex = existing->index + 1;
+			}
+		}
 	}
 	config->index = buttonindex;
 	config->type  = type;
@@ -2964,75 +2975,56 @@ sccp_configurationchange_t sccp_config_applyDeviceConfiguration(devicePtr d, PBX
  */
 sccp_config_file_status_t sccp_config_getConfig(boolean_t force, const char * const filename)
 {
-	// struct ast_flags config_flags = { CONFIG_FLAG_WITHCOMMENTS & CONFIG_FLAG_FILEUNCHANGED };
-	sccp_config_file_status_t res          = 0;
-	char *                    newfilename  = "sccp.conf";
-	struct ast_flags          config_flags = { CONFIG_FLAG_FILEUNCHANGED };
-	if (force) {
-		if (GLOB(cfg)) {
-			pbx_config_destroy(GLOB(cfg));
-			GLOB(cfg) = NULL;
-		}
-		pbx_clear_flag(&config_flags, CONFIG_FLAG_FILEUNCHANGED);
-	}
-
+	struct ast_flags config_flags = { force ? 0 : CONFIG_FLAG_FILEUNCHANGED };
+	/* copy the name first: callers may pass GLOB(config_file_name), which is replaced below */
+	const char * newfilename = "sccp.conf";
 	if (filename && !sccp_strlen_zero(filename)) {
-		newfilename = (char *)filename;
+		newfilename = pbx_strdupa(filename);
 	} else if (GLOB(config_file_name) && !sccp_strlen_zero(GLOB(config_file_name))) {
 		newfilename = pbx_strdupa(GLOB(config_file_name));
 	}
 
-	GLOB(cfg) = pbx_config_load(newfilename, "chan_sccp", config_flags);
-	if (GLOB(cfg) == CONFIG_STATUS_FILEMISSING) {
-		pbx_log(LOG_ERROR, "SCCP: config file '%s' not found; (re)load aborted\n", newfilename);
-		GLOB(cfg) = NULL;
-		res       = CONFIG_STATUS_FILE_NOT_FOUND;
-		goto FUNC_EXIT;
-	} else if (GLOB(cfg) == CONFIG_STATUS_FILEINVALID) {
-		pbx_log(LOG_ERROR, "SCCP: config file '%s' could not be parsed; (re)load aborted\n", newfilename);
-		GLOB(cfg) = NULL;
-		res       = CONFIG_STATUS_FILE_INVALID;
-		goto FUNC_EXIT;
-	} else if (GLOB(cfg) == CONFIG_STATUS_FILEUNCHANGED) {
-		// ugly solution, but we always need to have a valid config file loaded.
-		pbx_clear_flag(&config_flags, CONFIG_FLAG_FILEUNCHANGED);
-		GLOB(cfg) = pbx_config_load(newfilename, "chan_sccp", config_flags);
-		if (!force) {
+	/* load into a local config; GLOB(cfg) and the file name are only replaced when the new file is usable */
+	struct ast_config * newcfg = pbx_config_load(newfilename, "chan_sccp", config_flags);
+	if (newcfg == CONFIG_STATUS_FILEUNCHANGED) {
+		if (GLOB(cfg)) {
 			sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_3 "Config file '%s' has not changed, aborting (re)load.\n", newfilename);
-			res = CONFIG_STATUS_FILE_NOT_CHANGED;
-			goto FUNC_EXIT;
-		} else {
-			sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_3 "Config file '%s' has not changed, force requested, forcing reload.\n", newfilename);
+			return CONFIG_STATUS_FILE_NOT_CHANGED;
 		}
+		/* unchanged on disk, but nothing is loaded in memory: load it anyway */
+		pbx_clear_flag(&config_flags, CONFIG_FLAG_FILEUNCHANGED);
+		newcfg = pbx_config_load(newfilename, "chan_sccp", config_flags);
 	}
+	if (newcfg == CONFIG_STATUS_FILEMISSING) {
+		pbx_log(LOG_ERROR, "SCCP: config file '%s' not found; (re)load aborted, current configuration kept\n", newfilename);
+		return CONFIG_STATUS_FILE_NOT_FOUND;
+	}
+	if (newcfg == CONFIG_STATUS_FILEINVALID || newcfg == CONFIG_STATUS_FILEUNCHANGED) {
+		pbx_log(LOG_ERROR, "SCCP: config file '%s' could not be parsed; (re)load aborted, current configuration kept\n", newfilename);
+		return CONFIG_STATUS_FILE_INVALID;
+	}
+	if (ast_variable_browse(newcfg, "devices")) {
+		pbx_log(LOG_ERROR, "SCCP: '%s' uses the old format with a [devices] section, which is no longer supported; (re)load aborted, current configuration kept\n", newfilename);
+		pbx_config_destroy(newcfg);
+		return CONFIG_STATUS_FILE_OLD;
+	}
+	if (!ast_variable_browse(newcfg, "general")) {
+		pbx_log(LOG_ERROR, "SCCP: '%s' has no [general] section; (re)load aborted, current configuration kept\n", newfilename);
+		pbx_config_destroy(newcfg);
+		return CONFIG_STATUS_FILE_NOT_SCCP;
+	}
+
 	if (GLOB(cfg)) {
-		if (ast_variable_browse(GLOB(cfg), "devices")) { /* Warn user when old entries exist in sccp.conf */
-			pbx_log(LOG_ERROR, "SCCP: '%s' uses the old format with a [devices] section, which is no longer supported; (re)load aborted\n", newfilename);
-			pbx_config_destroy(GLOB(cfg));
-			GLOB(cfg) = NULL;
-			res       = CONFIG_STATUS_FILE_OLD;
-			goto FUNC_EXIT;
-		} else if (!ast_variable_browse(GLOB(cfg), "general")) {
-			pbx_log(LOG_ERROR, "SCCP: sccp.conf has no [general] section; (re)load aborted\n");
-			pbx_config_destroy(GLOB(cfg));
-			GLOB(cfg) = NULL;
-			res       = CONFIG_STATUS_FILE_NOT_SCCP;
-			goto FUNC_EXIT;
-		}
-	} else {
-		pbx_log(LOG_ERROR, "SCCP: loading sccp.conf failed without a reason from Asterisk; (re)load aborted\n");
-		GLOB(cfg) = NULL;
-		res       = CONFIG_STATUS_FILE_NOT_FOUND;
-		goto FUNC_EXIT;
+		pbx_config_destroy(GLOB(cfg));
+	}
+	GLOB(cfg) = newcfg;
+	char * previous_name = GLOB(config_file_name);
+	GLOB(config_file_name) = pbx_strdup(newfilename);
+	if (previous_name) {
+		sccp_free(previous_name);
 	}
 	sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_3 "Config file '%s' loaded.\n", newfilename);
-	res = CONFIG_STATUS_FILE_OK;
-FUNC_EXIT:
-	if (GLOB(config_file_name)) {
-		sccp_free(GLOB(config_file_name));
-	}
-	GLOB(config_file_name) = pbx_strdup(newfilename);
-	return res;
+	return CONFIG_STATUS_FILE_OK;
 }
 
 /*!

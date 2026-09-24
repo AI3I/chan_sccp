@@ -2622,17 +2622,21 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 				AUTO_RELEASE(sccp_device_t, device , sccp_device_find_byid(argv[3], FALSE));
 				PBX_VARIABLE_TYPE *v = NULL;
 
+				if (CONFIG_STATUS_FILE_OK != sccp_config_getConfig(TRUE, GLOB(config_file_name)) || !GLOB(cfg)) {
+					pbx_cli(fd, "Device %s not reloaded: %s could not be loaded (see the log)\n", argv[3], GLOB(config_file_name) ? GLOB(config_file_name) : "sccp.conf");
+					goto EXIT;
+				}
 				if (!device) {
-					pbx_cli(fd, "Could not find device %s\n", argv[3]);
-					const char * utype = NULL;
-
-					utype = pbx_variable_retrieve(GLOB(cfg), argv[3], "type");
+					const char * utype = pbx_variable_retrieve(GLOB(cfg), argv[3], "type");
 					if (utype && !strcasecmp(utype, "device")) {
 						device = sccp_device_create(argv[3]) /*ref_replace*/;
-					} else {
-						pbx_cli(fd, "Could not find device %s in config\n", argv[3]);
+					}
+					if (!device) {
+						pbx_cli(fd, "Device %s does not exist and is not defined in %s\n", argv[3], GLOB(config_file_name));
 						goto EXIT;
 					}
+					sccp_device_addToGlobals(device);
+					pbx_cli(fd, "Device %s added from %s\n", argv[3], GLOB(config_file_name));
 				}
 #ifdef CS_SCCP_REALTIME
 				if (device->realtime) {
@@ -2640,9 +2644,7 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 				} else
 #endif
 				{
-					if((CONFIG_STATUS_FILE_OK == sccp_config_getConfig(TRUE, GLOB(config_file_name))) && GLOB(cfg)) {
-						v = ast_variable_browse(GLOB(cfg), argv[3]);
-					}
+					v = ast_variable_browse(GLOB(cfg), argv[3]);
 				}
 				if (v) {
 					SCCP_LIST_LOCK(&device->buttonconfig);
@@ -2665,7 +2667,9 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 					}
 #endif
 				} else {
+					/* the loaded configuration no longer defines this device */
 					device->pendingDelete = 1;
+					pbx_cli(fd, "Device %s is no longer defined in %s; it will be removed\n", device->id, GLOB(config_file_name));
 				}
 
 				returnval = RESULT_SUCCESS;
@@ -2681,22 +2685,21 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 #ifdef CS_SCCP_REALTIME
 				PBX_VARIABLE_TYPE *dv = NULL;
 #endif
+				if (CONFIG_STATUS_FILE_OK != sccp_config_getConfig(TRUE, GLOB(config_file_name)) || !GLOB(cfg)) {
+					pbx_cli(fd, "Line %s not reloaded: %s could not be loaded (see the log)\n", argv[3], GLOB(config_file_name) ? GLOB(config_file_name) : "sccp.conf");
+					goto EXIT;
+				}
 				if (!line) {
-					pbx_cli(fd, "Could not find line %s\n", argv[3]);
-					const char * utype = NULL;
-
-					utype = pbx_variable_retrieve(GLOB(cfg), argv[3], "type");
+					const char * utype = pbx_variable_retrieve(GLOB(cfg), argv[3], "type");
 					if (utype && !strcasecmp(utype, "line")) {
 						line = sccp_line_create(argv[3]) /*ref_replace*/;
-					} else {
-						pbx_cli(fd, "Could not find line %s in config\n", argv[3]);
+					}
+					if (!line) {
+						pbx_cli(fd, "Line %s does not exist and is not defined in %s\n", argv[3], GLOB(config_file_name));
 						goto EXIT;
 					}
-				}
-				
-				if (!line) {
-					pbx_cli(fd, "Could not find/create line: '%s'\n", argv[3]);
-					goto EXIT;
+					sccp_line_addToGlobals(line);
+					pbx_cli(fd, "Line %s added from %s\n", argv[3], GLOB(config_file_name));
 				}
 #ifdef CS_SCCP_REALTIME
 				if (line->realtime) {
@@ -2704,9 +2707,7 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 				} else
 #endif
 				{
-					if((CONFIG_STATUS_FILE_OK == sccp_config_getConfig(TRUE, GLOB(config_file_name))) && GLOB(cfg)) {
-						v = ast_variable_browse(GLOB(cfg), argv[3]);
-					}
+					v = ast_variable_browse(GLOB(cfg), argv[3]);
 				}
 				if (v) {
 					change = sccp_config_applyLineConfiguration(line, v);
@@ -2755,7 +2756,9 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 					}
 #endif
 				} else {
+					/* the loaded configuration no longer defines this line */
 					line->pendingDelete = 1;
+					pbx_cli(fd, "Line %s is no longer defined in %s; it will be removed\n", line->name, GLOB(config_file_name));
 				}
 
 				returnval = RESULT_SUCCESS;
@@ -2807,7 +2810,7 @@ static int sccp_cli_reload(int fd, int argc, char *argv[])
 			break;
 		case CONFIG_STATUS_FILE_OK:
 			if (GLOB(cfg)) {
-				pbx_cli(fd, "SCCP reloading configuration. %p\n", GLOB(cfg));
+				pbx_cli(fd, "Reloading %s\n", GLOB(config_file_name));
 				if (!sccp_config_general(SCCP_CONFIG_READRELOAD)) {
 					pbx_cli(fd, "Unable to reload configuration.\n");
 					goto EXIT;

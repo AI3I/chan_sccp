@@ -569,13 +569,12 @@ static int sccp_manager_device_add_line(struct mansession *s, const struct messa
 		astman_send_error(s, m, "Line not found");
 		return 0;
 	}
+	d->pendingUpdate = 1;
 	if (sccp_config_addButton(&d->buttonconfig, -1, LINE, line->name, NULL, NULL) == SCCP_CONFIG_CHANGE_CHANGED) {
-		d->pendingUpdate = 1;
-		sccp_config_addButton(&d->buttonconfig, -1, LINE, line->name, NULL, NULL);
 		sccp_device_check_update(d);
-		astman_append(s, "Done\r\n");
-		astman_append(s, "\r\n");
+		astman_send_ack(s, m, "Line added; the device restarts to load it");
 	} else {
+		d->pendingUpdate = 0;
 		astman_send_error(s, m, "Adding line button to device failed");
 	}
 	return 0;

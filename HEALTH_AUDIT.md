@@ -1,5 +1,45 @@
 # chan_sccp-modern Health Audit
 
+## Fixed — found by exercising every CLI command and AMI action (2026-09-24)
+
+Method: a simulated SCCP phone (Cisco 7965, protocol 17) registered against
+the wadsworth lab Asterisk 22; every `sccp` CLI command and SCCP AMI action
+was run and the messages the phone received were checked. Harness:
+`~/asterisk-lab/clitest/` on wadsworth (`testphone.py`, `t`, `ami`).
+
+- **SCCP calls could not be hung up by Asterisk** (`sccp onhook`, `channel
+  request hangup`, AMI hangup, dialplan timeouts) unless an RTP packet arrived:
+  both `ast_channel_alloc()` calls passed `needqueue = 0`, so the channel had no
+  alert pipe. On a system without a timing module nothing could wake the
+  channel; calls stayed in the dialplan forever (seen stuck in `Echo()`). With
+  `res_timing_timerfd` the timer masked it, which is why production looked
+  fine. Now `needqueue = 1`, as every Asterisk channel driver does.
+- **One failed `sccp reload file` broke every later reload and could crash
+  Asterisk.** `sccp_config_getConfig()` freed `GLOB(config_file_name)` and then
+  copied from it when callers passed that same name (`reload device/line`), and
+  on any load failure it had already destroyed the working config. `sccp
+  reload device` then read a NULL config (segfault in `ast_variable_browse`,
+  core in the lab) or marked the device `pendingDelete`, removing it (the phone
+  was then rejected as "Device Unknown"). The config is now loaded into a local
+  and only replaces the current one when usable; reload device/line refuse to
+  run without a loaded config and only delete when the loaded file really lacks
+  the section. A device/line created by `reload device/line` is now also added
+  to the global list.
+- **`sccp add line` put the button at position 256**: `sccp_config_addButton()`
+  stored index -1 in a `uint8_t`. Index -1 now appends after the last button.
+  The same function returned with the list lock held on allocation failure.
+- **AMI SCCPDeviceAddLine added the line button twice** and answered with a bare
+  "Done" instead of an AMI response.
+- **Regression from the message pass:** an empty `privacy` (its default) was
+  reported as invalid on every reload; empty now means off again.
+- `sccp reload` printed a raw pointer ("SCCP reloading configuration. 0x7f…").
+
+Validation: wadsworth lab — calls now end on `sccp onhook` (plain and after
+hold/resume), `sccp reload file nosuch.conf` followed by `reload device` /
+`reload force` keeps the config and the device, `add line`/`remove line` place
+the button at position 2. Build clean with `-Wall -Wformat=2`; `make check`
+passes. Not deployed.
+
 ## Fixed — "internal" ACL range, netmask display, load crash (2026-09-23)
 
 - **`permit = internal` / `localnet = internal` allowed 172.0.0.0/11.** The

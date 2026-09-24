@@ -60,6 +60,7 @@ SCCP_API sccp_config_file_status_t SCCP_CALL sccp_config_getConfig(boolean_t for
 SCCP_API sccp_configurationchange_t SCCP_CALL sccp_config_applyGlobalConfiguration(PBX_VARIABLE_TYPE * v);
 SCCP_API sccp_configurationchange_t SCCP_CALL sccp_config_applyLineConfiguration(linePtr l, PBX_VARIABLE_TYPE * v);
 SCCP_API sccp_configurationchange_t SCCP_CALL sccp_config_applyDeviceConfiguration(devicePtr d, PBX_VARIABLE_TYPE * v);
+SCCP_API sccp_configurationchange_t SCCP_CALL sccp_config_setDeviceOption(devicePtr d, const char * name, const char * value);
 // SCCP_API sccp_configurationchange_t SCCP_CALL sccp_config_applyDeviceDefaults(sccp_device_t * device, PBX_VARIABLE_TYPE * variable);
 
 SCCP_API void SCCP_CALL sccp_config_softKeySet(PBX_VARIABLE_TYPE * variable, const char *name);

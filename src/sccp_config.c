@@ -83,7 +83,7 @@
  */
 
 /*** DOCUMENTATION
-	<manager name="SCCPConfigMetaData" language="en_US">
+	<manager name="SCCPConfigMetadata" language="en_US">
 		<synopsis>Retrieve config metadata in json format</synopsis>
 		<syntax>
 			<xi:include href="../core-en_US.xml" parse="xml"
@@ -101,7 +101,7 @@
 				<para/>
 				<enumlist>
 					<enum name="list">
-						<para>Will return Output will SCCPConfigMetaData managerevent</para>
+						<para>Will return Output will SCCPConfigMetadata managerevent</para>
 					</enum>
 					<enum name="command">
 						<para>Will return json formatted string presented in the 'DataType' field.</para>
@@ -113,12 +113,12 @@
 			<para>Fetch configuration metadata</para>
 		</description>
 		<see-also>
-			<ref type="managerEvent">SCCPConfigMetaData</ref>
-			<ref type="managerEvent">SCCPConfigMetaDataComplete</ref>
+			<ref type="managerEvent">SCCPConfigMetadata</ref>
+			<ref type="managerEvent">SCCPConfigMetadataComplete</ref>
 		</see-also>
 		<responses>
 			<list-elements>
-				<managerEvent language="en_US" name="SCCPConfigMetaData">
+				<managerEvent language="en_US" name="SCCPConfigMetadata">
 					<managerEventInstance class="EVENT_FLAG_COMMAND">
 						<synopsis>Detailed field information for the requested segment.</synopsis>
 						<synopsis>One</synopsis>
@@ -172,12 +172,12 @@
 							<para>Detailed field information for the requested segment.</para>
 						</description>
 						<see-also>
-							<ref type="managerEvent">SCCPConfigMetaDataComplete</ref>
+							<ref type="managerEvent">SCCPConfigMetadataComplete</ref>
 						</see-also>
 					</managerEventInstance>
 				</managerEvent>
 			</list-elements>
-			<managerEvent language="en_US" name="SCCPConfigMetaDataComplete">
+			<managerEvent language="en_US" name="SCCPConfigMetadataComplete">
 				<managerEventInstance class="EVENT_FLAG_AGENT">
 					<synopsis>Final response event in a series of events to the Agents AMI action.</synopsis>
 					<syntax>
@@ -185,7 +185,7 @@
 							xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
 					</syntax>
 					<see-also>
-						<ref type="manager">SCCPConfigMetaData</ref>
+						<ref type="manager">SCCPConfigMetadata</ref>
 					</see-also>
 				</managerEventInstance>
 			</managerEvent>
@@ -2970,6 +2970,28 @@ sccp_configurationchange_t sccp_config_applyDeviceConfiguration(devicePtr d, PBX
 }
 
 /*!
+ * \brief Set one device option on a running device, leaving every other option as it is
+ * \return SCCP_CONFIG_ERROR for an unknown, ignored or multi-entry option (button, permit, ...)
+ */
+sccp_configurationchange_t sccp_config_setDeviceOption(devicePtr d, const char * name, const char * value)
+{
+	const SCCPConfigOption * option = sccp_find_config(SCCP_CONFIG_DEVICE_SEGMENT, name);
+	if (!d || !option || !value || (option->flags & (SCCP_CONFIG_FLAG_IGNORE | SCCP_CONFIG_FLAG_OBSOLETE | SCCP_CONFIG_FLAG_MULTI_ENTRY))) {
+		return SCCP_CONFIG_ERROR;
+	}
+	PBX_VARIABLE_TYPE * v = ast_variable_new(name, value, "cli");
+	if (!v) {
+		return SCCP_CONFIG_ERROR;
+	}
+	sccp_configurationchange_t res = sccp_config_object_setValue(d, v, name, value, 0, SCCP_CONFIG_DEVICE_SEGMENT, NULL, FALSE);
+	ast_variables_destroy(v);
+	if (d->keepalive < SCCP_MIN_KEEPALIVE) {
+		d->keepalive = SCCP_MIN_KEEPALIVE;
+	}
+	return res;
+}
+
+/*!
  * \brief Find the Correct Config File
  * \return Asterisk Config Object as ast_config
  */
@@ -3292,8 +3314,8 @@ int sccp_manager_config_metadata(struct mansession * s, const struct message * m
 		       &sccp_config_revision);
 
 		if (sccp_strcaseequals(req_resultformat, "list")) {
-			astman_send_listack(s, m, "SCCPConfigMetaData Follows", "Start");
-			astman_append(s, "Event: SCCPConfigMetaData\r\n");
+			astman_send_listack(s, m, "SCCPConfigMetadata Follows", "Start");
+			astman_append(s, "Event: SCCPConfigMetadata\r\n");
 		} else if (sccp_strcaseequals(req_resultformat, "command")) {
 			astman_append(s, "Response: Follows\r\n");
 			astman_append(s, "Privilege: Command\r\n");
@@ -3387,7 +3409,7 @@ int sccp_manager_config_metadata(struct mansession * s, const struct message * m
 		total++;
 		if (sccp_strcaseequals(req_resultformat, "list")) {
 			astman_append(s,
-				      "\r\nEvent: SCCPConfigMetaDataComplete\r\n"
+				      "\r\nEvent: SCCPConfigMetadataComplete\r\n"
 				      "EventList: Complete\r\n"
 				      "ListItems: %d\r\n\r\n",
 				      total);
@@ -3421,8 +3443,8 @@ int sccp_manager_config_metadata(struct mansession * s, const struct message * m
 				const SCCPConfigOption * config = sccpConfigSegment->config;
 
 				if (sccp_strcaseequals(req_resultformat, "list")) {
-					astman_send_listack(s, m, "SCCPConfigMetaData Follows", "Start");
-					astman_append(s, "Event: SCCPConfigMetaData\r\n");
+					astman_send_listack(s, m, "SCCPConfigMetadata Follows", "Start");
+					astman_append(s, "Event: SCCPConfigMetadata\r\n");
 				} else if (sccp_strcaseequals(req_resultformat, "command")) {
 					astman_append(s, "Response: Follows\r\n");
 				} else {
@@ -3549,7 +3571,7 @@ int sccp_manager_config_metadata(struct mansession * s, const struct message * m
 				total++;
 				if (sccp_strcaseequals(req_resultformat, "list")) {
 					astman_append(s,
-						      "\r\nEvent: SCCPConfigMetaDataComplete\r\n"
+						      "\r\nEvent: SCCPConfigMetadataComplete\r\n"
 						      "EventList: Complete\r\n"
 						      "ListItems: %d\r\n\r\n",
 						      total);

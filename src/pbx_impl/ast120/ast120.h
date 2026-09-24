@@ -181,107 +181,153 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 			}                                                                                                                                                                                                       \
 		})
 
-#	define _CLI_AMI_RETURN_ERROR(fd, s, m, line, fmt, ...)                                                                                                                                                                 \
-		({                                                                                                                                                                                                              \
-			if (NULL != (s)) {                                                                                                                                                                                      \
-				char tmp_##line[101];                                                                                                                                                                           \
-				snprintf(tmp_##line, sizeof(tmp_##line), (fmt), __VA_ARGS__);                                                                                                                                   \
-				astman_send_error((s), (m), tmp_##line);                                                                                                                                                        \
-				local_line_total++;                                                                                                                                                                             \
-			} else {                                                                                                                                                                                                \
-				ast_cli((fd), "SCCP CLI ERROR: " fmt, __VA_ARGS__);                                                                                                                                             \
-			}                                                                                                                                                                                                       \
-			return RESULT_FAILURE;                                                                                                                                                                                  \
+/* Result codes beyond Asterisk's RESULT_SUCCESS/SHOWUSAGE/FAILURE, for handlers shared by CLI and AMI */
+#	define RESULT_ERROR_REPORTED 100									/* error already printed (CLI) or sent (AMI) */
+#	define RESULT_RESPONDED      101									/* AMI response header already written; wrapper ends it */
+
+/* _EVENTLIST value for list actions whose handler validates its arguments first and then starts the
+ * list itself with CLI_AMI_LIST_START, so an error arrives as a plain AMI error response */
+#	define SCCP_AMI_LIST_BY_HANDLER 2
+#	define CLI_AMI_LIST_START(s, m, _ACTION)                                                                \
+		({                                                                                              \
+			if (NULL != (s)) {                                                                      \
+				astman_send_listack((s), (m), _ACTION " list will follow", "start");            \
+			}                                                                                       \
 		})
-#	define CLI_AMI_RETURN_ERROR(fd, s, m, fmt, ...) _CLI_AMI_RETURN_ERROR((fd), (s), (m), __LINE__, fmt, __VA_ARGS__)
+
+/* Report an error on the CLI or as an AMI error response, then return from the handler */
+#	define CLI_AMI_RETURN_ERROR(fd, s, m, fmt, ...)                                                        \
+		({                                                                                              \
+			char _cli_ami_error[256];                                                               \
+			snprintf(_cli_ami_error, sizeof(_cli_ami_error), (fmt), __VA_ARGS__);                   \
+			size_t _cli_ami_len = strlen(_cli_ami_error);                                           \
+			while (_cli_ami_len && _cli_ami_error[_cli_ami_len - 1] == '\n') {                      \
+				_cli_ami_error[--_cli_ami_len] = '\0';                                          \
+			}                                                                                       \
+			if (NULL != (s)) {                                                                      \
+				astman_send_error((s), (m), _cli_ami_error);                                    \
+			} else {                                                                                \
+				ast_cli((fd), "%s\n", _cli_ami_error);                                          \
+			}                                                                                       \
+			return RESULT_ERROR_REPORTED;                                                           \
+		})
+
+/* Report success: a line on the CLI, or an AMI "Response: Success" with the text as its Message */
+#	define CLI_AMI_RETURN_DONE(fd, s, m, fmt, ...)                                                         \
+		({                                                                                              \
+			char _cli_ami_done[256];                                                                \
+			snprintf(_cli_ami_done, sizeof(_cli_ami_done), (fmt), __VA_ARGS__);                    \
+			if (NULL != (s)) {                                                                      \
+				const char * _cli_ami_id = astman_get_header((m), "ActionID");                   \
+				astman_append((s), "Response: Success\r\n");                                    \
+				if (!ast_strlen_zero(_cli_ami_id)) {                                            \
+					astman_append((s), "ActionID: %s\r\n", _cli_ami_id);                    \
+				}                                                                               \
+				astman_append((s), "Message: %s\r\n", _cli_ami_done);                           \
+				return RESULT_RESPONDED;                                                        \
+			}                                                                                       \
+			ast_cli((fd), "%s\n", _cli_ami_done);                                                   \
+			return RESULT_SUCCESS;                                                                  \
+		})
+
+/*
+ * AMI action wrapper. The variadic arguments are an argv template: plain strings are passed as is,
+ * strings starting with '$' are replaced by that AMI header (e.g. "sccp", "show", "device", "$Device").
+ * Trailing empty headers are dropped from argc, so a missing optional argument looks missing to the
+ * handler, exactly as on the CLI.
+ */
+#	define SCCP_AMI_ACTION(_FUNCTION_NAME, _CALLED_FUNCTION, _ACTION, _EVENTLIST, ...)                     \
+		static int manager_##_FUNCTION_NAME(struct mansession * s, const struct message * m)           \
+		{                                                                                               \
+			static const char * const template[] = { __VA_ARGS__ };                                 \
+			char * arguments[ARRAY_LEN(template)];                                                  \
+			int argc = 0;                                                                           \
+			for (size_t x = 0; x < ARRAY_LEN(template); x++) {                                      \
+				if (template[x][0] == '$') {                                                    \
+					arguments[x] = (char *)astman_get_header(m, (char *)template[x] + 1);           \
+					if (!ast_strlen_zero(arguments[x])) {                                   \
+						argc = (int)x + 1;                                              \
+					}                                                                       \
+				} else {                                                                        \
+					arguments[x] = (char *)template[x];                                     \
+					argc = (int)x + 1;                                                      \
+				}                                                                               \
+			}                                                                                       \
+			const char * id = astman_get_header(m, "ActionID");                                     \
+			sccp_cli_totals_t totals = { 0 };                                                       \
+			if ((_EVENTLIST) == TRUE) {                                                             \
+				astman_send_listack(s, m, _ACTION " list will follow", "start");                \
+			}                                                                                       \
+			int res = _CALLED_FUNCTION(-1, &totals, s, m, argc, arguments);                         \
+			if ((_EVENTLIST) == SCCP_AMI_LIST_BY_HANDLER && res != RESULT_SUCCESS) {                 \
+				/* the handler reported the error before starting its list */                  \
+				if (res == RESULT_SHOWUSAGE) {                                                  \
+					astman_send_error(s, m, "Missing or invalid arguments; see 'manager show command " _ACTION "'"); \
+				}                                                                               \
+				return 0;                                                                       \
+			}                                                                                       \
+			if ((_EVENTLIST) != FALSE) {                                                            \
+				astman_append(s, "Event: " _ACTION "Complete\r\nEventList: Complete\r\n"        \
+						 "ListItems: %d\r\nListTableItems: %d\r\n",                       \
+					      totals.lines, totals.tables);                                     \
+				if (!ast_strlen_zero(id)) {                                                     \
+					astman_append(s, "ActionID: %s\r\n", id);                               \
+				}                                                                               \
+				astman_append(s, "\r\n");                                                       \
+				if (res == RESULT_SHOWUSAGE) {                                                  \
+					astman_send_error(s, m, "Missing or invalid arguments; see 'manager show command " _ACTION "'"); \
+				}                                                                               \
+				return 0;                                                                       \
+			}                                                                                       \
+			switch (res) {                                                                          \
+				case RESULT_SUCCESS: astman_send_ack(s, m, NULL); break;                        \
+				case RESULT_RESPONDED: astman_append(s, "\r\n"); break;                         \
+				case RESULT_ERROR_REPORTED: break;                                              \
+				case RESULT_SHOWUSAGE:                                                          \
+					astman_send_error(s, m, "Missing or invalid arguments; see 'manager show command " _ACTION "'"); \
+					break;                                                                  \
+				default: astman_send_error(s, m, _ACTION " failed"); break;                     \
+			}                                                                                       \
+			return 0;                                                                               \
+		}
+
+/* CLI command whose handler is shared with AMI (handler signature: fd, totals, s, m, argc, argv) */
+#	define CLI_AMI_ENTRY(_FUNCTION_NAME, _CALLED_FUNCTION, _DESCR, _USAGE, _COMPLETER_REPEAT, _EVENTLIST)   \
+		static char * cli_##_FUNCTION_NAME(struct ast_cli_entry * e, int cmd, struct ast_cli_args * a) \
+		{                                                                                               \
+			const char * cli_command[] = { CLI_COMMAND, NULL };                                     \
+			static sccp_cli_completer_t cli_complete[] = { CLI_COMPLETE };                          \
+			static char command[80] = "";                                                           \
+			if (cmd == CLI_INIT) {                                                                  \
+				ast_join(command, sizeof(command), cli_command);                                \
+				e->command = command;                                                           \
+				e->usage = _USAGE;                                                              \
+				return NULL;                                                                    \
+			}                                                                                       \
+			if (cmd == CLI_GENERATE) {                                                              \
+				for (uint8_t completer = 0; completer < ARRAY_LEN(cli_complete); completer++) { \
+					if ((unsigned)a->pos == (completer + ARRAY_LEN(cli_command) - 1) || (_COMPLETER_REPEAT)) { \
+						return sccp_exec_completer(cli_complete[completer], (char *)a->line, (char *)a->word, a->pos, a->n); \
+					}                                                                       \
+				}                                                                               \
+				return NULL;                                                                    \
+			}                                                                                       \
+			if (a->argc < (int)(ARRAY_LEN(cli_command) - 1)) {                                      \
+				return CLI_SHOWUSAGE;                                                           \
+			}                                                                                       \
+			switch ((_CALLED_FUNCTION)(a->fd, NULL, NULL, NULL, a->argc, (char **)a->argv)) {       \
+				case RESULT_SUCCESS:                                                            \
+				case RESULT_RESPONDED: return CLI_SUCCESS;                                      \
+				case RESULT_SHOWUSAGE: return CLI_SHOWUSAGE;                                    \
+				default: return CLI_FAILURE;                                                    \
+			}                                                                                       \
+		}
 
 // CLI_ENTRY
 //   param1=registration_name
-//   param2=function to execute when called
-//   param3=cli string to be types as array of strings
-//   param4=registration description
-//   param5=usage string
-#define CLI_AMI_ENTRY(_FUNCTION_NAME,_CALLED_FUNCTION,_DESCR,_USAGE, _COMPLETER_REPEAT, _EVENTLIST)		\
-	static int manager_ ## _FUNCTION_NAME(struct mansession *s, const struct message *m)			\
-	{													\
-		const char *id = astman_get_header(m, "ActionID");						\
-		static char *cli_ami_params[] = { CLI_COMMAND, CLI_AMI_PARAMS };				\
-		static char *arguments[ARRAY_LEN(cli_ami_params)];						\
-		uint8_t x = 0, i = 0; 										\
-		for (x=0; x < ARRAY_LEN(cli_ami_params); x++) {							\
-			if(NULL != cli_ami_params[x] && strlen(cli_ami_params[x]) > 0){				\
-				arguments[i++]=(char *)astman_get_header(m, cli_ami_params[x]);			\
-			}											\
-		}												\
-		char idtext[256] = "";										\
-		/*int total = 0; */										\
-		sccp_cli_totals_t totals = {0};									\
-		if (!pbx_strlen_zero(id)) {									\
-			snprintf(idtext, sizeof(idtext), "ActionID: %s\r\n", id);				\
-		}												\
-		if ((_EVENTLIST) == TRUE) {									\
-			astman_send_listack(s, m, AMI_COMMAND " list will follow", "start");			\
-		}												\
-		if (RESULT_SUCCESS==_CALLED_FUNCTION(-1, &totals, s, m, ARRAY_LEN(arguments), arguments)) {	\
-			if ((_EVENTLIST) == TRUE) {								\
-				astman_append(s,								\
-				"Event: " AMI_COMMAND "Complete\r\n"						\
-				"EventList: Complete\r\n"							\
-				"ListItems: %d\r\n"								\
-				"ListTableItems: %d\r\n"							\
-				"%s"										\
-				"\r\n", totals.lines, totals.tables, idtext);  					\
-			} else {										\
-				astman_append(s, "\r\n");							\
-			}											\
-                } else {											\
-                        astman_send_error(s, m, "Execution Failed\n");						\
-                }												\
-		return 0;											\
-	}													\
-														\
-	static char * cli_ ## _FUNCTION_NAME(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a) {	\
-		const char *cli_command[] = { CLI_COMMAND, NULL };						\
-		static sccp_cli_completer_t cli_complete[] = { CLI_COMPLETE };					\
-		static char command[80]="";									\
-		if (cmd == CLI_INIT) {										\
-			ast_join(command, sizeof(command), cli_command);					\
-			e->command = command;									\
-			e->usage = _USAGE;									\
-			return NULL;										\
-		}												\
-		if (cmd == CLI_GENERATE) {									\
-		uint8_t completer;									\
-			for (completer=0; completer<ARRAY_LEN(cli_complete); completer++) {			\
-				if ((unsigned)a->pos == (completer + ARRAY_LEN(cli_command) - 1) || (_COMPLETER_REPEAT) ) {\
-					return sccp_exec_completer(cli_complete[completer], (char *)a->line, (char *)a->word, a->pos, a->n);\
-				}										\
-			}											\
-			return NULL;										\
-		}												\
-		if (a->argc < (int)(ARRAY_LEN(cli_command)-1)) {						\
-			return CLI_SHOWUSAGE;									\
-		}												\
-		static char *cli_ami_params[] = { CLI_COMMAND, CLI_AMI_PARAMS };				\
-		struct message m = { 0 };									\
-		size_t hdrlen; 											\
-                for (int x = 0; x < (int)ARRAY_LEN(cli_ami_params) && x < a->argc; x++) {			\
-                        hdrlen = strlen(cli_ami_params[x]) + 2 + strlen(a->argv[x]) + 1;			\
-                        m.headers[m.hdrcount] = (const char *)sccp_malloc(hdrlen);				\
-                        snprintf((char *) m.headers[m.hdrcount], hdrlen, "%s: %s", cli_ami_params[x], a->argv[x]);	\
-                        m.hdrcount++;                                        					\
-                }												\
-                int result = (_CALLED_FUNCTION)(a->fd, NULL, NULL, &m, a->argc, (char **) a->argv);		\
-		for(int x = 0; (int)ARRAY_LEN(cli_ami_params) && x < a->argc; x++) { 				\
-			sccp_free(m.headers[x]);								\
-		}												\
-		switch (result) {										\
-			case RESULT_SUCCESS: return CLI_SUCCESS;						\
-			case RESULT_FAILURE: return CLI_FAILURE;						\
-			case RESULT_SHOWUSAGE: return CLI_SHOWUSAGE;						\
-			default: return CLI_FAILURE;								\
-		}												\
-	};
+//   param2=function to execute when called (fd, argc, argv)
+//   param3=registration description
+//   param4=usage string
 #define CLI_ENTRY(_FUNCTION_NAME,_CALLED_FUNCTION,_DESCR,_USAGE, _COMPLETER_REPEAT)				\
 	static char *_FUNCTION_NAME(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a) {			\
 		const char *cli_command[] = { CLI_COMMAND, NULL };						\

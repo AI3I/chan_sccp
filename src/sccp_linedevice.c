@@ -410,8 +410,6 @@ void sccp_linedevice_createButtonsArray(devicePtr device)
 			ld = sccp_linedevice_find(device, (sccp_line_t *)btn[i].ptr);
 			if(!(device->lineButtons.instance[btn[i].instance] = ld)) {
 				pbx_log(LOG_ERROR, "%s: line button %d has no line attached; button left out of the line list\n", device->id, btn[i].instance);
-				device->lineButtons.size--;
-				sccp_free(device->lineButtons.instance);
 			}
 		}
 	}

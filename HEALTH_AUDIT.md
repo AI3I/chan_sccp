@@ -1,5 +1,62 @@
 # chan_sccp-modern Health Audit
 
+## Changed — CLI and AMI command set renamed and repaired (2026-09-24)
+
+Commands are renamed outright (no aliases). CLI: `sccp show {globals,
+devices, device, lines, line, channels, sessions, mwi subscriptions, hint line
+states, hint subscriptions, softkey sets, references, tones, version}`,
+`sccp message all|device`, `sccp system message`, `sccp set
+device|line|channel|fallback`, `sccp add|remove line`, `sccp call`, `sccp
+answer`, `sccp hangup`, `sccp reset|restart|unregister`, `sccp apply config`,
+`sccp refresh device`, `sccp token ack`. AMI actions are `SCCPShow*`,
+`SCCPMessageAll`, `SCCPMessageDevice`, `SCCPSystemMessage`,
+`SCCPSetDeviceDND`, `SCCPSetDeviceMicrophone`, `SCCPSetDeviceOption`,
+`SCCPSetLineForward`, `SCCPSetFallback`, `SCCPAddLine`, `SCCPRemoveLine`,
+`SCCPCall`, `SCCPAnswer`, `SCCPHangup`, `SCCPHold`, `SCCPReset`,
+`SCCPRestart`, `SCCPApplyConfig`, `SCCPUnregister`, `SCCPRefreshDevice`,
+`SCCPTokenAck` and `SCCPConfigMetadata`, all documented in the XML block in
+`sccp_cli.c` (loads with no xmldoc warnings). The duplicate actions in
+`sccp_management.c` are gone.
+
+AMI framework bugs fixed (`ast120.h` macros):
+- Successful actions sent no response at all; errors could send two.
+- The generated handlers built argv in one `static` array shared by every
+  concurrent AMI session.
+- The fixed CLI words of a command were looked up as AMI headers, so most
+  actions got empty arguments; `$Header` placeholders are now explicit.
+- Missing arguments were answered with Success; now an Error naming
+  `manager show command`.
+- As a result `SCCPSystemMessage`, call forward and DND always failed.
+
+Behavior bugs fixed:
+- **Rebuilding the button template dropped every line.**
+  `sccp_make_button_template()` skips buttons that already have an instance,
+  so a second ButtonTemplateReq in one registration (from the phone, or from
+  `refresh device`) produced a template and line list with no lines: outgoing
+  calls failed with "no line" until the phone re-registered. The handler now
+  resends the template built at registration; this also stops leaking the line
+  references held by the discarded template.
+- `sccp_linedevice_createButtonsArray()` freed the line array when one line
+  button had no line attached and then kept writing into it (use after free).
+  The slot is now left empty.
+- Setting a single device option at runtime went through
+  `sccp_config_applyDeviceConfiguration()`, which resets every option not
+  given to its default (description, buttons, ...). New
+  `sccp_config_setDeviceOption()` sets only that option and rejects unknown,
+  obsolete and multi-entry options such as `button`.
+- `hold off` resumes on the call's own device when none is named.
+- Every CLI/AMI command reports what it did or why it did nothing (unknown
+  device/line/call, device not registered, DND feature disabled, line already
+  on the device, call not ringing, no refused token, ...).
+
+Test harness: the simulated phone now drops its connection after Reset,
+Restart and RegisterReject, as a real phone does; `alltests.sh` runs every
+CLI command and AMI action including the negative cases.
+
+Validation: wadsworth lab, full `alltests.sh all` run — every command gives
+the expected result; calls work after refresh, reset, restart and unregister.
+Build clean with `-Wall -Wformat=2`. Not deployed.
+
 ## Fixed — found by exercising every CLI command and AMI action (2026-09-24)
 
 Method: a simulated SCCP phone (Cisco 7965, protocol 17) registered against

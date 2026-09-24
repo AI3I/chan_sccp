@@ -1543,13 +1543,14 @@ void sccp_handle_button_template_req(constSessionPtr s, devicePtr d, constMessag
 	}
 
 	/* pre-attach lines. We will wait for button template req if the phone does support it */
-	if (d->buttonTemplate) {
-		sccp_free(d->buttonTemplate);
+	/* the template is built once per registration (sccp_dev_clean frees it); a repeated request
+	 * resends it, because a rebuild skips the buttons that already have an instance and loses the lines */
+	btn = d->buttonTemplate;
+	if (!btn) {
+		btn = d->buttonTemplate = sccp_make_button_template(d);
+		/* update lineButtons array */
+		sccp_linedevice_createButtonsArray(d);
 	}
-	btn = d->buttonTemplate = sccp_make_button_template(d);
-
-	/* update lineButtons array */
-	sccp_linedevice_createButtonsArray(d);
 
 	if (!btn) {
 		pbx_log(LOG_ERROR, "%s: could not allocate the button template (out of memory); connection closed\n", d->id);

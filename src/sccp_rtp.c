@@ -437,6 +437,11 @@ void sccp_rtp_print(constChannelPtr c, sccp_rtp_type_t type, struct ast_str * bu
 		case SCCP_RTP_VIDEO:
 			rtp = &(c->rtp.video);
 			break;
+#else
+		case SCCP_RTP_VIDEO:
+			/* built without video support: nothing to print */
+			pbx_str_reset(buf);
+			return;
 #endif
 		default:
 			pbx_log(LOG_ERROR, "%s: RTP details not printed: type %d is neither audio nor video\n", c->designator, type);

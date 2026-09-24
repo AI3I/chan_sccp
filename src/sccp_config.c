@@ -84,12 +84,11 @@
 
 /*** DOCUMENTATION
 	<manager name="SCCPConfigMetadata" language="en_US">
-		<synopsis>Retrieve config metadata in json format</synopsis>
+		<synopsis>Describe the sccp.conf options as JSON.</synopsis>
 		<syntax>
-			<xi:include href="../core-en_US.xml" parse="xml"
-				xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
-			<parameter name="segment" required="false">
-				<para>The name of the segment you are interest, leaving it empty will list the segments available.</para>
+			<xi:include href="../core-en_US.xml" parse="xml" xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
+			<parameter name="Segment">
+				<para>Section to describe. Without it, the response lists the module version, build options and the sections.</para>
 				<enumlist>
 					<enum name="general"/>
 					<enum name="device"/>
@@ -98,19 +97,19 @@
 				</enumlist>
 			</parameter>
 			<parameter name="ResultFormat">
-				<para/>
+				<para>How the JSON is returned.</para>
 				<enumlist>
-					<enum name="list">
-						<para>Will return Output will SCCPConfigMetadata managerevent</para>
-					</enum>
-					<enum name="command">
-						<para>Will return json formatted string presented in the 'DataType' field.</para>
-					</enum>
+					<enum name="list"><para>In an SCCPConfigMetadata event, followed by SCCPConfigMetadataComplete.</para></enum>
+					<enum name="command"><para>As command output, with DataType: JSON.</para></enum>
 				</enumlist>
 			</parameter>
 		</syntax>
 		<description>
-			<para>Fetch configuration metadata</para>
+			<para>Without ResultFormat the JSON is returned in the JSON header of the response.
+			For a section, each option has Name, Type (BOOLEAN, INT, UNSIGNED INT, STRING, PARSER, CHAR or ENUM),
+			Size, Flags (Required, Deprecated, Obsolete, MultiEntry, RestartRequiredOnUpdate), DefaultValue
+			(null when the option has no default of its own), Description, PossibleValues for ENUM options and
+			Parser for PARSER options.</para>
 		</description>
 		<see-also>
 			<ref type="managerEvent">SCCPConfigMetadata</ref>
@@ -120,73 +119,22 @@
 			<list-elements>
 				<managerEvent language="en_US" name="SCCPConfigMetadata">
 					<managerEventInstance class="EVENT_FLAG_COMMAND">
-						<synopsis>Detailed field information for the requested segment.</synopsis>
-						<synopsis>One</synopsis>
+						<synopsis>The requested metadata.</synopsis>
 						<syntax>
-							<parameter name="Name">
-								<para>Name of the field.</para>
+							<xi:include href="../core-en_US.xml" parse="xml" xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
+							<parameter name="JSON">
+								<para>The metadata as JSON.</para>
 							</parameter>
-							<parameter name="Type">
-								<para>Name of the field.</para>
-							</parameter>
-							<parameter name="Size">
-								<para>Size of the field</para>
-							</parameter>
-							<parameter name="Flags">
-								<para/>
-								<enumlist>
-									<enum name="BOOLEAN"/>
-									<enum name="INT"/>
-									<enum name="UNSIGNED INT"/>
-									<enum name="STRINGPTR">
-										<para>Null terminated string.</para>
-									</enum>
-									<enum name="STRING">
-										<para>Fixed length string.</para>
-									</enum>
-									<enum name="PARSER">
-										<para>Custom parser/generator.</para>
-									</enum>
-									<enum name="CHAR">
-										<para>Single Character.</para>
-									</enum>
-									<enum name="ENUM">
-										<para>When 'ENUM' is used the list entry will also contain the <replaceable>Possible Values</replaceable> field</para>
-									</enum>
-								</enumlist>
-							</parameter>
-							<parameter name="Possible Values" required="false">
-								<para>Contains a string of possible values, enclosed in '[' &amp; ']' and separated by ','.</para>
-								<para>Only included for entries that have type:ENUM.</para>
-							</parameter>
-							<parameter name="DefaultValue">
-								<para>Default value of the field.</para>
-							</parameter>
-							<parameter name="Description">
-								<para>A detailed user description of the field.</para>
-							</parameter>
-							<xi:include href="../core-en_US.xml" parse="xml"
-								xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
 						</syntax>
-						<description>
-							<para>Detailed field information for the requested segment.</para>
-						</description>
-						<see-also>
-							<ref type="managerEvent">SCCPConfigMetadataComplete</ref>
-						</see-also>
 					</managerEventInstance>
 				</managerEvent>
 			</list-elements>
 			<managerEvent language="en_US" name="SCCPConfigMetadataComplete">
-				<managerEventInstance class="EVENT_FLAG_AGENT">
-					<synopsis>Final response event in a series of events to the Agents AMI action.</synopsis>
+				<managerEventInstance class="EVENT_FLAG_COMMAND">
+					<synopsis>End of the SCCPConfigMetadata list.</synopsis>
 					<syntax>
-						<xi:include href="../core-en_US.xml" parse="xml"
-							xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
+						<xi:include href="../core-en_US.xml" parse="xml" xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
 					</syntax>
-					<see-also>
-						<ref type="manager">SCCPConfigMetadata</ref>
-					</see-also>
 				</managerEventInstance>
 			</managerEvent>
 		</responses>
@@ -3293,6 +3241,28 @@ void sccp_config_softKeySet(PBX_VARIABLE_TYPE * variable, const char * name)
 	}
 }
 
+/* append str as a JSON string literal */
+static void sccp_config_append_json_string(struct mansession * s, const char * str)
+{
+	char * out = (char *)sccp_alloca(strlen(str) * 6 + 3);                     /* worst case: every character as \u00XX */
+	char * o   = out;
+	*o++       = '"';
+	for (; *str; str++) {
+		unsigned char ch = (unsigned char)*str;
+		if (ch == '"' || ch == '\\') {
+			*o++ = '\\';
+			*o++ = ch;
+		} else if (ch < 0x20) {
+			o += snprintf(o, 7, "\\u%04x", ch);
+		} else {
+			*o++ = ch;
+		}
+	}
+	*o++ = '"';
+	*o   = '\0';
+	astman_append(s, "%s", out);
+}
+
 /* generate json output from now on */
 int sccp_manager_config_metadata(struct mansession * s, const struct message * m)
 {
@@ -3327,21 +3297,8 @@ int sccp_manager_config_metadata(struct mansession * s, const struct message * m
 		}
 
 		astman_append(s, "JSON: {");
-		astman_append(s, "\"Name\":\"Chan-sccp-b\",");
+		astman_append(s, "\"Name\":\"chan_sccp\",");
 		astman_append(s, "\"Version\":\"%s\",", SCCP_VERSION);
-#if defined(VCS_BRANCH) && defined(VCS_NUM) && defined(VCS_TAG) && defined(VCS_TAG) && defined(VCS_TYPE)
-		astman_append(s, "\"Branch\":\"%s\",", VCS_BRANCH);
-		astman_append(s, "\"RevisionHash\":\"%s\",", VCS_SHORT_HASH);
-		astman_append(s, "\"RevisionNum\":\"%d\",", VCS_NUM);
-		astman_append(s, "\"Tag\":\"%s\",", VCS_TAG);
-		astman_append(s, "\"VersioningType\":\"%s\",", VCS_TYPE);
-#else
-		astman_append(s, "\"Branch\":\"%s\",", SCCP_BRANCH);
-		astman_append(s, "\"RevisionHash\":\"%s\",", SCCP_REVISION);
-		astman_append(s, "\"RevisionNum\":\"%d\",", 0);
-		astman_append(s, "\"Tag\":\"%s\",", "");
-		astman_append(s, "\"VersioningType\":\"%s\",", "archive");
-#endif
 		astman_append(s, "\"ConfigRevision\":\"%d\",", sccp_config_revision);
 		char * conf_enabled_array[] = {
 #ifdef CS_SCCP_PARK
@@ -3480,7 +3437,7 @@ int sccp_manager_config_metadata(struct mansession * s, const struct message * m
 									astman_append(s, "\"Size\":%d", (int)config[cur_elem].size - 1);
 									break;
 								case SCCP_CONFIG_DATATYPE_STRINGPTR:
-									astman_append(s, "\"Type\":\" STRING\",");
+									astman_append(s, "\"Type\":\"STRING\",");
 									astman_append(s, "\"Size\":0");
 									break;
 								case SCCP_CONFIG_DATATYPE_STRING:
@@ -3499,17 +3456,17 @@ int sccp_manager_config_metadata(struct mansession * s, const struct message * m
 								case SCCP_CONFIG_DATATYPE_ENUM:
 									astman_append(s, "\"Type\":\"ENUM\",");
 									astman_append(s, "\"Size\":%d,", (int)config[cur_elem].size - 1);
-									char * all_entries    = pbx_strdup(config[cur_elem].all_entries());
+									char * all_entries    = pbx_strdupa(config[cur_elem].all_entries());
 									char * possible_entry = "";
 
 									int subcomma = 0;
-									astman_append(s, "\"Possible Values\": [");
+									astman_append(s, "\"PossibleValues\":[");
 									while (all_entries && (possible_entry = strsep(&all_entries, ","))) {
-										astman_append(s, "%s\"%s\"", subcomma ? "," : "", possible_entry);
+										astman_append(s, "%s", subcomma ? "," : "");
+										sccp_config_append_json_string(s, possible_entry);
 										subcomma = 1;
 									}
 									astman_append(s, "]");
-									sccp_free(all_entries);
 									break;
 							}
 							astman_append(s, ",");
@@ -3548,19 +3505,25 @@ int sccp_manager_config_metadata(struct mansession * s, const struct message * m
 								astman_append(s, "],");
 							}
 
-							astman_append(s, "\"DefaultValue\":\"%s\"", config[cur_elem].defaultValue);
+							/* no default: null; the value then comes from [general] or is left unset */
+							astman_append(s, "\"DefaultValue\":");
+							if (config[cur_elem].defaultValue) {
+								sccp_config_append_json_string(s, config[cur_elem].defaultValue);
+							} else {
+								astman_append(s, "null");
+							}
 
 							if (!sccp_strlen_zero(config[cur_elem].description)) {
-								char * description      = pbx_strdup(config[cur_elem].description);
+								char * description      = pbx_strdupa(config[cur_elem].description);
 								char * description_part = "";
 								int    comma2           = 0;
 
-								astman_append(s, ",\"Description\": [");
+								astman_append(s, ",\"Description\":[");
 								while (description && (description_part = strsep(&description, "\n")) && !sccp_strlen_zero(description_part)) {
-									astman_append(s, "%s\"%s\"", comma2++ ? "," : "", description_part);
+									astman_append(s, "%s", comma2++ ? "," : "");
+									sccp_config_append_json_string(s, description_part);
 								}
 								astman_append(s, "]");
-								sccp_free(description);
 							}
 						}
 						astman_append(s, "}");
@@ -3587,6 +3550,16 @@ int sccp_manager_config_metadata(struct mansession * s, const struct message * m
 	return 0;
 }
 
+/* where 'sccp config generate' writes: an absolute path as given, a relative one in the Asterisk config directory */
+void sccp_config_generate_path(char * fn, size_t size, const char * filename)
+{
+	if (filename[0] == '/') {
+		snprintf(fn, size, "%s", filename);
+	} else {
+		snprintf(fn, size, "%s/%s", ast_config_AST_CONFIG_DIR, filename);
+	}
+}
+
 static int _config_generate_wiki(char * filename)
 {
 	const SCCPConfigSegment * sccpConfigSegment = NULL;
@@ -3597,18 +3570,18 @@ static int _config_generate_wiki(char * filename)
 	char *                    description_part  = "";
 	char                      fn[PATH_MAX];
 
-	snprintf(fn, sizeof(fn), "%s/%s", ast_config_AST_CONFIG_DIR, filename);
-	pbx_log(LOG_NOTICE, "SCCP: writing option reference to '%s'\n", fn);
+	sccp_config_generate_path(fn, sizeof(fn), filename);
 
+	/* failures are reported by the caller from errno */
 	int fd = open(fn, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 	if (fd == -1) {
-		pbx_log(LOG_WARNING, "SCCP: could not create '%s' (it must not already exist): %s\n", fn, strerror(errno));
 		return -1;
 	}
 	FILE * f = fdopen(fd, "w+");
 	if (!f) {
-		pbx_log(LOG_WARNING, "SCCP: could not open '%s' for writing: %s\n", fn, strerror(errno));
+		int err = errno;
 		close(fd);
+		errno = err;
 		return -2;
 	}
 
@@ -3623,6 +3596,7 @@ static int _config_generate_wiki(char * filename)
 		if (!sccpConfigSegment) {
 			pbx_log(LOG_ERROR, "SCCP: config segment %d does not exist (caller bug)\n", (int)segment);
 			fclose(f); /* also closes fd */
+			errno = EINVAL;
 			return -3;
 		}
 
@@ -3709,7 +3683,7 @@ static int _config_generate_wiki(char * filename)
 		fprintf(f, "</table><br>\n");
 	}
 	fclose(f); /* also closes fd */
-	pbx_log(LOG_NOTICE, "SCCP: wrote option reference to '%s'\n", fn);
+	sccp_log(DEBUGCAT_CONFIG)(VERBOSE_PREFIX_2 "SCCP: wrote option reference to '%s'\n", fn);
 
 	return 0;
 };
@@ -3741,37 +3715,32 @@ int sccp_config_generate(char * filename, int configType)
 
 	char fn[PATH_MAX];
 
-	snprintf(fn, sizeof(fn), "%s/%s", ast_config_AST_CONFIG_DIR, filename);
-	pbx_log(LOG_NOTICE, "SCCP: writing example configuration to '%s'\n", fn);
+	sccp_config_generate_path(fn, sizeof(fn), filename);
 
+	/* failures are reported by the caller from errno */
 	int fd = open(fn, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 	if (fd == -1) {
-		pbx_log(LOG_WARNING, "SCCP: could not create '%s' (it must not already exist): %s\n", fn, strerror(errno));
 		return -1;
 	}
 	FILE * f = fdopen(fd, "w+");
 	if (!f) {
-		pbx_log(LOG_WARNING, "SCCP: could not open '%s' for writing: %s\n", fn, strerror(errno));
+		int err = errno;
 		close(fd);
+		errno = err;
 		return -2;
 	}
 
 	char           date[256] = "";
 	struct ast_tm  tm;
 	struct timeval now = ast_tvnow();
-	ast_strftime(date, sizeof(date), "%b %e %T", ast_localtime(&now, &tm, NULL));
+	ast_strftime(date, sizeof(date), "%Y-%m-%d %H:%M:%S", ast_localtime(&now, &tm, NULL));
 
 	fprintf(f, ";!\n");
-	fprintf(f, ";! Automatically generated configuration file\n");
-	fprintf(f, ";! Filename: %s (%s)\n", filename, fn);
-	fprintf(f, ";! Generator: sccp config generate\n");
-	fprintf(f, ";! Creation Date: %s", date);
+	fprintf(f, ";! Generated by 'sccp config generate' on %s\n", date);
+	fprintf(f, ";! File: %s\n", fn);
 	fprintf(f, ";!\n");
-	fprintf(f, "\n");
-	fprintf(f, ";!\n");
-	fprintf(f, ";! This file is only provided to show a possible parameters and their defaults.\n");
-	fprintf(f, ";! Please do not use this file as a starting point for your sccp.conf file !\n");
-	fprintf(f, ";! Parameters that have blanks or empty strings are just there as a placeholder, not to show a valid value.\n");
+	fprintf(f, ";! Every sccp.conf option with its default value, as a reference.\n");
+	fprintf(f, ";! Empty values are placeholders, not working settings.\n");
 	fprintf(f, ";!\n");
 	fprintf(f, "\n");
 
@@ -3780,6 +3749,7 @@ int sccp_config_generate(char * filename, int configType)
 		if (!sccpConfigSegment) {
 			pbx_log(LOG_ERROR, "SCCP: config segment %d does not exist (caller bug)\n", (int)segment);
 			fclose(f); /* also closes fd */
+			errno = EINVAL;
 			return -3;
 		}
 		if (configType == 0 && (segment == SCCP_CONFIG_DEVICE_SEGMENT || segment == SCCP_CONFIG_LINE_SEGMENT)) {
@@ -3897,7 +3867,7 @@ int sccp_config_generate(char * filename, int configType)
 		sccp_log((DEBUGCAT_CONFIG))("\n");
 	}
 	fclose(f); /* also closes fd */
-	pbx_log(LOG_NOTICE, "SCCP: wrote example configuration to '%s'\n", fn);
+	sccp_log(DEBUGCAT_CONFIG)(VERBOSE_PREFIX_2 "SCCP: wrote example configuration to '%s'\n", fn);
 
 	return 0;
 };

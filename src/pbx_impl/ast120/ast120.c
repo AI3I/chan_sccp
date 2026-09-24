@@ -1765,13 +1765,19 @@ static PBX_CHANNEL_TYPE *sccp_astwrap_request(const char *type, struct ast_forma
 	sccp_parse_auto_answer((PBX_CHANNEL_TYPE *)requestor, &autoanswer_type);
 
 	/** get requested format */
-	if ( (audio_codec = pbx_codec2skinny_codec(ast_format_compatibility_format2bitfield(ast_format_cap_get_best_by_type(cap, AST_MEDIA_TYPE_AUDIO)))) == SKINNY_CODEC_NONE) {
-		pbx_log(LOG_NOTICE, "SCCP: none of the requested audio formats maps to an SCCP codec; requesting G.722\n");
+	struct ast_format * best_format = ast_format_cap_get_best_by_type(cap, AST_MEDIA_TYPE_AUDIO);
+	audio_codec = best_format ? pbx_codec2skinny_codec(ast_format_compatibility_format2bitfield(best_format)) : SKINNY_CODEC_NONE;
+	ao2_cleanup(best_format);
+	if (audio_codec == SKINNY_CODEC_NONE) {
+		sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_3 "SCCP: none of the requested audio formats maps to an SCCP codec; requesting G.722\n");
 		audio_codec = SKINNY_CODEC_G722_64K;
 	}
 	sccp_log(DEBUGCAT_CODEC) (VERBOSE_PREFIX_4 "SCCP: requested Audio Codec in Skinny Format: %s\n", codec2str(audio_codec));
 #ifdef CS_SCCP_VIDEO
-	if ( (video_codec = pbx_codec2skinny_codec(ast_format_compatibility_format2bitfield(ast_format_cap_get_best_by_type(cap, AST_MEDIA_TYPE_VIDEO)))) == SKINNY_CODEC_NONE) {
+	best_format = ast_format_cap_get_best_by_type(cap, AST_MEDIA_TYPE_VIDEO);
+	video_codec = best_format ? pbx_codec2skinny_codec(ast_format_compatibility_format2bitfield(best_format)) : SKINNY_CODEC_NONE;
+	ao2_cleanup(best_format);
+	if (video_codec == SKINNY_CODEC_NONE) {
 		sccp_log((DEBUGCAT_CODEC))(VERBOSE_PREFIX_3 "SCCP: none of the requested video formats maps to an SCCP codec; call has no video\n");
 		video_codec = SKINNY_CODEC_NONE;
 	}
@@ -1788,7 +1794,7 @@ static PBX_CHANNEL_TYPE *sccp_astwrap_request(const char *type, struct ast_forma
 				ast_format_cap_append_from_cap(acaps, ast_channel_nativeformats(requestor), AST_MEDIA_TYPE_AUDIO);				// Add rest
 				sccp_astwrap_getSkinnyFormatMultiple(acaps, audioCapabilities, ARRAY_LEN(audioCapabilities));
 				if (audio_codec == SKINNY_CODEC_NONE && (audio_codec = audioCapabilities[0]) == SKINNY_CODEC_NONE) {
-					pbx_log(LOG_NOTICE, "SCCP: the calling channel's audio formats have no SCCP equivalent; Asterisk will transcode\n");
+					sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_3 "SCCP: the calling channel's audio formats have no SCCP equivalent; Asterisk will transcode\n");
 					audioCapabilities[0] = SKINNY_CODEC_WIDEBAND_256K;
 					audio_codec  =SKINNY_CODEC_WIDEBAND_256K;
 				}
@@ -3964,7 +3970,7 @@ static struct ast_module_info __mod_info = {
 	.reload = module_reload,
 	.unload = unload_module,
 	.name = AST_MODULE,
-	.description = SCCP_VERSIONSTR,
+	.description = "Skinny Client Control Protocol (SCCP)",
 	.key = ASTERISK_GPL_KEY,
 	.flags = AST_MODFLAG_LOAD_ORDER,
 	.buildopt_sum = AST_BUILDOPT_SUM,

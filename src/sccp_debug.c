@@ -111,6 +111,22 @@ int32_t sccp_parse_debugline(char * arguments[], int startat, int argc, int32_t 
 }
 
 /*!
+ * \brief Is name a debug category (or one of the keywords none, off, no, all)
+ */
+boolean_t sccp_debug_is_category(const char * name)
+{
+	if (!strcasecmp(name, "none") || !strcasecmp(name, "off") || !strcasecmp(name, "no") || !strcasecmp(name, "all")) {
+		return TRUE;
+	}
+	for (uint32_t i = 0; i < ARRAY_LEN(sccp_debug_categories); i++) {
+		if (!strcasecmp(name, sccp_debug_categories[i].key)) {
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+/*!
  * \brief Write the current debug value to debug categories
  * \param debugvalue DebugValue as uint32_t
  * \return string containing list of categories comma separated (you need to free it)

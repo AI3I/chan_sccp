@@ -84,5 +84,6 @@ extern const struct sccp_debug_category sccp_debug_categories[32];
 
 SCCP_API int32_t SCCP_CALL sccp_parse_debugline(char * arguments[], int startat, int argc, int32_t new_debug_value);
 SCCP_API char * SCCP_CALL  sccp_get_debugcategories(int32_t debugvalue);
+SCCP_API boolean_t SCCP_CALL sccp_debug_is_category(const char * name);
 __END_C_EXTERN__
 // kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

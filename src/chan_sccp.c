@@ -189,8 +189,7 @@ boolean_t sccp_postPBX_load(void)
 {
 	pbx_rwlock_wrlock(&GLOB(lock));
 
-	// initialize SCCP_REVISIONSTR and SCCP_REVISIONSTR
-	
+	/* SCCP_VERSIONSTR is also the module description; revision and build details go in backtraces only */
 #ifdef VCS_SHORT_HASH
 #if VCS_WC_MODIFIED
 	snprintf(SCCP_REVISIONSTR, sizeof(SCCP_REVISIONSTR), "%sM", VCS_SHORT_HASH);
@@ -200,7 +199,7 @@ boolean_t sccp_postPBX_load(void)
 #else
 	snprintf(SCCP_REVISIONSTR, sizeof(SCCP_REVISIONSTR), "%s", SCCP_REVISION);
 #endif
-	snprintf(SCCP_VERSIONSTR, sizeof(SCCP_VERSIONSTR), "Skinny Client Control Protocol (SCCP). Release: %s %s - %s (built by '%s' on '%s')\n", SCCP_VERSION, SCCP_BRANCH, SCCP_REVISIONSTR, BUILD_USER, BUILD_DATE);
+	snprintf(SCCP_VERSIONSTR, sizeof(SCCP_VERSIONSTR), "Skinny Client Control Protocol (SCCP) %s", SCCP_VERSION);
 
 	GLOB(module_running) = TRUE;
 	pbx_rwlock_unlock(&GLOB(lock));

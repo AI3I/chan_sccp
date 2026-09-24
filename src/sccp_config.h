@@ -67,5 +67,6 @@ SCCP_API void SCCP_CALL sccp_config_softKeySet(PBX_VARIABLE_TYPE * variable, con
 SCCP_API void SCCP_CALL sccp_config_restoreDeviceFeatureStatus(devicePtr device);
 
 SCCP_API int SCCP_CALL sccp_config_generate(char *filename, int configType);
+SCCP_API void SCCP_CALL sccp_config_generate_path(char * fn, size_t size, const char * filename);
 __END_C_EXTERN__
 // kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

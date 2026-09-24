@@ -659,17 +659,26 @@ int __PURE__ sccp_strIsNumeric(const char *s)
 	return 0;
 }
 
+/* "Keepalive (s)" -> "Keepalive", "DND feature enabled" -> "DNDFeatureEnabled", "IPAddress" stays: a CLI
+ * label or field name as an AMI key. Each word starts upper case, the rest keeps its case; parenthesized
+ * parts (units) are dropped; any other non-alphanumeric character starts a new word. */
 gcc_inline void sccp_camelcase(char * instr)
 {
 	boolean_t capsNext = TRUE;
-	int       i = 0, j = 0;
-	while (instr[i] != '\0') {
-		if (!isalnum(instr[i])) {
-			i++;
-			capsNext = TRUE;
+	int       depth    = 0;
+	int       j        = 0;
+	for (int i = 0; instr[i] != '\0'; i++) {
+		unsigned char ch = (unsigned char)instr[i];
+		if (ch == '(') {
+			depth++;
+		} else if (ch == ')' && depth > 0) {
+			depth--;
+		} else if (depth == 0 && isalnum(ch)) {
+			instr[j++] = capsNext ? toupper(ch) : ch;
+			capsNext   = FALSE;
+			continue;
 		}
-		instr[j++] = capsNext ? toupper(instr[i++]) : tolower(instr[i++]);
-		capsNext   = FALSE;
+		capsNext = TRUE;
 	}
 	instr[j] = '\0';
 }
@@ -1705,7 +1714,7 @@ void sccp_do_backtrace(void)
 	}
 	
 	pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "================================================================================\n");
-	pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "OPERATING SYSTEM: %s, ARCHITECTURE: %s, KERNEL: %s\nASTERISK: %s\nCHAN-SCCP-b: %s\n", BUILD_OS, BUILD_MACHINE, BUILD_KERNEL, pbx_get_version(), SCCP_VERSIONSTR);
+	pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "OPERATING SYSTEM: %s, ARCHITECTURE: %s, KERNEL: %s\nASTERISK: %s\nCHAN_SCCP: %s, revision %s, built by %s on %s\n", BUILD_OS, BUILD_MACHINE, BUILD_KERNEL, pbx_get_version(), SCCP_VERSION, SCCP_REVISIONSTR, BUILD_USER, BUILD_DATE);
 	pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "--------------------------------------------------------------------------(bt)--\n");
 	size = backtrace(addresses, SCCP_BACKTRACE_SIZE);
 	strings = ast_bt_get_symbols(addresses, size);

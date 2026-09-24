@@ -614,7 +614,7 @@ int sccp_show_refcount(int fd, sccp_cli_totals_t *totals, struct mansession *s, 
 	ast_rwlock_rdlock(&objectslock);
 #	define CLI_AMI_TABLE_NAME           Refcount
 #define CLI_AMI_TABLE_TITLE "Reference Counts"
-#	define CLI_AMI_TABLE_PER_ENTRY_NAME Entry
+#	define CLI_AMI_TABLE_PER_ENTRY_NAME Reference
 #	define CLI_AMI_TABLE_ITERATOR       for(bucket = 0; bucket < SCCP_HASH_PRIME; bucket++)
 #	define CLI_AMI_TABLE_BEFORE_ITERATION                                                                                                                \
 		if(objects[bucket]) {                                                                                                                         \

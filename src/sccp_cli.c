@@ -2579,19 +2579,35 @@ SCCP_AMI_ACTION(remove_line, sccp_add_remove_line, "SCCPRemoveLine", FALSE, "scc
 static int sccp_do_debug(int fd, int argc, char *argv[])
 {
 	int32_t new_debug = GLOB(debug);
+	int     mask      = 0;
 
+	/* check every name first, so a typo changes nothing */
+	if (argc > 2 && sscanf(argv[2], "%d", &mask) != 1) {
+		for (int argi = 2; argi < argc; argi++) {
+			char * copy = pbx_strdupa(argv[argi]);
+			char * rest = NULL;
+			for (char * token = strtok_r(copy, " ,\t", &rest); token; token = strtok_r(NULL, " ,\t", &rest)) {
+				if (!sccp_debug_is_category(token)) {
+					pbx_cli(fd, "'%s' is not a debug category; debug not changed\n", token);
+					return RESULT_SHOWUSAGE;
+				}
+			}
+		}
+	}
 	if (argc > 2) {
 		new_debug = sccp_parse_debugline(argv, 2, argc, new_debug);
 	}
 
-	char *debugcategories = sccp_get_debugcategories(new_debug);
+	char * old_categories = sccp_get_debugcategories(GLOB(debug));
+	char * new_categories = sccp_get_debugcategories(new_debug);
 
 	if (argc > 2) {
-		pbx_cli(fd, "SCCP new debug status: (%d -> %d) %s\n", GLOB(debug), new_debug, debugcategories ? debugcategories : "none");
+		pbx_cli(fd, "SCCP debug: %s (was %s)\n", new_categories ? new_categories : "none", old_categories ? old_categories : "none");
 	} else {
-		pbx_cli(fd, "SCCP debug status: (%d) %s\n", GLOB(debug), debugcategories ? debugcategories : "none");
+		pbx_cli(fd, "SCCP debug: %s\n", old_categories ? old_categories : "none");
 	}
-	sccp_free(debugcategories);
+	sccp_free(old_categories);
+	sccp_free(new_categories);
 
 	GLOB(debug) = new_debug;
 	return RESULT_SUCCESS;
@@ -2924,33 +2940,30 @@ CLI_ENTRY(cli_reload_file, sccp_cli_reload, "Reload the SCCP configuration", rel
      */
 static int sccp_cli_config_generate(int fd, int argc, char *argv[])
 {
-	int returnval = RESULT_FAILURE;
-	char *config_file = "sccp.conf.new";
-	int option = 0;
+	const char * config_file = argc >= 4 ? argv[3] : "sccp.conf.new";
+	int          option      = 0;
+	char         fn[PATH_MAX];
 
-	if(argc < 2 || argc > 5) {
+	if (argc < 3 || argc > 5 || (argc == 5 && !sccp_strcaseequals(argv[4], "wiki"))) {
 		return RESULT_SHOWUSAGE;
 	}
-
-	pbx_cli(fd, "SCCP: Generating new config file.\n");
-
-	if(argc >= 4) {
-		config_file = pbx_strdupa(argv[3]);
-	}
-	if(argc == 5 && sccp_strcaseequals(argv[4], "wiki")) {
+	if (argc == 5) {
 		option = 3;
 	}
-	if(!sccp_config_generate(config_file, option)) {
-		returnval = RESULT_SUCCESS;
-	} else {
-		pbx_cli(fd, "SCCP generation failed.\n");
+	sccp_config_generate_path(fn, sizeof(fn), config_file);
+	if (sccp_config_generate(pbx_strdupa(config_file), option) != 0) {
+		pbx_cli(fd, "%s not written: %s\n", fn, errno == EEXIST ? "the file already exists" : strerror(errno));
+		return RESULT_FAILURE;
 	}
-
-	return returnval;
+	pbx_cli(fd, "%s written\n", fn);
+	return RESULT_SUCCESS;
 }
 
-static char config_generate_usage[] = "Usage: sccp config generate [filename] [option]\n"
-				      "       Generates a new sccp.conf if none exists. Either creating sccp.conf or [filename] if specified\n";
+static char config_generate_usage[] = "Usage: sccp config generate [file [wiki]]\n"
+				      "       Write every sccp.conf option with its default value to file (default\n"
+				      "       sccp.conf.new). A relative name is placed in the Asterisk configuration\n"
+				      "       directory. An existing file is not overwritten. With wiki, the options\n"
+				      "       are written as a wiki page.\n";
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_COMMAND "sccp", "config", "generate"
@@ -2971,7 +2984,7 @@ CLI_ENTRY(cli_config_generate, sccp_cli_config_generate, "Generate a SCCP config
      */
 static int sccp_show_version(int fd, int argc, char *argv[])
 {
-	pbx_cli(fd, "%s", SCCP_VERSIONSTR);
+	pbx_cli(fd, "%s\n", SCCP_VERSIONSTR);
 	return RESULT_SUCCESS;
 }
 

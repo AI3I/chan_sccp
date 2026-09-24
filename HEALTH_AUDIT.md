@@ -49,6 +49,30 @@ Behavior bugs fixed:
   device/line/call, device not registered, DND feature disabled, line already
   on the device, call not ringing, no refused token, ...).
 
+Also cleaned up:
+- `sccp show version` and the module description are now "Skinny Client
+  Control Protocol (SCCP) 5.0.0" / "... (SCCP)"; the branch, revision and
+  builder only appear in backtraces. The old string ended in a newline and
+  overflowed the `module show` column.
+- `sccp debug` rejects unknown category names on the CLI (with usage) and
+  changes nothing; before, typos were logged as NOTICEs and the rest applied.
+- AMI keys made from CLI labels: `sccp_camelcase()` read past the end of
+  labels ending in ")" and turned "Keepalive (s)" into "Keepalive(s"; units in
+  parentheses are now dropped and the rest keeps its case (`IPAddress`, not
+  `Ipaddress`). Refcount entries are `SCCPReferenceEntry`, not
+  `SCCPEntryEntry`.
+- `SCCPConfigMetadata`: string options were typed `" STRING"`, missing
+  defaults printed as `"(null)"` (now JSON null), text was not JSON-escaped,
+  the ENUM key had a space ("Possible Values", now `PossibleValues`), and two
+  `strsep()` loops freed NULL and leaked their copies. Name is `chan_sccp`;
+  the archive branch/revision fields are gone. XML docs rewritten.
+- `sccp show channels` logged an ERROR per call on builds without video.
+- Two NOTICEs on every call from a channel without an SCCP codec (e.g. a
+  Local channel) are now codec debug; the requested format reference leaked.
+- `sccp config generate`: absolute paths were put under the config
+  directory; the result and reason are printed on the CLI; the generated
+  header was missing a newline after the date.
+
 Test harness: the simulated phone now drops its connection after Reset,
 Restart and RegisterReject, as a real phone does; `alltests.sh` runs every
 CLI command and AMI action including the negative cases.

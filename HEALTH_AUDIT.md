@@ -1,5 +1,45 @@
 # chan_sccp-modern Health Audit
 
+## Changed — console formatting of the SCCP CLI screens (2026-09-24)
+
+Key/value screens (`sccp show globals`, `show device`, `show line`) now use
+the Asterisk layout: short section titles (General, Network, Media, Calls,
+...), indented sentence-case "  Label:" lines with values aligned per screen,
+and long lists (deny/permit, local networks, codecs) wrapped under the value
+column. Empty values read "(not set)" for an option and "(none)" for a list;
+AMI gets an empty value. Removed: "---"/"???.???.???.???"/"<not set>"/
+"Unset"/"NONE"/"(null)" placeholders, "=>" arrows, the "Softkey Set: default
+=> NULL ! ((nil))" pointer dump, the External IP advice text, byte order,
+made-up labels (PendingUpdate, BTemplate support, Videosupport?,
+linesRegistered, Can CFWDALL, AmaFlags, ParkingLot), the conference "---"
+banner and the ANSI-coloured refcount advice. Tables: rows indented under the
+title, no dash underline, "(none)" for an empty table, "(not set)" for an
+empty cell, two decimals for call-quality figures, sentence-case titles.
+AMI keys follow the new labels (e.g. `ConfigFile`, `AudioTOSCOS`).
+
+Bugs found and fixed on the way:
+- `show line` printed "Pending Delete" from `pendingUpdate` and "Pending
+  Update" from `pendingDelete`; "Adhoc Number Assigned" was always "on" (a
+  string passed as a boolean). The line PIN was printed in clear text; now
+  only "set" / "(not set)".
+- `show globals` dereferenced `GLOB(hotline)->line` without a NULL check,
+  and computed the video codec list with the audio array length.
+- `sccp reload`: a second reload while one was running cleared the running
+  reload's in-progress flag; a missing config file name crashed
+  (`pbx_strdupa(NULL)`); a failed listener rebind returned 3, which is not a
+  CLI result. Messages now name the file that was (not) reloaded and why.
+- `sccp reload device/line` without a name printed its own usage line instead
+  of the command's usage.
+
+Seen, not changed: a line's combined device codec list reads "(none)" while
+a registered phone is attached (line capabilities are not recomputed on
+registration).
+
+Validation: wadsworth lab, full `alltests.sh all` — every CLI command and AMI
+action behaves as before, no ERROR/WARNING in the log; `make check` (table
+renderer test updated) passes; build clean with `-Wall -Wformat=2`. Not
+deployed.
+
 ## Changed — CLI and AMI command set renamed and repaired (2026-09-24)
 
 Commands are renamed outright (no aliases). CLI: `sccp show {globals,

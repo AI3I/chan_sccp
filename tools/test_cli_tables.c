@@ -36,10 +36,9 @@ int main(void)
 	char *text = render(&table);
 	assert(!strcmp(text,
 		"Test:\n"
-		"Name                            Count\n"
-		"------------------------------  ---------\n"
-		"A very long device description  123456789\n"
-		"short                           1\n\n"));
+		"  Name                            Count\n"
+		"  A very long device description  123456789\n"
+		"  short                           1\n\n"));
 	free(text);
 
 	table = (sccp_cli_table_data_t){ .headers = headers, .columns = 2 };
@@ -64,7 +63,7 @@ int main(void)
 
 	table = (sccp_cli_table_data_t){ .headers = headers, .columns = 2 };
 	text = render(&table);
-	assert(!strcmp(text, "Test:\nName  Count\n----  -----\n(no entries)\n\n"));
+	assert(!strcmp(text, "Test:\n  (none)\n\n"));
 	free(text);
 
 	table = (sccp_cli_table_data_t){ .headers = headers, .columns = 2 };

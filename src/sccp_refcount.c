@@ -613,7 +613,7 @@ int sccp_show_refcount(int fd, sccp_cli_totals_t *totals, struct mansession *s, 
 
 	ast_rwlock_rdlock(&objectslock);
 #	define CLI_AMI_TABLE_NAME           Refcount
-#define CLI_AMI_TABLE_TITLE "Reference Counts"
+#define CLI_AMI_TABLE_TITLE "Reference counts"
 #	define CLI_AMI_TABLE_PER_ENTRY_NAME Reference
 #	define CLI_AMI_TABLE_ITERATOR       for(bucket = 0; bucket < SCCP_HASH_PRIME; bucket++)
 #	define CLI_AMI_TABLE_BEFORE_ITERATION                                                                                                                \
@@ -692,7 +692,7 @@ int sccp_show_refcount(int fd, sccp_cli_totals_t *totals, struct mansession *s, 
 	fillfactor = (float) numentries / SCCP_HASH_PRIME;
 	int once = 0;
 #define CLI_AMI_TABLE_NAME FillFactor
-#define CLI_AMI_TABLE_TITLE "Hash Table Usage"
+#define CLI_AMI_TABLE_TITLE "Hash table usage"
 #define CLI_AMI_TABLE_PER_ENTRY_NAME Factor
 #define CLI_AMI_TABLE_ITERATOR for(once=0;once<1;once++)
 #define CLI_AMI_TABLE_FIELDS 												\
@@ -704,9 +704,9 @@ int sccp_show_refcount(int fd, sccp_cli_totals_t *totals, struct mansession *s, 
 	local_line_total++;
 	if (fillfactor > 1.00) {
 		if (!s) {
-			pbx_cli(fd, "\033[1m\033[41m\033[37mPlease keep fillfactor below 1.00. Check ./configure --with-hash-size.\033[0m\n");
+			pbx_cli(fd, "Fill factor above 1.00: more objects than hash buckets, so lookups slow down (bucket count is set by configure --with-hash-size)\n");
 		} else {
-			astman_append(s, "Please keep fillfactor below 1.00. Check ./configure --with-hash-size.\r\n");
+			astman_append(s, "Warning: fill factor above 1.00; more objects than hash buckets\r\n");
 			local_line_total++;
 		}
 	}

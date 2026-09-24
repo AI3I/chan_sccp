@@ -87,10 +87,10 @@ if (s) {
 
 	/* iterator through list */
 if (!s) {
-#define CLI_TABLE_CELL_s(_b,_e) { const char *cell_text = (_e); sccp_cli_table_add(&UNIQUE_VAR(table_, CLI_AMI_TABLE_NAME), "%s", cell_text ? cell_text : "--"); }
+#define CLI_TABLE_CELL_s(_b,_e) { const char *cell_text = (_e); sccp_cli_table_add(&UNIQUE_VAR(table_, CLI_AMI_TABLE_NAME), "%s", !sccp_strlen_zero(cell_text) ? cell_text : "(not set)"); }
 #define CLI_TABLE_CELL_d(_b,_e) sccp_cli_table_add(&UNIQUE_VAR(table_, CLI_AMI_TABLE_NAME), "%d", _e);
 #define CLI_TABLE_CELL_p(_b,_e) sccp_cli_table_add(&UNIQUE_VAR(table_, CLI_AMI_TABLE_NAME), "%p", (void *)(_e));
-#define CLI_TABLE_CELL_f(_b,_e) sccp_cli_table_add(&UNIQUE_VAR(table_, CLI_AMI_TABLE_NAME), "%f", (double)(_e));
+#define CLI_TABLE_CELL_f(_b,_e) sccp_cli_table_add(&UNIQUE_VAR(table_, CLI_AMI_TABLE_NAME), "%.2f", (double)(_e));
 #define CLI_AMI_TABLE_FIELD(_a,_b,_c,_d,_e) CLI_TABLE_CELL_##_c(_b,_e)
 #define CLI_AMI_TABLE_FIELD_NAMED(_a,_label,_b,_c,_d,_e) CLI_AMI_TABLE_FIELD(_a,_b,_c,_d,_e)
 #define CLI_AMI_TABLE_UTF8_FIELD(_a,_b,_c,_d,_e) CLI_AMI_TABLE_FIELD(_a,_b,_c,_d,_e)

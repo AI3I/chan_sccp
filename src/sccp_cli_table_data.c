@@ -111,30 +111,32 @@ void sccp_cli_table_render(sccp_cli_table_data_t *table, const char *title,
 			widths[i % table->columns] = table->data[i].width;
 		}
 	}
+	/* Asterisk style: title, then header and rows indented under it; no underline row */
 	write_text(context, title);
 	write_text(context, ":\n");
-	for (size_t c = 0; c < table->columns; c++) {
-		write_text(context, table->headers[c]);
-		if (c + 1 < table->columns) {
-			repeat(write_text, context, ' ', widths[c] - display_width(table->headers[c]) + 2);
+	if (!table->cells) {
+		write_text(context, "  (none)\n");
+	} else {
+		write_text(context, "  ");
+		for (size_t c = 0; c < table->columns; c++) {
+			write_text(context, table->headers[c]);
+			if (c + 1 < table->columns) {
+				repeat(write_text, context, ' ', widths[c] - display_width(table->headers[c]) + 2);
+			}
 		}
-	}
-	write_text(context, "\n");
-	for (size_t c = 0; c < table->columns; c++) {
-		repeat(write_text, context, '-', widths[c]);
-		write_text(context, c + 1 < table->columns ? "  " : "\n");
+		write_text(context, "\n");
 	}
 	for (size_t i = 0; i < table->cells; i++) {
-		write_text(context, table->data[i].text);
 		size_t c = i % table->columns;
+		if (c == 0) {
+			write_text(context, "  ");
+		}
+		write_text(context, table->data[i].text);
 		if (c + 1 < table->columns) {
 			repeat(write_text, context, ' ', widths[c] - table->data[i].width + 2);
 		} else {
 			write_text(context, "\n");
 		}
-	}
-	if (!table->cells) {
-		write_text(context, "(no entries)\n");
 	}
 	write_text(context, "\n");
 	if (locale) {

@@ -153,7 +153,7 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 				astman_append((s), "%s: " fmt "\r\n", (camelParam), __VA_ARGS__);                                                                                                                               \
 				local_line_total++;                                                                                                                                                                             \
 			} else {                                                                                                                                                                                                \
-				ast_cli((fd), "%-*.*s %s " fmt "\n", (width), (width), (param), ":", __VA_ARGS__);                                                                                                              \
+				ast_cli((fd), "  %-*s " fmt "\n", (width) + 1, param ":", __VA_ARGS__);                                                                                                              \
 			}                                                                                                                                                                                                       \
 		})
 
@@ -165,7 +165,7 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 				astman_append((s), "%s: %s\r\n", (camelParam), ((value) ? "on" : "off"));                                                                                                                       \
 				local_line_total++;                                                                                                                                                                             \
 			} else {                                                                                                                                                                                                \
-				ast_cli((fd), "%-*.*s %s %s\n", (width), (width), (param), ":", ((value) ? "on" : "off"));                                                                                                      \
+				ast_cli((fd), "  %-*s %s\n", (width) + 1, param ":", ((value) ? "on" : "off"));                                                                                                      \
 			}                                                                                                                                                                                                       \
 		})
 
@@ -177,7 +177,7 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 				astman_append((s), "%s: %s\r\n", (camelParam), ((value) ? "yes" : "no"));                                                                                                                       \
 				local_line_total++;                                                                                                                                                                             \
 			} else {                                                                                                                                                                                                \
-				ast_cli((fd), "%-*.*s %s %s\n", (width), (width), (param), ":", ((value) ? "yes" : "no"));                                                                                                      \
+				ast_cli((fd), "  %-*s %s\n", (width) + 1, param ":", ((value) ? "yes" : "no"));                                                                                                      \
 			}                                                                                                                                                                                                       \
 		})
 

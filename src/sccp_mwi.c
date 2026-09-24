@@ -375,7 +375,7 @@ static int showSubscriptions(int fd, sccp_cli_totals_t *totals, struct mansessio
 
 	subscription_lock();
 #define CLI_AMI_TABLE_NAME MWISubscriptions
-#define CLI_AMI_TABLE_TITLE "MWI Subscriptions"
+#define CLI_AMI_TABLE_TITLE "MWI subscriptions"
 #define CLI_AMI_TABLE_PER_ENTRY_NAME MailboxSubscriber
 #define CLI_AMI_TABLE_ITERATOR for (uint32_t idx = 0; idx < SCCP_VECTOR_SIZE(&subscriptions); idx++)
 #define CLI_AMI_TABLE_BEFORE_ITERATION                                            \

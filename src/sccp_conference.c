@@ -1741,12 +1741,12 @@ int sccp_cli_show_conference(int fd, sccp_cli_totals_t *totals, struct mansessio
 		sccp_participant_t *participant = NULL;
 
 		if (!s) {
-			CLI_AMI_OUTPUT(fd, s, "\n--- SCCP conference ----------------------------------------------------------------------------------\n");
+			CLI_AMI_OUTPUT(fd, s, "Conference %d:\n", conference->id);
 		} else {
 			astman_send_listack(s, m, argv[0], "start");
 			CLI_AMI_OUTPUT_PARAM("Event", CLI_AMI_LIST_WIDTH, "%s", argv[0]);
+			CLI_AMI_OUTPUT_PARAM("ConfId", CLI_AMI_LIST_WIDTH, "%d", conference->id);
 		}
-		CLI_AMI_OUTPUT_PARAM("ConfId", CLI_AMI_LIST_WIDTH, "%d", conference->id);
 #define CLI_AMI_TABLE_NAME Participants
 #define CLI_AMI_TABLE_PER_ENTRY_NAME Participant
 #define CLI_AMI_TABLE_LIST_ITER_HEAD &conference->participants
@@ -1756,7 +1756,7 @@ int sccp_cli_show_conference(int fd, sccp_cli_totals_t *totals, struct mansessio
 #define CLI_AMI_TABLE_LIST_UNLOCK SCCP_RWLIST_UNLOCK
 #define CLI_AMI_TABLE_FIELDS 																						\
 			CLI_AMI_TABLE_FIELD_NAMED(Id, "ID",			"3.3",		d,	3,	participant->id)											\
-			CLI_AMI_TABLE_FIELD_NAMED(ChannelName, "Channel",	"-20.20",	s,	20,	participant->conferenceBridgePeer ? pbx_channel_name(participant->conferenceBridgePeer) : "NULL")	\
+			CLI_AMI_TABLE_FIELD_NAMED(ChannelName, "Channel",	"-20.20",	s,	20,	participant->conferenceBridgePeer ? pbx_channel_name(participant->conferenceBridgePeer) : "")	\
 			CLI_AMI_TABLE_FIELD(Moderator,		"-11.11",	s,	11,	participant->isModerator ? "Yes" : "No")								\
 			CLI_AMI_TABLE_FIELD(Muted,		"-5.5",		s,	5,	participant->features.mute ? "Yes" : "No")								\
 			CLI_AMI_TABLE_FIELD(Announce,		"-8.8",		s,	8,	participant->playback_announcements ? "Yes" : "No")							\

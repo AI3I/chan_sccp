@@ -47,6 +47,7 @@
 #include "sccp_channel.h"
 #include "sccp_cli.h"
 #include "sccp_actions.h"
+#include "sccp_softkeys.h"
 
 SCCP_FILE_VERSION(__FILE__, "");
 
@@ -121,6 +122,36 @@ void sccp_cli_table_print(sccp_cli_table_data_t *table, int fd, const char *titl
 		</syntax>
 		<description>
 			<para>Returns one SCCPDeviceCallEntry event per call, newest first (the last 20 calls since the module loaded), with the packet counts, loss, jitter, latency, MOS and concealment the phone reported at the end of the call, followed by SCCPShowDeviceCallsComplete.</para>
+		</description>
+	</manager>
+	<manager name="SCCPPushURL" language="en_US">
+		<synopsis>Make a phone open a URL.</synopsis>
+		<syntax>
+			<xi:include href="../core-en_US.xml" parse="xml" xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
+			<parameter name="Device" required="true"><para>Device name.</para></parameter>
+			<parameter name="URL" required="true"><para>Cisco XML service or page, at most 256 characters.</para></parameter>
+		</syntax>
+		<description>
+			<para>The phone accepts the URL only if its authentication URL allows pushes.</para>
+		</description>
+	</manager>
+	<manager name="SCCPPress" language="en_US">
+		<synopsis>Press a key on a phone.</synopsis>
+		<syntax>
+			<xi:include href="../core-en_US.xml" parse="xml" xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
+			<parameter name="Device" required="true"><para>Device name.</para></parameter>
+			<parameter name="Key" required="true">
+				<enumlist>
+					<enum name="softkey"><para>Value is the softkey name, e.g. NewCall, EndCall, Hold.</para></enum>
+					<enum name="digits"><para>Value is the digits (0-9, *, #, +).</para></enum>
+					<enum name="offhook"/>
+					<enum name="onhook"/>
+				</enumlist>
+			</parameter>
+			<parameter name="Value"><para>Softkey name or digits.</para></parameter>
+		</syntax>
+		<description>
+			<para>Acts as if the key was pressed on the phone; softkeys and digits apply to the phone's active call.</para>
 		</description>
 	</manager>
 	<manager name="SCCPShowFirmware" language="en_US">
@@ -3698,6 +3729,173 @@ SCCP_AMI_ACTION(set_fallback, sccp_set_object, "SCCPSetFallback", FALSE, "sccp",
 #endif
 
 /* ----------------------------------------------------------------------------------------------------- DEVICE CONTROL - */
+/* sccp push url <device> <url>: make the phone open url (needs the phone's authentication URL to accept it) */
+static int sccp_push_url(int fd, sccp_cli_totals_t * totals, struct mansession * s, const struct message * m, int argc, char * argv[])
+{
+	if (argc != 5 || !ARG_PRESENT(3) || !ARG_PRESENT(4)) {
+		return RESULT_SHOWUSAGE;
+	}
+	AUTO_RELEASE(sccp_device_t, d, sccp_device_find_byid(argv[3], FALSE));
+	if (!d) {
+		CLI_AMI_RETURN_ERROR(fd, s, m, "Device %s does not exist", argv[3]);
+	}
+	if (!d->session) {
+		CLI_AMI_RETURN_ERROR(fd, s, m, "Device %s is not registered", d->id);
+	}
+	switch (d->pushURL(d, argv[4], 1, SKINNY_TONE_ZIP)) {
+		case SCCP_PUSH_RESULT_SUCCESS:
+			CLI_AMI_RETURN_DONE(fd, s, m, "URL sent to %s", d->id);
+		case SCCP_PUSH_RESULT_NOT_SUPPORTED:
+			CLI_AMI_RETURN_ERROR(fd, s, m, "URL not sent: %s (%s, protocol %d) does not support pushed URLs", d->id, skinny_devicetype2str(d->skinny_type), d->inuseprotocolversion);
+		default:
+			CLI_AMI_RETURN_ERROR(fd, s, m, "URL not sent to %s: it is longer than 256 characters or could not be encoded", d->id);
+	}
+}
+
+/* feed a message to the normal message handler as if the phone had sent it */
+static void sccp_cli_inject(constDevicePtr d, sccp_msg_t * msg)
+{
+	msg->header.lel_protocolVer = htolel(d->inuseprotocolversion);
+	sccp_handle_message(msg, d->session);
+	sccp_free(msg);
+}
+
+/* sccp press <device> softkey <label> | digits <digits> | offhook | onhook */
+static int sccp_press(int fd, sccp_cli_totals_t * totals, struct mansession * s, const struct message * m, int argc, char * argv[])
+{
+	if (argc < 4 || argc > 5 || !ARG_PRESENT(2) || !ARG_PRESENT(3)) {
+		return RESULT_SHOWUSAGE;
+	}
+	AUTO_RELEASE(sccp_device_t, d, sccp_device_find_byid(argv[2], FALSE));
+	if (!d) {
+		CLI_AMI_RETURN_ERROR(fd, s, m, "Device %s does not exist", argv[2]);
+	}
+	if (!d->session || sccp_device_getRegistrationState(d) != SKINNY_DEVICE_RS_OK) {
+		CLI_AMI_RETURN_ERROR(fd, s, m, "Device %s is not registered", d->id);
+	}
+	const char * what  = argv[3];
+	const char * value = argc == 5 ? argv[4] : "";
+
+	/* the key applies to the active call, or else to a call held on this device (for Resume) */
+	uint32_t lineInstance = 0;
+	uint32_t callid       = 0;
+	{
+		AUTO_RELEASE(sccp_channel_t, c, sccp_device_getActiveChannel(d));
+		if (!c) {
+			/* a held call is detached from the device, so look on the device's lines */
+			sccp_buttonconfig_t * config = NULL;
+			SCCP_LIST_LOCK(&d->buttonconfig);
+			SCCP_LIST_TRAVERSE(&d->buttonconfig, config, list) {
+				if (config->type == LINE && !c) {
+					AUTO_RELEASE(sccp_line_t, l, sccp_line_find_byname(config->button.line.name, FALSE));
+					if (l) {
+						c = sccp_channel_find_bystate_on_line(l, SCCP_CHANNELSTATE_HOLD) /*ref_replace*/;
+					}
+				}
+			}
+			SCCP_LIST_UNLOCK(&d->buttonconfig);
+		}
+		if (c && c->line) {
+			lineInstance = sccp_device_find_index_for_line(d, c->line->name);
+			callid       = c->callid;
+		}
+	}
+	sccp_msg_t * msg = NULL;
+
+	if (sccp_strcaseequals(what, "offhook") || sccp_strcaseequals(what, "onhook")) {
+		if (argc != 4) {
+			return RESULT_SHOWUSAGE;
+		}
+		if (sccp_strcaseequals(what, "offhook")) {
+			REQ(msg, OffHookMessage);
+		} else {
+			REQ(msg, OnHookMessage);
+		}
+		if (!msg) {
+			CLI_AMI_RETURN_ERROR(fd, s, m, "Key not pressed on %s: out of memory", d->id);
+		}
+		sccp_cli_inject(d, msg);
+		CLI_AMI_RETURN_DONE(fd, s, m, "%s pressed on %s", sccp_strcaseequals(what, "offhook") ? "Off hook" : "On hook", d->id);
+	}
+	if (sccp_strcaseequals(what, "softkey")) {
+		if (argc != 5) {
+			return RESULT_SHOWUSAGE;
+		}
+		uint32_t event = 0;
+		for (uint32_t i = 0; i < ARRAY_LEN(softkeysmap) && !event; i++) {
+			const char * label = label2str(softkeysmap[i]);
+			if (label && !strcasecmp(label, value)) {
+				event = i + 1;
+			}
+		}
+		if (!event) {
+			CLI_AMI_RETURN_ERROR(fd, s, m, "%s is not a softkey name (names as in 'sccp show softkey sets', e.g. NewCall, EndCall, Hold, Resume, Transfer)", value);
+		}
+		REQ(msg, SoftKeyEventMessage);
+		if (!msg) {
+			CLI_AMI_RETURN_ERROR(fd, s, m, "Softkey not pressed on %s: out of memory", d->id);
+		}
+		msg->data.SoftKeyEventMessage.lel_softKeyEvent  = htolel(event);
+		msg->data.SoftKeyEventMessage.lel_lineInstance  = htolel(lineInstance);
+		msg->data.SoftKeyEventMessage.lel_callReference = htolel(callid);
+		sccp_cli_inject(d, msg);
+		CLI_AMI_RETURN_DONE(fd, s, m, "Softkey %s pressed on %s", label2str(softkeysmap[event - 1]), d->id);
+	}
+	if (sccp_strcaseequals(what, "digits")) {
+		if (argc != 5) {
+			return RESULT_SHOWUSAGE;
+		}
+		for (const char * p = value; *p; p++) {
+			if (!isdigit((unsigned char)*p) && *p != '*' && *p != '#' && *p != '+') {
+				CLI_AMI_RETURN_ERROR(fd, s, m, "Digits not pressed: '%c' is not a keypad key (0-9, *, #, +)", *p);
+			}
+		}
+		for (const char * p = value; *p; p++) {
+			REQ(msg, KeypadButtonMessage);
+			if (!msg) {
+				CLI_AMI_RETURN_ERROR(fd, s, m, "Digits not pressed on %s: out of memory", d->id);
+			}
+			uint32_t key = *p == '*' ? 14 : *p == '#' ? 15 : *p == '+' ? 16 : (uint32_t)(*p - '0');
+			msg->data.KeypadButtonMessage.lel_kpButton      = htolel(key);
+			msg->data.KeypadButtonMessage.lel_lineInstance  = htolel(lineInstance);
+			msg->data.KeypadButtonMessage.lel_callReference = htolel(callid);
+			sccp_cli_inject(d, msg);
+			if (!callid) {
+				/* the first digit may have opened a call; the rest go to it */
+				AUTO_RELEASE(sccp_channel_t, c, sccp_device_getActiveChannel(d));
+				if (c && c->line) {
+					lineInstance = sccp_device_find_index_for_line(d, c->line->name);
+					callid       = c->callid;
+				}
+			}
+		}
+		CLI_AMI_RETURN_DONE(fd, s, m, "Digits %s pressed on %s", value, d->id);
+	}
+	return RESULT_SHOWUSAGE;
+}
+
+static char cli_push_url_usage[] = "Usage: sccp push url <device> <url>\n"
+				   "       Make the phone open url (a Cisco XML service or page). The phone accepts\n"
+				   "       it only if its authentication URL allows pushes.\n";
+static char cli_press_usage[] = "Usage: sccp press <device> softkey <name>\n"
+				"       sccp press <device> digits <digits>\n"
+				"       sccp press <device> offhook|onhook\n"
+				"       Act as if the key was pressed on the phone; softkeys and digits apply to\n"
+				"       the phone's active call. Softkey names are those in 'sccp show softkey sets'.\n";
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+#define CLI_COMPLETE SCCP_CLI_CONNECTED_DEVICE_COMPLETER
+#define CLI_COMMAND "sccp", "push", "url"
+CLI_AMI_ENTRY(push_url, sccp_push_url, "Make a phone open a URL", cli_push_url_usage, FALSE, FALSE)
+SCCP_AMI_ACTION(push_url, sccp_push_url, "SCCPPushURL", FALSE, "sccp", "push", "url", "$Device", "$URL")
+#undef CLI_COMMAND
+#define CLI_COMMAND "sccp", "press"
+CLI_AMI_ENTRY(press, sccp_press, "Press a key on a phone", cli_press_usage, FALSE, FALSE)
+SCCP_AMI_ACTION(press, sccp_press, "SCCPPress", FALSE, "sccp", "press", "$Device", "$Key", "$Value")
+#undef CLI_COMMAND
+#undef CLI_COMPLETE
+#endif														/* DOXYGEN_SHOULD_SKIP_THIS */
+
 /* sccp reset|restart|unregister <device>, sccp apply config <device>, sccp refresh device <device>, sccp token ack <device> */
 static int sccp_device_control(int fd, sccp_cli_totals_t * totals, struct mansession * s, const struct message * m, int argc, char * argv[])
 {
@@ -4004,6 +4202,8 @@ static struct pbx_cli_entry cli_entries[] = {
 	AST_CLI_DEFINE(cli_unregister, "Unregister a phone"),
 	AST_CLI_DEFINE(cli_refresh_device, "Resend a phone's button layout"),
 	AST_CLI_DEFINE(cli_token_ack, "Acknowledge a phone's token request"),
+	AST_CLI_DEFINE(cli_push_url, "Make a phone open a URL"),
+	AST_CLI_DEFINE(cli_press, "Press a key on a phone"),
 	AST_CLI_DEFINE(cli_do_debug, "Show or change SCCP debug logging"),
 	AST_CLI_DEFINE(cli_reload, "Reload sccp.conf"),
 	AST_CLI_DEFINE(cli_reload_file, "Reload SCCP from another file"),
@@ -4062,6 +4262,8 @@ static const struct {
 	{ "SCCPUnregister", _MAN_SYSTEM, manager_unregister },
 	{ "SCCPRefreshDevice", _MAN_SYSTEM, manager_refresh_device },
 	{ "SCCPTokenAck", _MAN_SYSTEM, manager_token_ack },
+	{ "SCCPPushURL", _MAN_SYSTEM, manager_push_url },
+	{ "SCCPPress", _MAN_CALL, manager_press },
 #ifdef CS_SCCP_CONFERENCE
 	{ "SCCPShowConferences", _MAN_SHOW, manager_show_conferences },
 	{ "SCCPShowConference", _MAN_SHOW, manager_show_conference },

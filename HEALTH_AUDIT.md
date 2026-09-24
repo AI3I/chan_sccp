@@ -1,5 +1,19 @@
 # chan_sccp-modern Health Audit
 
+## To do (requested 2026-09-24)
+
+- **Graceful shutdown.** Like PJSIP, chan_sccp should take part in
+  `core stop gracefully` / `core restart when convenient`: Asterisk must not
+  exit (and the module must not unload) while SCCP calls are in progress,
+  held, or being set up (including held calls detached from any device and
+  calls still in the dialplan). Refuse new calls once shutdown is pending, let
+  existing calls finish, then close sessions cleanly. Today a held call keeps
+  a module reference, so `module unload` fails with "use count 1", but
+  nothing ties this to Asterisk's graceful shutdown state.
+- **Code comments.** Many `/* */` comments in the C files are meaningless,
+  ungrammatical or wrong. Fix, update or add them where they carry real
+  information; delete the rest.
+
 ## Added — provisioning and support commands (2026-09-24)
 
 - `sccp show devices [registered | unregistered | model <text> | line <line> |
@@ -21,8 +35,17 @@
   concealed seconds) for the last 20 calls, newest first. The statistics
   debug dump in `handle_ConnectionStatistics` is two plain lines now.
 
+- `sccp push url <device> <url>`, AMI `SCCPPushURL`: send a CiscoIPPhoneExecute
+  (the phone accepts it only if its authentication URL allows pushes).
+- `sccp press <device> softkey <name> | digits <digits> | offhook | onhook`,
+  AMI `SCCPPress`: feed the same message the phone would send through the
+  normal handler. Keys apply to the active call, or to a held call on one of
+  the device's lines (so Resume works; a held call is detached from its
+  device).
+
 Validation: wadsworth lab with the simulated phone, which now answers
-ConnectionStatisticsReq; every filter, invalid filters (usage / AMI error),
+ConnectionStatisticsReq; offhook, digits 700, Hold, Resume and EndCall via
+`sccp press` drive a real call through; push URL escapes `&`; every filter, invalid filters (usage / AMI error),
 firmware list, debug limited to the marked device during a call (only
 non-SCCP Asterisk lines otherwise), history after a call on CLI and AMI.
 Build clean with `-Wall -Wformat=2`; `make check` passes. Not deployed.

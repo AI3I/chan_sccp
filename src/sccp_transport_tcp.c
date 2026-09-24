@@ -19,12 +19,9 @@ SCCP_FILE_VERSION(__FILE__, "");
 #define REQUEST_RETRY_COUNT    2
 #define DUPLICATE_INTERVAL     REQUEST_RETRY_INTERVAL * REQUEST_RETRY_COUNT
 
-/* local variables */
-
-/* forward declares */
 const sccp_transport_t tcptransport;
 
-#if 1 /*CS_SCCP_TCP*/
+#if 1
 const sccp_transport_t * const tcp_init(void)
 {
 	return &tcptransport;
@@ -108,4 +105,3 @@ const sccp_transport_t * const tcp_init(uint8_t h)
 	return NULL;
 }
 #endif
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

@@ -25,18 +25,8 @@
 
 SCCP_FILE_VERSION(__FILE__, "");
 
-
-/*
- * Pre Declarations
- */
 void sccp_manager_eventListener(const sccp_event_t * event);
 static const char * configMetadata_command = "SCCPConfigMetadata";
-
-/* old */
-
-/*
- * Descriptions
- */
 
 #if HAVE_PBX_MANAGER_HOOK_H
 static int sccp_asterisk_managerHookHelper(int category, const char *event, char *content);
@@ -48,13 +38,8 @@ static struct manager_custom_hook sccp_manager_hook = {
 };
 #	endif
 
-/*!
- * \brief Register management commands
- * \note deprecated
- */
 int sccp_register_management(void)
 {
-	/* the other SCCP AMI actions are registered with the CLI commands they share code with (sccp_cli.c) */
 	int result = iPbx.register_manager(configMetadata_command, EVENT_FLAG_SYSTEM | EVENT_FLAG_CONFIG, sccp_manager_config_metadata, NULL, NULL);
 
 #	if HAVE_PBX_MANAGER_HOOK_H
@@ -71,9 +56,6 @@ int sccp_register_management(void)
 	return result;
 }
 
-/*!
- * \brief Unregister management commands
- */
 int sccp_unregister_management(void)
 {
 	int result = pbx_manager_unregister(configMetadata_command);
@@ -85,29 +67,17 @@ int sccp_unregister_management(void)
 	return result;
 }
 
-/*!
- * \brief starting manager-module
- */
 void sccp_manager_module_start(void)
 {
 	sccp_event_subscribe(SCCP_EVENT_DEVICE_ATTACHED | SCCP_EVENT_DEVICE_PREREGISTERED | SCCP_EVENT_DEVICE_REGISTERED | SCCP_EVENT_FEATURE_CHANGED, sccp_manager_eventListener, TRUE);
 	sccp_event_subscribe(SCCP_EVENT_DEVICE_DETACHED | SCCP_EVENT_DEVICE_UNREGISTERED, sccp_manager_eventListener, FALSE);
 }
 
-/*!
- * \brief stop manager-module
- *
- */
 void sccp_manager_module_stop(void)
 {
 	sccp_event_unsubscribe(SCCP_EVENT_DEVICE_ATTACHED | SCCP_EVENT_DEVICE_DETACHED | SCCP_EVENT_DEVICE_PREREGISTERED | SCCP_EVENT_DEVICE_REGISTERED | SCCP_EVENT_DEVICE_UNREGISTERED, sccp_manager_eventListener);
 }
 
-/*!
- * \brief Event Listener
- *
- * Handles the manager events that need to be posted when an event happens
- */
 void sccp_manager_eventListener(const sccp_event_t * event)
 {
 	sccp_device_t * device = NULL;
@@ -188,10 +158,6 @@ void sccp_manager_eventListener(const sccp_event_t * event)
 }
 
 #if HAVE_PBX_MANAGER_HOOK_H
-/*!
- * \brief parse string from management hook to struct message
- * \note side effect: this function changes/consumes the str pointer
- */
 static char * sccp_asterisk_parseStrToAstMessage(char *str, struct message *m)
 {
 	int x = 0;
@@ -199,33 +165,27 @@ static char * sccp_asterisk_parseStrToAstMessage(char *str, struct message *m)
 
 	curlen = sccp_strlen(str);
 	for (x = 0; x < curlen; x++) {
-		int cr = 0; /* set if we have \r */
+		int cr = 0;
 
 		if (str[x] == '\r' && x + 1 < curlen && str[x + 1] == '\n') {
-			cr = 2;											/* Found. Update length to include \r\n */
+			cr = 2;
 		} else if (str[x] == '\n') {
 			cr = 1;											/* also accept \n only */
 		} else {
 			continue;
 		}
-		/* don't keep empty lines */
 		if (x && m->hdrcount < ARRAY_LEN(m->headers)) {
-			/* ... but trim \r\n and terminate the header string */
 			str[x] = '\0';
 			m->headers[m->hdrcount++] = str;
 		}
 		x += cr;
-		curlen -= x;											/* remaining size */
-		str += x;											/* update pointer */
-		x = -1;												/* reset loop */
+		curlen -= x;
+		str += x;
+		x = -1;
 	}
 	return str;
 }
 
-/*!
- * \brief HookHelper to parse AMI events
- * Used to check for Monitor Stop/Start events
- */
 static int sccp_asterisk_managerHookHelper(int category, const char *event, char *content)
 {
 	char * str = NULL;
@@ -237,13 +197,13 @@ static int sccp_asterisk_managerHookHelper(int category, const char *event, char
 			AUTO_RELEASE(sccp_channel_t, channel , NULL);
 			struct message m = { 0 };
 
-			str = dupStr = pbx_strdupa(content); /** need a dup, because converter to message structure will modify the str */
-			sccp_log(DEBUGCAT_CORE)("SCCP: AMI MonitorStart/MonitorStop received:\n[%s]\n", content);	/* temp */
+			str = dupStr = pbx_strdupa(content);
+			sccp_log(DEBUGCAT_CORE)("SCCP: AMI MonitorStart/MonitorStop received:\n[%s]\n", content);
 
-			sccp_asterisk_parseStrToAstMessage(str, &m); /** convert to message structure to use the astman_get_header function */
+			sccp_asterisk_parseStrToAstMessage(str, &m);
 			const char *channelName = astman_get_header(&m, "Channel");
 
-			PBX_CHANNEL_TYPE *pbxchannel = pbx_channel_get_by_name(channelName);							/* returns reffed */
+			PBX_CHANNEL_TYPE *pbxchannel = pbx_channel_get_by_name(channelName);
 			if (pbxchannel) {
 				PBX_CHANNEL_TYPE *pbxBridge = NULL;
 				if ((CS_AST_CHANNEL_PVT_IS_SCCP(pbxchannel))) {
@@ -258,10 +218,10 @@ static int sccp_asterisk_managerHookHelper(int category, const char *event, char
 			}
 
 			if (channel) {
-				sccp_log(DEBUGCAT_CORE)("%s: AMI MonitorStart/MonitorStop received\n", channel->designator);	/* temp */
+				sccp_log(DEBUGCAT_CORE)("%s: AMI MonitorStart/MonitorStop received\n", channel->designator);
 				AUTO_RELEASE(sccp_device_t, d , sccp_channel_getDevice(channel));
 				if (d) {
-					sccp_log(DEBUGCAT_CORE)("%s: AMI MonitorStart/MonitorStop for %s\n", channel->designator, d->id);	/* temp */
+					sccp_log(DEBUGCAT_CORE)("%s: AMI MonitorStart/MonitorStop for %s\n", channel->designator, d->id);
 					if (!strcasecmp("MonitorStart", event)) {
 						d->monitorFeature.status |= SCCP_FEATURE_MONITOR_STATE_ACTIVE;
 					} else {
@@ -292,23 +252,6 @@ static int sccp_asterisk_managerHookHelper(int category, const char *event, char
 				const char *extension = astman_get_header(&m, PARKING_SLOT);
 				int exten = sccp_atoi(extension, strlen(extension));
 
-				/*
-								//const char *from = astman_get_header(&m, PARKING_FROM);
-								if (sccp_strcaseequals("ParkedCall", event) && !sccp_strlen_zero(from)) {
-									AUTO_RELEASE(sccp_line_t, l, sccp_line_find_byname(from, FALSE));
-									if (l) {
-										sccp_linedevice_t * ld = NULL;
-										char extstr[20] = "";
-										snprintf(extstr, sizeof(extstr), "%c%c %.16s", 128, SKINNY_LBL_CALL_PARK_AT, extension);
-										SCCP_LIST_LOCK(&l->devices);
-										SCCP_LIST_TRAVERSE(&l->devices, ld, list) {
-											if (ld->line == l) {
-												sccp_dev_displayprinotify(ld->device, extstr, SCCP_MESSAGE_PRIORITY_TIMEOUT, 20);
-											}
-										}
-										SCCP_LIST_UNLOCK(&l->devices);
-									}
-								}*/
 				if (parkinglot && exten) {
 					if (sccp_strcaseequals("ParkedCall", event)) {
 						iParkingLot.addSlot(parkinglot, exten, &m);
@@ -318,8 +261,6 @@ static int sccp_asterisk_managerHookHelper(int category, const char *event, char
 				}
 			}
 #endif
-		//} else {
-		//	sccp_log(DEBUGCAT_CORE)("SCCP: (managerHookHelper) %s Received\ncontent:[%s]\n", event, content);
 		}
 	}
 	return 0;
@@ -328,9 +269,6 @@ static int sccp_asterisk_managerHookHelper(int category, const char *event, char
 AST_THREADSTORAGE(hookresult_threadbuf);
 #define HOOKRESULT_INITSIZE DEFAULT_PBX_STR_BUFFERSIZE*2
 
-/*
- * \brief helper function to concatenate the result from a ami hook send action using a threadlocal buffer
- */
 static int __sccp_manager_hookresult(int category, const char *event, char *content) {
         struct ast_str *buf = ast_str_thread_get(&hookresult_threadbuf, HOOKRESULT_INITSIZE);;
 	if (buf) {
@@ -338,16 +276,8 @@ static int __sccp_manager_hookresult(int category, const char *event, char *cont
 	}
 	return 0;
 }
-/*!
- * \brief Call an AMI/Manager Function and Wait for the Result
- * 
- * @param manager_command	const char * containing Something like "Action: ParkedCalls\r\n"
- * @param outStr		unallocated char * (will be allocated if successfull, must be freed after call)
- * @return int (-1 on failure | return value from called function)
- *
- * \todo implement using thread_local instead
- */
-boolean_t sccp_manager_action2str(const char *manager_command, char **outStr) 
+/* outStr is allocated on success and must be freed by the caller; returns -1 on failure, otherwise the called function's result */
+boolean_t sccp_manager_action2str(const char *manager_command, char **outStr)
 {
         int failure = 0;
 	struct ast_str * buf = NULL;
@@ -358,7 +288,7 @@ boolean_t sccp_manager_action2str(const char *manager_command, char **outStr)
 	}
 
 	struct manager_custom_hook hook = {__FILE__, __sccp_manager_hookresult};
-        failure = ast_hook_send_action(&hook, manager_command);							/* "Action: ParkedCalls\r\n" */
+        failure = ast_hook_send_action(&hook, manager_command);
         if (!failure) {
 		sccp_log(DEBUGCAT_CORE)("SCCP: AMI result: %s\n", pbx_str_buffer(buf));
         	*outStr = pbx_strdup(pbx_str_buffer(buf));
@@ -374,11 +304,11 @@ boolean_t sccp_manager_action2str(const char *manager_command, char **outStr)
 */
 
 #if defined(CS_EXPERIMENTAL)
-char * sccp_manager_retrieve_parkedcalls_cxml(char ** out) 
+char * sccp_manager_retrieve_parkedcalls_cxml(char ** out)
 {
 	char *parkedcalls_messageStr = NULL;
 	char *manager_command = "Action: ParkedCalls\r\n";
-	
+
 	if (sccp_manager_action2str(manager_command, &parkedcalls_messageStr) && parkedcalls_messageStr) {
 		pbx_str_t *tmpPbxStr = ast_str_create(DEFAULT_PBX_STR_BUFFERSIZE);
 		struct message m = {0};
@@ -402,8 +332,8 @@ char * sccp_manager_retrieve_parkedcalls_cxml(char ** out)
 			if (sccp_strcaseequals(event, "ParkedCallsComplete")) {
 				break;
 			} else if(sccp_strcaseequals(event, "ParkedCall")) {
-				pbx_str_append(&tmpPbxStr, 0, "<Name>%s (%s) by %s</Name><Telephone>%s</Telephone>", 
-					astman_get_header((const struct message *)&m, "CallerIdName"), 
+				pbx_str_append(&tmpPbxStr, 0, "<Name>%s (%s) by %s</Name><Telephone>%s</Telephone>",
+					astman_get_header((const struct message *)&m, "CallerIdName"),
 					astman_get_header((const struct message *)&m, "CallerIdNum"),
 					astman_get_header((const struct message *)&m, "ConnectedLineName"),
 					astman_get_header((const struct message *)&m, "Exten")
@@ -417,7 +347,7 @@ char * sccp_manager_retrieve_parkedcalls_cxml(char ** out)
 		pbx_str_append(&tmpPbxStr, 0, "</CiscoIPPhoneDirectory>");
 
 		*out = pbx_strdup(pbx_str_buffer(tmpPbxStr));
-		
+
 		sccp_free(tmpPbxStr);
 		sccp_free(parkedcalls_messageStr);
 	}
@@ -427,4 +357,3 @@ char * sccp_manager_retrieve_parkedcalls_cxml(char ** out)
 #endif
 #endif														// HAVE_PBX_MANAGER_HOOK_H
 #endif														// CS_SCCP_MANAGER
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

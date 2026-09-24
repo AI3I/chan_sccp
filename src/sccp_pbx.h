@@ -9,7 +9,7 @@
  *              See the LICENSE file at the top of the source tree.
  */
 #pragma once
-#include "sccp_codec.h"		/* can be removed if we pass the sccp_codec capabilities by ref */
+#include "sccp_codec.h"
 __BEGIN_C_EXTERN__
 SCCP_API sccp_channel_request_status_t SCCP_CALL sccp_requestChannel(const char * lineName, sccp_autoanswer_t autoanswer_type, uint8_t autoanswer_cause, skinny_ringtype_t ringermode, sccp_channel_t * const * channel);
 SCCP_API boolean_t SCCP_CALL sccp_pbx_channel_allocate(constChannelPtr channel, const void * ids, const PBX_CHANNEL_TYPE * parentChannel);
@@ -21,4 +21,3 @@ SCCP_API int SCCP_CALL sccp_pbx_call(channelPtr c, const char * dest, int timeou
 SCCP_API int sccp_pbx_cfwdnoanswer_cb(const void * data);
 SCCP_API int SCCP_CALL sccp_pbx_remote_answer(constChannelPtr channel);
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

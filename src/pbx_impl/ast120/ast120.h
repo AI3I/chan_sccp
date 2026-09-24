@@ -24,12 +24,10 @@
 
 typedef struct ast_format_cap ast_format_t;
 
-//int skinny_codecs2pbx_codec_pref(skinny_codec_t * skinny_codecs, struct ast_codec_pref *astCodecPref);
 int sccp_wrapper_asterisk_set_rtp_peer(PBX_CHANNEL_TYPE * ast, PBX_RTP_TYPE * rtp, PBX_RTP_TYPE * vrtp, PBX_RTP_TYPE * trtp, int codecs, int nat_active);
 const char *pbx_getformatname(const struct ast_format *format);
 const char *pbx_getformatname_multiple(char *buf, size_t size, struct ast_format_cap *format);
 
-/* Redefinitions for asterisk-trunk, need to be sorted  */
 #define pbx_channel_name(x) ast_channel_name(x)
 
 #undef CS_BRIDGEPEERNAME
@@ -132,8 +130,8 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 #define CS_AST_CHANNEL_PVT_TYPE(_a) ast_channel_tech(_a)->type
 #define CS_AST_CHANNEL_PVT_CMP_TYPE(_a,_b) !strncasecmp(CS_AST_CHANNEL_PVT_TYPE(_a), _b, strlen(_b))
 
-#define NEWCONST const												// old functions used without const
-#define OLDCONST												// new function used with const
+#define NEWCONST const
+#define OLDCONST
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CLI_AMI_OUTPUT(fd, s, ...) ({ 										\
@@ -181,12 +179,9 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 			}                                                                                                                                                                                                       \
 		})
 
-/* Result codes beyond Asterisk's RESULT_SUCCESS/SHOWUSAGE/FAILURE, for handlers shared by CLI and AMI */
-#	define RESULT_ERROR_REPORTED 100									/* error already printed (CLI) or sent (AMI) */
-#	define RESULT_RESPONDED      101									/* AMI response header already written; wrapper ends it */
+#	define RESULT_ERROR_REPORTED 100
+#	define RESULT_RESPONDED      101
 
-/* _EVENTLIST value for list actions whose handler validates its arguments first and then starts the
- * list itself with CLI_AMI_LIST_START, so an error arrives as a plain AMI error response */
 #	define SCCP_AMI_LIST_BY_HANDLER 2
 #	define CLI_AMI_LIST_START(s, m, _ACTION)                                                                \
 		({                                                                                              \
@@ -195,7 +190,6 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 			}                                                                                       \
 		})
 
-/* Report an error on the CLI or as an AMI error response, then return from the handler */
 #	define CLI_AMI_RETURN_ERROR(fd, s, m, fmt, ...)                                                        \
 		({                                                                                              \
 			char _cli_ami_error[256];                                                               \
@@ -212,7 +206,6 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 			return RESULT_ERROR_REPORTED;                                                           \
 		})
 
-/* Report success: a line on the CLI, or an AMI "Response: Success" with the text as its Message */
 #	define CLI_AMI_RETURN_DONE(fd, s, m, fmt, ...)                                                         \
 		({                                                                                              \
 			char _cli_ami_done[256];                                                                \
@@ -230,12 +223,6 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 			return RESULT_SUCCESS;                                                                  \
 		})
 
-/*
- * AMI action wrapper. The variadic arguments are an argv template: plain strings are passed as is,
- * strings starting with '$' are replaced by that AMI header (e.g. "sccp", "show", "device", "$Device").
- * Trailing empty headers are dropped from argc, so a missing optional argument looks missing to the
- * handler, exactly as on the CLI.
- */
 #	define SCCP_AMI_ACTION(_FUNCTION_NAME, _CALLED_FUNCTION, _ACTION, _EVENTLIST, ...)                     \
 		static int manager_##_FUNCTION_NAME(struct mansession * s, const struct message * m)           \
 		{                                                                                               \
@@ -291,7 +278,6 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 			return 0;                                                                               \
 		}
 
-/* CLI command whose handler is shared with AMI (handler signature: fd, totals, s, m, argc, argv) */
 #	define CLI_AMI_ENTRY(_FUNCTION_NAME, _CALLED_FUNCTION, _DESCR, _USAGE, _COMPLETER_REPEAT, _EVENTLIST)   \
 		static char * cli_##_FUNCTION_NAME(struct ast_cli_entry * e, int cmd, struct ast_cli_args * a) \
 		{                                                                                               \
@@ -323,11 +309,6 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 			}                                                                                       \
 		}
 
-// CLI_ENTRY
-//   param1=registration_name
-//   param2=function to execute when called (fd, argc, argv)
-//   param3=registration description
-//   param4=usage string
 #define CLI_ENTRY(_FUNCTION_NAME,_CALLED_FUNCTION,_DESCR,_USAGE, _COMPLETER_REPEAT)				\
 	static char *_FUNCTION_NAME(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a) {			\
 		const char *cli_command[] = { CLI_COMMAND, NULL };						\
@@ -359,4 +340,3 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 		}												\
 	};
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

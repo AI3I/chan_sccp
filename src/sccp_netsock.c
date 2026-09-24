@@ -17,13 +17,12 @@ SCCP_FILE_VERSION(__FILE__, "");
 #include <asterisk/netsock2.h>
 #include <asterisk/acl.h>
 
-/* arbitrary values */
 #define NETSOCK_TIMEOUT_SEC 10											/* timeout after seven seconds when trying to read/write from/to a socket */
-#define NETSOCK_TIMEOUT_MILLISEC 0										/* "       "     0 milli seconds "    "    */
+#define NETSOCK_TIMEOUT_MILLISEC 0
 #define NETSOCK_KEEPALIVE_CNT 3											/* The maximum number of keepalive probes TCP should send before dropping the connection. */
-#define NETSOCK_LINGER_WAIT 0											/* but wait 0 milliseconds before closing socket and discard all outboung messages */
-#define NETSOCK_RCVBUF SCCP_MAX_PACKET										/* SO_RCVBUF */
-#define NETSOCK_SNDBUF (SCCP_MAX_PACKET * 5)									/* SO_SNDBUG */
+#define NETSOCK_LINGER_WAIT 0											/* but wait 0 milliseconds before closing socket and discard all outbound messages */
+#define NETSOCK_RCVBUF SCCP_MAX_PACKET
+#define NETSOCK_SNDBUF (SCCP_MAX_PACKET * 5)
 
 union sockaddr_union {
 	struct sockaddr sa;
@@ -49,7 +48,6 @@ gcc_inline struct ast_sockaddr * storage2ast_sockaddr(struct sockaddr_storage * 
 	return dst;
 }
 
-//#include "sccp_utils.h" // sccp_copy_string
 boolean_t sccp_netsock_ouraddrfor(const struct sockaddr_storage * them, struct sockaddr_storage * us)
 {
 	const char * sock_err;
@@ -89,7 +87,6 @@ boolean_t sccp_netsock_ouraddrfor(const struct sockaddr_storage * them, struct s
 	memcpy(us, &usaddr.ss, sizeof(struct sockaddr_storage));
 	close(sockfd);
 	sccp_netsock_setPort(us, port);
-	// sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_3 "SCCP: Connected via '%s'\n", sccp_netsock_stringify_addr(us));
 	return TRUE;
 }
 
@@ -200,7 +197,7 @@ boolean_t sccp_netsock_getExternalAddr(struct sockaddr_storage *sockAddrStorage,
 	return result;
 }
 
-void sccp_netsock_flush_externhost(void) 
+void sccp_netsock_flush_externhost(void)
 {
 	externhost[AF_INET].expire = 0;
 	externhost[AF_INET6].expire = 0;
@@ -230,7 +227,7 @@ boolean_t __PURE__ sccp_netsock_is_mapped_IPv4(const struct sockaddr_storage *so
 	if (sccp_netsock_is_IPv6(sockAddrStorage)) {
 		const struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) sockAddrStorage;
 		return IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr);
-	} 
+	}
 	return FALSE;
 }
 
@@ -258,19 +255,8 @@ boolean_t sccp_netsock_ipv4_mapped(const struct sockaddr_storage *sockAddrStorag
 	return TRUE;
 }
 
-/*!
- * \brief
- * Compares the addresses of two sockaddr structures.
- *
- * \retval -1 \a a is lexicographically smaller than \a b
- * \retval 0 \a a is equal to \a b
- * \retval 1 \a b is lexicographically smaller than \a a
- */
 int sccp_netsock_cmp_addr(const struct sockaddr_storage *a, const struct sockaddr_storage *b)
 {
-	//char *stra = pbx_strdupa(sccp_netsock_stringpify_addr(a));
-	//char *strb = pbx_strdupa(sccp_netsock_stringify_addr(b));
-
 	const struct sockaddr_storage * a_tmp = NULL;
 
 	const struct sockaddr_storage * b_tmp = NULL;
@@ -300,23 +286,14 @@ int sccp_netsock_cmp_addr(const struct sockaddr_storage *a, const struct sockadd
 	if (a_tmp->ss_family == b_tmp->ss_family) {
 		if (a_tmp->ss_family == AF_INET) {
 			ret = memcmp(&(((struct sockaddr_in *) a_tmp)->sin_addr), &(((struct sockaddr_in *) b_tmp)->sin_addr), sizeof(struct in_addr));
-		} else {											// AF_INET6
+		} else {
 			ret = memcmp(&(((struct sockaddr_in6 *) a_tmp)->sin6_addr), &(((struct sockaddr_in6 *) b_tmp)->sin6_addr), sizeof(struct in6_addr));
 		}
 	}
 EXIT:
-	//sccp_log(DEBUGCAT_HIGH)(VERBOSE_PREFIX_2 "SCCP: sccp_netsock_cmp_addr(%s, %s) returning %d\n", stra, strb, ret);
 	return ret;
 }
 
-/*!
- * \brief
- * Compares the port of two sockaddr structures.
- *
- * \retval -1 \a a is smaller than \a b
- * \retval 0 \a a is equal to \a b
- * \retval 1 \a b is smaller than \a a
- */
 int sccp_netsock_cmp_port(const struct sockaddr_storage *a, const struct sockaddr_storage *b)
 {
 	uint16_t a_port = sccp_netsock_getPort(a);
@@ -327,21 +304,9 @@ int sccp_netsock_cmp_port(const struct sockaddr_storage *a, const struct sockadd
 	return (a_port < b_port) ? -1 : (a_port == b_port) ? 0 : 1;
 }
 
-/*!
- * \brief
- * Splits a string into its host and port components
- *
- * \param str       [in] The string to parse. May be modified by writing a NUL at the end of
- *                  the host part.
- * \param host      [out] Pointer to the host component within \a str.
- * \param port      [out] Pointer to the port component within \a str.
- * \param flags     If set to zero, a port MAY be present. If set to PARSE_PORT_IGNORE, a
- *                  port MAY be present but will be ignored. If set to PARSE_PORT_REQUIRE,
- *                  a port MUST be present. If set to PARSE_PORT_FORBID, a port MUST NOT
- *                  be present.
- *
- * \retval 1 Success
- * \retval 0 Failure
+/*
+ * If set to PARSE_PORT_REQUIRE, a port MUST be present.
+ * If set to PARSE_PORT_FORBID, a port MUST NOT be present.
  */
 int sccp_netsock_split_hostport(char *str, char **host, char **port, int flags)
 {
@@ -398,7 +363,6 @@ int sccp_netsock_split_hostport(char *str, char **host, char **port, int flags)
 			}
 			break;
 	}
-	/* Can terminate the host string now if needed. */
 	if (host_end) {
 		*host_end = '\0';
 	}
@@ -476,7 +440,6 @@ void sccp_netsock_setoptions(int new_socket, int reuse, int linger, int keepaliv
 {
 	int on = 1;
 
-	/* reuse */
 	if (reuse > -1) {
 		SCCP_NETSOCK_SETOPTION(new_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
 #if defined(SO_REUSEPORT)
@@ -506,29 +469,24 @@ void sccp_netsock_setoptions(int new_socket, int reuse, int linger, int keepaliv
 		}
 	}
 
-	/* nodelay */
 	SCCP_NETSOCK_SETOPTION(new_socket, IPPROTO_TCP, TCP_NODELAY, &on, sizeof(on));
 
-	/* tos/cos */
 	int value = (int) GLOB(sccp_tos);
 	SCCP_NETSOCK_SETOPTION(new_socket, IPPROTO_IP, IP_TOS, &value, sizeof(value));
 #if defined(linux)
 	value = (int) GLOB(sccp_cos);
 	SCCP_NETSOCK_SETOPTION(new_socket, SOL_SOCKET, SO_PRIORITY, &value, sizeof(value));
 
-	/* rcvbuf / sndbug */
 	int so_rcvbuf = NETSOCK_RCVBUF;
 	int so_sndbuf = NETSOCK_SNDBUF;
 	SCCP_NETSOCK_SETOPTION(new_socket, SOL_SOCKET, SO_RCVBUF, &so_rcvbuf, sizeof(int));
 	SCCP_NETSOCK_SETOPTION(new_socket, SOL_SOCKET, SO_SNDBUF, &so_sndbuf, sizeof(int));
 
-	/* linger */
 	if (linger > -1) {
-		struct linger so_linger = {linger, NETSOCK_LINGER_WAIT};					/* linger=on but wait NETSOCK_LINGER_WAIT milliseconds before closing socket and discard all outboung messages */
+		struct linger so_linger = {linger, NETSOCK_LINGER_WAIT};					/* linger=on but wait NETSOCK_LINGER_WAIT milliseconds before closing socket and discard all outbound messages */
 		SCCP_NETSOCK_SETOPTION(new_socket, SOL_SOCKET, SO_LINGER, &so_linger, sizeof(so_linger));
 	}
 
-	/* timeeo */
 	if (sndtimeout) {											/* Setting the send timeout is a must, case because currently we are doing blocking send.
 														 * Without this timeout, it could stay in send for a long time, which means the session would
 														 * not read the alert pipe, and it could take a lot of time before asking the session
@@ -538,30 +496,23 @@ void sccp_netsock_setoptions(int new_socket, int reuse, int linger, int keepaliv
 		struct timeval mytv = { NETSOCK_TIMEOUT_SEC, NETSOCK_TIMEOUT_MILLISEC };			/* timeout after xxxx seconds when trying to write to a socket */
 		SCCP_NETSOCK_SETOPTION(new_socket, SOL_SOCKET, SO_SNDTIMEO, &mytv, sizeof(mytv));
 	}
-	
+
 	if (rcvtimeout) {
 		struct timeval mytv = { NETSOCK_TIMEOUT_SEC, NETSOCK_TIMEOUT_MILLISEC };			/* timeout after xxxx seconds when trying to read from a socket */
 		SCCP_NETSOCK_SETOPTION(new_socket, SOL_SOCKET, SO_RCVTIMEO, &mytv, sizeof(mytv));
 	}
 
-	/* keepalive */
 	if (keepalive > -1) {
 		int ip_keepidle  = keepalive;									/* The time (in seconds) the connection needs to remain idle before TCP starts sending keepalive probes */
-		int ip_keepintvl = keepalive;									/* The time (in seconds) between individual keepalive probes, once we have started to probe. */
+		int ip_keepintvl = keepalive;
 		int ip_keepcnt   = NETSOCK_KEEPALIVE_CNT;							/* The maximum number of keepalive probes TCP should send before dropping the connection. */
 		SCCP_NETSOCK_SETOPTION(new_socket, SOL_TCP, TCP_KEEPIDLE, &ip_keepidle, sizeof(int));
 		SCCP_NETSOCK_SETOPTION(new_socket, SOL_TCP, TCP_KEEPINTVL, &ip_keepintvl, sizeof(int));
 		SCCP_NETSOCK_SETOPTION(new_socket, SOL_TCP, TCP_KEEPCNT, &ip_keepcnt, sizeof(int));
 		SCCP_NETSOCK_SETOPTION(new_socket, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
 	}
-	/* thin-tcp */
-//#ifdef TCP_THIN_LINEAR_TIMEOUTS
-//	SCCP_NETSOCK_SETOPTION(new_socket, IPPROTO_TCP, TCP_THIN_LINEAR_TIMEOUTS, &on, sizeof(on));
-//	SCCP_NETSOCK_SETOPTION(new_socket, IPPROTO_TCP, TCP_THIN_DUPACK, &on, sizeof(on));
-//#endif
 #endif
 }
 
 #undef SCCP_NETSOCK_SETOPTION
 
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

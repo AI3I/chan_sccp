@@ -18,9 +18,6 @@ SCCP_FILE_VERSION(__FILE__, "");
 
 #include "sccp_labels.h"
 
-/*!
- * \brief Skinny LABEL Structure
- */
 static const struct skinny_label {
 	const char *const text;
 	uint16_t label;
@@ -102,7 +99,6 @@ static const struct skinny_label {
 	{"Service is not Active", SKINNY_LBL_SERVICE_IS_NOT_ACTIVE},
 	{"High Traffic Try Again Later", SKINNY_LBL_HIGH_TRAFFIC_TRY_AGAIN_LATER},
 	{"Quality Reporting Tool", SKINNY_LBL_QUALITY_REPORT_TOOL},
-//	{"Hunt Group Log-In/Out", SKINNY_LBL_HUNT_GROUP},
 	{"Malicious Call Identification", SKINNY_LBL_MALICIOUS_CALL_IDENTIFICATION},
 	{"DirTrfr", SKINNY_LBL_DIRTRFR},
 	{"Select", SKINNY_LBL_SELECT},

@@ -5,131 +5,44 @@
  * \note        This program is free software and may be modified and distributed under the terms of the GNU Public License.
  *              See the LICENSE file at the top of the source tree.
  * \note        Based on the work of Johan Hanssen Seferidis
- *              Library providing a threading pool where you can add work. 
+ *              Library providing a threading pool where you can add work.
  * \since       2009-01-16
  */
 #pragma once
-//#include "config.h"
-//#include "common.h"
 
 __BEGIN_C_EXTERN__
-/* Description:         Library providing a threading pool where you can add work on the fly. The number
- *                      of threads is fixed when creating the pool. In most cases
- *                      this should equal the number of threads supported by your cpu.
- *          
- *                      In this header file a detailed overview of the functions and the threadpool logical
- *                      scheme is present in case tweaking of the pool is needed. 
- * */
-
-/* 
- * Fast reminders:
- * 
- * tp                   = threadpool 
- * sccp_threadpool      = threadpool
- * sccp_threadpool_t    = threadpool type
- * tp_p                 = threadpool pointer
- * xN                   = x can be any string. N stands for amount
- * 
- * */
-
-/*                       _______________________________________________________        
- *                      /                                                       \
- *                      |   JOB QUEUE        | job1 | job2 | job3 | job4 | ..   |
- *                      |                                                       |
- *                      |   threadpool      | thread1 | thread2 | ..            |
- *                      \_______________________________________________________/
- *      
- * Description:         Jobs are added to the job queue. Once a thread in the pool
- *                      is idle, it is assigned with the first job from the queue(and
- *                      erased from the queue). It's each thread's job to read from 
- *                      the queue serially(using lock) and executing each job
- *                      until the queue is empty.
- * 
+/*
+ * In this header file a detailed overview of the functions and the threadpool logical scheme is present in case tweaking of the pool is needed.
  */
-/* ================================= STRUCTURES ================================================ */
 
-/* Individual job */
+/* It's each thread's job to read from the queue serially(using lock) and executing each job */
+
 typedef struct sccp_threadpool_job sccp_threadpool_job_t;
 
 struct sccp_threadpool_job {
-	void *(*function) (void *arg);										/*!< function pointer         */
-	void *arg;												/*!< function's argument      */
+	void *(*function) (void *arg);
+	void *arg;
 	SCCP_LIST_ENTRY (sccp_threadpool_job_t) list;
 };
 
-/* =========================== FUNCTIONS ================================================ */
-
-/* ----------------------- Threadpool specific --------------------------- */
-
-/*!
- * \brief  Initialize threadpool
- * 
- * Allocates memory for the threadpool, jobqueue, semaphore and fixes 
- * pointers in jobqueue.
- * 
- * \param threadsN number of threads to be used
- * \return threadpool struct on success,
- *         NULL on error
- */
 SCCP_API sccp_threadpool_t * SCCP_CALL sccp_threadpool_init(int threadsN);
 
-/*!
- * \brief Add work to the job queue
- * 
- * Takes an action and its argument and adds it to the threadpool's job queue.
- * If you want to add to work a function with more than one arguments then
- * a way to implement this is by passing a pointer to a structure.
- * 
- * ATTENTION: You have to cast both the function and argument to not get warnings.
- * 
- * \param tp_p threadpool to which the work will be added to
- * \param function_p callback function to add as work
- * \param arg_p argument to the above function
- * \return 1 if accepted; 0 if rejected (caller still owns arg_p).
- */
 SCCP_API int sccp_threadpool_add_work(sccp_threadpool_t * SCCP_CALL  tp_p, void *(*function_p) (void *), void *arg_p);
 
-/*!
- * \brief Destroy the threadpool
- * 
- * Stop admission, drain all accepted jobs, join workers, then free the pool.
+/*
  * Call only after external producers have stopped, never from a pool callback.
  * Callbacks must return normally; callbacks must not cancel or exit workers.
  * A blocked callback delays destruction rather than permitting unsafe unload.
- * 
- * \param tp_p threadpool a pointer to the threadpool structure you want to destroy
  */
 SCCP_API boolean_t SCCP_CALL sccp_threadpool_destroy(sccp_threadpool_t * tp_p);
 
-/*!
- * \brief Return number of currently allocate threads in the threadpool
- * \param tp_p threadpool a pointer to the threadpool structure for which we would like to know the number of workers
- */
 SCCP_API int SCCP_CALL sccp_threadpool_thread_count(sccp_threadpool_t * tp_p);
-
-/* ------------------------- Queue specific ------------------------------ */
 
 /* Close admission; pool storage remains valid until destroy. */
 SCCP_API void SCCP_CALL sccp_threadpool_stop(sccp_threadpool_t *tp_p);
 
-/*!
- * \brief Add job to queue
- * 
- * A new job will be added to the queue. The new job MUST be allocated
- * before passed to this function or else other functions like sccp_threadpool_jobqueue_empty()
- * will be broken.
- * 
- * \param tp_p pointer to threadpool
- * \param newjob_p pointer to the new job(MUST BE ALLOCATED)
- * \return 1 on acceptance (pool owns job and argument); 0 on rejection
- *         (caller retains both job and argument).
- */
+/* newjob_p must be allocated by the caller; sccp_threadpool_jobqueue_empty() and friends rely on it */
 SCCP_API int SCCP_CALL sccp_threadpool_jobqueue_add(sccp_threadpool_t * tp_p, sccp_threadpool_job_t * newjob_p);
 
-/*!
- * \brief Return Number of Jobs in the Queue
- * \param tp_p pointer to threadpool
- */
 SCCP_API int SCCP_CALL sccp_threadpool_jobqueue_count(sccp_threadpool_t * tp_p);
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

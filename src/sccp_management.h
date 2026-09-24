@@ -9,12 +9,6 @@
 
 #ifdef CS_SCCP_MANAGER
 __BEGIN_C_EXTERN__
-/*
- * sccp_management.h
- *
- *  Created on: 22.11.2008
- *      Author: marcello
- */
 SCCP_API int SCCP_CALL sccp_register_management(void);
 SCCP_API int SCCP_CALL sccp_unregister_management(void);
 SCCP_API void SCCP_CALL sccp_manager_module_start(void);
@@ -29,4 +23,3 @@ SCCP_API char * SCCP_CALL sccp_manager_retrieve_parkedcalls_cxml(char ** out);
 
 __END_C_EXTERN__
 #endif
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

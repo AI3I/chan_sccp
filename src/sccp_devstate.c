@@ -17,7 +17,7 @@ SCCP_FILE_VERSION(__FILE__, "");
 #	include "sccp_utils.h"
 #	include <asterisk/devicestate.h>
 
-#	if defined(CS_AST_HAS_EVENT) && defined(HAVE_PBX_EVENT_H)                                        // ast_event_subscribe
+#	if defined(CS_AST_HAS_EVENT) && defined(HAVE_PBX_EVENT_H)
 #		include <asterisk/event.h>
 #	endif
 
@@ -33,10 +33,10 @@ struct FeatureState {
 typedef struct SubscribingDevice SubscribingDevice_t;
 struct SubscribingDevice {
 	SCCP_LIST_ENTRY(SubscribingDevice_t) list;
-	sccp_device_t *device;											/*!< SCCP Device */
+	sccp_device_t *device;
 	sccp_buttonconfig_t *buttonConfig;
 	char label[StationMaxNameSize];
-	feature_state_t states[AST_DEVICE_TOTAL]; /*!< Array of Feature States */
+	feature_state_t states[AST_DEVICE_TOTAL];
 };
 
 typedef struct deviceState deviceState_t;
@@ -94,7 +94,7 @@ void sccp_devstate_module_stop(void)
 
 			SCCP_LIST_LOCK(&deviceState->subscribers);
 			while ((subscriber = SCCP_LIST_REMOVE_HEAD(&deviceState->subscribers, list))) {
-				sccp_device_release(&subscriber->device);		/* explicit release */
+				sccp_device_release(&subscriber->device);
 			}
 			SCCP_LIST_UNLOCK(&deviceState->subscribers);
 			sccp_devstate_setASTDB(deviceState);
@@ -109,17 +109,6 @@ void sccp_devstate_module_stop(void)
 }
 
 /*
-static void printStates(feature_state_t * states)
-{
-	for(uint x = 0; x < AST_DEVICE_TOTAL; x++) {
-		feature_state_t state = states[x];
-		sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "'%s' (%d): rhythm %d, color %d, icon %d, next state %s (%d)\n", ast_devstate2str((enum ast_device_state)x), x, state.value.strct.rythm, state.value.strct.color, state.value.strct.icon,
-			ast_devstate2str(state.nextstate), state.nextstate);
-	}
-}
-*/
-
-/*!
  * Parse devstate feature button arguments
  * returns allocated states which need to be freed after use
  */
@@ -127,7 +116,6 @@ static void parseButtonArgs(const char * args, feature_state_t * states)
 {
 	char * _args = pbx_strdupa(args);
 
-	/* split arg string and assigned to states struct */
 	char * arg = NULL;
 	while((arg = strsep(&_args, "|")) != NULL) {
 		unsigned short int state, rythm, color, icon, nextstate;
@@ -137,13 +125,10 @@ static void parseButtonArgs(const char * args, feature_state_t * states)
 			states[state].value.strct.icon = icon;
 			states[state].value.strct.oldval = 0;
 			states[state].nextstate = (enum ast_device_state)nextstate;
-			// sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "SCCP: parseButtonArgs(%p): added: '%s' -> '%s', %d, %d, %d, '%s'\n", (void *)&states[state], arg, ast_devstate2str(state), states[state].value.strct.rythm,
-			// states[state].value.strct.color, states[state].value.strct.icon, ast_devstate2str(states[state].nextstate));
 		} else {
 			pbx_log(LOG_WARNING, "SCCP: devstate button options '%s': segment '%s' is not five digits (state, rhythm, color, icon, next state); segment ignored\n", args, arg);
 		}
 	}
-	// printStates(states);
 }
 
 static SubscribingDevice_t * addSubscriber(deviceState_t * deviceState, const sccp_device_t * device, sccp_buttonconfig_t * buttonConfig)
@@ -170,7 +155,7 @@ static void removeSubscriber(deviceState_t * deviceState, const sccp_device_t * 
 	SCCP_LIST_TRAVERSE_SAFE_BEGIN(&deviceState->subscribers, subscriber, list) {
 		if(subscriber->device == device) {
 			SCCP_LIST_REMOVE_CURRENT(list);
-			sccp_device_release(&subscriber->device); /* explicit release */
+			sccp_device_release(&subscriber->device);
 		}
 	}
 	SCCP_LIST_TRAVERSE_SAFE_END
@@ -206,7 +191,7 @@ static void deviceRegistered(const sccp_device_t * device)
 						} else {
 							sccp_devstate_setASTDB(deviceState);
 						}
-						notifySubscriber(deviceState, subscriber); /* set initial state */
+						notifySubscriber(deviceState, subscriber);
 					}
 				}
 				sccp_free (devStateStr);
@@ -332,8 +317,6 @@ enum ast_device_state sccp_devstate_getNextDeviceState(constDevicePtr d, sccp_bu
 	SCCP_LIST_TRAVERSE(&deviceState->subscribers, subscriber, list) {
 		if(subscriber->device == d) {
 			nextstate = subscriber->states[deviceState->featureState].nextstate;
-			// sccp_log((DEBUGCAT_FEATURE))(VERBOSE_PREFIX_3 "%s: getNextDeviceState: current:'%s';(%d), next:'%s'(%d)\n", d->id, ast_devstate2str(deviceState->featureState), (int)deviceState->featureState,
-			// ast_devstate2str(nextstate),*(int)nextstate);
 			break;
 		}
 	}
@@ -363,7 +346,6 @@ void notifySubscriber(deviceState_t * deviceState, const SubscribingDevice_t * s
 		}
 		msg->data.FeatureStatMessage.lel_lineInstance = htolel(subscriber->buttonConfig->instance);
 		msg->data.FeatureStatMessage.lel_buttonType = htolel(SKINNY_BUTTONTYPE_FEATURE);
-		//msg->data.FeatureStatMessage.lel_stateValue = htolel((*(int *)&curstate->value) ? 1 : 0);
 		msg->data.FeatureStatMessage.lel_stateValue = htolel(curstate->value.lel_uint32);
 		sccp_copy_string(msg->data.FeatureStatMessage.textLabel, subscriber->label, sizeof(msg->data.FeatureStatMessage.textLabel));
 	}
@@ -377,7 +359,7 @@ void changed_cb(void * data, struct stasis_subscription * sub, struct stasis_mes
 	enum ast_device_state newState = AST_DEVICE_UNKNOWN;
 
 	struct ast_device_state_message *dev_state = (struct ast_device_state_message *)stasis_message_data(msg);
-	if(ast_device_state_message_type() != stasis_message_type(msg) || !dev_state->eid) { /* ignore wrong message type or non-aggregate states */
+	if(ast_device_state_message_type() != stasis_message_type(msg) || !dev_state->eid) {
 		return;
 	}
 	newState = dev_state->state;
@@ -393,4 +375,3 @@ void changed_cb(void * data, struct stasis_subscription * sub, struct stasis_mes
 	}
 }
 #endif
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

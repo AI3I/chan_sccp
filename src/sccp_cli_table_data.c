@@ -11,9 +11,7 @@
 #include <string.h>
 #include <wchar.h>
 
-/* Use a thread-local UTF-8 locale without changing Asterisk's global locale.
- * Invalid bytes count as one column; combining/wide characters use wcwidth.
- */
+/* Invalid bytes count as one column; combining/wide characters use wcwidth. */
 static size_t display_width(const char *text)
 {
 	size_t width = 0, left = strlen(text);
@@ -63,7 +61,6 @@ void sccp_cli_table_add(sccp_cli_table_data_t *table, const char *format, ...)
 		table->failed = 1;
 		return;
 	}
-	/* Keep cells on one terminal line, including untrusted labels/variables. */
 	for (char *p = text; *p; ++p) {
 		if ((unsigned char)*p < 32 || (unsigned char)*p == 127) {
 			*p = ' ';
@@ -111,7 +108,6 @@ void sccp_cli_table_render(sccp_cli_table_data_t *table, const char *title,
 			widths[i % table->columns] = table->data[i].width;
 		}
 	}
-	/* Asterisk style: title, then header and rows indented under it; no underline row */
 	write_text(context, title);
 	write_text(context, ":\n");
 	if (!table->cells) {

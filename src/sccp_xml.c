@@ -32,11 +32,6 @@ SCCP_FILE_VERSION(__FILE__, "")
 #		endif
 #	endif
 
-/* forward declarations */
-
-/* private variables */
-
-/* external functions */
 static __attribute__((malloc)) xmlDoc * createDoc(void)
 {
 	xmlDoc * doc = xmlNewDoc((const xmlChar *)"1.0");
@@ -46,7 +41,7 @@ static __attribute__((malloc)) xmlDoc * createDoc(void)
 
 static __attribute__((malloc)) xmlDoc * createDocFromStr(const char * inbuf, int length)
 {
-	int      options = 0; /* XML_PARSE_XINCLUDE */
+	int      options = 0;
 	xmlDoc * doc     = xmlReadMemory(inbuf, length, "noname.xml", NULL, options);
 	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_2 "SCCP: XML document %p parsed\n", doc);
 	return doc;
@@ -109,7 +104,6 @@ static boolean_t applyStyleSheetByName(xmlDoc * const doc, const char * const st
 	const char *params[] = { "locales", "en", NULL };
 	*result = NULL;
 
-	/* process xinclude elements. */
 	if (xmlXIncludeProcess(doc) < 0) {
 		return res;
 	}
@@ -123,7 +117,7 @@ static boolean_t applyStyleSheetByName(xmlDoc * const doc, const char * const st
 			return res;
 		}
 		xmlDoc * const newdoc = xsltApplyStylesheet(xslt, doc, params);
-		if (newdoc) {                                        // switch xml doc with newdoc which got the stylesheet applied, free original xml doc
+		if (newdoc) {
 			int output_len = 0;
 			xmlChar *xml_output = NULL;
 			xmlDocDumpFormatMemoryEnc(newdoc, &xml_output, &output_len, "UTF-8", 1);
@@ -151,14 +145,12 @@ static void destroyDoc(xmlDoc **doc)
 	}
 }
 
-/* private functions */
 static void __attribute__((constructor)) init_xml(void)
 {
 	xmlInitParser();
 	exsltRegisterAll();
 }
 
-/* Assign to interface */
 const XMLInterface iXML = {
 	.createDoc           = createDoc,
 	.createDocFromStr    = createDocFromStr,
@@ -231,4 +223,3 @@ static void __attribute__((destructor)) sccp_unregister_tests(void)
 const XMLInterface iXML = { 0 };
 #endif                                        // defined(CS_EXPERIMENTAL_XML)
 
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

@@ -22,12 +22,9 @@ SCCP_FILE_VERSION(__FILE__, "");
 #	include <asterisk/http.h>
 #	include <asterisk/paths.h>
 #	include <asterisk/file.h>
-#	include <asterisk/channel.h>                                 // sccp_webservice_parkedcalls: channel iteration
-#	include <sys/stat.h>                                        // sccp_webservice_xslt_callback:stat
+#	include <asterisk/channel.h>
+#	include <sys/stat.h>
 
-/* forward declarations */
-
-/* private variables */
 #	define MAX_PREFIX            80
 #	define DEFAULT_PORT          8088
 #	define DEFAULT_SESSION_LIMIT 100
@@ -44,7 +41,6 @@ typedef struct handler {
 
 char * outputfmt2contenttype[] = {
 	[SCCP_XML_OUTPUTFMT_NULL] = "text/plain",
-	//[SCCP_XML_OUTPUTFMT_HTML] = "application/xhtml+xml",
 	[SCCP_XML_OUTPUTFMT_HTML]  = "text/html",
 	[SCCP_XML_OUTPUTFMT_XHTML] = "application/xhtml+xml",
 	[SCCP_XML_OUTPUTFMT_XML]   = "application/xml",
@@ -54,22 +50,12 @@ char * outputfmt2contenttype[] = {
 	[SCCP_XML_OUTPUTFMT_TXT]   = "text/plain",
 };
 
-/*! \brief Limit the kinds of files we're willing to serve up */
 static struct {
 	const char * ext;
 	const char * mtype;
 } mimetypes[] = {
-	//        { "html", "application/xhtml+xml" },
-	//        { "htm", "application/xhtml+xml" },
 	{ "html", "text/html" },        { "htm", "text/html" }, { "xml", "text/xml" },  { "xslt", "text/xsl" },  { "xsl", "text/xsl" },  { "js", "application/x-javascript" },
 	{ "json", "application/json" }, { "css", "text/css" },  { "png", "image/png" }, { "jpg", "image/jpeg" }, { "gif", "image/gif" },
-	//        { "wav", "audio/x-wav" },
-	//        { "mp3", "audio/mpeg" },
-	//        { "cnf", "text/plain" },
-	//        { "cfg", "text/plain" },
-	//        { "bin", "application/octet-stream" },
-	//        { "sbn", "application/octet-stream" },
-	//        { "ld", "application/octet-stream" },
 };
 
 static const char * ftype2mtype(const char * ftype)
@@ -89,7 +75,6 @@ SCCP_VECTOR_RW(sccp_uri_handler, handler_t) handlers;
 
 #	define HANDLER_CB_CMP(elem, value) (sccp_strcaseequals((elem).uri, (value)))
 
-/* private functions */
 static boolean_t parse_manager_conf(void)
 {
 	boolean_t             result       = FALSE;
@@ -247,20 +232,9 @@ static Process_XSLT_t parse_useragent(PBX_VARIABLE_TYPE * request_headers)
 	return res;
 }
 
-/*!
- * \brief Look up the handler for this request's "handler" URI param.
- *
- * Returns a copy of the matched handler_t, not a pointer into &handlers'
- * backing storage - the vector is only protected by its lock while we hold
- * it here, and handler_t (fixed-size uri[], a function pointer, an enum) is
- * cheap to copy. Returning a live pointer instead would let a concurrent
- * iWebService.addHandler()/removeHandler() call (SCCP_VECTOR_APPEND can
- * realloc the backing array on growth) invalidate it while the caller is
- * still dereferencing handler->callback/uri/outputfmt after we've already
- * released the lock.
- *
- * \retval TRUE  *out was filled in with a valid handler copy
- * \retval FALSE no matching handler (or no "handler" param); *out untouched
+/*
+ * Returns a copy of the matched handler_t, not a pointer into &handlers' backing storage - the vector is only protected by its lock while we hold it here, and handler_t (fixed-size uri[], a function pointer, an enum) is cheap to copy.
+ * Returning a live pointer instead would let a concurrent iWebService.addHandler()/removeHandler() call (SCCP_VECTOR_APPEND can realloc the backing array on growth) invalidate it while the caller is still dereferencing handler->callback/uri/outputfmt after we've already released the lock.
  */
 static boolean_t get_request_handler(PBX_VARIABLE_TYPE * request_params, handler_t * const out)
 {
@@ -287,8 +261,6 @@ static boolean_t get_request_handler(PBX_VARIABLE_TYPE * request_params, handler
 
 static int parse_request_headers(PBX_VARIABLE_TYPE * request_headers, const char * locale)
 {
-	//locale = sccp_retrieve_str_variable_byKey(request_headers, "Accept-Language");
-
 	return 0;
 }
 
@@ -307,9 +279,6 @@ static int parse_outputfmt(PBX_VARIABLE_TYPE * request_params, PBX_VARIABLE_TYPE
 	if (!sccp_strlen_zero(requested_outputfmt)) {
 		sccp_xml_outputfmt_t parsed = sccp_xml_outputfmt_str2val(requested_outputfmt);
 		if (!sccp_xml_outputfmt_exists(parsed)) {
-			// unrecognized ?outformat=... value - do not let the SENTINEL flow on to
-			// be used as an outputfmt2contenttype[] index (out of bounds: valid
-			// indices are 0..SCCP_XML_OUTPUTFMT_SENTINEL-1)
 			pbx_log(LOG_NOTICE, "SCCP: web request asks for outformat '%s', which is not supported\n", requested_outputfmt);
 			return -1;
 		}
@@ -318,18 +287,6 @@ static int parse_outputfmt(PBX_VARIABLE_TYPE * request_params, PBX_VARIABLE_TYPE
 	}
 	return (*outputfmt == SCCP_XML_OUTPUTFMT_NULL) ? -1 : 0;
 }
-
-/*
-static int parse_request_params()
-{
-	return 0;
-}
-
-static int parse_request_uri()
-{
-	return 0;
-}
-*/
 
 static __attribute__((malloc)) char * searchWebDirForFile(const char * filename, sccp_xml_outputfmt_t outputfmt, const char * extension)
 {
@@ -348,20 +305,6 @@ static __attribute__((malloc)) char * searchWebDirForFile(const char * filename,
 	return pbx_strdup(filepath);
 }
 
-/*
-static int addTranslation(PBX_VARIABLE_TYPE *request_params)
-{
-	int res = -1;
-	char *translationFilename = searchWebDirForFile("translations", SCCP_XML_OUTPUTFMT_NULL, "xml");
-	if (translationFilename) {
-		//append_variable(request_params, "translationFile", pbx_strdup(translationFilename));
-		//sccp_free(translationFilename);
-		sccp_append_variable(request_params, "translationFile", translationFilename);
-	}
-	return res;
-}
-*/
-
 static __attribute__((malloc)) char * findStylesheet(const char * const uri, sccp_xml_outputfmt_t outputfmt)
 {
 	return searchWebDirForFile(uri, outputfmt, "xsl");
@@ -376,26 +319,15 @@ static int request_parser(struct ast_tcptls_session_instance * ser, enum ast_htt
 
 	handler_t handler;
 	if (!get_request_handler(request_params, &handler)) {
-		// get_request_handler() already logged the specific reason (missing
-		// 'handler' param, or no registered handler matches it); this line adds
-		// the request context (uri/remote address) that log line doesn't have.
 		pbx_log(LOG_NOTICE, "SCCP: web request for '%s' from %s refused (reason in the previous message)\n",
 			request_uri, ast_sockaddr_stringify(&ser->remote_address));
-		// this is a malformed/unrecognized client request, not a server-side failure
 		ast_http_error(ser, 404, "Not Found", "No SCCP XML service is registered for the requested 'handler' parameter.\n");
 		return -1;
 	}
-	// Process_XSLT_t process_side = parse_useragent(request_headers);
 
-	// sccp_xml_outputfmt_t outputfmt = handler->outputfmt;
 	sccp_xml_outputfmt_t outputfmt = SCCP_XML_OUTPUTFMT_HTML;
 	result |= parse_outputfmt(request_params, request_headers, &outputfmt);
-	// const char *locale = NULL;
-	// result |= parse_request_headers(request_headers, locale);
-	// result |= parse_request_params();
-	// result |= parse_request_uri();
 
-	// if (DEBUG) {
 	PBX_VARIABLE_TYPE * header = NULL;
 	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "request headers:\n");
 	for (header = request_headers; header; header = header->next) {
@@ -406,7 +338,6 @@ static int request_parser(struct ast_tcptls_session_instance * ser, enum ast_htt
 	for (param = request_params; param; param = param->next) {
 		sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: parameter %s: %s\n", param->name, param->value);
 	}
-	//}
 	sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: handler %p, result %d\n", handler, result);
 	do {
 		http_header = pbx_str_create(80);
@@ -441,7 +372,6 @@ static int request_parser(struct ast_tcptls_session_instance * ser, enum ast_htt
 			    "Pragma: SuppressEvents\r\n"
 			    "Last-Modified: %s\r\n",
 			    outputfmt2contenttype[outputfmt], 1, cookie_timeout, timebuf);
-		// sccp_log(DEBUGCAT_WEBSERVICE) (VERBOSE_PREFIX_3 "SCCP: (request_parser) Returning Header:'%s'\n", pbx_str_buffer(http_header));
 
 		ast_http_send(ser, method, 200, NULL, http_header, out, 0, 0);
 		http_header = out = NULL;
@@ -562,15 +492,12 @@ static int sccp_webservice_xslt_callback(struct ast_tcptls_session_instance * se
 		goto out403;
 	}
 
-	/* make "Etag:" http header value */
 	snprintf(etag, sizeof(etag), "\"%ld\"", (long)st.st_mtime);
 
-	/* make "Last-Modified:" http header value */
 	tv.tv_sec  = st.st_mtime;
 	tv.tv_usec = 0;
 	ast_strftime(timebuf, sizeof(timebuf), "%a, %d %b %Y %H:%M:%S GMT", ast_localtime(&tv, &tm, "GMT"));
 
-	/* check received "If-None-Match" request header and Etag value for file */
 	for (v = headers; v; v = v->next) {
 		if (strcasecmp(v->name, "If-None-Match") == 0) {
 			if (strcasecmp(v->value, etag) == 0) {
@@ -599,7 +526,7 @@ static int sccp_webservice_xslt_callback(struct ast_tcptls_session_instance * se
 	if (not_modified) {
 		ast_http_send(ser, method, 304, "Not Modified", http_header, NULL, 0, 1);
 	} else {
-		ast_http_send(ser, method, 200, NULL, http_header, NULL, fd, 1); /* static content flag is set */
+		ast_http_send(ser, method, 200, NULL, http_header, NULL, fd, 1);
 	}
 	close(fd);
 	return 0;
@@ -635,8 +562,6 @@ static boolean_t xmlPostProcess(xmlDoc * const doc, const char * const uri, PBX_
 	parse_request_headers(headers, locale);
 
 	if (outputfmt && iXML.applyStyleSheetByName) {
-		// addTranslation(params);
-		// sccp_append_variable(params, "locales", locale ? pbx_strdup(locale) : "en");
 		if (process_side == ServerSide) {
 			sccp_log(DEBUGCAT_WEBSERVICE)(VERBOSE_PREFIX_3 "SCCP: applying stylesheet on the server\n");
 			char * stylesheetFilename = findStylesheet(uri, outputfmt);
@@ -661,17 +586,8 @@ static boolean_t xmlPostProcess(xmlDoc * const doc, const char * const uri, PBX_
 	return res;
 }
 
-/*!
- * \brief Webservice handler for the "parkedcalls" URI.
- *
- * Builds a <response><generic event="ParkedCall" .../></response> document
- * matching the shape parkedcalls2cxml.xsl already expects (mirrors what an
- * AMI ParkedCalls action would return), by iterating currently active
- * channels and filtering to the "parkedcalls" context. There is no core
- * Asterisk API to query current parking-lot occupancy directly (parking.h
- * only exposes the park action and an event-based Stasis topic, not a
- * point-in-time snapshot), so channel iteration + context filtering is the
- * same technique used by AMI/CLI parking introspection internally.
+/*
+ * There is no core Asterisk API to query current parking-lot occupancy directly (parking.h only exposes the park action and an event-based Stasis topic, not a point-in-time snapshot), so channel iteration + context filtering is the same technique used by AMI/CLI parking introspection internally.
  */
 static boolean_t sccp_webservice_parkedcalls(const char * const uri, PBX_VARIABLE_TYPE * params, PBX_VARIABLE_TYPE * headers, pbx_str_t ** result)
 {
@@ -740,7 +656,6 @@ static void __attribute__((destructor)) destroy_webservice(void)
 	}
 }
 
-/* exported functions */
 static boolean_t isRunning(void)
 {
 	return running;
@@ -782,7 +697,6 @@ static boolean_t removeHandler(const char * const uri)
 	return result;
 }
 
-/* Assign to interface */
 const WebServiceInterface iWebService = {
 	.isRunning     = isRunning,
 	.getBaseURL    = getBaseURL,

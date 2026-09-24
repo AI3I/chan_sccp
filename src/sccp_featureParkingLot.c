@@ -30,182 +30,6 @@ static const uint32_t appID = APPID_VISUALPARKINGLOT;
 #  include <asterisk/app.h>
 #endif
 
-/* asterisk-11 */
-/*
-Event: ParkedCall
-Privilege: call,all
-Timestamp: 1460205775.670404
-Exten: 701
-Channel: SCCP/10041-0000000e
-Parkinglot: default
-From: SCCP/10011-0000000f
-Timeout: 45
-CallerIDNum: 10041
-CallerIDName: PHONE4
-ConnectedLineNum: <unknown>
-ConnectedLineName: <unknown>
-Uniqueid: 1460205775.48
-
-Event: UnParkedCall
-Privilege: call,all
-Timestamp: 1460205785.934545
-Exten: 701
-Channel: SCCP/10041-0000000e
-Parkinglot: default
-From: SCCP/10031-00000010
-CallerIDNum: 10041
-CallerIDName: PHONE4
-ConnectedLineNum: <unknown>
-ConnectedLineName: <unknown>
-Uniqueid: 1460205775.48
-
-Event: ParkedCallGiveUp
-Privilege: call,all
-Timestamp: 1460819185.922496
-Exten: 701
-Channel: SCCP/10041-00000001
-Parkinglot: default
-CallerIDNum: 10041
-CallerIDName: PHONE4
-ConnectedLineNum: 10011
-ConnectedLineName: Diederik-Phone1
-UniqueID: 1460819174.54
-
-Event: ParkedCallTimeOut
-Privilege: call,all
-Timestamp: 1460974082.683646
-Exten: 701
-Channel: SCCP/10011-00000003
-Parkinglot: default
-CallerIDNum: 10011
-CallerIDName: Diederik-Phone1
-ConnectedLineNum: 10031
-ConnectedLineName: Diederik-Phone3
-UniqueID: 1460974037.17
-*/
-
-/* asterisk-13 */
-/*
-Event: ParkedCall
-Privilege: call,all
-SequenceNumber: 118
-File: parking/parking_manager.c
-Line: 676
-Func: parked_call_message_response
-ParkeeChannel: SCCP/10011-00000001
-ParkeeChannelState: 6
-ParkeeChannelStateDesc: Up
-ParkeeCallerIDNum: 10011
-ParkeeCallerIDName: Diederik-Phone1
-ParkeeConnectedLineNum: <unknown>
-ParkeeConnectedLineName: <unknown>
-ParkeeLanguage: en
-ParkeeAccountCode: 10011
-ParkeeContext: internal
-ParkeeExten: 10031
-ParkeePriority: 3
-ParkeeUniqueid: 1461160476.0
-ParkeeLinkedid: 1461160476.0
-ParkerDialString: SCCP/10031
-Parkinglot: default
-ParkingSpace: 701
-ParkingTimeout: 45
-ParkingDuration: 0
-
-UnParkedCall
-Privilege: call,all
-SequenceNumber: 1091
-File: parking/parking_manager.c
-Line: 676
-Func: parked_call_message_response
-ParkeeChannel: SCCP/10011-00000001
-ParkeeChannelState: 6
-ParkeeChannelStateDesc: Up
-ParkeeCallerIDNum: 10011
-ParkeeCallerIDName: Diederik-Phone1
-ParkeeConnectedLineNum: <unknown>
-ParkeeConnectedLineName: <unknown>
-ParkeeLanguage: en
-ParkeeAccountCode: 10011
-ParkeeContext: internal
-ParkeeExten: 10031
-ParkeePriority: 3
-ParkeeUniqueid: 1461161791.29
-ParkeeLinkedid: 1461161791.29
-RetrieverChannel: SCCP/10041-00000003
-RetrieverChannelState: 6
-RetrieverChannelStateDesc: Up
-RetrieverCallerIDNum: 10041
-RetrieverCallerIDName: PHONE4
-RetrieverConnectedLineNum: <unknown>
-RetrieverConnectedLineName: <unknown>
-RetrieverLanguage: en
-RetrieverAccountCode: 79005
-RetrieverContext: internal
-RetrieverExten: 701
-RetrieverPriority: 1
-RetrieverUniqueid: 1461161803.31
-RetrieverLinkedid: 1461161803.31
-ParkerDialString: SCCP/10031
-Parkinglot: default
-ParkingSpace: 701
-ParkingTimeout: 35
-ParkingDuration: 10
-
-Event: ParkedCallGiveUp
-Privilege: call,all
-SequenceNumber: 142
-File: parking/parking_manager.c
-Line: 676
-Func: parked_call_message_response
-ParkeeChannel: SCCP/10011-00000001
-ParkeeChannelState: 6
-ParkeeChannelStateDesc: Up
-ParkeeCallerIDNum: 10011
-ParkeeCallerIDName: Diederik-Phone1
-ParkeeConnectedLineNum: <unknown>
-ParkeeConnectedLineName: <unknown>
-ParkeeLanguage: en
-ParkeeAccountCode: 10011
-ParkeeContext: internal
-ParkeeExten: 10031
-ParkeePriority: 3
-ParkeeUniqueid: 1461160476.0
-ParkeeLinkedid: 1461160476.0
-ParkerDialString: SCCP/10031
-Parkinglot: default
-ParkingSpace: 701
-ParkingTimeout: 36
-ParkingDuration: 9
-
-Event: ParkedCallTimeOut
-Privilege: call,all
-SequenceNumber: 427
-File: parking/parking_manager.c
-Line: 676
-Func: parked_call_message_response
-ParkeeChannel: SCCP/10011-00000007
-ParkeeChannelState: 6
-ParkeeChannelStateDesc: Up
-ParkeeCallerIDNum: 10011
-ParkeeCallerIDName: Diederik-Phone1
-ParkeeConnectedLineNum: <unknown>
-ParkeeConnectedLineName: <unknown>
-ParkeeLanguage: en
-ParkeeAccountCode: 10011
-ParkeeContext: park-dial
-ParkeeExten: SCCP_10031
-ParkeePriority: 1
-ParkeeUniqueid: 1461160740.12
-ParkeeLinkedid: 1461160740.12
-ParkerDialString: SCCP/10031
-Parkinglot: default
-ParkingSpace: 701
-ParkingTimeout: 0
-ParkingDuration: 45
-*/
-
-/* forward declarations */
 struct parkinglot;
 typedef struct parkinglot sccp_parkinglot_t;
 static void notifyLocked(sccp_parkinglot_t *pl);
@@ -213,7 +37,6 @@ static void notifyLocked(sccp_parkinglot_t *pl);
 typedef struct plslot plslot_t;
 typedef struct plobserver plobserver_t;
 
-/* private variables */
 struct plslot {
 	int slot;
 	const char *exten;
@@ -239,16 +62,13 @@ struct parkinglot {
 	SCCP_RWLIST_ENTRY(sccp_parkinglot_t) list;
 };
 
-#define ICONSTATE_NEW_ON 0x020303												// option:closed, color=yellow, flashspeed=slow
-#define ICONSTATE_NEW_OFF 0x010000												// option:open, color=off, flashspeed=None
-#define ICONSTATE_OLD_ON 1													// option:closed
-#define ICONSTATE_OLD_OFF 0													// option:open
+#define ICONSTATE_NEW_ON 0x020303
+#define ICONSTATE_NEW_OFF 0x010000
+#define ICONSTATE_OLD_ON 1
+#define ICONSTATE_OLD_OFF 0
 
-/* private functions */
-//#define sccp_parkinglot_lock(x)	({sccp_log(DEBUGCAT_PARKINGLOT)(VERBOSE_PREFIX_2 "%s:%d:requestinglock:%p\n",__PRETTY_FUNCTION__,__LINE__,x);pbx_mutex_lock(&((sccp_parkinglot_t * const)(x))->lock);sccp_log(DEBUGCAT_PARKINGLOT)(VERBOSE_PREFIX_2 "%s:%d:locked:%p\n",__PRETTY_FUNCTION__,__LINE__,x);})				// discard const
-//#define sccp_parkinglot_unlock(x)	({sccp_log(DEBUGCAT_PARKINGLOT)(VERBOSE_PREFIX_2 "%s:%d:unlock:%p\n",__PRETTY_FUNCTION__,__LINE__,x);pbx_mutex_unlock(&((sccp_parkinglot_t * const)(x))->lock);})			// discard const
-#define sccp_parkinglot_lock(x)		({pbx_mutex_lock(&((sccp_parkinglot_t * const)(x))->lock);})				// discard const
-#define sccp_parkinglot_unlock(x)	({pbx_mutex_unlock(&((sccp_parkinglot_t * const)(x))->lock);})				// discard const
+#define sccp_parkinglot_lock(x)		({pbx_mutex_lock(&((sccp_parkinglot_t * const)(x))->lock);})
+#define sccp_parkinglot_unlock(x)	({pbx_mutex_unlock(&((sccp_parkinglot_t * const)(x))->lock);})
 
 SCCP_RWLIST_HEAD(sccp_parkinglot_vector, sccp_parkinglot_t) parkinglots;
 #define OBSERVER_CB_CMP(elem, value) ((elem).device == (value).device && (elem).instance == (value).instance)
@@ -263,8 +83,6 @@ SCCP_RWLIST_HEAD(sccp_parkinglot_vector, sccp_parkinglot_t) parkinglots;
 	if ((elem).connectedline_num) {sccp_free((elem).connectedline_num);}	\
 	if ((elem).connectedline_name) {sccp_free((elem).connectedline_name);}
 
-
-/* exported functions */
 static sccp_parkinglot_t * addParkinglot(const char *parkinglot)
 {
 	pbx_assert(parkinglot != NULL);
@@ -322,7 +140,6 @@ static sccp_parkinglot_t * const findParkinglotByContext(const char *parkinglot)
 	SCCP_RWLIST_TRAVERSE(&parkinglots, pl, list) {
 		sccp_parkinglot_lock(pl);
 		if (sccp_strcaseequals(pl->context, parkinglot)) {
-			//sccp_log(DEBUGCAT_PARKINGLOT)(VERBOSE_PREFIX_1 "SCCP: (findParkinglotByContext) found match:%s\n", pl->context);
 			// returning parkinglot locked
 			break;
 		}
@@ -337,21 +154,17 @@ static sccp_parkinglot_t * const findCreateParkinglot(const char *parkinglot, bo
 {
 	pbx_assert(parkinglot != NULL);
 
-	//sccp_log(DEBUGCAT_PARKINGLOT)(VERBOSE_PREFIX_1 "SCCP: (findCreateParkinglot) %s (create:%s)\n", parkinglot, create ? "TRUE" : "FALSE");
 	sccp_parkinglot_t *pl = findParkinglotByContext(parkinglot);
 	if (!pl && create) {
 		if (!(pl = addParkinglot(parkinglot))) {
-			//pbx_log(LOG_NOTICE, "SCCP: (findCreateParkinglot) Could not add ParkingLot: %s\n", parkinglot);
 			return NULL;
 		}
-		//sccp_log(DEBUGCAT_PARKINGLOT)(VERBOSE_PREFIX_1 "SCCP: (findCreateParkinglot) New %s Created\n", parkinglot);
 		sccp_parkinglot_lock(pl);
 	}
 	sccp_log(DEBUGCAT_PARKINGLOT)(VERBOSE_PREFIX_1 "SCCP: parking lot found: %s\n", pl ? "yes" : "no");
 	return pl;
 }
 
-// observer
 static int attachObserver(sccp_device_t * device, const sccp_buttonconfig_t * const buttonConfig)
 {
 	pbx_assert(device != NULL && buttonConfig != NULL);
@@ -367,7 +180,6 @@ static int attachObserver(sccp_device_t * device, const sccp_buttonconfig_t * co
 				.transactionId = 0,
 			};
 
-			/* upgrade to wrlock */
 			if (SCCP_VECTOR_APPEND(&pl->observers, observer) == 0) {
 				res = TRUE;
 			}
@@ -383,7 +195,7 @@ static int detachObserver(sccp_device_t * device, const sccp_buttonconfig_t * co
 
 	if(!sccp_strlen_zero(buttonConfig->button.feature.options)) {
 		sccp_log(DEBUGCAT_PARKINGLOT)(VERBOSE_PREFIX_1 "%s: %s stopped watching this parking lot (instance %d)\n", buttonConfig->button.feature.options, device->id, buttonConfig->instance);
-		sccp_parkinglot_t * pl = findCreateParkinglot(buttonConfig->button.feature.options, FALSE); /* don't use RAII, removeParkinglot unlocks and destroys the lock */
+		sccp_parkinglot_t * pl = findCreateParkinglot(buttonConfig->button.feature.options, FALSE);
 		if (pl) {
 			plobserver_t cmp = {
 				.device = device,
@@ -517,7 +329,6 @@ static void _notifyHelper(plobserver_t *observer, sccp_parkinglot_t *pl, constDe
 		iconstate = numslots ? ICONSTATE_NEW_ON : ICONSTATE_NEW_OFF;
 	}
 
-	// change button state
 	SCCP_LIST_LOCK(&device->buttonconfig);
 	SCCP_LIST_TRAVERSE(&device->buttonconfig, config, list) {
 		if (config->type == FEATURE && config->instance == observer->instance) {
@@ -526,7 +337,6 @@ static void _notifyHelper(plobserver_t *observer, sccp_parkinglot_t *pl, constDe
 	}
 	SCCP_LIST_UNLOCK(&device->buttonconfig);
 
-	// update already displayed visual parkinglot window
 	if (observer->transactionId) {
 		if (numslots > 0 && !device->active_channel) {
 			__showVisualParkingLot(pl, device, observer);
@@ -574,7 +384,6 @@ static void notifyLocked(sccp_parkinglot_t *pl)
 	}
 }
 
-// slot
 static int addSlot(const char *parkinglot, int slot, struct message *m)
 {
 	pbx_assert(parkinglot != NULL && m != NULL);
@@ -586,7 +395,7 @@ static int addSlot(const char *parkinglot, int slot, struct message *m)
 	RAII(sccp_parkinglot_t *, pl, findCreateParkinglot(parkinglot, TRUE), sccp_parkinglot_unlock);
 	if (pl) {
 		if (SCCP_VECTOR_GET_CMP(&pl->slots, slot, SLOT_CB_CMP) == NULL) {
-			plslot_t new_slot = { 
+			plslot_t new_slot = {
 				.slot = slot,
 				.exten = pbx_strdup(astman_get_header(m, PARKING_SLOT)),
 				.from = pbx_strdup(astman_get_header(m, PARKING_FROM)),
@@ -628,14 +437,6 @@ static int removeSlot(const char *parkinglot, int slot)
 	return !res;
 }
 
-/*
- * Handle Park Feature Button Press
- * -If we have an active call -> pressing the park feature key, will park that call
- * -If we are not on an active call:
- * 	- If there is 0 parked calls: Display Status Message, "No parked calls'
- * 	- If there is 1 parked call: Unpark that call immediatly
- *	- If there is more than 1 parked call: display the visual parking lot representation.
- */
 static void handleButtonPress(constDevicePtr d, const sccp_buttonconfig_t * const buttonConfig)
 {
 	pbx_assert(d != NULL && buttonConfig != NULL);
@@ -657,7 +458,7 @@ static void handleButtonPress(constDevicePtr d, const sccp_buttonconfig_t * cons
 					if (slot) {
 						AUTO_RELEASE(sccp_line_t, line , channel ? sccp_line_retain(channel->line) : d->currentLine ? sccp_dev_getActiveLine(d) : sccp_line_find_byid(d, d->defaultLineInstance));
 						AUTO_RELEASE(sccp_channel_t, new_channel,
-							     sccp_channel_newcall(line, d, slot->exten, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));                                        // implicit release
+							     sccp_channel_newcall(line, d, slot->exten, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));
 					}
 				} else {
 					sccp_log(DEBUGCAT_PARKINGLOT)(VERBOSE_PREFIX_1 "%s: several parked calls; showing the parking lot\n", buttonConfig->button.feature.options);
@@ -681,13 +482,12 @@ static void handleDevice2User(const char *parkinglot, constDevicePtr d, const ch
 	if (d->dtu_softkey.action && d->dtu_softkey.transactionID == transactionId) {
 		if (sccp_strequals(d->dtu_softkey.action, "DIAL")) {
 			AUTO_RELEASE(sccp_line_t, line , d->currentLine ? sccp_dev_getActiveLine(d) : sccp_line_find_byid(d, d->defaultLineInstance));
-			AUTO_RELEASE(sccp_channel_t, new_channel, sccp_channel_newcall(line, d, slot_exten, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));                                        // implicit release
+			AUTO_RELEASE(sccp_channel_t, new_channel, sccp_channel_newcall(line, d, slot_exten, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));
 		} else if (sccp_strequals(d->dtu_softkey.action, "EXIT")) {
 			hideVisualParkingLot(parkinglot, d, instance);
 		}
 	}
 }
-/* Assign to interface */
 const ParkingLotInterface iParkingLot = {
 	.attachObserver = attachObserver,
 	.detachObserver = detachObserver,

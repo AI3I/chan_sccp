@@ -17,18 +17,15 @@
 
 #pragma once
 #include "config.h"
-/*!
- * \note most of these should be moved to autoconf/asterisk.m4 and be defined in config.h
- */
 #if !defined(__BEGIN_C_EXTERN__)
-#  if defined(__cplusplus) || defined(c_plusplus) 
+#  if defined(__cplusplus) || defined(c_plusplus)
 #    define __BEGIN_C_EXTERN__ 		\
 extern "C" {
 #    define __END_C_EXTERN__ 		\
 }
 #  else
-#    define __BEGIN_C_EXTERN__ 
-#    define __END_C_EXTERN__ 
+#    define __BEGIN_C_EXTERN__
+#    define __END_C_EXTERN__
 #  endif
 #endif
 
@@ -42,7 +39,7 @@ extern "C" {
 #  define SCCP_API extern __attribute__((__visibility__("hidden")))
 #  define SCCP_API_VISIBLE extern __attribute__((__visibility__("default")))
 #  define SCCP_INLINE SCCP_API
-#  define SCCP_CALL 
+#  define SCCP_CALL
 #define __PURE__ __attribute__((pure))
 #define __CONST__ __attribute__((const))
 #else
@@ -50,21 +47,20 @@ extern "C" {
 #  define SCCP_API extern
 #  define SCCP_API_VISIBLE extern
 #  define SCCP_INLINE SCCP_API
-#  define SCCP_CALL 
-#define __PURE__ 
-#define __CONST__ 
+#  define SCCP_CALL
+#define __PURE__
+#define __CONST__
 #endif
 #endif
 
 #if defined(RUNNING_STATIC_ANALYSIS)
 #define __NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
 #else
-#define __NONNULL(...) 
+#define __NONNULL(...)
 #endif
 
 #define sccp_mutex_t pbx_mutex_t
 
-/* Add bswap function if necessary */
 #if defined(HAVE_ENDIAN_H)
 #  include <endian.h>
 #elif defined(HAVE_SYS_ENDIAN_H)
@@ -103,23 +99,10 @@ SCCP_LINE unsigned long long ___bswap_64(unsigned long long x)
 #  endif
 #endif
 
-/* Byte swap based on platform endianes */
-
 #define SCCP_TECHTYPE_STR "SCCP"
 
 #define RET_STRING(_a) #_a
 #define STRINGIFY(_a) RET_STRING(_a)
-
-/* Versioning */
-/*
-#ifndef SCCP_VERSION
-#define SCCP_VERSION "custom"
-#endif
-
-#ifndef SCCP_BRANCH
-#define SCCP_BRANCH "trunk"
-#endif
-*/
 
 #define SCCP_FILENAME_MAX 80
 #if defined(PATH_MAX)
@@ -130,17 +113,14 @@ SCCP_LINE unsigned long long ___bswap_64(unsigned long long x)
 
 #define SCCP_LOCK_TRIES 10
 #define SCCP_LOCK_USLEEP 100
-#define SCCP_MIN_DTMF_DURATION 80										// 80 ms
-#define SCCP_FIRST_LINEINSTANCE 1										/* whats the instance of the first line */
-#define SCCP_FIRST_SERVICEINSTANCE 1										/* whats the instance of the first service button */
-#define SCCP_FIRST_SPEEDDIALINSTANCE 1										/* whats the instance of the first speeddial button */
+#define SCCP_MIN_DTMF_DURATION 80
+#define SCCP_FIRST_LINEINSTANCE 1
+#define SCCP_FIRST_SERVICEINSTANCE 1
+#define SCCP_FIRST_SPEEDDIALINSTANCE 1
 
 #define SCCP_DISPLAYSTATUS_TIMEOUT 5
 
-/* Simulated Enbloc Dialing */
-//#define SCCP_SIM_ENBLOC_DEVIATION 3.5
 #define SCCP_SIM_ENBLOC_MAX_PER_DIGIT 400
-//#define SCCP_SIM_ENBLOC_MIN_DIGIT 3
 #define SCCP_SIM_ENBLOC_MIN_DIGIT 4
 #define SCCP_SIM_ENBLOC_TIMEOUT 2
 
@@ -151,19 +131,17 @@ SCCP_LINE unsigned long long ___bswap_64(unsigned long long x)
 #define THREADPOOL_RESIZE_INTERVAL 10
 
 #define CAS32_TYPE int
-#define SCCP_TIME_TO_KEEP_REFCOUNTEDOBJECT 2000									// ms
+#define SCCP_TIME_TO_KEEP_REFCOUNTEDOBJECT 2000
 #define SCCP_BACKTRACE_SIZE 10
 #define SCCP_DEVICE_MWILIGHT 30
 
 #define DEFAULT_PBX_STR_BUFFERSIZE 512
 
-/*! \todo I don't like the -1 returned value */
 #define sccp_true(x) (pbx_true(x) ? 1 : 0)
 #define sccp_false(x) (pbx_false(x) ? 1 : 0)
 
 #define GLOB(x) sccp_globals->x
 
-/* Lock Macro for Globals */
 #define sccp_globals_lock(x)			pbx_mutex_lock(&sccp_globals->x)
 #define sccp_globals_unlock(x)			pbx_mutex_unlock(&sccp_globals->x)
 #define sccp_globals_trylock(x)			pbx_mutex_trylock(&sccp_globals->x)
@@ -172,13 +150,11 @@ SCCP_LINE unsigned long long ___bswap_64(unsigned long long x)
 
 #define PTR_TYPE_CMP(_T,_ptr) 					\
 ({									\
-	/*__builtin_types_compatible_p(typeof(_ptr), _type) == 1)*/	\
+ \
 	_T __attribute__((unused)) __dummy = (_T)(_ptr);	\
 	1;								\
 })
 
-/* (temporary) forward declarations */
-/* this can be removed by using a pointer version of mutex and rwlock in structures below */
 #define StationMaxServiceURLSize			256
 struct pbx_mutex_info {
         pthread_mutex_t mutex;
@@ -197,16 +173,13 @@ typedef struct pbx_rwlock_info pbx_rwlock_t;
 #define AUTO_MUTEX(varname, lock) SCOPED_LOCK(varname, (lock), pbx_mutex_lock, pbx_mutex_unlock)
 #define AUTO_RDLOCK(varname, lock) SCOPED_LOCK(varname, (lock), pbx_rwlock_rdlock, pbx_rwlock_unlock)
 #define AUTO_WRLOCK(varname, lock) SCOPED_LOCK(varname, (lock), pbx_rwlock_wrlock, pbx_rwlock_unlock)
-/* example AUTO_RDLOCK(lock, &s->lock); */
 
-/* check to see if is pointer is actually already being cleaned up */
 #if __WORDSIZE == 64
 #define isPointerDead(_x) (sizeof(char*) == 4 ? (uintptr_t)(_x) == 0xdeaddead : (uintptr_t)(_x) == 0xdeaddeaddeaddead)
 #else
 #define isPointerDead(_x) ((uintptr_t)(_x) == 0xdeaddead)
 #endif
 
-/* deny the use of unsafe functions */
 #define __strcat strcat
 #undef strcat
 #define strcat(...) _Pragma("GCC error \"use snprint instead of strcat\"")
@@ -253,7 +226,7 @@ typedef struct pbx_rwlock_info pbx_rwlock_t;
 #define snprintf(...) ({int __snprres = __snprintf(__VA_ARGS__); if (__snprres < 0) {pbx_log(LOG_WARNING, "SCCP: snprintf() failed (encoding error)\n");};__snprres;})
 #endif
 
-#if defined(__clang__) 
+#if defined(__clang__)
 #  if __has_extension(blocks)
 typedef void (^sccp_raii_cleanup_block_t)(void);
 static inline void sccp_raii_cleanup_block(sccp_raii_cleanup_block_t *b) { (*b)(); }
@@ -285,4 +258,3 @@ static inline void sccp_raii_cleanup_block(sccp_raii_cleanup_block_t *b) { (*b)(
 #define enum_incr(_enum) ({												\
         (_enum)=(typeof(_enum))((int)(_enum) + 1);									\
 })
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

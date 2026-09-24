@@ -8,15 +8,6 @@
  *
  */
 
-/*!
- * \remarks
- * Purpose:     SCCP FeatureButton
- * When to use: Only methods directly related to the phone featureButtons should be stored in this source file.
- *              FeatureButtons are the ones at the bottom of the display, not to be confused with speeddial
- *              buttons on the right side of the display.
- * Relations:   Call SCCP Features
- */
-
 #include "config.h"
 #include "common.h"
 #include "sccp_device.h"
@@ -32,21 +23,10 @@
 
 SCCP_FILE_VERSION(__FILE__, "");
 
-#if defined(CS_AST_HAS_EVENT) && defined(HAVE_PBX_EVENT_H) 	// ast_event_subscribe
+#if defined(CS_AST_HAS_EVENT) && defined(HAVE_PBX_EVENT_H)
 #  include <asterisk/event.h>
 #endif
 
-/*!
- * \brief Feature Button Changed
- *
- * fetch the new state, and send status to device
- *
- * \param device SCCP Device
- * \param featureType SCCP Feature Type
- * 
- * \warning
- *  - device->buttonconfig is not always locked
- */
 void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureType)
 {
 	sccp_msg_t *msg = NULL;
@@ -54,7 +34,7 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 
 	sccp_buttonconfig_t * buttonconfig = NULL;
 	uint8_t instance = 0;
-	uint8_t buttonID = SKINNY_BUTTONTYPE_FEATURE;								// Default feature type.
+	uint8_t buttonID = SKINNY_BUTTONTYPE_FEATURE;
 	boolean_t lineFound = FALSE;
 	char label_text[StationDynamicNameSize];
 
@@ -95,10 +75,8 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 					// is not being enabled unless we can ask the lines for their state.
 					config->button.feature.status = 0;
 
-					/* get current state */
 					SCCP_LIST_TRAVERSE(&device->buttonconfig, buttonconfig, list) {
 						if (buttonconfig->type == LINE) {
-							// Check if line and line device exists and thus forward status on that device can be checked
 							AUTO_RELEASE(sccp_line_t, line , sccp_line_find_byname(buttonconfig->button.line.name, FALSE));
 
 							if (line) {
@@ -115,7 +93,6 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 										lineFound = TRUE;
 										config->button.feature.status = 1;
 									}
-									// Set status of feature by logical and to comply with requirement above.
 									config->button.feature.status &= ((ld->cfwd[SCCP_CFWD_ALL].enabled) ? 1 : 0);                                        // Logical and &= intended here.
 								}
 							}
@@ -142,25 +119,25 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 								config->button.feature.status = 0;
 							}
 						} else {
-							if (device->inuseprotocolversion > 15) {				// multiple States
+							if (device->inuseprotocolversion > 15) {
 								buttonID = SKINNY_BUTTONTYPE_MULTIBLINKFEATURE;
 								switch (status) {
 									case SCCP_DNDMODE_OFF:
-										config->button.feature.status = 0x010000;                                        // off
+										config->button.feature.status = 0x010000;
 										break;
 									case SCCP_DNDMODE_REJECT:
-										config->button.feature.status = 0x020202;                                        // red/on/filled
+										config->button.feature.status = 0x020202;
 										break;
 									case SCCP_DNDMODE_SILENT:
-										config->button.feature.status = 0x030302;                                        // amber/blink/filled
+										config->button.feature.status = 0x030302;
 										break;
 									case SCCP_DNDMODE_SENTINEL:
 										/* fall through */
 									case SCCP_DNDMODE_USERDEFINED:
-										config->button.feature.status = 0x030303;                                        // amber/blink/boxes
+										config->button.feature.status = 0x030303;
 										break;
 								}
-							} else {								// old non-java phones
+							} else {
 								if (status == SCCP_DNDMODE_OFF) {
 									config->button.feature.status = 0;
 								} else {
@@ -176,7 +153,7 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 						// coverity[MIXED_ENUMS]
 						uint8_t status = (sccp_feature_monitor_state_t) device->monitorFeature.status;
 						if(device->inuseprotocolversion <= 15 || device->skinny_type == SKINNY_DEVICETYPE_CISCO8941
-						   || device->skinny_type == SKINNY_DEVICETYPE_CISCO8945) {                                        // multiple States
+						   || device->skinny_type == SKINNY_DEVICETYPE_CISCO8945) {
 							// firmware on the 89xx series is broken, showing the color of the lamp on the label of MultiBlinkButtons
 							// so using old SKINNY_BUTTONTYPE_MONITOR instead
 							switch (status) {
@@ -195,19 +172,18 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 							buttonID = SKINNY_BUTTONTYPE_MULTIBLINKFEATURE;
 							switch (status) {
 								case SCCP_FEATURE_MONITOR_STATE_DISABLED:
-									config->button.feature.status = 0; /*off*/
+									config->button.feature.status = 0;
 									break;
 								case SCCP_FEATURE_MONITOR_STATE_REQUESTED:
-									// snprintf(label_text, sizeof(label_text), "%s (%s)", config->label, SKINNY_DISP_RECORDING_AWAITING_CALL_TO_BE_ACTIVE);
-									config->button.feature.status = 0x020302; /*amber/on/filled */
+									config->button.feature.status = 0x020302;
 									break;
 								case SCCP_FEATURE_MONITOR_STATE_ACTIVE:
 									snprintf(label_text, sizeof(label_text), "%s (%s)", config->label, SKINNY_DISP_RECORDING);
-									config->button.feature.status = 0x030203; /*red/slowblink/filled */
+									config->button.feature.status = 0x030203;
 									break;
 								case (SCCP_FEATURE_MONITOR_STATE_REQUESTED | SCCP_FEATURE_MONITOR_STATE_ACTIVE):
 									snprintf(label_text, sizeof(label_text), "%s (%s)", config->label, SKINNY_DISP_RECORDING);
-									config->button.feature.status = 0x030205; /*red/slowblink/boxes */
+									config->button.feature.status = 0x030205;
 									break;
 							}
 						}
@@ -215,7 +191,6 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 					break;
 #ifdef CS_DEVSTATE_FEATURE
 					case SCCP_FEATURE_DEVSTATE:
-						/* handled by sccp_devstate.c */
 						goto EXIT_FUNC;
 #endif
 					case SCCP_FEATURE_HOLD:
@@ -315,10 +290,8 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 
 				default:
 					break;
-
 			}
 
-			/* send status using new message */
 			if (device->inuseprotocolversion >= 15) {
 				REQ(msg, FeatureStatDynamicMessage);
 				if (!msg) {
@@ -345,4 +318,3 @@ void sccp_featButton_changed(constDevicePtr device, sccp_feature_type_t featureT
 EXIT_FUNC:
 	SCCP_LIST_UNLOCK(&(((devicePtr)device)->buttonconfig));
 }
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

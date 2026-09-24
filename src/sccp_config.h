@@ -14,9 +14,6 @@ __BEGIN_C_EXTERN__
 // sccp_buttonconfig_list_t externally declared in sccp_device.h, required by sccp_config_addButton
 extern struct sccp_buttonconfig_list sccp_buttonconfig_list;
 
-/*!
- * \brief Enum for Config Value Change Status
- */
 typedef enum {
 	SCCP_CONFIG_CHANGE_NOCHANGE,
 	SCCP_CONFIG_CHANGE_CHANGED,
@@ -24,9 +21,6 @@ typedef enum {
 	SCCP_CONFIG_CHANGE_ERROR,
 } sccp_value_changed_t;
 
-/*!
- * \brief Enum for Config Option Blocks
- */
 typedef enum {
 	SCCP_CONFIG_GLOBAL_SEGMENT,
 	SCCP_CONFIG_DEVICE_SEGMENT,
@@ -34,7 +28,6 @@ typedef enum {
 	SCCP_CONFIG_SOFTKEY_SEGMENT,
 } sccp_config_segment_t;
 
-// SCCP_API void SCCP_CALL sccp_copy_defaultValue(const char *name, void *obj, const sccp_device_t * device, const sccp_config_segment_t segment);
 SCCP_API int SCCP_CALL sccp_manager_config_metadata(struct mansession *s, const struct message *m);
 SCCP_API void SCCP_CALL sccp_config_cleanup_dynamically_allocated_memory(void *obj, const sccp_config_segment_t segment);
 SCCP_API sccp_value_changed_t SCCP_CALL sccp_config_addButton(sccp_buttonconfig_list_t *buttonconfigList, int buttonindex, sccp_config_buttontype_t type, const char *name, const char *options, const char *args);
@@ -42,9 +35,6 @@ SCCP_API boolean_t SCCP_CALL sccp_config_general(sccp_readingtype_t readingtype)
 SCCP_API void SCCP_CALL cleanup_stale_contexts(char *new_context, char *old_context);
 SCCP_API boolean_t SCCP_CALL sccp_config_readDevicesLines(sccp_readingtype_t readingtype);
 
-/*!
- * \brief Enum for Config File Status (Return Values)
- */
 typedef enum {
 	/* *INDENT-OFF* */
 	CONFIG_STATUS_FILE_NOT_CHANGED 	= -1,
@@ -61,7 +51,6 @@ SCCP_API sccp_configurationchange_t SCCP_CALL sccp_config_applyGlobalConfigurati
 SCCP_API sccp_configurationchange_t SCCP_CALL sccp_config_applyLineConfiguration(linePtr l, PBX_VARIABLE_TYPE * v);
 SCCP_API sccp_configurationchange_t SCCP_CALL sccp_config_applyDeviceConfiguration(devicePtr d, PBX_VARIABLE_TYPE * v);
 SCCP_API sccp_configurationchange_t SCCP_CALL sccp_config_setDeviceOption(devicePtr d, const char * name, const char * value);
-// SCCP_API sccp_configurationchange_t SCCP_CALL sccp_config_applyDeviceDefaults(sccp_device_t * device, PBX_VARIABLE_TYPE * variable);
 
 SCCP_API void SCCP_CALL sccp_config_softKeySet(PBX_VARIABLE_TYPE * variable, const char *name);
 SCCP_API void SCCP_CALL sccp_config_restoreDeviceFeatureStatus(devicePtr device);
@@ -69,4 +58,3 @@ SCCP_API void SCCP_CALL sccp_config_restoreDeviceFeatureStatus(devicePtr device)
 SCCP_API int SCCP_CALL sccp_config_generate(char *filename, int configType);
 SCCP_API void SCCP_CALL sccp_config_generate_path(char * fn, size_t size, const char * filename);
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

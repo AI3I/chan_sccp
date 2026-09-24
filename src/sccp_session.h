@@ -11,7 +11,6 @@
 #pragma once
 #include "sccp_cli.h"
 #include "sccp_transport.h"
-//#include "sccp_protocol.h"
 struct sccp_session;
 
 __BEGIN_C_EXTERN__
@@ -63,4 +62,3 @@ SCCP_API int SCCP_CALL sccp_cli_show_sessions(int fd, sccp_cli_totals_t *totals,
 SCCP_API boolean_t SCCP_CALL sccp_session_bind_and_listen(sccp_servercontext_t * context, struct sockaddr_storage * bindaddr);
 SCCP_API void SCCP_CALL sccp_session_stop_accept_thread(sccp_servercontext_t * context);
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

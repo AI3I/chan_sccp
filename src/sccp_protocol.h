@@ -7,7 +7,7 @@
  *              Modified by Jan Czmok and Julien Goodwin
  * \note        This program is free software and may be modified and distributed under the terms of the GNU Public License.
  *              See the LICENSE file at the top of the source tree.
- * 
+ *
  * \note        Thank you Federico Santulli for SPCP support
  */
 #pragma once
@@ -26,9 +26,9 @@ __BEGIN_C_EXTERN__
 
 #define DEFAULT_SCCP_PORT				2000							/*!< SCCP uses port 2000. */
 #define DEFAULT_SCCP_SECURE_PORT			2443							/*!< SCCP secure port 2443. */
-#define DEFAULT_SCCP_BACKLOG				16							/*!< the listen baklog. */
+#define DEFAULT_SCCP_BACKLOG				16
 #define SCCP_MAX_AUTOLOGIN				100							/*!< Maximum allowed of autologins per device */
-#define SCCP_MIN_KEEPALIVE				30							/*!< Minimal keepalive time if not specified in sccp.conf. */
+#define SCCP_MIN_KEEPALIVE				30
 
 /*
 Still looking for these features bits
@@ -37,33 +37,16 @@ RSVP_SUPPORT, UNICODE_CAPABLE, AUTO_IDLE_DISABLE, RESTRICT_PI, AUTHENTICATED_SIG
 MEDIA_ENCRYPTION_SUPPORT, STATION_MAX_FEATURE_MASK, INTERNALIZATION
 */
 
-//#define SKINNY_PHONE_FEATURES0			1<<0
-//#define SKINNY_PHONE_FEATURES0			1<<1
-//#define SKINNY_PHONE_FEATURES0			1<<2
-//#define SKINNY_PHONE_FEATURES0			1<<3
-//#define SKINNY_PHONE_FEATURES0 			1<<4
-//#define SKINNY_PHONE_FEATURES0 			1<<5
-//#define SKINNY_PHONE_FEATURES0	 		1<<6
-//#define SKINNY_PHONE_FEATURES0			1<<7
-
-//#define SKINNY_PHONE_FEATURES1			1<<0
 #define SKINNY_PHONE_FEATURES1_PORTREQUEST		1<<1							/*!< Guess: portRequest/portResponse */
-//#define SKINNY_PHONE_FEATURES1			1<<2
-//#define SKINNY_PHONE_FEATURES1			1<<3
 #define SKINNY_PHONE_FEATURES1_UTF8 			1<<4
 #define SKINNY_PHONE_FEATURES1_UNKNOWN1			1<<5
 #define SKINNY_PHONE_FEATURES1_UNKNOWN2	 		1<<6
-//#define SKINNY_PHONE_FEATURES1			1<<7
 
 #define SKINNY_PHONE_FEATURES2_DYNAMIC_MESSAGES 	1<<0
-//#define SKINNY_PHONE_FEATURES2			1<<1
 #define SKINNY_PHONE_FEATURES2_RFC2833			1<<2
-//#define SKINNY_PHONE_FEATURES2			1<<3
 #define SKINNY_PHONE_FEATURES2_INTERNAL_CM_MEDIA	1<<4
-//#define SKINNY_PHONE_FEATURES2			1<<5
 #define SKINNY_PHONE_FEATURES2_UNKNOWN3			1<<6
 #define SKINNY_PHONE_FEATURES2_ABBRDIAL 		1<<7
-
 
 #define SKINNY_MaxAnnouncementList			32
 #define SKINNY_StationMaxMonitorParties			16
@@ -104,9 +87,6 @@ MEDIA_ENCRYPTION_SUPPORT, STATION_MAX_FEATURE_MASK, INTERNALIZATION
 #define APPID_PUSH					9089
 #define APPID_VISUALPARKINGLOT				9090
 
-/*
- * \todo Merge sccp_button_type_t / sccp_buttontypes[] and this define
- */
 #define SCCP_BUTTONTYPE_MULTI				0xF1
 #define SCCP_BUTTONTYPE_LINE				0xF2
 #define SCCP_BUTTONTYPE_SPEEDDIAL			0xF3
@@ -116,7 +96,7 @@ MEDIA_ENCRYPTION_SUPPORT, STATION_MAX_FEATURE_MASK, INTERNALIZATION
 /* unregister */
 #define SKINNY_UNREGISTERSTATUS_OK			0
 #define SKINNY_UNREGISTERSTATUS_ERROR			1
-#define SKINNY_UNREGISTERSTATUS_NAK 			2							/*!< we have an active channel */
+#define SKINNY_UNREGISTERSTATUS_NAK 			2
 
 /* media silence suppression */
 #define SKINNY_MEDIA_SILENCESUPPRESSION_OFF 		0
@@ -152,19 +132,15 @@ MEDIA_ENCRYPTION_SUPPORT, STATION_MAX_FEATURE_MASK, INTERNALIZATION
 #define MAX_SERVICE_TYPE				4
 #define MAX_LEVEL_PREFERENCE		 		4
 
-/*!
- * \brief SCCP Device->Button List Structure
- */
+/* SCCP Device->Button List Structure */
 typedef struct {
-	uint8_t instance;											/*!< Button Instance */
-	uint8_t type;												/*!< Button Type */
+	uint8_t instance;
+	uint8_t type;
 	skinny_devicetype_t devicetype;
-	sccp_line_t *ptr;											/*!< Pointer to the Line */
-} btnlist;													/*!< Button List Structure */
+	sccp_line_t *ptr;
+} btnlist;
 
-/*!
- * \brief SKINNY Message Types Enum
- */
+/* SKINNY Message Types Enum */
 
 typedef enum {
 /* *INDENT-OFF* */
@@ -376,7 +352,6 @@ typedef enum {
 	SPCPRegisterTokenReject = 0x8101,
 
 	//UnknownVGMessage				= 0xFF00,	/* Unknown Message (VG224). Reported by Ahmet Zaim */
-//#define SPCP_MESSAGE_HIGH_BOUNDARY			UnknownVGMessage		/*0xFF00*/
 #define SPCP_MESSAGE_HIGH_BOUNDARY			SPCPRegisterTokenReject
 	/*
 		SPCPPlatformInfoGetReq				= 0xFF02,
@@ -386,7 +361,6 @@ typedef enum {
 	/* *INDENT-ON* */
 } sccp_mid_t; /*!< SKINNY Message ID Enum */
 
-
 /*=====================================================================================================*/
 
 typedef struct
@@ -395,26 +369,22 @@ typedef struct
   uint8_t stationIpAddr[16];
 } skinny_ipAddress_t;
 
-/*!
- * \brief SKINNY Station Identifier Structure
- */
+/* SKINNY Station Identifier Structure */
 typedef struct {
-	char deviceName[StationMaxDeviceNameSize];								/*!< Device name */
-	uint32_t lel_userid;											/*!< User ID */
-	uint32_t lel_instance;											/*!< Instance */
-} StationIdentifier;												/*!< SKINNY Station Identifier Structure */
+	char deviceName[StationMaxDeviceNameSize];
+	uint32_t lel_userid;
+	uint32_t lel_instance;
+} StationIdentifier;
 
 typedef struct {
 	uint8_t protocolVersion;
 	uint8_t phoneFeatures[3];
 } StationProtocolFeatures_t;
-/*!
- * \brief SKINNY Station Button Definition Structure
- */
+/* SKINNY Station Button Definition Structure */
 typedef struct {
-	uint8_t instanceNumber;											/*!< set to instance number or StationKeyPadButton value */
-	uint8_t buttonDefinition;										/*!< set to one of the preceding Bt values */
-} StationButtonDefinition;											/*!< SKINNY Station Button Definition Structure */
+	uint8_t instanceNumber;
+	uint8_t buttonDefinition;
+} StationButtonDefinition;
 
 typedef struct {
 	uint8_t key[16];
@@ -430,77 +400,59 @@ typedef struct {
 	uint32_t keyDerivationRate;
 } EncryptionInfo;
 
-/*!
- * \brief SKINNY Media Payload Capability Structure
- */
+/* SKINNY Media Payload Capability Structure */
 typedef struct {
-	skinny_codec_t lel_payloadCapability;									/*!< Payload Capability (Codec Used) */
+	skinny_codec_t lel_payloadCapability;
 	uint32_t lel_maxFramesPerPacket;									/*!< Maximum Number of Frames per IP Packet / Number of milliseconds of audio per RTP Packet */
 	union {
 		uint8_t futureUse[8];
 		uint8_t lel_g723BitRate;									/*!< g723 Bit Rate (1=5.3 Kbps, 2=6.4 Kbps) */
-	} PAYLOADS;												/*!< SKINNY Media Payload Capability Payloads Union */
-} MediaCapabilityStructure;											/*!< SKINNY Media Payload Capability Structure */
+	} PAYLOADS;
+} MediaCapabilityStructure;
 
-/*!
- * \brief SKINNY Station Soft Key Definition Structure
- */
+/* SKINNY Station Soft Key Definition Structure */
 typedef struct {
-	char softKeyLabel[StationMaxSoftKeyLabelSize];								/*!< Soft Key Label */
-	uint32_t lel_softKeyEvent;										/*!< Soft Key Event */
-} StationSoftKeyDefinition;											/*!< SKINNY Station Soft Key Definition Structure */
+	char softKeyLabel[StationMaxSoftKeyLabelSize];
+	uint32_t lel_softKeyEvent;
+} StationSoftKeyDefinition;
 
-/*!
- * \brief SKINNY Station Soft Key Set Definition Structure
- */
+/* SKINNY Station Soft Key Set Definition Structure */
 typedef struct {
-	uint8_t softKeyTemplateIndex[StationMaxSoftKeyIndex];							/*!< Soft Key Template Index */
-	uint16_t les_softKeyInfoIndex[StationMaxSoftKeyIndex];							/*!< Soft Key Info Index */
-} StationSoftKeySetDefinition;											/*!< SKINNY Station Soft Key Set Definition Structure */
+	uint8_t softKeyTemplateIndex[StationMaxSoftKeyIndex];
+	uint16_t les_softKeyInfoIndex[StationMaxSoftKeyIndex];
+} StationSoftKeySetDefinition;
 
-/*!
- * \brief SKINNY Server Identifier Structure
- */
+/* SKINNY Server Identifier Structure */
 typedef struct {
-	char serverName[ServerMaxNameSize];									/*!< Server Name */
-} ServerIdentifier;												/*!< SKINNY Server Identifier Structure */
+	char serverName[ServerMaxNameSize];
+} ServerIdentifier;
 
-/*! 
- * \brief SKINNY Layout Config Structure
- * \note Part of Update Capabilities Message Struct
- * \since 20080111
- */
+/* SKINNY Layout Config Structure */
 typedef struct {
-	uint32_t layout;											/*!< Layout */
-} layoutConfig_t;												/*!< SKINNY Layout Config Structure */
+	uint32_t layout;
+} layoutConfig_t;
 
-/*!
- * \brief SKINNY Video Level Preference Structure
- */
+/* SKINNY Video Level Preference Structure */
 typedef struct {
-	uint32_t lel_transmitPreference;									/*!< Transmit Preference */
-	uint32_t lel_format;											/*!< Format / Codec */
-	uint32_t lel_maxBitRate;										/*!< Maximum BitRate */
-	uint32_t lel_minBitRate;										/*!< Minimum BitRate */
-	uint32_t lel_MPI;											/*!<  */
-	uint32_t lel_serviceNumber;										/*!< Service Number */
-} levelPreference_t;												/*!< SKINNY Level Preference Structure */
+	uint32_t lel_transmitPreference;
+	uint32_t lel_format;
+	uint32_t lel_maxBitRate;
+	uint32_t lel_minBitRate;
+	uint32_t lel_MPI;
+	uint32_t lel_serviceNumber;
+} levelPreference_t;
 
-/*!
- * \brief SKINNY Service Resource Structure
- */
+/* SKINNY Service Resource Structure */
 typedef struct {
-	uint32_t layoutCount;											/*!< Layout Count */
-	layoutConfig_t layout[MAX_LAYOUT_WITH_SAME_SERVICE];							/*!< Layout */
-	uint32_t serviceNum;											/*!< Service Number */
-	uint32_t maxStreams;											/*!< Maximum number of Streams */
-	uint32_t maxConferences;										/*!< Maximum number of Conferences */
-	uint32_t activeConferenceOnRegistration;								/*!< Active Conference On Registration */
-} serviceResource_t;												/*!< SKINNY Service Resource Structure */
+	uint32_t layoutCount;
+	layoutConfig_t layout[MAX_LAYOUT_WITH_SAME_SERVICE];
+	uint32_t serviceNum;
+	uint32_t maxStreams;
+	uint32_t maxConferences;
+	uint32_t activeConferenceOnRegistration;
+} serviceResource_t;
 
-/*!
- * \brief SKINNY Conference Resource
- */
+/* SKINNY Conference Resource */
 typedef struct {
 	uint32_t lel_activeStreamsOnRegistration;
 	uint32_t lel_maxBW;
@@ -508,16 +460,14 @@ typedef struct {
 	serviceResource_t serviceResource[MAX_SERVICE_TYPE];
 } confResource_t ;
 
-/*!
- * \brief SKINNY Picture Format Structure
- */
+/* SKINNY Picture Format Structure */
 typedef struct {
-	uint32_t lel_width;											/*!< Picture Width */
-	uint32_t lel_height;											/*!< Picture Height */
-	uint32_t lel_pixelAspectRatio;										/*!< Picture Pixel Aspect Ratio */
-	uint32_t lel_pixelclockConversionCode;									/*!< Picture Pixel Conversion Code  */
-	uint32_t lel_pixelclockDivisor;										/*!< Picture Pixel Divisor */
-} customPictureFormat_t;											/*!< SKINNY Picture Format Structure */
+	uint32_t lel_width;
+	uint32_t lel_height;
+	uint32_t lel_pixelAspectRatio;
+	uint32_t lel_pixelclockConversionCode;
+	uint32_t lel_pixelclockDivisor;
+} customPictureFormat_t;
 
 typedef struct
 {
@@ -546,158 +496,126 @@ typedef union {
 	CodecParameters_t codecParams;
 } payload_t;
 
-/*!
- * \brief SKINNY Audio Capabilities Structure
- */
+/* SKINNY Audio Capabilities Structure */
 typedef struct {
-	skinny_codec_t lel_payloadCapability;									/*!< PayLoad Capability */
+	skinny_codec_t lel_payloadCapability;
 	uint32_t lel_maxFramesPerPacket;									/*!< Maximum Number of Frames per IP Packet */
 	payload_t payloads;
-} audioCap_t;													/*!< SKINNY Audio Capabilities Structure */
+} audioCap_t;
 
-/*!
- * \brief SKINNY Audio Parameters Structure
- */
+/* SKINNY Audio Parameters Structure */
 typedef struct {
 	uint32_t millisecondPacketSize;										/*!< Packet Size per Milli Second */
-	uint32_t lel_echoCancelType;										/*!< Echo Cancelation Type */
+	uint32_t lel_echoCancelType;
 	uint32_t lel_g723BitRate;										/*!< only used with G.723 payload */
-} audioParameter_t;												/*!< SKINNY Audio Parameters Structure */
+} audioParameter_t;
 
-/*!
- * \brief SKINNY Picture Format Structure
- */
+/* SKINNY Picture Format Structure */
 typedef struct {
-	uint32_t format;											/*!< Picture Format */
-	uint32_t mpi;												/*!< MPI */
-} pictureFormat_t;												/*!< SKINNY Picture Format Structure */
+	uint32_t format;
+	uint32_t mpi;
+} pictureFormat_t;
 
-/*!
- * \brief SKINNY H261 Video Capability Structure
- */
+/* SKINNY H261 Video Capability Structure */
 typedef struct {
-	uint32_t lel_temporalSpatialTradeOffCapability;								/*!< Temporal Spatial Trade Off Capability */
-	uint32_t lel_stillImageTransmission;									/*!< Still Image Transmission */
-} h261_VideoCapability_t;											/*!< SKINNY H261 Video Capability Structure */
+	uint32_t lel_temporalSpatialTradeOffCapability;
+	uint32_t lel_stillImageTransmission;
+} h261_VideoCapability_t;
 
-/*!
- * \brief SKINNY H263 Video Capability Structure
- */
+/* SKINNY H263 Video Capability Structure */
 typedef struct {
 	uint32_t lel_capabilityBitfield;									/*!< H263 Capability Bit-Field */
-	uint32_t lel_annexNandWFutureUse;									/*!< Annex Nandw for Future Use */
-} h263_VideoCapability_t;											/*!< SKINNY H262 Video Capability Structure */
+	uint32_t lel_annexNandWFutureUse;
+} h263_VideoCapability_t;
 
-/*!
- * \brief SKINNY vieo / h263P Video Capability Structure
- */
+/* SKINNY vieo / h263P Video Capability Structure */
 typedef struct {
-	uint32_t lel_modelNumber;										/*!< Model Number */
-	uint32_t lel_bandwidth;											/*!< BandWidth */
-} h263P_VideoCapability_t;											/*!< SKINNY vieo/h263P Video Capability Structure */
+	uint32_t lel_modelNumber;
+	uint32_t lel_bandwidth;
+} h263P_VideoCapability_t;
 
-/*!
- * \brief SKINNY H264 Video Capability Structure
- */
+/* SKINNY H264 Video Capability Structure */
 typedef struct {
-	uint32_t lel_profile;											/*!< H264 profile */
-	uint32_t lel_level;											/*!< H264 level */
+	uint32_t lel_profile;
+	uint32_t lel_level;
 	uint32_t lel_customMaxMBPS;										/*!< max decoding speed (in macroblocks/s) */
 	uint32_t lel_customMaxFS;										/*!< max frame size (in macroblocks) */
-	uint32_t lel_customMaxDPB;										/*!< decoded picture buffering */
-	uint32_t lel_customMaxBRandCPB;										/*!< */
+	uint32_t lel_customMaxDPB;
+	uint32_t lel_customMaxBRandCPB;
 } h264_VideoCapability_t;
 
 typedef union {
 	h261_VideoCapability_t h261;
 	h263_VideoCapability_t h263;
-	h263P_VideoCapability_t h263P;										/*!< Also known as Vieo */
+	h263P_VideoCapability_t h263P;										/*!< Also known as Video */
 } videoCapabilityUnionV1_t;
 
-/*!
- * \brief SKINNY Video Capabilities Structure
- */
+/* SKINNY Video Capabilities Structure */
 typedef struct {
-	skinny_codec_t lel_payloadCapability;									/*!< PayLoad Capability */
-	uint32_t lel_transmitOrReceive;										/*!< Transmit or Receive */
-	//uint32_t lel_protocolDependentData;
-	//uint32_t lel_maxBitRate;
-	uint32_t lel_levelPreferenceCount;									/*!< Level of Preference Count */
-	levelPreference_t levelPreference[MAX_LEVEL_PREFERENCE];						/*!< Level Preference */
+	skinny_codec_t lel_payloadCapability;
+	uint32_t lel_transmitOrReceive;
+	uint32_t lel_levelPreferenceCount;
+	levelPreference_t levelPreference[MAX_LEVEL_PREFERENCE];
 	videoCapabilityUnionV1_t capability;
-} videoCapV1_t;													/*!< SKINNY Video Capabilities Structure */
+} videoCapV1_t;
 
 typedef union {
 	h261_VideoCapability_t h261;
 	h263_VideoCapability_t h263;
-	h263P_VideoCapability_t h263P;										/*!< Also known as Vieo */
+	h263P_VideoCapability_t h263P;										/*!< Also known as Video */
 	h264_VideoCapability_t h264;
 } videoCapabilityUnionV2_t;
-/*!
- * \brief SKINNY Video Capabilities Structure
- */
+/* SKINNY Video Capabilities Structure */
 typedef struct {
-	skinny_codec_t lel_payloadCapability;									/*!< PayLoad Capability */
-	uint32_t lel_transmitOrReceive;										/*!< Transmit or Receive */
-	uint32_t lel_levelPreferenceCount;									/*!< Level of Preference Count */
+	skinny_codec_t lel_payloadCapability;
+	uint32_t lel_transmitOrReceive;
+	uint32_t lel_levelPreferenceCount;
 
-	levelPreference_t levelPreference[MAX_LEVEL_PREFERENCE];						/*!< Level Preference */
+	levelPreference_t levelPreference[MAX_LEVEL_PREFERENCE];
 	videoCapabilityUnionV2_t capability;
-} videoCapV2_t;													/*!< SKINNY Video Capabilities Structure */
+} videoCapV2_t;
 
-
-/*!
- * \brief SKINNY Video Capabilities Structure
- */
+/* SKINNY Video Capabilities Structure */
 typedef struct {
-	skinny_codec_t lel_payloadCapability;									/*!< PayLoad Capability */
-	uint32_t lel_transmitOrReceive;										/*!< Transmit or Receive */
-	uint32_t lel_levelPreferenceCount;									/*!< Level of Preference Count */
+	skinny_codec_t lel_payloadCapability;
+	uint32_t lel_transmitOrReceive;
+	uint32_t lel_levelPreferenceCount;
 
-	levelPreference_t levelPreference[MAX_LEVEL_PREFERENCE];						/*!< Level Preference */
+	levelPreference_t levelPreference[MAX_LEVEL_PREFERENCE];
 	uint32_t lel_encryptionCapability;									/*!< Encryption Capability. ENUM(NotEncrCapable:0x00, EncrCapable: 0x01) */
 	videoCapabilityUnionV2_t capability;
 	uint32_t lel_ipv46;											/*!< Enum ModeIPv4: 0x00 / ModeIPv6: 0x01 / Both: 0x02 */
-} videoCapV3_t;													/*!< SKINNY Video Capabilities Structure */
+} videoCapV3_t;
 
-/*!
- * \brief SKINNY Data Capabilities Structure V1
- */
+/* SKINNY Data Capabilities Structure V1 */
 typedef struct {
-	uint32_t lel_payloadCapability;										/*!< Payload Capability */
-	uint32_t lel_transmitOrReceive;										/*!< Transmit or Receive */
-	uint32_t lel_protocolDependentData;									/*!< Protocol Dependent Data */
-	uint32_t lel_maxBitRate;										/*!< Maximum BitRate */
-} dataCapV1_t;													/*!< SKINNY Data Capabilities Structure */
+	uint32_t lel_payloadCapability;
+	uint32_t lel_transmitOrReceive;
+	uint32_t lel_protocolDependentData;
+	uint32_t lel_maxBitRate;
+} dataCapV1_t;
 
-/*!
- * \brief SKINNY Data Capabilities Structure V2
- */
+/* SKINNY Data Capabilities Structure V2 */
 typedef struct {
-	uint32_t lel_payloadCapability;										/*!< Payload Capability */
-	uint32_t lel_transmitOrReceive;										/*!< Transmit or Receive */
-	uint32_t lel_protocolDependentData;									/*!< Protocol Dependent Data */
-	uint32_t lel_maxBitRate;										/*!< Maximum BitRate */
+	uint32_t lel_payloadCapability;
+	uint32_t lel_transmitOrReceive;
+	uint32_t lel_protocolDependentData;
+	uint32_t lel_maxBitRate;
 	uint32_t lel_encryptionCapability;									/*!< Encryption Capability. ENUM(NotEncrCapable:0x00, EncrCapable: 0x01) */
-} dataCapV2_t;													/*!< SKINNY Data Capabilities Structure */
+} dataCapV2_t;
 
-/*!
- * \brief SKINNY Data Parameter Structure
- */
+/* SKINNY Data Parameter Structure */
 typedef struct {
-	uint32_t lel_protocolDependentData;									/*!< Protocol Dependent Data */
-	uint32_t lel_maxBitRate;										/*!< Maximum BitRate */
-} dataParameter_t;												/*!< SKINNY Data Parameter Structure */
+	uint32_t lel_protocolDependentData;
+	uint32_t lel_maxBitRate;
+} dataParameter_t;
 
-/*! 
- * \brief SKINNY Video Parameter Structure 
- * \since 20110718
- */
+/* SKINNY Video Parameter Structure */
 typedef struct {
 	uint32_t bitRate;											/*!< BitRate (default 384) */
 	uint32_t pictureFormatCount;										/*!< Picture Format Count (default 0) */
-	pictureFormat_t pictureFormat[5];									/*!< Picture Format Array */
-	uint32_t confServiceNum;										/*!< Conf Service Number */
+	pictureFormat_t pictureFormat[5];
+	uint32_t confServiceNum;
 	uint32_t profile;
 	uint32_t level;
 	uint32_t macroblockspersec;
@@ -712,16 +630,14 @@ typedef struct {
 	uint32_t dummy6;
 	uint32_t dummy7;
 	uint32_t dummy8;
-} videoParameter_t;												/*!< SKINNY Video Parameter Structure */
+} videoParameter_t;
 
-/*! 
- * \brief SKINNY AnnouncementList Structure
- */
+/* SKINNY AnnouncementList Structure */
 typedef struct {
 	uint32_t lel_local;
 	uint32_t lel_country;
 	uint32_t lel_deviceTone;
-} skinny_announcementList_t;											/*!< SKINNY AnnouncementList Structure */
+} skinny_announcementList_t;
 
 typedef struct {
 	uint32_t lel_active;
@@ -750,7 +666,6 @@ typedef struct {
 		uint8_t FutureUse3;
 	} dynamicPayload;
 } skinny_latentCapsInfo_t;
-
 
 /*
 ========================================
@@ -807,11 +722,8 @@ End OpenMultiMediaChannelMessageNew
 ----------------------------------------
 */
 
-/*!
- * \brief SKINNY Protocol Message Data Union
- */
+/* SKINNY Protocol Message Data Union */
 typedef union {
-
 	/* 0x0048 is phone call list update (comes from phone 7921
 	 * phones when you press the dial button without a number.
 	 * It looks like this:
@@ -838,25 +750,25 @@ typedef union {
 	 * Third DWORD is unknown, Next there is the phone number [260 bytes]
 	 */
 	struct {
-		uint32_t lel_transactionID;									/*!< TransactionID */ /*Number Index (this must be shifted 4 bits right) */
+		uint32_t lel_transactionID; /*Number Index (this must be shifted 4 bits right) */
 		uint32_t lel_featureID;										/*!< LineInstance / BLF: 0x0001 */
-		uint32_t lel_timer;										/*!< Timer */
-		char subscriptionID[256];									/*!< SubscriptionID */
-	} SubscriptionStatReqMessage;										/*!< SubscriptionStatReqMessage Message Structure */
+		uint32_t lel_timer;
+		char subscriptionID[256];
+	} SubscriptionStatReqMessage;
 
 	struct {
-		uint32_t lel_transactionID;									/*!< TransactionID */ /*!< Number Index (this must be shifted 4 bits right) */
+		uint32_t lel_transactionID; /*!< Number Index (this must be shifted 4 bits right) */
 		uint32_t lel_featureID;										/*!< LineInstance / BLF: 0x00001 */
-		uint32_t lel_timer;										/*!< Timer */
+		uint32_t lel_timer;
 		uint32_t lel_cause;										/*!< Cause (Enum): OK: 0x00, RouteFail:0x01, AuthFail:0x02, Timeout:0x03, TrunkTerm:0x04, TrunkForbidden:0x05, Throttle:0x06 */
-	} SubscriptionStatMessage;										/*!< SubscriptionStatMessage */
+	} SubscriptionStatMessage;
 
 	struct {
-		uint32_t lel_transactionID;									/*!< TransactionID */ /*!< Number Index (this must be shifted 4 bits right) */
+		uint32_t lel_transactionID; /*!< Number Index (this must be shifted 4 bits right) */
 		uint32_t lel_featureID;										/*!< LineInstance / BLF: 0x01*/
-		uint32_t lel_status;										/*!< Status */
-		char text[100];                                                                                 /*!< Text */
-	} NotificationMessage;											/*!< NotificationMessage / CallListStatusUpdate */
+		uint32_t lel_status;
+		char text[100];
+	} NotificationMessage;
 
 	struct {
 		uint32_t lel_appID;
@@ -865,7 +777,7 @@ typedef union {
 		uint32_t lel_transactionID;
 		uint32_t lel_dataLength;
 		char data[StationMaxXMLMessage];
-	} UserToDeviceDataMessage;										/*!< User to Device Message Structure */
+	} UserToDeviceDataMessage;
 
 	struct {
 		uint32_t lel_appID;
@@ -878,9 +790,8 @@ typedef union {
 		uint32_t lel_conferenceID;
 		uint32_t lel_appInstanceID;
 		uint32_t lel_routing;
-		//char data[StationMaxXMLMessage];                                                              // dummy char for variable length message (Causes issues on 7960, needs further research)
 		char data[1];											// dummy char for variable length message (Revert)
-	} UserToDeviceDataVersion1Message;									/*!< User to Device Version1 Message Structure */
+	} UserToDeviceDataVersion1Message;
 
 	struct {
 		uint32_t lel_appID;
@@ -889,7 +800,7 @@ typedef union {
 		uint32_t lel_transactionID;
 		uint32_t lel_dataLength;
 		char data[StationMaxXMLMessage];
-	} DeviceToUserDataMessage;										/*!< Device to User Message Structure */
+	} DeviceToUserDataMessage;
 
 	struct {
 		uint32_t lel_appID;
@@ -898,7 +809,7 @@ typedef union {
 		uint32_t lel_transactionID;
 		uint32_t lel_dataLength;
 		char data[StationMaxXMLMessage];
-	} DeviceToUserDataResponseMessage;									/*!< Device to User Response Message Structure */
+	} DeviceToUserDataResponseMessage;
 
 	struct {
 		uint32_t lel_appID;
@@ -912,7 +823,7 @@ typedef union {
 		uint32_t lel_appInstanceID;
 		uint32_t lel_routing;
 		char data[StationMaxXMLMessage];
-	} DeviceToUserDataVersion1Message;									/*!< Device to User Version1 Message Structure */
+	} DeviceToUserDataVersion1Message;
 
 	struct {
 		uint32_t lel_appID;
@@ -1193,7 +1104,7 @@ typedef union {
 	/*
 	  00000000 - 34 07 00 00 00 00 00 00  30 00 00 00 08 00 00 00  - 4.......0....... 			audioCapCount
 	  00000010 - 02 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - ................ VideoCap, dataCap, RTPPayload, customPictureFormatCount
-	  00000020 - 00 00 01 00 0C CC CC CC  00 1B 54 CA 49 9B 00 7B  - ..........T.I..{ 
+	  00000020 - 00 00 01 00 0C CC CC CC  00 1B 54 CA 49 9B 00 7B  - ..........T.I..{
 	  00000030 - AA AA 03 00 00 0C 20 00  02 B4 85 F7 00 01 00 13  - ...... .........
 	  00000040 - 53 45 50 30 30 31 42 35  34 43 41 34 39 39 42 00  - SEP001B54CA499B.
 	  00000050 - 02 00 11 00 00 00 01 01  01 CC 00 04 0A 0F 0F 8B  - ................
@@ -1307,61 +1218,61 @@ typedef union {
 	  00000710 - 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - ................
 	  00000720 - 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - ................
 	  00000730 - 00 00 00 00 00 00 00 00  00 00 00 00              - ............
-	*/	 
+	*/
 	struct {
 		union {
 			struct {
-				uint32_t lel_audioCapCount;									/*!< Audio Capability Count */
-				uint32_t lel_videoCapCount;									/*!< Video Capability Count */
-				uint32_t lel_dataCapCount;									/*!< Data Capability Count */
-				uint32_t lel_RTPPayloadFormat;									/*!< RTP Payload Format */
-				uint32_t lel_customPictureFormatCount;								/*!< Custom Picture Format Count */
-				customPictureFormat_t customPictureFormat[MAX_CUSTOM_PICTURES];					/*!< Custom Picture Format */
+				uint32_t lel_audioCapCount;
+				uint32_t lel_videoCapCount;
+				uint32_t lel_dataCapCount;
+				uint32_t lel_RTPPayloadFormat;
+				uint32_t lel_customPictureFormatCount;
+				customPictureFormat_t customPictureFormat[MAX_CUSTOM_PICTURES];
 				confResource_t confResources;
-				audioCap_t audioCaps[SKINNY_MAX_CAPABILITIES];							/*!< Audio Capabilities */
-				videoCapV1_t videoCaps[SKINNY_MAX_VIDEO_CAPABILITIES];						/*!< Video Capabilities */
-				dataCapV1_t dataCaps[SKINNY_MAX_DATA_CAPABILITIES];						/*!< Data Capabilities */
+				audioCap_t audioCaps[SKINNY_MAX_CAPABILITIES];
+				videoCapV1_t videoCaps[SKINNY_MAX_VIDEO_CAPABILITIES];
+				dataCapV1_t dataCaps[SKINNY_MAX_DATA_CAPABILITIES];
 			} v3;
 			struct {
-				uint32_t lel_audioCapCount;									/*!< Audio Capability Count */
-				uint32_t lel_videoCapCount;									/*!< Video Capability Count */
-				uint32_t lel_dataCapCount;									/*!< Data Capability Count */
-				uint32_t lel_RTPPayloadFormat;									/*!< RTP Payload Format */
-				uint32_t lel_customPictureFormatCount;								/*!< Custom Picture Format Count */
-				customPictureFormat_t customPictureFormat[MAX_CUSTOM_PICTURES];					/*!< Custom Picture Format */
+				uint32_t lel_audioCapCount;
+				uint32_t lel_videoCapCount;
+				uint32_t lel_dataCapCount;
+				uint32_t lel_RTPPayloadFormat;
+				uint32_t lel_customPictureFormatCount;
+				customPictureFormat_t customPictureFormat[MAX_CUSTOM_PICTURES];
 				confResource_t confResources;
-				audioCap_t audioCaps[SKINNY_MAX_CAPABILITIES];							/*!< Audio Capabilities */
+				audioCap_t audioCaps[SKINNY_MAX_CAPABILITIES];
 				videoCapV2_t videoCaps[SKINNY_MAX_VIDEO_CAPABILITIES];						/*!< Video Capabilities V2 */
-				dataCapV1_t dataCaps[SKINNY_MAX_DATA_CAPABILITIES];						/*!< Data Capabilities */
+				dataCapV1_t dataCaps[SKINNY_MAX_DATA_CAPABILITIES];
 			} v16;
 		};
-	} UpdateCapabilitiesMessage;										/*!< Update Capabilities Message Structure */
+	} UpdateCapabilitiesMessage;
 
 	struct {
-		uint32_t lel_audioCapCount;									/*!< Audio Capability Count */
-		uint32_t lel_videoCapCount;									/*!< Video Capability Count */
-		uint32_t lel_dataCapCount;									/*!< Data Capability Count */
-		uint32_t lel_RTPPayloadFormat;									/*!< RTP Payload Format */
-		uint32_t lel_customPictureFormatCount;								/*!< Custom Picture Format Count */
-		customPictureFormat_t customPictureFormat[MAX_CUSTOM_PICTURES];					/*!< Custom Picture Format */
+		uint32_t lel_audioCapCount;
+		uint32_t lel_videoCapCount;
+		uint32_t lel_dataCapCount;
+		uint32_t lel_RTPPayloadFormat;
+		uint32_t lel_customPictureFormatCount;
+		customPictureFormat_t customPictureFormat[MAX_CUSTOM_PICTURES];
 		confResource_t confResources;
-		audioCap_t audioCaps[SKINNY_MAX_CAPABILITIES];							/*!< Audio Capabilities */
+		audioCap_t audioCaps[SKINNY_MAX_CAPABILITIES];
 		videoCapV2_t videoCaps[SKINNY_MAX_VIDEO_CAPABILITIES];						/*!< Video Capabilities V2 */
-		dataCapV1_t dataCaps[SKINNY_MAX_DATA_CAPABILITIES];						/*!< Data Capabilities */
-	} UpdateCapabilitiesV2Message;										/*!< */
+		dataCapV1_t dataCaps[SKINNY_MAX_DATA_CAPABILITIES];
+	} UpdateCapabilitiesV2Message;
 
 	struct {
-		uint32_t lel_audioCapCount;									/*!< Audio Capability Count */
-		uint32_t lel_videoCapCount;									/*!< Video Capability Count */
-		uint32_t lel_dataCapCount;									/*!< Data Capability Count */
-		uint32_t lel_RTPPayloadFormat;									/*!< RTP Payload Format */
-		uint32_t lel_customPictureFormatCount;								/*!< Custom Picture Format Count */
-		customPictureFormat_t customPictureFormat[MAX_CUSTOM_PICTURES];					/*!< Custom Picture Format */
+		uint32_t lel_audioCapCount;
+		uint32_t lel_videoCapCount;
+		uint32_t lel_dataCapCount;
+		uint32_t lel_RTPPayloadFormat;
+		uint32_t lel_customPictureFormatCount;
+		customPictureFormat_t customPictureFormat[MAX_CUSTOM_PICTURES];
 		confResource_t confResources;
-		audioCap_t audioCaps[SKINNY_MAX_CAPABILITIES];							/*!< Audio Capabilities */
+		audioCap_t audioCaps[SKINNY_MAX_CAPABILITIES];
 		videoCapV3_t videoCaps[SKINNY_MAX_VIDEO_CAPABILITIES];						/*!< Video Capabilities V3 */
-		dataCapV2_t dataCaps[SKINNY_MAX_DATA_CAPABILITIES];						/*!< Data Capabilities */
-		uint32_t unknown[70];										/*!< Hmmm */
+		dataCapV2_t dataCaps[SKINNY_MAX_DATA_CAPABILITIES];
+		uint32_t unknown[70];
 	} UpdateCapabilitiesV3Message;									/*!< @see https://sourceforge.net/p/chan-sccp-b/bugs/181 */
 
 	/* AccessoryStatusMessage (0x0073):
@@ -1374,7 +1285,7 @@ typedef union {
 	struct {
 		uint32_t lel_AccessoryID;									/*!< Accessory ID (0x1=HeadSet, 0x2=HandSet, 0x3=Speaker) (MediaPathID) */
 		uint32_t lel_AccessoryStatus;									/*!< Accessory Status (0x1=On, 0x2=Off) (MediaPathEvent) */
-	} AccessoryStatusMessage;										/*!< Accessory Status Message Structure (MediaPathEventMessage) */
+	} AccessoryStatusMessage;
 
 	// Message 0x4A len 12 (cisco ip communicator uses it)
 	// 00000000 - 0C 00 00 00 16 00 00 00  4A 00 00 00 03 00 00 00  - ........J.......
@@ -1382,7 +1293,7 @@ typedef union {
 	struct {
 		uint32_t lel_MediaPathID;									/*!< mediaPathID (0x1=HeadSet, 0x2=HandSet, 0x3=Speaker) */
 		uint32_t lel_MediaPathCapabilities;								/*!< mediaPathCapabilities (0x1=Enable, 0x2=Disable, 0x3=Monitor) */
-	} MediaPathCapabilityMessage;										/*!< \todo MediaPath Capability Message Structure */
+	} MediaPathCapabilityMessage;
 
 	struct {
 		uint32_t lel_conferenceID;
@@ -1391,32 +1302,32 @@ typedef union {
 	} VideoDisplayCommandMessage;
 
 	struct {												// INCOMPLETE
-		uint32_t lel_conferenceID;									/*!< Conference ID */
+		uint32_t lel_conferenceID;
 		uint32_t lel_passThruPartyId;
-		uint32_t lel_callReference;									/*!< Call Reference */
-		uint32_t lel_maxBitRate;									/*!< maxBitRate */
-	} FlowControlNotifyMessage;										/*!< \todo FlowControlNotify Message Structure */
+		uint32_t lel_callReference;
+		uint32_t lel_maxBitRate;
+	} FlowControlNotifyMessage;
 
 	struct {
-		uint32_t lel_lineInstance;              /*!< Instance */
+		uint32_t lel_lineInstance;
 		uint32_t lel_buttonType;                /*!< always 0x15 */
 		union {
 			struct FeatureStateValue {
-				uint8_t rythm;  /*!< 0:off, 1:on, 2-7:different speeds */
-				uint8_t color;  /*!< 0:off, 1:green, 2:red, 3:orange */
-				uint8_t icon;   /*!< 0:open, 1:closed, 2:boxes */
-				uint8_t oldval; /*!< old implementation open/closed */
+				uint8_t rythm;
+				uint8_t color;
+				uint8_t icon;
+				uint8_t oldval;
 			} strct;
 			uint32_t lel_uint32;
 		} stateVal;
-		char textLabel[StationDynamicNameSize]; /*!< SpeedDial Display Name \todo shoud be dynamic - readMessage - OVERRUN remaining bytes=29 messageType=0x146 */
-	} FeatureStatDynamicMessage;                    /*!< Speed Dial Stat Dynamic Message Structure */
+		char textLabel[StationDynamicNameSize];
+	} FeatureStatDynamicMessage;
 
 	struct {
 		uint32_t lel_Number;
 		char DirNumber[StationMaxDirnumSize];
 		char DisplayName[StationMaxNameSize];
-	} SpeedDialStatDynamicMessage;										/*!< Speed Dial Stat Dynamic Message Structure */
+	} SpeedDialStatDynamicMessage;
 
 	struct {
 		uint32_t lel_conferenceID;
@@ -1424,23 +1335,19 @@ typedef union {
 	} ClearConferenceMessage;
 
 	struct {
-		uint32_t lel_lineNumber;									/*!< Line Number */
+		uint32_t lel_lineNumber;
 		uint32_t lel_lineType;										/*!< Line Type: Bit-field: 1-Original Dialed 2-Redirected Dialed, 4-Calling line ID, 8-Calling name ID */
 		char dummy[1];											/*!< Dummy (25+141+141) + 3 terminators */
-		//char lineDirNumber[25];
-		//char lineFullyQualifiedDisplayName[40];
-		//char lineTextLabel[40];
-		//uint32_t lel_lineDisplayOptions;
-	} LineStatDynamicMessage;										/*!< Line Stat Dynmic Message Structure */
+	} LineStatDynamicMessage;
 
 	struct {
-		uint32_t lel_lineInstance;									/*!< Line Instance */
-		uint32_t lel_callReference;									/*!< Call Reference */
-		uint32_t lel_callType;										/*!< Call Type (INBOUND=1, OUTBOUND=2, FORWARD=3) */
-		uint32_t lel_originalCdpnRedirectReason;							/*!< Original CalledParty Redirect Reason */
-		uint32_t lel_lastRedirectingReason;								/*!< Last Redirecting Reason (=1, =2, =3, FOR=4, PICKUP=5) */
-		uint32_t lel_callInstance;									/*!< Call Instance */
-		uint32_t lel_callSecurityStatus;								/*!< Call Security Status */
+		uint32_t lel_lineInstance;
+		uint32_t lel_callReference;
+		uint32_t lel_callType;
+		uint32_t lel_originalCdpnRedirectReason;
+		uint32_t lel_lastRedirectingReason;
+		uint32_t lel_callInstance;
+		uint32_t lel_callSecurityStatus;
 		uint32_t partyPIRestrictionBits;								/*!< Party PI Restriction Bits Structure
 														   0 RestrictCallingPartyName
 														   1 RestrictCallingPartyNumber
@@ -1450,7 +1357,7 @@ typedef union {
 														   5 RestrictOriginalCalledPartyNumber
 														   6 RestrictLastRedirectPartyName
 														   7 RestrictLastRedirectPartyNumber */
-		uint32_t dummy[1];											/*!< Dummy */
+		uint32_t dummy[1];
 														/* Dummy: Consists of:						// v3 - >v18
 														 char callingParty[StationDynamicDirnumSize];		 	// 24 - 25
 														 char calledParty[StationDynamicDirnumSize];			// 24 - 25
@@ -1458,7 +1365,7 @@ typedef union {
 														 char lastRedirectingParty[StationDynamicDirnumSize];		// 24 - 25
 														 char cgpnVoiceMailbox[StationDynamicDirnumSize];		// 24 - 25
 														 char cdpnVoiceMailbox[StationDynamicDirnumSize];		// 24 - 25
-														 char originalCdpnVoiceMailbox[StationDynamicDirnumSize];	// 24 - 25	
+														 char originalCdpnVoiceMailbox[StationDynamicDirnumSize];	// 24 - 25
 														 char lastRedirectingVoiceMailbox[StationDynamicDirnumSize];	// 24 - 25
 														 char callingPartyName[StationDynamicNameSize];			// 40 - 121
 														 char calledPartyName[StationDynamicNameSize];			// 40 - 121
@@ -1467,7 +1374,7 @@ typedef union {
 														 char HuntPilotNumber[StationDynamicDirnumSize];		// 24 - 25
 														 char HuntPilotName[StationDynamicNameSize];			// 40 - 121
 														 */
-														 
+
 														/* V2 (XML)
 														char callingParty[25];
 														char AlternateCallingParty[25];
@@ -1485,7 +1392,7 @@ typedef union {
 														char HuntPilotNumber[25];
 														char HuntPilotName[121];
 														*/
-	} CallInfoDynamicMessage;										/*!< Call Information Dynamic Message Structure */
+	} CallInfoDynamicMessage;
 
 	struct {
 		union {
@@ -1496,12 +1403,12 @@ typedef union {
 			   00000020 - 00 00 00 00 03 00 00 00 00 00 00 00             ............
 			 */
 			struct {
-				uint32_t lel_callReference;							/*!< Call Reference */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
-				uint32_t lel_callReference1;							/*!< Call Reference1 */
+				uint32_t lel_callReference;
+				uint32_t lel_passThruPartyId;
+				uint32_t lel_callReference1;
 				uint32_t bel_ipAddr;								/*!< Ip Address Array (This field is apparently in big-endian format, even though most other fields are in little-endian format.) */
-				uint32_t lel_portNumber;							/*!< Port Number */
-				skinny_mediastatus_t lel_mediastatus;						/*!< Start Media Transmission Status */
+				uint32_t lel_portNumber;
+				skinny_mediastatus_t lel_mediastatus;
 			} v3;
 
 			/* this is from a 6911
@@ -1512,13 +1419,13 @@ typedef union {
 			   0070  00 00 00 00                                         ......                     ; smtStatus=0
 			 */
 			struct {
-				uint32_t lel_callReference;							/*!< Call Reference */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
+				uint32_t lel_callReference;
+				uint32_t lel_passThruPartyId;
 				uint32_t lel_callReference1;							/*!< Call Reference 1 */
-				uint32_t lel_ipv46;								/*!< ipv4 / ipv6 */
+				uint32_t lel_ipv46;
 				char bel_ipAddr[16];								/*!< This field is apparently in big-endian format, even though most other fields are in little-endian format. */
-				uint32_t lel_portNumber;							/*!< Port Number */
-				skinny_mediastatus_t lel_mediastatus;						/*!< startmediatransmission status */
+				uint32_t lel_portNumber;
+				skinny_mediastatus_t lel_mediastatus;
 			} v17;
 
 			/* this is from a 6901 during transfer (notice missing passThruPartyId)
@@ -1529,13 +1436,13 @@ typedef union {
 			   0030 - 00 00 00 00 00 00 00 00  00 00 00 00              - ............              ; mediaStatus, Unkown, Unknown
 			 */
 		};
-	} StartMediaTransmissionAck;										/*!< Start Media Transmission Acknowledgement Structure */
+	} StartMediaTransmissionAck;
 
 	// No struct
 
 	struct {
 		uint8_t dummy;
-	} StationKeepAliveMessage;										/*!< Station Keep Alive Message */
+	} StationKeepAliveMessage;
 
 	/* this is register message from 7940 with load 8.1.1 (protocol 0)
 	 * 00000010 - 00 00 00 00 01 00 00 00 0A 0A 0A D2 07 00 00 00 ................
@@ -1579,14 +1486,14 @@ typedef union {
 	 * 00000040 - 00 00 00 00                                     ....
 	 */
 	struct {
-		StationIdentifier sId;										/*!< Station Identifier */
-		uint32_t stationIpAddr;										/*c0:a8:09:24=192.168.9.36 *//*!< Station IP Address */
-		skinny_devicetype_t lel_deviceType;								/*73:00:00:00=115 *//*!< Device Type as part of SKINNY_DEVICETYPE_* */
+		StationIdentifier sId;
+		uint32_t stationIpAddr;										/*c0:a8:09:24=192.168.9.36 */
+		skinny_devicetype_t lel_deviceType;								/*73:00:00:00=115 */
 		uint32_t lel_maxStreams;									/*05:00:00:00=5 *//*!< Max Streams */
-		uint32_t lel_activeStreams;									/*00:00:00:00=0 *//*!< number of active streams */
+		uint32_t lel_activeStreams;									/*00:00:00:00=0 */
 		StationProtocolFeatures_t protocolFeatures;
 		uint32_t lel_maxConferences;
-		uint32_t lel_activeConferences;									/*00:00:00:00 *//*!< Unknown */
+		uint32_t lel_activeConferences;									/*00:00:00:00 */
 		uint8_t macAddress[12];										/* *//*!< byte array */
 		uint32_t lel_ipV4AddressScope;
 		uint32_t lel_maxNumberOfLines;
@@ -1602,37 +1509,37 @@ typedef union {
 		   02 00 00 00 == 2
 		   ce f1 00 00 // == (61092 / 206 / 241) 1668 dn-size 420
 		 */
-	} RegisterMessage;											/*!< Register Message Structure */
+	} RegisterMessage;
 
 	struct {
 		// All char arrays are in multiples of 32bit
 		struct {
-			char deviceName[StationMaxDeviceNameSize];						/*!< Device Name */
-			uint32_t lel_stationUserId;								/*!< Station User ID (Not In Use) */
-			uint32_t lel_stationInstance;								/*!< Station Instance */
-		} station_identifier;										/*!< Station Identifier */
-		char userName[StationMaxNameSize];								/*!< User Name */
-		char serverName[StationMaxNameSize];								/*!< Server Name */
-		uint32_t lel_numberLines;									/*!< Number of Lines configured */
-		uint32_t lel_numberSpeedDials;									/*!< Number of SpeedDials configured */
+			char deviceName[StationMaxDeviceNameSize];
+			uint32_t lel_stationUserId;
+			uint32_t lel_stationInstance;
+		} station_identifier;
+		char userName[StationMaxNameSize];
+		char serverName[StationMaxNameSize];
+		uint32_t lel_numberLines;
+		uint32_t lel_numberSpeedDials;
 	} ConfigStatMessage;											/*!< Configuration Status Message - Server -> Client */
 
 	struct {
 		// All char arrays are in multiples of 32bit
 		struct {
-			char deviceName[StationMaxDeviceNameSize];						/*!< Device Name */
-			uint32_t lel_stationUserId;								/*!< Station User ID (Not In Use) */
-			uint32_t lel_stationInstance;								/*!< Station Instance */
-		} station_identifier;										/*!< Station Identifier */
-		char userName[StationDynamicNameSize];								/*!< User Name */
-		char serverName[StationDynamicNameSize];							/*!< Server Name */
-		uint32_t lel_numberLines;									/*!< Number of Lines configured */
-		uint32_t lel_numberSpeedDials;									/*!< Number of SpeedDials configured */
+			char deviceName[StationMaxDeviceNameSize];
+			uint32_t lel_stationUserId;
+			uint32_t lel_stationInstance;
+		} station_identifier;
+		char userName[StationDynamicNameSize];
+		char serverName[StationDynamicNameSize];
+		uint32_t lel_numberLines;
+		uint32_t lel_numberSpeedDials;
 	} ConfigStatDynamicMessage;										/*!< Configuration Status Message - Server -> Client */
 
 	struct {
-		uint32_t lel_rtpMediaPort;									/*!< RTP Media Port */
-	} IpPortMessage;											/*!< Ip Port Message - Superseded by including the IP Port info in the OpenReceiveChannelAck Message  */
+		uint32_t lel_rtpMediaPort;
+	} IpPortMessage;
 
 /*
 	struct {
@@ -1651,8 +1558,8 @@ typedef union {
 	} KeypadButtonMessage;											//!< KeyPad Button Message - Client -> Server
 */
 	struct {
-		uint32_t lel_kpButton;										/*!< KeyPad Button */
-		uint32_t lel_lineInstance;									/*!< Line Instance on device */
+		uint32_t lel_kpButton;
+		uint32_t lel_lineInstance;
 		uint32_t lel_callReference;									/*!< Call Reference - current channel identifier */
 		uint32_t lel_unknown1;
 		uint32_t lel_unknown2;
@@ -1662,7 +1569,7 @@ typedef union {
 	// 00000000 - 24 00 00 00 16 00 00 00  04 00 00 00 39 38 30 31  - $...........9801
 	// 00000010 - 31 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - 1...............
 	// 00000020 - 00 00 00 00 00 00 00 00  01 00 00 00              - ............
-	
+
 	/* 7970 v22 packed*/
 	// 00000000 - 24 00 00 00 16 00 00 00  04 00 00 00 39 38 30 31  - $...........9801
 	// 00000010 - 31 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - 1...............
@@ -1671,20 +1578,20 @@ typedef union {
 	struct {
 		union {
 			struct {
-				char calledParty[StationMaxDirnumSize];						/*!< Called Party */
+				char calledParty[StationMaxDirnumSize];
 			} v3;
 			struct {
-				char calledParty[StationMaxDirnumSize];						/*!< Called Party */
+				char calledParty[StationMaxDirnumSize];
 				uint32_t lel_lineInstance;
 			} v17;
 			/* 8945 */
 			struct {										/* packing needed because of char[25] */
-				char calledParty[25];								/*!< Called Party */
+				char calledParty[25];
 				uint32_t lel_lineInstance;
 			} v18u;
 			/* 7970 */
 			struct __attribute__ ((__packed__)) {							/* packing needed because of char[25] */
-				char calledParty[25];								/*!< Called Party */
+				char calledParty[25];
 				uint32_t lel_lineInstance;
 			} v18p;
 		};
@@ -1692,9 +1599,9 @@ typedef union {
 
 	struct {
 		uint32_t lel_stimulus;										/*!< Stimulus (ENUM: skinny_stimulus) */
-		uint32_t lel_stimulusInstance;									/*!< Stimulus Instance (normally set to 1 (except speed dial and line)) */
+		uint32_t lel_stimulusInstance;
 		uint32_t lel_callReference;									/*!< Call Reference - current channel identifier */
-		uint32_t lel_stimulusStatus;									/*!< Stimulus Status */
+		uint32_t lel_stimulusStatus;
 	} StimulusMessage;											/*!< Stimulus Message - Client -> Server */
 
 	/*
@@ -1707,11 +1614,11 @@ typedef union {
 	struct {
 		uint32_t lel_lineInstance;
 		uint32_t lel_callReference;
-	} OffHookMessage;											/*!< Off Hook Message Structure */
+	} OffHookMessage;
 
 	struct {
-		char callingPartyNumber[StationMaxDirnumSize];							/*!< Calling Party Number */
-	} OffHookMessageWithCallingPartyMessage;								/*!< Off Hook With Calling Party Number Message Structure 
+		char callingPartyNumber[StationMaxDirnumSize];
+	} OffHookMessageWithCallingPartyMessage;								/*!< Off Hook With Calling Party Number Message Structure
 														   Goes Off Hook and provides a Calling Party Number
 														   to the PBX used by multiline Devices */
 	/*
@@ -1724,30 +1631,30 @@ typedef union {
 	struct {
 		uint32_t lel_buttonIndex;									/*!< Button Index instead of lineInstance */
 		uint32_t lel_callReference;
-	} OnHookMessage;											/*!< On Hook Message Structure */
+	} OnHookMessage;
 
 	struct {
 		uint32_t lel_lineInstance;
 		uint32_t lel_callReference;
-	} HookFlashMessage;											/*!< Hook Flash Message Structure */
+	} HookFlashMessage;
 
 	struct {
-		skinny_devicetype_t lel_deviceType;								/*!< Device Type as part of SKINNY_DEVICETYPE_* */
-		uint32_t lel_numberOfInServiceStreams;								/*!< Number Of In-Service Streams  */
-		uint32_t lel_maxStreamsPerConf;									/*!< Maximum Streams Per Configuration */
-		uint32_t lel_numberOfOutOfServiceStreams;							/*!< Number of Out-Of_Service Streams */
+		skinny_devicetype_t lel_deviceType;
+		uint32_t lel_numberOfInServiceStreams;
+		uint32_t lel_maxStreamsPerConf;
+		uint32_t lel_numberOfOutOfServiceStreams;
 	} MediaResourceNotification;										/*!< Media Resource Notification - Client -> Server */
 
 	struct {
-		uint32_t lel_lineNumber;									/*!< lineNumber for which Forward should be set */
+		uint32_t lel_lineNumber;
 	} ForwardStatReqMessage;										/*!< Forward Status Request Message - Client -> Server */
 
 	struct {
-		uint32_t lel_speedDialNumber;									/*!< instance on device */
+		uint32_t lel_speedDialNumber;
 	} SpeedDialStatReqMessage;										/*!< Speed Dial Status Request Message - Client -> Server */
 
 	struct {
-		uint32_t lel_lineNumber;									/*!< instance on device */
+		uint32_t lel_lineNumber;
 	} LineStatReqMessage;											/*!< Line Status Request Message - Client -> Server */
 
 	struct {
@@ -1759,7 +1666,7 @@ typedef union {
 	} TimeDateReqMessage;											/*!< Time Date Request Message  - Client -> Server */
 
 	struct {
-		uint32_t lel_totalButtonCount;									/*!< number of available buttons */
+		uint32_t lel_totalButtonCount;
 	} ButtonTemplateReqMessage;										/*!< Button Template Request Message - Client -> Server  */
 
 	struct {
@@ -1767,15 +1674,15 @@ typedef union {
 	} VersionReqMessage;											/*!< Version Request Message - Client -> Server */
 
 	struct {
-		uint32_t lel_count;										/*!< Count */
-		MediaCapabilityStructure caps[SKINNY_MAX_CAPABILITIES];						/*!< MediaCapabilities */
+		uint32_t lel_count;
+		MediaCapabilityStructure caps[SKINNY_MAX_CAPABILITIES];
 	} CapabilitiesResMessage;										/*!< Capabilities Resource Message - Client -> Server */
 
 	struct {
-		uint32_t portCount;										/*!< portCount contains the total number of RTP ports supported by the device. */
-		uint32_t rtpMediaPort[StationMaxPorts];								/*!< RtpMediaPort contains the list of RTP port numbers. */
+		uint32_t portCount;
+		uint32_t rtpMediaPort[StationMaxPorts];
 	} MediaPortListMessage;											/*!< Media Port List Message Structure
-														   Used instead of the StationIpPort message for Devices which have multiple RTP stream ports. 
+														   Used instead of the StationIpPort message for Devices which have multiple RTP stream ports.
 														   Devices like media bridges */
 
 	struct {
@@ -1783,26 +1690,25 @@ typedef union {
 	} ServerReqMessage;											/*!< Server Request Message - Client -> Server */
 
 	struct {
-		skinny_alarm_t lel_alarmSeverity;								/*!< Alarm Severity Level */
-		char text[StationMaxAlarmMessage];								/*!< Alarm Text */
-		uint32_t lel_parm1;										/*!< Alarm Parameter 1 */
-		uint32_t lel_parm2;										/*!< Alarm Parameter 2 */
+		skinny_alarm_t lel_alarmSeverity;
+		char text[StationMaxAlarmMessage];
+		uint32_t lel_parm1;
+		uint32_t lel_parm2;
 	} AlarmMessage;												/*!< Alarm Message - Client -> Server */
 
 	/* 0x34 FeatureStatReqMessage */
 	struct {
 		uint32_t lel_featureIndex;									/*!< index on device */
-		uint32_t lel_featureCapabilities;								/*!< feature capabilities */
+		uint32_t lel_featureCapabilities;
 	} FeatureStatReqMessage;										/*!< Feature Stat Request Message - Client -> Server */
 
 	struct {
-		uint32_t lel_serviceURLIndex;									/*!< instance on device */
+		uint32_t lel_serviceURLIndex;
 	} ServiceURLStatReqMessage;										/*!< Service URL Stat Request Message - Client -> Server */
 
-
 	struct {
-		uint32_t receptionStatus;									/*!< Reception Status */
-		uint32_t passThruPartyID;									/*!< Pass Through Party ID */
+		uint32_t receptionStatus;
+		uint32_t passThruPartyID;
 	} MulticastMediaReceptionAck;										/*!< Multicast Media Reception Acknowledgement Message - Client -> Server */
 
 	struct {
@@ -1812,9 +1718,9 @@ typedef union {
 				uint32_t bel_ipAddr;								/*!< This field is apparently in big-endian format,
 														   even though most other fields are in
 														   little-endian format. */
-				uint32_t lel_portNumber;							/*!< Port Number */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
-				uint32_t lel_callReference;							/*!< Call Reference */
+				uint32_t lel_portNumber;
+				uint32_t lel_passThruPartyId;
+				uint32_t lel_callReference;
 			} v3;
 			struct {
 				skinny_mediastatus_t lel_mediastatus;						/*!< Receive Channel Status (OK:0x00 / Error: 0x01)*/
@@ -1822,12 +1728,12 @@ typedef union {
 				char bel_ipAddr[16];								/*!< This field is apparently in big-endian format,
 														   even though most other fields are in
 														   little-endian format. */
-				uint32_t lel_portNumber;							/*!< Port Number */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
-				uint32_t lel_callReference;							/*!< Call Reference */
+				uint32_t lel_portNumber;
+				uint32_t lel_passThruPartyId;
+				uint32_t lel_callReference;
 			} v17;
 		};
-	} OpenReceiveChannelAck;										/*!< Open Receive Channel Acknowledgement */
+	} OpenReceiveChannelAck;
 
 	struct {
 		union {
@@ -1856,7 +1762,6 @@ typedef union {
 
 	struct {
 		union {
-
 			/*
 			   00000000 - 9C 02 00 00 00 00 00 00  23 00 00 00 39 38 30 33  - ........#...9803
 			   00000010 - 31 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - 1...............
@@ -1903,23 +1808,23 @@ typedef union {
 			   000002A0 - 00 00 00 00                                       - ....
 			 */
 			struct {
-				char DirectoryNumber[StationMaxDirnumSize];					/*!< Directory Number */
-				uint32_t lel_CallIdentifier;							/*!< Call Identifier */
-				uint32_t lel_StatsProcessingType;						/*!< Stats Processing Type */
-				uint32_t lel_SentPackets;							/*!< Sent Packets */
-				uint32_t lel_SentOctets;							/*!< Sent Octets */
-				uint32_t lel_RecvdPackets;							/*!< Received Packets */
+				char DirectoryNumber[StationMaxDirnumSize];
+				uint32_t lel_CallIdentifier;
+				uint32_t lel_StatsProcessingType;
+				uint32_t lel_SentPackets;
+				uint32_t lel_SentOctets;
+				uint32_t lel_RecvdPackets;
 				uint32_t lel_RecvdOctets;							/*!< Received Octets */
-				uint32_t lel_LostPkts;								/*!< Lost Packets */
-				uint32_t lel_Jitter;								/*!< Jitter */
-				uint32_t lel_latency;								/*!< Latency */
+				uint32_t lel_LostPkts;
+				uint32_t lel_Jitter;
+				uint32_t lel_latency;
 				uint32_t lel_QualityStatsSize;
-				char QualityStats[600];								/*!< QualityStatistics */
+				char QualityStats[600];
 			} v3;											/*!< Connection Statistics Response Message - Server -> Client */
 			/*
 			   00000000 - A0 02 00 00 14 00 00 00  23 00 00 00 31 33 37 00  - ........#...137.
 			   00000010 - 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - ................
-			   00000020 - 00 00 00 00 00 00 00 00  03 00 00 00 00 00 00 00  - ................              // unknown1=0, callIdentifier=3, StatsProcessingType=0, 
+			   00000020 - 00 00 00 00 00 00 00 00  03 00 00 00 00 00 00 00  - ................              // unknown1=0, callIdentifier=3, StatsProcessingType=0,
 			   00000030 - 99 00 00 00 A0 5F 00 00  91 00 00 00 A0 5A 00 00  - ....._.......Z..              // sendPackets=99=153,sendOctets=A05F=41055, RecvdPackets=91=145, RecvdOctets=A05A=41050
 			   00000040 - 00 00 00 00 00 00 00 00  00 00 00 00 74 00 00 00  - ............t...              // lostPkts=0, Jitter=0, Latency=0, unknown2=74
 			   00000050 - 4C 6F 67 20 34 37 36 3A  20 6D 6F 73 20 30 2E 30  - Log 476: mos 0.0              //
@@ -1962,24 +1867,24 @@ typedef union {
 			   000002A0 - 00 00 00 00 00 00 00 00                           - ........
 			 */
 			struct {
-				char DirectoryNumber[StationMaxDirnumSize];					/*!< Directory Number */
+				char DirectoryNumber[StationMaxDirnumSize];
 				uint32_t lel_padding;
-				uint32_t lel_CallIdentifier;							/*!< Call Identifier */
-				uint32_t lel_StatsProcessingType;						/*!< Stats Processing Type */
-				uint32_t lel_SentPackets;							/*!< Sent Packets */
-				uint32_t lel_SentOctets;							/*!< Sent Octets */
-				uint32_t lel_RecvdPackets;							/*!< Received Packets */
+				uint32_t lel_CallIdentifier;
+				uint32_t lel_StatsProcessingType;
+				uint32_t lel_SentPackets;
+				uint32_t lel_SentOctets;
+				uint32_t lel_RecvdPackets;
 				uint32_t lel_RecvdOctets;							/*!< Received Octets */
-				uint32_t lel_LostPkts;								/*!< Lost Packets */
-				uint32_t lel_Jitter;								/*!< Jitter */
-				uint32_t lel_latency;								/*!< Latency */
+				uint32_t lel_LostPkts;
+				uint32_t lel_Jitter;
+				uint32_t lel_latency;
 				uint32_t lel_QualityStatsSize;
-				char QualityStats[600];								/*!< QualityStatistics */
+				char QualityStats[600];
 			} v20;											/*!< Connection Statistics Response Message - Client -> Server (used when protocol version >= 19) */
 
 			/*
 			   00000000 - B4 00 00 00 16 00 00 00  23 00 00 00 39 38 30 31  - ........#...9801      // DirectoryNumber= 98031
-			   00000010 - 31 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - 1...............      
+			   00000010 - 31 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - 1...............
 			   00000020 - 00 00 00 00 00 00 00 00  01 00 00 00 00 5C 00 00  - .............\..      // callIdentifier=1, StatsProcessingType= 0, sendPackets=5c=92
 			   00000030 - 00 D0 3D 00 00 59 00 00  00 CC 3B 00 00 00 00 00  - ..=..Y....;.....      // sendOctets=D03D=53309, RecvdPackets=59=89, RecvdOctets=cc3b=52283
 			   00000040 - 00 00 00 00 00 00 00 00  00 6F 00 00 00 4D 4C 51  - .........o...MLQ      // lostPkts=0, Jitter=0, Latency=0, unknown2=6F000000
@@ -1995,19 +1900,18 @@ typedef union {
 #pragma pack(push)
 #pragma pack(1)
 			struct {
-				//char DirectoryNumber[25];
 				char DirectoryNumber[28];
-				uint32_t lel_CallIdentifier;							/*!< Call Identifier */
-				uint8_t lel_StatsProcessingType;						/*!< Stats Processing Type */
-				uint32_t lel_SentPackets;							/*!< Sent Packets */
-				uint32_t lel_SentOctets;							/*!< Sent Octets */
-				uint32_t lel_RecvdPackets;							/*!< Received Packets */
+				uint32_t lel_CallIdentifier;
+				uint8_t lel_StatsProcessingType;
+				uint32_t lel_SentPackets;
+				uint32_t lel_SentOctets;
+				uint32_t lel_RecvdPackets;
 				uint32_t lel_RecvdOctets;							/*!< Received Octets */
-				uint32_t lel_LostPkts;								/*!< Lost Packets */
-				uint32_t lel_Jitter;								/*!< Jitter */
-				uint32_t lel_latency;								/*!< Latency */
+				uint32_t lel_LostPkts;
+				uint32_t lel_Jitter;
+				uint32_t lel_latency;
 				uint32_t lel_QualityStatsSize;
-				char QualityStats[600];								/*!< QualityStatistics */
+				char QualityStats[600];
 			} v22;											/*!< Connection Statistics Response Message - Client -> Server (used when protocol version >= 22) */
 #pragma pack(pop)
 		};
@@ -2015,125 +1919,124 @@ typedef union {
 
 	struct {
 		uint8_t dummy;
-	} SoftKeySetReqMessage;											/*!< Soft Key Set Request Message Structure */
+	} SoftKeySetReqMessage;
 
 	struct {
-		uint32_t lel_softKeyEvent;									/*!< Soft Key Event */
-		uint32_t lel_lineInstance;									/*!< Line Instance on device (indicated callplane) */
-		uint32_t lel_callReference;									/*!< Call Reference ID */
+		uint32_t lel_softKeyEvent;
+		uint32_t lel_lineInstance;
+		uint32_t lel_callReference;
 	} SoftKeyEventMessage;
 
 	struct {
 		uint32_t lel_UnregisterReason;
-	} UnregisterMessage;											/*!< Unregister Message Structure */
+	} UnregisterMessage;
 
 	struct {
 		uint8_t dummy;
-	} SoftKeyTemplateReqMessage;										/*!< Soft Key Template Request Message Structure */
+	} SoftKeyTemplateReqMessage;
 
 	struct {
-		StationIdentifier sId;										/*!< Station Identifier */
-		uint32_t lel_stationIpAddr;									/*!< Station IP Address */
-		skinny_devicetype_t lel_deviceType;								/*!< Device Type as part of SKINNY_DEVICETYPE_* */
+		StationIdentifier sId;
+		uint32_t lel_stationIpAddr;
+		skinny_devicetype_t lel_deviceType;
 		char ipv6Address[16];
-		uint32_t unknown;										/*!< Active Call ?? */
-	} RegisterTokenRequest;											/*!< Register Token Request */
+		uint32_t unknown;
+	} RegisterTokenRequest;
 
 	struct {
 		union{
 			struct {
-				uint32_t lel_conferenceId;							/*!< Conference ID */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
+				uint32_t lel_conferenceId;
+				uint32_t lel_passThruPartyId;
 				uint32_t bel_remoteIpAddr;							/*!< This field is apparently in big-endian */
-				uint32_t lel_remotePortNumber;							/*!< Remote Port Number */
-				uint32_t lel_callRef;								/*!< Call Reference */
+				uint32_t lel_remotePortNumber;
+				uint32_t lel_callRef;
 			} v3;
 			struct {
-				uint32_t lel_conferenceId;							/*!< Conference ID */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
-				uint32_t lel_ipv46;								/*!< ipv4 / ipv6 */
+				uint32_t lel_conferenceId;
+				uint32_t lel_passThruPartyId;
+				uint32_t lel_ipv46;
 				char bel_ipAddr[16];								/*!< This field is apparently in big-endian format, even though most other fields are in little-endian format. */
-				uint32_t lel_remotePortNumber;							/*!< Remote Port Number */
-				uint32_t lel_callRef;								/*!< Call Reference */
+				uint32_t lel_remotePortNumber;
+				uint32_t lel_callRef;
 			} v16;
 		};
 	} MediaTransmissionFailure;
 
 	struct {
-		uint32_t lel_hsMode;										/*!< Head Set Mode */
-	} HeadsetStatusMessage;											/*!< Headset Status Message Structure */
+		uint32_t lel_hsMode;
+	} HeadsetStatusMessage;
 
 	struct {
 		uint32_t lel_keepAliveInterval;									/*!< Keep Alive Interval to the Primary Server */
-		char dateTemplate[StationDateTemplateSize];							/*!< Date Template */
-		uint8_t alignmentPadding;									/*!< Filler 1 */
+		char dateTemplate[StationDateTemplateSize];
+		uint8_t alignmentPadding;
 		uint32_t lel_secondaryKeepAliveInterval;							/*!< Keep Alive Interval to the Secundairy Server */
 		StationProtocolFeatures_t protocolFeatures;
-	} RegisterAckMessage;											/*!< Register Acknowledgement Message Structure */
+	} RegisterAckMessage;
 
 	struct {
 		uint32_t lel_tone;										/*!< Tone (SKINNY_TONE ENUM)*/
 		uint32_t lel_toneDirection;									/*!< Tone Direction (0 = User, 1=Network, 2=Both) */
-		uint32_t lel_lineInstance;									/*!< Line Instance */
-		uint32_t lel_callReference;									/*!< Call Reference */
-	} StartToneMessage;											/*!< Start Tone Message Structure */
+		uint32_t lel_lineInstance;
+		uint32_t lel_callReference;
+	} StartToneMessage;
 
 	struct {
 		/* protocol v3 */
-		uint32_t lel_lineInstance;									/*!< Line Instance */
-		uint32_t lel_callReference;									/*!< Call Reference */
+		uint32_t lel_lineInstance;
+		uint32_t lel_callReference;
 		/* protocol > v11 */
 		uint32_t lel_tone;										/*!< Tone (SKINNY_TONE ENUM)*/
 	} StopToneMessage;
 
 	struct {
-		uint32_t lel_ringMode;										/*!< Ring Mode */
+		uint32_t lel_ringMode;
 		uint32_t lel_ringDuration;									/*!< Ring Duration (Normal:0x01 /Single:0x02) */
-		uint32_t lel_lineInstance;									/*!< Line Instance */
-		uint32_t lel_callReference;									/*!< Call Reference */
-	} SetRingerMessage;											/*!< Set Ringer Message Structure */
+		uint32_t lel_lineInstance;
+		uint32_t lel_callReference;
+	} SetRingerMessage;
 
 	struct {
-		uint32_t lel_stimulus;										/*!< Stimulus */
-		uint32_t lel_stimulusInstance;									/*!< Stimulus Instance */
-		uint32_t lel_lampMode;										/*!< Lamp Mode (MWI) */
-	} SetLampMessage;											/*!< Set Lamp Message Structure */
+		uint32_t lel_stimulus;
+		uint32_t lel_stimulusInstance;
+		uint32_t lel_lampMode;
+	} SetLampMessage;
 
 	struct {
 		uint8_t dummy;
-	} SetHookFlashDetectMessage;											/*!< Set Hkf Detect Message Structure */
+	} SetHookFlashDetectMessage;
 
 	struct {
-		uint32_t lel_speakerMode;									/*!< Spreaker Mode */
-	} SetSpeakerModeMessage;										/*!< Set Speaker Mode Message Structure */
+		uint32_t lel_speakerMode;
+	} SetSpeakerModeMessage;
 
 	struct {
-		uint32_t lel_micMode;										/*!< Microphone Mode */
-	} SetMicroModeMessage;											/*!< Set Microphone Mode Message Structure */
+		uint32_t lel_micMode;
+	} SetMicroModeMessage;
 
 	struct {
 		union {
 			struct {
-				uint32_t lel_conferenceId;							/*!< Conference ID */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
+				uint32_t lel_conferenceId;
+				uint32_t lel_passThruPartyId;
 				uint32_t bel_remoteIpAddr;							/*!< This field is apparently in big-endian
 														   format, even though most other fields are
 														   little-endian. */
-				uint32_t lel_remotePortNumber;							/*!< Remote Port Number */
+				uint32_t lel_remotePortNumber;
 				uint32_t lel_millisecondPacketSize;						/*!< Packet Size per MilliSecond */
-				//uint32_t lel_payloadType;							/*!< Media_PayloadType */
-				skinny_codec_t lel_codecType;							/*!< Skinny Codec Type / Compression Type */
-				uint32_t lel_precedenceValue;							/*!< Precedence Value */
-				uint32_t lel_ssValue;								/*!< Silence Suppression Value */
-				uint32_t lel_maxFramesPerPacket;						/*!< Maximum Frames per Packet */
+				skinny_codec_t lel_codecType;
+				uint32_t lel_precedenceValue;
+				uint32_t lel_ssValue;
+				uint32_t lel_maxFramesPerPacket;
 				uint32_t lel_g723BitRate;							/*!< only used with G.723 payload */
-				uint32_t lel_callReference;							/*!< Conference ID 1 */
+				uint32_t lel_callReference;
 				EncryptionInfo encryptioninfo;
 				/* protocol v11 mods */
-				uint32_t lel_streamPassThroughID;						/*!< Stream Pass-Through ID */
-				uint32_t lel_assocStreamID;							/*!< Associated Stream ID */
+				uint32_t lel_streamPassThroughID;
+				uint32_t lel_assocStreamID;
 				uint32_t lel_RFC2833Type;							/*!< RTP DTMF PayLoad (this is often set to 0x65 (101)) */
-				uint32_t lel_dtmfType;								/*!< RTP Type */
+				uint32_t lel_dtmfType;
 				/* protocol v11 fields */
 				uint32_t lel_mixingMode;
 				uint32_t lel_direction;
@@ -2151,69 +2054,67 @@ typedef union {
 			 * 0080   00 00 00 00 0a 00 00 00 00 00 00 00 00 00 00 00  ................
 			 */
 			struct {
-				uint32_t lel_conferenceId;							/*!< Conference ID */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
+				uint32_t lel_conferenceId;
+				uint32_t lel_passThruPartyId;
 				uint32_t lel_ipv46;								/*!< ipv4 (0)/ ipv6 (1) */
 				char bel_remoteIpAddr[16];							/*!< This field is apparently in big-endian
 														   format, even though most other fields are
 														   little-endian. */
-				uint32_t lel_remotePortNumber;							/*!< Remote Port Number */
+				uint32_t lel_remotePortNumber;
 				uint32_t lel_millisecondPacketSize;						/*!< Packet Size per Millisecond */
-				//uint32_t lel_payloadType;							/*!< Media_PayloadType */
-				skinny_codec_t lel_codecType;							/*!< Skinny Codec Type / Compression Type */
-				uint32_t lel_precedenceValue;							/*!< Precedence Value */
-				uint32_t lel_ssValue;								/*!< Silence Suppression Value */
-				uint32_t lel_maxFramesPerPacket;						/*!< Maximum Frames per Packet */
+				skinny_codec_t lel_codecType;
+				uint32_t lel_precedenceValue;
+				uint32_t lel_ssValue;
+				uint32_t lel_maxFramesPerPacket;
 				uint32_t lel_g723BitRate;							/*!< G.723 BitRate (only used with G.723 payload) */
-				uint32_t lel_callReference;							/*!< Conference ID 1 */
+				uint32_t lel_callReference;
 				EncryptionInfo encryptioninfo;
-				uint32_t lel_streamPassThroughID;						/*!< Stream Pass-Through ID */
-				uint32_t lel_assocStreamID;							/*!< Associated Stream ID */
-				uint32_t lel_RFC2833Type;							/*!< RTP DTMP PayLoad (this is often set to 0x65 (101)) */
+				uint32_t lel_streamPassThroughID;
+				uint32_t lel_assocStreamID;
+				uint32_t lel_RFC2833Type;							/*!< RTP DTMF PayLoad (this is often set to 0x65 (101)) */
 				uint32_t lel_dtmfType;								/*!< RTP Timeout (this is set to 0x0A) */
 				uint32_t lel_mixingMode;
 				uint32_t lel_direction;
 			} v17;
 
 			struct {
-				uint32_t lel_conferenceId;							/*!< Conference ID */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
+				uint32_t lel_conferenceId;
+				uint32_t lel_passThruPartyId;
 				uint32_t lel_ipv46;								/*!< ipv4 (0)/ ipv6 (1) */
 				char bel_remoteIpAddr[16];							/*!< This field is apparently in big-endian
 														   format, even though most other fields are
 														   little-endian. */
-				uint32_t lel_remotePortNumber;							/*!< Remote Port Number */
+				uint32_t lel_remotePortNumber;
 				uint32_t lel_millisecondPacketSize;						/*!< Packet Size per Millisecond */
-				//uint32_t lel_payloadType;							/*!< Media_PayloadType */
-				skinny_codec_t lel_codecType;							/*!< Skinny Codec Type / Compression Type */
-				uint32_t lel_precedenceValue;							/*!< Precedence Value */
-				uint32_t lel_ssValue;								/*!< Silence Suppression Value */
-				uint32_t lel_maxFramesPerPacket;						/*!< Maximum Frames per Packet */
+				skinny_codec_t lel_codecType;
+				uint32_t lel_precedenceValue;
+				uint32_t lel_ssValue;
+				uint32_t lel_maxFramesPerPacket;
 				uint32_t lel_g723BitRate;							/*!< G.723 BitRate (only used with G.723 payload) */
-				uint32_t lel_callReference;							/*!< Conference ID 1 */
+				uint32_t lel_callReference;
 				EncryptionInfo encryptioninfo;
-				uint32_t lel_streamPassThroughID;						/*!< Stream Pass-Through ID */
-				uint32_t lel_assocStreamID;							/*!< Associated Stream ID */
-				uint32_t lel_RFC2833Type;							/*!< RTP DTMP PayLoad (this is often set to 0x65 (101)) */
+				uint32_t lel_streamPassThroughID;
+				uint32_t lel_assocStreamID;
+				uint32_t lel_RFC2833Type;							/*!< RTP DTMF PayLoad (this is often set to 0x65 (101)) */
 				uint32_t lel_dtmfType;								/*!< RTP Timeout (this is set to 0x0A) */
 				uint32_t lel_mixingMode;
 				uint32_t lel_direction;
 				skinny_latentCapsInfo_t latentCapsInfo;
 			} v22;
 		};
-	} StartMediaTransmission;										/*!< Start Media Transmission Structure */
+	} StartMediaTransmission;
 
 	struct {
-		uint32_t lel_conferenceId;									/*!< Conference ID */
-		uint32_t lel_passThruPartyId;									/*!< Pass Through Party ID */
-		uint32_t lel_callReference;									/*!< Conference ID 1 */
+		uint32_t lel_conferenceId;
+		uint32_t lel_passThruPartyId;
+		uint32_t lel_callReference;
 		uint32_t lel_portHandlingFlag;									/*!< 0 = Close Port, 1 = Keep Port Open */
-	} StopMediaTransmission;										/*!< Stop Media Transmission Structure */
+	} StopMediaTransmission;
 
 	struct {
-		uint32_t lel_conferenceId;									/*!< Conference ID */
-		uint32_t lel_passThruPartyId;									/*!< Pass Through Party ID */
-		uint32_t lel_callReference;									/*!< Conference ID 1 */
+		uint32_t lel_conferenceId;
+		uint32_t lel_passThruPartyId;
+		uint32_t lel_callReference;
 		uint32_t lel_portHandlingFlag;									/*!< 0 = Close Port, 1 = Keep Port Open */
 	} StopMultiMediaTransmission;
 
@@ -2222,30 +2123,30 @@ typedef union {
 	} StartMediaReception;
 
 	struct {
-		uint32_t lel_conferenceId;									/*!< Conference ID 1 */
-		uint32_t lel_passThruPartyId;									/*!< Pass Through Party ID */
-	} StopMediaReception;											/*!< Stop Media Reception Structure */
+		uint32_t lel_conferenceId;
+		uint32_t lel_passThruPartyId;
+	} StopMediaReception;
 
 	struct {
-		char callingPartyName[StationMaxNameSize];							/*!< Calling Party Name */
-		char callingParty[StationMaxDirnumSize];							/*!< Calling Party ID */
-		char calledPartyName[StationMaxNameSize];							/*!< Called Party Name */
-		char calledParty[StationMaxDirnumSize];								/*!< Called Party ID */
-		uint32_t lel_lineInstance;									/*!< Line Instance */
-		uint32_t lel_callReference;									/*!< Call Reference */
-		uint32_t lel_callType;										/*!< Call Type (INBOUND=1, OUTBOUND=2, FORWARD=3) */
-		char originalCalledPartyName[StationMaxNameSize];						/*!< Original Calling Party Name */
-		char originalCalledParty[StationMaxDirnumSize];							/*!< Original Calling Party ID */
-		char lastRedirectingPartyName[StationMaxNameSize];						/*!< Original Called Party Name */
-		char lastRedirectingParty[StationMaxDirnumSize];						/*!< Original Called Party ID */
-		uint32_t lel_originalCdpnRedirectReason;								/*!< Original Called Party Redirect Reason */
-		uint32_t lel_lastRedirectingReason;									/*!< Last Redirecting Reason */
-		char cgpnVoiceMailbox[StationMaxDirnumSize];							/*!< Calling Party Voicemail Box */
-		char cdpnVoiceMailbox[StationMaxDirnumSize];							/*!< Called Party Voicemail Box */
-		char originalCdpnVoiceMailbox[StationMaxDirnumSize];						/*!< Original Called Party VoiceMail Box */
-		char lastRedirectingVoiceMailbox[StationMaxDirnumSize];						/*!< Last Redirecting VoiceMail Box */
-		uint32_t lel_callInstance;									/*!< Call Instance */
-		uint32_t lel_callSecurityStatus;								/*!< Call Security Status */
+		char callingPartyName[StationMaxNameSize];
+		char callingParty[StationMaxDirnumSize];
+		char calledPartyName[StationMaxNameSize];
+		char calledParty[StationMaxDirnumSize];
+		uint32_t lel_lineInstance;
+		uint32_t lel_callReference;
+		uint32_t lel_callType;
+		char originalCalledPartyName[StationMaxNameSize];
+		char originalCalledParty[StationMaxDirnumSize];
+		char lastRedirectingPartyName[StationMaxNameSize];
+		char lastRedirectingParty[StationMaxDirnumSize];
+		uint32_t lel_originalCdpnRedirectReason;
+		uint32_t lel_lastRedirectingReason;
+		char cgpnVoiceMailbox[StationMaxDirnumSize];
+		char cdpnVoiceMailbox[StationMaxDirnumSize];
+		char originalCdpnVoiceMailbox[StationMaxDirnumSize];
+		char lastRedirectingVoiceMailbox[StationMaxDirnumSize];
+		uint32_t lel_callInstance;
+		uint32_t lel_callSecurityStatus;
 		uint32_t partyPIRestrictionBits;								/*!< Party PI Restriction Bits (
 														   0 RestrictCallingPartyName
 														   1 RestrictCallingPartyNumber
@@ -2255,90 +2156,89 @@ typedef union {
 														   5 RestrictOriginalCalledPartyNumber
 														   6 RestrictLastRedirectPartyName
 														   7 RestrictLastRedirectPartyNumber) */
-	} CallInfoMessage;											/*!< Call Info Message Structure */
+	} CallInfoMessage;
 
  	struct {
  		union {
  			struct {
-				char calledParty[StationMaxDirnumSize];						/*!< Called Party */
-				uint32_t lel_lineInstance;							/*!< Line Instance */
-				uint32_t lel_callReference;							/*!< Call Reference */
+				char calledParty[StationMaxDirnumSize];
+				uint32_t lel_lineInstance;
+				uint32_t lel_callReference;
  			} v3;
 #pragma pack(push)
 #pragma pack(1)
  			struct {
-				char calledParty[StationDynamicDirnumSize];					/*!< Called Party */
-				uint32_t lel_lineInstance;							/*!< Line Instance */
-				uint32_t lel_callReference;							/*!< Call Reference */
+				char calledParty[StationDynamicDirnumSize];
+				uint32_t lel_lineInstance;
+				uint32_t lel_callReference;
  			} v18;
 #pragma pack(pop)
  		};
- 	} DialedNumberMessage;											/*!< Dialed Number Message Structure */
-	
+ 	} DialedNumberMessage;
+
  	struct {
 		union {
 			struct {
 				uint32_t lel_activeForward;							/*!< Status (0=inactive, 1=active, 4=cm ??) */
-				uint32_t lel_lineNumber;							/*!< Line Number */
-				uint32_t lel_forwardAllActive;							/*!< Call Forward All Status */
-				char cfwdallnumber[StationMaxDirnumSize];					/*!< Call Forward All Number */
-				uint32_t lel_forwardBusyActive;							/*!< Call Forward on Busy Status */
-				char cfwdbusynumber[StationMaxDirnumSize];					/*!< Call Forward on Busy Number */
-				uint32_t lel_forwardNoAnswerActive;						/*!< Call Forward on No-Answer Status */
-				char cfwdnoanswernumber[StationMaxDirnumSize];					/*!< Call Forward on No-Answer Number */
+				uint32_t lel_lineNumber;
+				uint32_t lel_forwardAllActive;
+				char cfwdallnumber[StationMaxDirnumSize];
+				uint32_t lel_forwardBusyActive;
+				char cfwdbusynumber[StationMaxDirnumSize];
+				uint32_t lel_forwardNoAnswerActive;
+				char cfwdnoanswernumber[StationMaxDirnumSize];
 			} v3;
 #pragma pack(push)
 #pragma pack(1)
 			struct {
 				uint32_t lel_activeForward;							/*!< Status (0=inactive, 1=active, 4=cm ??) */
-				uint32_t lel_lineNumber;							/*!< Line Number */
-				uint32_t lel_forwardAllActive;							/*!< Call Forward All Status */
-				char cfwdallnumber[StationDynamicDirnumSize];					/*!< Call Forward All Number */
-				uint32_t lel_forwardBusyActive;							/*!< Call Forward on Busy Status */
-				char cfwdbusynumber[StationDynamicDirnumSize];					/*!< Call Forward on Busy Number */
-				uint32_t lel_forwardNoAnswerActive;						/*!< Call Forward on No-Answer Status */
-				char cfwdnoanswernumber[StationDynamicDirnumSize];				/*!< Call Forward on No-Answer Number */
-			} v18;											
+				uint32_t lel_lineNumber;
+				uint32_t lel_forwardAllActive;
+				char cfwdallnumber[StationDynamicDirnumSize];
+				uint32_t lel_forwardBusyActive;
+				char cfwdbusynumber[StationDynamicDirnumSize];
+				uint32_t lel_forwardNoAnswerActive;
+				char cfwdnoanswernumber[StationDynamicDirnumSize];
+			} v18;
 #pragma pack(pop)
 		};
- 	} ForwardStatMessage;											/*!< Forward Status Message Structure */
+ 	} ForwardStatMessage;
 
 	struct {
-		uint32_t lel_speedDialNumber;									/*!< SpeedDial Number */
-		char speedDialDirNumber[StationMaxDirnumSize];							/*!< SpeedDial Dir Number */
-		char speedDialDisplayName[StationMaxNameSize];							/*!< SpeedDial Display Name */
-	} SpeedDialStatMessage;											/*!< SpeedDial Status Message Structure */
+		uint32_t lel_speedDialNumber;
+		char speedDialDirNumber[StationMaxDirnumSize];
+		char speedDialDisplayName[StationMaxNameSize];
+	} SpeedDialStatMessage;
 
 	struct {
-		uint32_t lel_lineNumber;									/*!< Line Number */
-		char lineDirNumber[StationMaxDirnumSize];							/*!< Line Dir Number */
-		char lineFullyQualifiedDisplayName[StationMaxNameSize];						/*!< Line Fully Qualified Display Name */
-		//char lineDisplayName[StationMaxButtonTemplateNameSize];					/*!< Line Display Name */
+		uint32_t lel_lineNumber;
+		char lineDirNumber[StationMaxDirnumSize];
+		char lineFullyQualifiedDisplayName[StationMaxNameSize];
 		char lineDisplayName[StationMaxNameSize];
 		uint32_t lel_lineDisplayOptions;
-	} LineStatMessage;											/*!< Line Status Messages Structure */
+	} LineStatMessage;
 
 	struct {
-		uint32_t lel_year;										/*!< Year */
-		uint32_t lel_month;										/*!< Month */
-		uint32_t lel_dayOfWeek;										/*!< Day of the Week (\todo Starting su=0|1) */
-		uint32_t lel_day;										/*!< Day */
-		uint32_t lel_hour;										/*!< Hour */
-		uint32_t lel_minute;										/*!< Minute */
-		uint32_t lel_seconds;										/*!< Seconds */
-		uint32_t lel_milliseconds;									/*!< MilliSeconds */
-		uint32_t lel_systemTime;									/*!< System Time */
-	} DefineTimeDate;											/*!< Definition of Date/Time Structure */
+		uint32_t lel_year;
+		uint32_t lel_month;
+		uint32_t lel_dayOfWeek;
+		uint32_t lel_day;
+		uint32_t lel_hour;
+		uint32_t lel_minute;
+		uint32_t lel_seconds;
+		uint32_t lel_milliseconds;
+		uint32_t lel_systemTime;
+	} DefineTimeDate;
 
 	struct {
 		union {
 			struct {
 				uint32_t bel_ipAddr;
-				uint32_t lel_sessionType;							/*!< SKINNY SESSION TYPE: 
-															Chat:0x01, 
-															Whiteboard:0x02, 
-															ApplicationSharing: 0x04, 
-															FileTransfer:0x08, 
+				uint32_t lel_sessionType;							/*!< SKINNY SESSION TYPE:
+															Chat:0x01,
+															Whiteboard:0x02,
+															ApplicationSharing: 0x04,
+															FileTransfer:0x08,
 															Video:0x10 // 10 !??!
 														*/
 			} v3;
@@ -2348,17 +2248,17 @@ typedef union {
 				uint32_t lel_sessionType;							/*!< SKINNY SESSION TYPE: Chat:0x01, Whiteboard:0x02, ApplicationSharing: 0x04, FileTransfer:0x08, Video:0x10 */
 			} v16;
 		};
-	} StartSessionTransmission;										/*!< Start Session Transmission Structure */
+	} StartSessionTransmission;
 
 	struct {
 		union {
 			struct {
 				uint32_t bel_ipAddr;
-				uint32_t lel_sessionType;							/*!< SKINNY SESSION TYPE: 
-															Chat:0x01, 
-															Whiteboard:0x02, 
-															ApplicationSharing: 0x04, 
-															FileTransfer:0x08, 
+				uint32_t lel_sessionType;							/*!< SKINNY SESSION TYPE:
+															Chat:0x01,
+															Whiteboard:0x02,
+															ApplicationSharing: 0x04,
+															FileTransfer:0x08,
 															Video:0x10 // 10 !??!
 														*/
 			} v3;
@@ -2368,30 +2268,30 @@ typedef union {
 				uint32_t lel_sessionType;							/*!< SKINNY SESSION TYPE: Chat:0x01, Whiteboard:0x02, ApplicationSharing: 0x04, FileTransfer:0x08, Video:0x10 */
 			} v16;
 		};
-	} StopSessionTransmission;										/*!< Stop Session Transmission Structure */
+	} StopSessionTransmission;
 
 	struct {
-		uint32_t lel_buttonOffset;									/*!< Button OffSet */
-		uint32_t lel_buttonCount;									/*!< Button Count */
-		uint32_t lel_totalButtonCount;									/*!< Total Number of Buttons */
-		StationButtonDefinition definition[StationMaxButtonTemplateSize];				/*!< Station Button Definition */
-	} ButtonTemplateMessage;										/*!< Button Template Message Structure */
+		uint32_t lel_buttonOffset;
+		uint32_t lel_buttonCount;
+		uint32_t lel_totalButtonCount;
+		StationButtonDefinition definition[StationMaxButtonTemplateSize];
+	} ButtonTemplateMessage;
 
 	struct {
-		uint32_t lel_buttonOffset;									/*!< Button OffSet */
-		uint32_t lel_buttonCount;									/*!< Button Count */
-		uint32_t lel_totalButtonCount;									/*!< Total Number of Buttons */
-		uint32_t dummy[1];											/*!< Station Button Definition */
-	} ButtonTemplateMessageDynamic;										/*!< Identical to ButtonTemplateMessage */
+		uint32_t lel_buttonOffset;
+		uint32_t lel_buttonCount;
+		uint32_t lel_totalButtonCount;
+		uint32_t dummy[1];
+	} ButtonTemplateMessageDynamic;
 
 	struct {
-		char requiredVersion[StationMaxVersionSize];							/*!< Required Version */
-	} VersionMessage;											/*!< Version Message Structure */
+		char requiredVersion[StationMaxVersionSize];
+	} VersionMessage;
 
 	struct {
-		char displayMessage[StationMaxDisplayTextSize];							/*!< Display Message */
-		/*              uint32_t        lel_displayTimeout; *//*!< Display Timeout */
-	} DisplayTextMessage;											/*!< Display Text Message */
+		char displayMessage[StationMaxDisplayTextSize];
+		/*              uint32_t        lel_displayTimeout; */
+	} DisplayTextMessage;
 
 	struct {
 		uint32_t unknown;
@@ -2399,97 +2299,97 @@ typedef union {
 
 	struct {
 		uint8_t dummy;
-	} CapabilitiesReqMessage;										/*!< Capabilities Reqest Message Structure */
+	} CapabilitiesReqMessage;
 
 	struct {
 		uint8_t dummy;
-	} EnunciatorCommandMessage;										/*!< Enunciator Command Message Structure */
+	} EnunciatorCommandMessage;
 
 	struct {
-		char text[StationMaxDisplayTextSize];								/*!< Rejection Text */
-	} RegisterRejectMessage;										/*!< Register Reject Message Structure */
+		char text[StationMaxDisplayTextSize];
+	} RegisterRejectMessage;
 
 	struct {
 		union {
 			struct {
 				ServerIdentifier server[StationMaxServers];							/*!< Server Identifier */
-				uint32_t serverListenPort[StationMaxServers];							/*!< Server is Listening on Port */
+				uint32_t serverListenPort[StationMaxServers];
 				uint32_t serverIpAddr[StationMaxServers];							/*!< Server IP Port */
 			} v3;
 			struct {
 				ServerIdentifier server[StationMaxServers];							/*!< Server Identifier */
-				uint32_t serverListenPort[StationMaxServers];							/*!< Server is Listening on Port */
+				uint32_t serverListenPort[StationMaxServers];
 				struct {
-					uint32_t lel_ipv46;								/*!< ipv4 / ipv6 */
-					char bel_ipAddr[16];								/*!< Multicast IP Address */
+					uint32_t lel_ipv46;
+					char bel_ipAddr[16];
 				} serverIpAddr[StationMaxServers];
-			} v17;			
+			} v17;
 		};
-	} ServerResMessage;											/*!< Server Result Message Structure */
+	} ServerResMessage;
 
 	struct {
 		uint32_t lel_resetType;										/*!< Reset Type (1=Reset, 2=Restart, 3=ApplyConfig) */
-	} Reset;												/*!< Reset Message Structure */
+	} Reset;
 
 	struct {
 		uint8_t dummy;
-	} KeepAliveAckMessage;											/*!< Keep Aliver Acknowledgement Message Structure */
+	} KeepAliveAckMessage;
 
 	struct {
 		union {
 			struct {
-				uint32_t lel_conferenceID;							/*!< Conference ID */
-				uint32_t lel_passThruPartyID;							/*!< Pass Through Party ID */
-				uint32_t bel_ipAddr;								/*!< Multicast IP Address */
-				uint32_t lel_Port;								/*!< Multicast Port */
-				uint32_t lel_millisecondPacketSize;						/*!< Millisecond Packet Size */
-				skinny_codec_t lel_payloadCapability;						/*!< PayLoad Capability */
-				uint32_t lel_echoCancelType;							/*!< Echo Cancelation Type */
+				uint32_t lel_conferenceID;
+				uint32_t lel_passThruPartyID;
+				uint32_t bel_ipAddr;
+				uint32_t lel_Port;
+				uint32_t lel_millisecondPacketSize;
+				skinny_codec_t lel_payloadCapability;
+				uint32_t lel_echoCancelType;
 				uint32_t lel_g723BitRate;							/*!< G.723 Bit Rate (only applies to G.723 */
 			} v3;
 			struct {
-				uint32_t lel_conferenceID;							/*!< Conference ID */
-				uint32_t lel_passThruPartyID;							/*!< Pass Through Party ID */
-				uint32_t lel_ipv46;								/*!< ipv4 / ipv6 */
-				char bel_ipAddr[16];								/*!< Multicast IP Address */
-				uint32_t lel_Port;								/*!< Multicast Port */
-				uint32_t lel_millisecondPacketSize;						/*!< Millisecond Packet Size */
-				skinny_codec_t lel_payloadCapability;						/*!< PayLoad Capability */
-				uint32_t lel_echoCancelType;							/*!< Echo Cancelation Type */
+				uint32_t lel_conferenceID;
+				uint32_t lel_passThruPartyID;
+				uint32_t lel_ipv46;
+				char bel_ipAddr[16];
+				uint32_t lel_Port;
+				uint32_t lel_millisecondPacketSize;
+				skinny_codec_t lel_payloadCapability;
+				uint32_t lel_echoCancelType;
 				uint32_t lel_g723BitRate;							/*!< G.723 Bit Rate (only applies to G.723 */
 			} v16;
 		};
-	} StartMulticastMediaReception;										/*!< Start Multicast Media Reception Message Structure */
+	} StartMulticastMediaReception;
 
 	struct {
 		union {
 			struct {
-				uint32_t lel_conferenceID;							/*!< Conference ID */
-				uint32_t lel_passThruPartyID;							/*!< Pass Through Party ID */
-				uint32_t bel_ipAddr;								/*!< Multicast IP Address */
-				uint32_t lel_Port;								/*!< Multicast Port */
-				uint32_t lel_millisecondPacketSize;						/*!< Millisecond Packet Size */
-				skinny_codec_t lel_payloadCapability;						/*!< PayLoad Capability */
-				uint32_t lel_precedenceValue;							/*!< Precedence Value */
-				uint32_t lel_silenceSuppression;						/*!< Silence Suppression */
-				uint32_t lel_maxFramesPerPacket;						/*!< Max Frames Per Packet */
+				uint32_t lel_conferenceID;
+				uint32_t lel_passThruPartyID;
+				uint32_t bel_ipAddr;
+				uint32_t lel_Port;
+				uint32_t lel_millisecondPacketSize;
+				skinny_codec_t lel_payloadCapability;
+				uint32_t lel_precedenceValue;
+				uint32_t lel_silenceSuppression;
+				uint32_t lel_maxFramesPerPacket;
 				uint32_t lel_g723BitRate;							/*!< G.723 Bit Rate (only applies to G.723 */
 			} v3;
 			struct {
-				uint32_t lel_conferenceID;							/*!< Conference ID */
-				uint32_t lel_passThruPartyID;							/*!< Pass Through Party ID */
-				uint32_t lel_ipv46;								/*!< ipv4 / ipv6 */
-				char bel_ipAddr[16];								/*!< Multicast IP Address */
-				uint32_t lel_Port;								/*!< Multicast Port */
-				uint32_t lel_millisecondPacketSize;						/*!< Millisecond Packet Size */
-				skinny_codec_t lel_payloadCapability;						/*!< PayLoad Capability */
-				uint32_t lel_precedenceValue;							/*!< Precedence Value */
-				uint32_t lel_silenceSuppression;						/*!< Silence Suppression */
-				uint32_t lel_maxFramesPerPacket;						/*!< Max Frames Per Packet */
+				uint32_t lel_conferenceID;
+				uint32_t lel_passThruPartyID;
+				uint32_t lel_ipv46;
+				char bel_ipAddr[16];
+				uint32_t lel_Port;
+				uint32_t lel_millisecondPacketSize;
+				skinny_codec_t lel_payloadCapability;
+				uint32_t lel_precedenceValue;
+				uint32_t lel_silenceSuppression;
+				uint32_t lel_maxFramesPerPacket;
 				uint32_t lel_g723BitRate;							/*!< G.723 Bit Rate (only applies to G.723 */
 			} v16;
 		};
-	} StartMulticastMediaTransmission;									/*!< Start Multicast Media Transmission Message Structure */
+	} StartMulticastMediaTransmission;
 
 	/*
 	 * based on miscCommandType we have other struct
@@ -2497,10 +2397,10 @@ typedef union {
 	 */
 
 	struct {
-		uint32_t lel_conferenceId;									/*!< Conference ID */
-		uint32_t lel_passThruPartyId;									/*!< Pass Through Party ID */
-		uint32_t lel_callReference;									/*!< Call Reference */
-		skinny_miscCommandType_t lel_miscCommandType;							/*!< Miscellaneous Command Type 
+		uint32_t lel_conferenceId;
+		uint32_t lel_passThruPartyId;
+		uint32_t lel_callReference;
+		skinny_miscCommandType_t lel_miscCommandType;							/*!< Miscellaneous Command Type
 															videoFreezePicture: 		0x00
 															videoFastUpdatePicture:		0x01
 															videoFastUpdateGOB: 		0x02
@@ -2514,7 +2414,7 @@ typedef union {
 			uint32_t lel_none;
 
 			struct { /* this one seems to be empty */
-				uint8_t dummy; /*!< Dummy, this is just for addressing */
+				uint8_t dummy;
 			} videoFastUpdatePicture;
 
 			struct {
@@ -2541,7 +2441,7 @@ typedef union {
 				uint32_t lel_firstMB;
 				uint32_t lel_numberOfMBs;
 			} lostPartialPicture;
-			
+
 			struct {
 				uint32_t lel_PictureCount;
 				struct {
@@ -2549,22 +2449,22 @@ typedef union {
 					uint32_t lel_longTermPictureIndex;
 				} pictureReference[4];
 			} recoveryReferencePicture;
-			
+
 			uint32_t lel_temporalSpatialTradeOff;
 		} data;
-	} MiscellaneousCommandMessage;										/*!< Miscellaneous Command Message Structure */
+	} MiscellaneousCommandMessage;
 
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
-		uint32_t lel_passThruPartyID;									/*!< Pass Through Party ID */
+		uint32_t lel_conferenceID;
+		uint32_t lel_passThruPartyID;
 		uint32_t lel_callReference;
-	} StopMulticastMediaReception;										/*!< Stop Multicast Media Reception Message Structure */
+	} StopMulticastMediaReception;
 
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
-		uint32_t lel_passThruPartyID;									/*!< Pass Through Party ID */
+		uint32_t lel_conferenceID;
+		uint32_t lel_passThruPartyID;
 		uint32_t lel_callReference;
-	} StopMulticastMediaTransmission;									/*!< Stop Multicast Media Transmission Message Structure */
+	} StopMulticastMediaTransmission;
 
 	struct {
 		union {
@@ -2578,24 +2478,23 @@ typedef union {
 			 * 0060   00 00 00 00 0a 00 00 00                          ........
 			 */
 			struct {
-				uint32_t lel_conferenceId;							/*!< Conference ID */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
-				uint32_t lel_millisecondPacketSize;						/*!< Millisecond Packet Size */
-				//uint32_t lel_payloadType;							/*!< Media_Payload Type */
-				skinny_codec_t lel_codecType;							/*!< Skinny Codec Type / Compression Type */
-				uint32_t lel_vadValue;								/*!< Voice Activity Detection Value */
+				uint32_t lel_conferenceId;
+				uint32_t lel_passThruPartyId;
+				uint32_t lel_millisecondPacketSize;
+				skinny_codec_t lel_codecType;
+				uint32_t lel_vadValue;
 				uint32_t lel_g723BitRate;							/*!< G.723 Payload (Only applies to G.723) */
 				/* protocol version 5 fields */
-				uint32_t lel_callReference;							/*!< Conference ID */
+				uint32_t lel_callReference;
 				EncryptionInfo encryptioninfo;
-				uint32_t lel_streamPassThroughID;						/*!< Stream Pass-Through ID */
-				uint32_t lel_assocStreamID;							/*!< Associated Stream ID */
+				uint32_t lel_streamPassThroughID;
+				uint32_t lel_assocStreamID;
 				uint32_t lel_RFC2833Type;							/*!< RTP DTMF PayLoad (this is often set to 0x65 (101)) */
 				uint32_t lel_dtmfType;								/*!< RTP Timeout (this is always 0x0A) */
 				/* protocol version 15 fields */
 				uint32_t lel_mixingMode;
 				uint32_t lel_direction;
-				uint32_t bel_remoteIpAddr;							/*!< Ipv4 Address */
+				uint32_t bel_remoteIpAddr;
 				uint32_t lel_remotePortNumber;							/*!< this is always 0xFA0 */
 			} v3;
 
@@ -2611,132 +2510,130 @@ typedef union {
 			 * 0080   00 00 00 00 a0 0f 00 00 00 00 00 00              ............
 			 */
 			struct {
-				uint32_t lel_conferenceId;							/*!< Conference ID */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
-				uint32_t lel_millisecondPacketSize;						/*!< Millisecond Packet Size */
-				//uint32_t lel_payloadType;							/*!< Media_Payload Type */
-				skinny_codec_t lel_codecType;							/*!< Skinny Codec Type / Compression Type */
-				uint32_t lel_vadValue;								/*!< Voice Activity Detection Value */
+				uint32_t lel_conferenceId;
+				uint32_t lel_passThruPartyId;
+				uint32_t lel_millisecondPacketSize;
+				skinny_codec_t lel_codecType;
+				uint32_t lel_vadValue;
 				uint32_t lel_g723BitRate;							/*!< G.723 Payload (Only applies to G.723) */
 				/* protocol version 5 fields */
-				uint32_t lel_callReference;							/*!< Conference ID */
+				uint32_t lel_callReference;
 				EncryptionInfo encryptioninfo;
-				uint32_t lel_streamPassThroughID;						/*!< Stream Pass-Through ID */
-				uint32_t lel_assocStreamID;							/*!< Associated Stream ID */
+				uint32_t lel_streamPassThroughID;
+				uint32_t lel_assocStreamID;
 				uint32_t lel_RFC2833Type;							/*!< RTP DTMF PayLoad (this is often set to 0x65 (101)) */
 				uint32_t lel_dtmfType;								/*!< RTP Timeout (this is always 0x0A) */
 				/* protocol version 15 fields */
 				uint32_t lel_mixingMode;
 				uint32_t lel_direction;
-				uint32_t lel_ipv46;								/*!< ipv4 / ipv6 */
+				uint32_t lel_ipv46;
 				char bel_remoteIpAddr[16];
 				uint32_t lel_remotePortNumber;							/*!< this is always 0xFA0 */
-				skinny_ipAddr_t lel_requestedIpAddrType;					/*!< Unknown */
+				skinny_ipAddr_t lel_requestedIpAddrType;
 			} v17;
 
 			struct {
-				uint32_t lel_conferenceId;							/*!< Conference ID */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
-				uint32_t lel_millisecondPacketSize;						/*!< Millisecond Packet Size */
-				//uint32_t lel_payloadType;							/*!< Media_Payload Type */
-				skinny_codec_t lel_codecType;							/*!< Skinny Codec Type / Compression Type */
-				uint32_t lel_vadValue;								/*!< Voice Activity Detection Value */
+				uint32_t lel_conferenceId;
+				uint32_t lel_passThruPartyId;
+				uint32_t lel_millisecondPacketSize;
+				skinny_codec_t lel_codecType;
+				uint32_t lel_vadValue;
 				uint32_t lel_g723BitRate;							/*!< G.723 Payload (Only applies to G.723) */
 				/* protocol version 5 fields */
-				uint32_t lel_callReference;							/*!< Conference ID */
+				uint32_t lel_callReference;
 				EncryptionInfo encryptioninfo;
-				uint32_t lel_streamPassThroughID;						/*!< Stream Pass-Through ID */
-				uint32_t lel_assocStreamID;							/*!< Associated Stream ID */
+				uint32_t lel_streamPassThroughID;
+				uint32_t lel_assocStreamID;
 				uint32_t lel_RFC2833Type;							/*!< RTP DTMF PayLoad (this is often set to 0x65 (101)) */
 				uint32_t lel_dtmfType;								/*!< RTP Timeout (this is always 0x0A) */
 				/* protocol version 15 fields */
 				uint32_t lel_mixingMode;
 				uint32_t lel_direction;
-				uint32_t lel_ipv46;								/*!< ipv4 / ipv6 */
+				uint32_t lel_ipv46;
 				char bel_remoteIpAddr[16];
 				uint32_t lel_remotePortNumber;							/*!< this is always 0xFA0 */
-				skinny_ipAddr_t lel_requestedIpAddrType;					/*!< Unknown */
+				skinny_ipAddr_t lel_requestedIpAddrType;
 				uint32_t lel_audioLevelAdjustment;
 				skinny_latentCapsInfo_t latentCapsInfo;
 			} v22;
 		};
-	} OpenReceiveChannel;											/*!< Open Receive Channel Message Structure */
+	} OpenReceiveChannel;
 
 	struct {
-		uint32_t lel_conferenceId;									/*!< Conference ID */
-		uint32_t lel_passThruPartyId;									/*!< Pass Through Party ID */
+		uint32_t lel_conferenceId;
+		uint32_t lel_passThruPartyId;
 		/* version 5 fields */
-		uint32_t lel_callReference;									/*!< Conference ID 1 */
+		uint32_t lel_callReference;
 		uint32_t lel_portHandlingFlag;									/*!< 0 = Close Port, 1 = Keep Port Open */
-	} CloseReceiveChannel;											/*!< Close Receive Channel */
+	} CloseReceiveChannel;
 
 	struct {
-		uint32_t lel_conferenceId;									/*!< Conference ID */
-		uint32_t lel_passThruPartyId;									/*!< Pass Through Party ID */
+		uint32_t lel_conferenceId;
+		uint32_t lel_passThruPartyId;
 		/* version 5 fields */
-		uint32_t lel_callReference;									/*!< Conference ID 1 */
+		uint32_t lel_callReference;
 		uint32_t lel_portHandlingFlag;									/*!< 0 = Close Port, 1 = Keep Port Open */
 	} CloseMultiMediaReceiveChannel;
 
 	struct {												// Request Statistics from Phone
 		union {
 			struct {
-				char DirectoryNumber[StationMaxDirnumSize];					/*!< Directory Number */
-				uint32_t lel_callReference;							/*!< Call Reference */
-				uint32_t lel_StatsProcessing;							/*!< Statistics Processing */
+				char DirectoryNumber[StationMaxDirnumSize];
+				uint32_t lel_callReference;
+				uint32_t lel_StatsProcessing;
 			} v3;
 			struct {
-				char DirectoryNumber[25];							/*!< Directory Number */
-				uint32_t lel_callReference;							/*!< Call Reference */
-				uint32_t lel_StatsProcessing;							/*!< Statistics Processing */
+				char DirectoryNumber[25];
+				uint32_t lel_callReference;
+				uint32_t lel_StatsProcessing;
 			} v19;
 		};
-	} ConnectionStatisticsReq;										/*!< Connection Statistics Request Message Structure */
+	} ConnectionStatisticsReq;
 
 	struct {
-		uint32_t lel_softKeyOffset;									/*!< Soft Key Off Set */
-		uint32_t lel_softKeyCount;									/*!< Soft Key Count */
-		uint32_t lel_totalSoftKeyCount;									/*!< Total Number of Soft Keys */
+		uint32_t lel_softKeyOffset;
+		uint32_t lel_softKeyCount;
+		uint32_t lel_totalSoftKeyCount;
 		StationSoftKeyDefinition definition[StationMaxSoftKeyDefinition];				/*!< Station Soft Key Definition: Max:32 */
-	} SoftKeyTemplateResMessage;										/*!< Soft Key Template Result Message Structure */
+	} SoftKeyTemplateResMessage;
 
 	struct {
-		uint32_t lel_softKeySetOffset;									/*!< Soft Key Off Set */
-		uint32_t lel_softKeySetCount;									/*!< Soft Key Count */
-		uint32_t lel_totalSoftKeySetCount;								/*!< Total Number of Soft Keys */
+		uint32_t lel_softKeySetOffset;
+		uint32_t lel_softKeySetCount;
+		uint32_t lel_totalSoftKeySetCount;
 		StationSoftKeySetDefinition definition[StationMaxSoftKeySetDefinition];				/*!< Station Soft Key Definition: Max:16*/
-	} SoftKeySetResMessage;											/*!< Soft Key Set Result Message Structure */
+	} SoftKeySetResMessage;
 
 	struct {
-		uint32_t lel_lineInstance;									/*!< Line Instance */
-		uint32_t lel_callReference;									/*!< Call Reference */
-		uint32_t lel_softKeySetIndex;									/*!< Soft Key Set Index */
-		uint32_t les_validKeyMask;									/*!< Valid Key Mask */
-	} SelectSoftKeysMessage;										/*!< Select Soft Keys Message Structure */
+		uint32_t lel_lineInstance;
+		uint32_t lel_callReference;
+		uint32_t lel_softKeySetIndex;
+		uint32_t les_validKeyMask;
+	} SelectSoftKeysMessage;
 
 	struct {
 		uint32_t lel_callState;										/*!< Call State: ENUM: skinny_callstate_ */
-		uint32_t lel_lineInstance;									/*!< Line Instance */
-		uint32_t lel_callReference;									/*!< Call Reference */
+		uint32_t lel_lineInstance;
+		uint32_t lel_callReference;
 		skinny_callinfo_visibility_t lel_visibility;							/*!< Visibility / Privacy: ENUM : none, limited, full */
 		struct {
-			uint32_t lel_level;									/*!< Level */
-			uint32_t lel_domain;									/*!< Domain */
-		} precedence;											/*!< Precedency / Priority */
-	} CallStateMessage;											/*!< Call State Message Structure */
+			uint32_t lel_level;
+			uint32_t lel_domain;
+		} precedence;
+	} CallStateMessage;
 
 	/* display prompt */
 	struct {
-		uint32_t lel_messageTimeout;									/*!< Message Timeout */
+		uint32_t lel_messageTimeout;
 		char promptMessage[32];										/*!< Prompt Message (Max Lenght 32) */
-		uint32_t lel_lineInstance;									/*!< Line Instance */
-		uint32_t lel_callReference;									/*!< Call Reference */
-	} DisplayPromptStatusMessage;										/*!< Display Prompt Status Message Structure */
+		uint32_t lel_lineInstance;
+		uint32_t lel_callReference;
+	} DisplayPromptStatusMessage;
 
 	struct {
-		uint32_t lel_messageTimeout;									/*!< Message Timeout */
-		uint32_t lel_lineInstance;									/*!< Line Instance  */
-		uint32_t lel_callReference;									/*!< Call Reference */
+		uint32_t lel_messageTimeout;
+		uint32_t lel_lineInstance;
+		uint32_t lel_callReference;
 		/* here follow the message string
 		 * take care rest of size should
 		 * be calculated with string
@@ -2745,18 +2642,18 @@ typedef union {
 		 */
 		uint32_t dummy[1];											/*!< Dummy, this is just for addressing
 															MaxLength:97 */
-	} DisplayDynamicPromptStatusMessage;									/*!< Display Dynamic Prompt Status Message Structure */
+	} DisplayDynamicPromptStatusMessage;
 
 	struct {
-		uint32_t lel_lineInstance;									/*!< Line Instance */
-		uint32_t lel_callReference;									/*!< Call Reference */
-	} ClearPromptStatusMessage;										/*!< Clear Prompt Status Message Structure */
+		uint32_t lel_lineInstance;
+		uint32_t lel_callReference;
+	} ClearPromptStatusMessage;
 
 	/* display notify */
 	struct {
-		uint32_t lel_displayTimeout;									/*!< Display Timeout */
-		char displayMessage[StationMaxDisplayNotifySize];						/*!< Display Message */
-	} DisplayNotifyMessage;											/*!< Display Notify Message Structure */
+		uint32_t lel_displayTimeout;
+		char displayMessage[StationMaxDisplayNotifySize];
+	} DisplayNotifyMessage;
 
 	struct {												// OK
 		uint32_t lel_displayTimeout;
@@ -2765,14 +2662,14 @@ typedef union {
 
 	struct {
 		uint8_t dummy;
-	} ClearNotifyMessage;											/*!< Clear Notify Message Structure */
+	} ClearNotifyMessage;
 
 	/* display pri notify */
 	struct {
-		uint32_t lel_displayTimeout;									/*!< Display Timeout */
-		uint32_t lel_priority;										/*!< Priority */
-		char displayMessage[StationMaxDisplayNotifySize];						/*!< Display Message */
-	} DisplayPriNotifyMessage;										/*!< Display Priority Notify Message Structure */
+		uint32_t lel_displayTimeout;
+		uint32_t lel_priority;
+		char displayMessage[StationMaxDisplayNotifySize];
+	} DisplayPriNotifyMessage;
 
 	struct {												// OK
 		uint32_t lel_displayTimeout;
@@ -2781,33 +2678,33 @@ typedef union {
 	} DisplayDynamicPriNotifyMessage;									// 0x0144;
 
 	struct {
-		uint32_t lel_priority;										/*!< Priority */
-	} ClearPriNotifyMessage;										/*!< Clear Priority Notify Message Structure */
+		uint32_t lel_priority;
+	} ClearPriNotifyMessage;
 
 	/* 0x11F FeatureStatMessage */
 	struct {
-		uint32_t lel_lineInstance;                                                                      /*!< Instance */
+		uint32_t lel_lineInstance;
 		uint32_t lel_buttonType;                                                                        /*!< always 0x15 */
-		char textLabel[StationMaxNameSize];                                                             /*!< Feature Text Label */
-		uint32_t lel_stateValue;                                                                        /*!< Feature Status */
-	} FeatureStatMessage;											/*!< Feature Status Message Structure */
+		char textLabel[StationMaxNameSize];
+		uint32_t lel_stateValue;
+	} FeatureStatMessage;
 
 	struct {
 		uint32_t lel_serviceURLIndex;									/*!< Service URL Index */
-		char URL[StationMaxServiceURLSize];								/*!< Actual URL */
-		char label[StationMaxNameSize];									/*!< Label */
-	} ServiceURLStatMessage;										/*!< Service URL Stat Message Structure */
+		char URL[StationMaxServiceURLSize];
+		char label[StationMaxNameSize];
+	} ServiceURLStatMessage;
 
 	struct {												// Used Above Protocol 7 */
 		uint32_t lel_serviceURLIndex;									/*!< Service URL Index */
-		uint32_t dummy[1];										/*!< Dummy */
-	} ServiceURLStatDynamicMessage;										/*!< Service URL Stat Message Structure */
+		uint32_t dummy[1];
+	} ServiceURLStatDynamicMessage;
 
 	struct {
-		uint32_t lel_status;										/*!< Status */
-		uint32_t lel_callReference;									/*!< Call Reference */
-		uint32_t lel_lineInstance;									/*!< Line Instance */
-	} CallSelectStatMessage;										/*!< Call Select Status Message Structure */
+		uint32_t lel_status;
+		uint32_t lel_callReference;
+		uint32_t lel_lineInstance;
+	} CallSelectStatMessage;
 
 	struct {
 		union {
@@ -2860,129 +2757,106 @@ typedef union {
 
 	struct {
 		union {
-			/*!
-			 * \since 20100104 -MC
-			 * \note update 20100722
-			 * 0000   ac 00 00 00 00 00 00 00 32 01 00 00 0b 00 00 01
-			 0010   82 00 00 01 67 00 00 00 ac 11 01 66 45 15 00 00
-			 0020   0b 00 00 01 00 00 00 00 61 00 00 00 88 00 00 00
-			 0030   00 0f 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-			 0040   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-			 0050   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-			 0060   00 00 00 00 40 00 00 00 32 00 00 00 5b 52 3a 4c
-			 0070   50 20 2d 20 48 50 3a 20 30 2c 20 4e f8 15 24 00
-			 0080   c4 02 89 09 9c ee 5a 0a 88 06 18 00 54 ef 5a 0a
-			 0090   64 7e fb 77 58 31 f8 77 ff ff ff ff 64 ef 5a 0a
-			 00a0   c2 b7 fc 77 78 07 18 00 20 16 24 00 40 16 24 00
-			 00b0   20 16 24 00
-			 * 
-			 * 
-			 */
 			struct {
-				uint32_t lel_conferenceID;							/*!< Conference ID */				// 0b 00 00 01
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */			// 82 00 00 01
+				uint32_t lel_conferenceID; // 0b 00 00 01
+				uint32_t lel_passThruPartyId; // 82 00 00 01
 				//skinny_codec_t lel_payloadCapability;						/*!< payload capability */			// 67 00 00 00 = codec 103
-				skinny_codec_t lel_codecType;							/*!< Skinny Codec Type / Compression Type */	// 67 00 00 00 = codec 103 = H264
+				skinny_codec_t lel_codecType; // 67 00 00 00 = codec 103 = H264
 				uint32_t bel_remoteIpAddr;							/*!< This field is apparently in big-endian
 														   format, even though most other fields are
 														   little-endian. */				// ac 11 01 66
-				uint32_t lel_remotePortNumber;							/*!< Remote Port Number */			// 45 15 00 00
-				uint32_t lel_callReference;							/*!< Call Reference */				// 0b 00 00 01
-				uint32_t lel_payload_rfc_number;						/*!< Payload RFC Number */			// 00 00 00 00
-				uint32_t lel_payloadType;							/*!< payload type */				// 61 00 00 00 = payload 97  == rtpmap
-				uint32_t lel_DSCPValue;								/*!< DSCP Value */				// 88 00 00 00
-				videoParameter_t videoParameter;						/*!< Video Parameter */
+				uint32_t lel_remotePortNumber; // 45 15 00 00
+				uint32_t lel_callReference; // 0b 00 00 01
+				uint32_t lel_payload_rfc_number; // 00 00 00 00
+				uint32_t lel_payloadType; // 61 00 00 00 = payload 97  == rtpmap
+				uint32_t lel_DSCPValue; // 88 00 00 00
+				videoParameter_t videoParameter;
 			} v3;
 
 			struct {
-				uint32_t lel_conferenceID;							/*!< Conference ID */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
-				//skinny_codec_t lel_payloadCapability;						/*!< payload capability */
-				skinny_codec_t lel_codecType;							/*!< Skinny Codec Type / Compression Type */	// 67 00 00 00 = codec 103 = H264
-				uint32_t lel_ipv46;								/*!<  */
+				uint32_t lel_conferenceID;
+				uint32_t lel_passThruPartyId;
+				skinny_codec_t lel_codecType; // 67 00 00 00 = codec 103 = H264
+				uint32_t lel_ipv46;
 
 				char bel_remoteIpAddr[16];							/*!< This field is apparently in big-endian
 														   format, even though most other fields are
 														   little-endian. */
-				uint32_t lel_remotePortNumber;							/*!< Remote Port Number */
-				uint32_t lel_callReference;							/*!< Call Reference */
-				uint32_t lel_payload_rfc_number;						/*!< Payload RFC Number */
-				uint32_t lel_payloadType;							/*!< payload type */
-				uint32_t lel_DSCPValue;								/*!< DSCP Value */
+				uint32_t lel_remotePortNumber;
+				uint32_t lel_callReference;
+				uint32_t lel_payload_rfc_number;
+				uint32_t lel_payloadType;
+				uint32_t lel_DSCPValue;
 
-				videoParameter_t videoParameter;						/*!< Data Parameter */
+				videoParameter_t videoParameter;
 				EncryptionInfo encryptionInfo;
-				uint32_t lel_streamPassThroughID;						/*!< Stream Pass-Through ID */
-				uint32_t lel_assocStreamID;							/*!< Associated Stream ID */
+				uint32_t lel_streamPassThroughID;
+				uint32_t lel_assocStreamID;
 			} v17;
 		};
-	} StartMultiMediaTransmission;										/*!< Start MultiMedia Transmission Message Structure */
+	} StartMultiMediaTransmission;
 
 	struct {
 		union {
 			struct {
-				uint32_t lel_callReference;							/*!< Call Reference */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
-				uint32_t lel_callReference1;							/*!< Call Reference1 */
+				uint32_t lel_callReference;
+				uint32_t lel_passThruPartyId;
+				uint32_t lel_callReference1;
 				uint32_t bel_ipAddr;								/*!< This field is apparently in big-endian format, even though most other fields are little-endian. */
-				uint32_t lel_portNumber;							/*!< Port Number */
-				skinny_mediastatus_t lel_mediastatus;						/*!< Start Media Transmission Status */
-				uint32_t lel_unknown;								/*!< Unknown (Does this actually Exist) */
+				uint32_t lel_portNumber;
+				skinny_mediastatus_t lel_mediastatus;
+				uint32_t lel_unknown;
 			} v3;
 
 			struct {
-				uint32_t lel_callReference;							/*!< Call Reference */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through Party ID */
+				uint32_t lel_callReference;
+				uint32_t lel_passThruPartyId;
 				uint32_t lel_callReference1;							/*!< Call Reference 1 */
-				uint32_t lel_ipv46;								/*!< ipv4 / ipv6 */
+				uint32_t lel_ipv46;
 				char bel_ipAddr[16];								/*!< This field is apparently in big-endian format, even though most other fields are in little-endian format. */
-				uint32_t lel_portNumber;							/*!< Port Number */
-				skinny_mediastatus_t lel_mediastatus;						/*!< startmediatransmission status */
-				uint32_t lel_unknown;								/*!< Unknown (Does this actually Exist)*/
+				uint32_t lel_portNumber;
+				skinny_mediastatus_t lel_mediastatus;
+				uint32_t lel_unknown;
 			} v17;
 		};
-	} StartMultiMediaTransmissionAck;									/*!< Start Media Transmission Acknowledgement Structure */
+	} StartMultiMediaTransmissionAck;
 
 	struct {
-		uint32_t lel_lineInstance;									/*!< Line Instance */
-	} ActivateCallPlaneMessage;										/*!< Activate Call Plane Message Structure */
-
-	struct {
-		uint8_t dummy;
-	} DeactivateCallPlaneMessage;										/*!< Deactivate Call Plane Message Structure */
-
-	struct {
-		uint32_t lel_status;										/*!< Status */
-	} UnregisterAckMessage;											/*!< Unregister Ackknowledge Message Structure */
-
-	struct {
-		uint32_t lel_lineInstance;									/*!< Line Instance */
-		uint32_t lel_callReference;									/*!< Call Reference */
-	} BackSpaceResMessage;											/*!< Back Space Request Message Message Structure */
+		uint32_t lel_lineInstance;
+	} ActivateCallPlaneMessage;
 
 	struct {
 		uint8_t dummy;
-	} RegisterTokenAck;											/*!< Register Token Ackknowledge Message Structure */
+	} DeactivateCallPlaneMessage;
 
 	struct {
-		uint32_t lel_tokenRejWaitTime;									/*!< Back Off Time */
-	} RegisterTokenReject;											/*!< Register Token Reject Message Structure */
+		uint32_t lel_status;
+	} UnregisterAckMessage;
 
-	/*!
-	 * 
-	 * \since 20100103 -MC
-	 */
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
-		uint32_t lel_passThruPartyId;									/*!< Pass Through Party ID */
-		uint32_t lel_callReference;									/*!< Call Reference */
-		uint32_t maxBitRate;										/*!< Maximum BitRate */
+		uint32_t lel_lineInstance;
+		uint32_t lel_callReference;
+	} BackSpaceResMessage;
+
+	struct {
+		uint8_t dummy;
+	} RegisterTokenAck;
+
+	struct {
+		uint32_t lel_tokenRejWaitTime;
+	} RegisterTokenReject;
+
+	struct {
+		uint32_t lel_conferenceID;
+		uint32_t lel_passThruPartyId;
+		uint32_t lel_callReference;
+		uint32_t maxBitRate;
 	} FlowControlCommandMessage;
 
 	/* SCCP Firmware version > 9.1 */
 	struct {
-		char le_data[StationMaxXMLAlarmMessage];							/*!< XML Alarm Message Data */
-	} XMLAlarmMessage;											/*!< XML Alarm Message Structure */
+		char le_data[StationMaxXMLAlarmMessage];
+	} XMLAlarmMessage;
 
 	struct {
 		uint32_t lel_unknown;
@@ -2990,10 +2864,10 @@ typedef union {
 
 	/* SPA */
 	struct {
-		StationIdentifier sId;										/*!< Station Identifier */
-		uint32_t lel_stationIpAddr;									/*!< Station IP Address */
-		skinny_devicetype_t lel_deviceType;								/*!< Device Type as part of SKINNY_DEVICETYPE_* */
-		uint32_t maxStreams;										/*!< Max Streams */
+		StationIdentifier sId;
+		uint32_t lel_stationIpAddr;
+		skinny_devicetype_t lel_deviceType;
+		uint32_t maxStreams;
 	} SPCPRegisterTokenRequest;
 
 	struct {
@@ -3019,7 +2893,7 @@ typedef union {
 	 00000070 - 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - ................
 	 00000080 - 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - ................
 	 00000090 - 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - ................
-	 000000A0 - 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - ................	 
+	 000000A0 - 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - ................
 	 *
 	 *      This was sent by a single 7970 with one CP-7914 attached.
 	 *      Message is related to Addons and i suppose it notifies their
@@ -3062,7 +2936,7 @@ typedef union {
 
 	struct {
 		uint32_t lel_disposition;									/*!< Call History Disposition Enum */
-		uint32_t lel_lineInstance;									
+		uint32_t lel_lineInstance;
 		uint32_t lel_callReference;
 	} CallHistoryDispositionMessage;
 
@@ -3131,52 +3005,52 @@ typedef union {
 	} UnSubscribeDtmfPayloadErrMessage;
 
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
-		uint32_t lel_numberOfReservedParticipants;							/*!< Number of Reserved Participants */
+		uint32_t lel_conferenceID;
+		uint32_t lel_numberOfReservedParticipants;
 		uint32_t lel_resourceType;									/*!< Resource Type: Conf:0x00, IVR:0x01 */
-		uint32_t lel_appID;										/*!< Application ID */
-		char appConfID[32];										/*!< Application ConfID */
-		char lel_appData[24];										/*!< Application Data */
-		uint32_t lel_dataLength;									/*!< Application DataLength */
+		uint32_t lel_appID;
+		char appConfID[32];
+		char lel_appData[24];
+		uint32_t lel_dataLength;
 		char lel_passThruData[];									/*!< Pass Through Data (variable size / max 2000)*/
-	} CreateConferenceReqMessage;										/*!< Create Conference Request Message Structure */
+	} CreateConferenceReqMessage;
 
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
+		uint32_t lel_conferenceID;
 		uint32_t lel_result;										/*!< Result ENUM(OK:0x00, ResourceNotAvailable: 0x01, ConferenceAlreadyExists: 0x02, SystemErr:0x03) */
-		uint32_t lel_dataLength;									/*!< Application DataLength */
+		uint32_t lel_dataLength;
 		char lel_passThruData[];									/*!< Pass Through Data (variable size / max 2000)*/
 	} CreateConferenceResMessage;
 
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
-	} DeleteConferenceReqMessage;										/*!< Delete Conference Request Message Structure */
+		uint32_t lel_conferenceID;
+	} DeleteConferenceReqMessage;
 
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
+		uint32_t lel_conferenceID;
 		uint32_t lel_result;										/*!< Result ENUM(OK:0x00, ConferenceDoesNotExist: 0x01, SystemErr: 0x02)*/
 	} DeleteConferenceResMessage;
 
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
-		uint32_t lel_numberOfReservedParticipants;							/*!< Number of Participants to be reserved */
-		uint32_t lel_appID;										/*!< App ID */
-		char appConfID[StationMaxDisplayTextSize];							/*!< app Conf ID */
-		char appData[StationMaxDirnumSize];								/*!< Add Data */
-		uint32_t lel_dataLength;									/*!< Application DataLength */
+		uint32_t lel_conferenceID;
+		uint32_t lel_numberOfReservedParticipants;
+		uint32_t lel_appID;
+		char appConfID[StationMaxDisplayTextSize];
+		char appData[StationMaxDirnumSize];
+		uint32_t lel_dataLength;
 		char lel_passThruData[];									/*!< Pass Through Data (variable size / max 2000)*/
 	} ModifyConferenceReqMessage;
 
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
+		uint32_t lel_conferenceID;
 		uint32_t lel_result;										/*!< Result ENUM(OK:0x00, ResourceNotAvailable: 0x01, ConferenceDoesNotExist: 0x02, InvalidParameter: 0x03, MoreActiveCallsThanReserved: 0x04, InvalidResourceType:0x05, SystemErr:0x06) */
-		uint32_t lel_dataLength;									/*!< Application DataLength */
+		uint32_t lel_dataLength;
 		char lel_passThruData[];									/*!< Pass Through Data (variable size / max 2000)*/
 	} ModifyConferenceResMessage;
 
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
-		uint32_t lel_callReference;									/*!< Call Reference */
+		uint32_t lel_conferenceID;
+		uint32_t lel_callReference;
 		uint32_t partyPIRestrictionBits;								/*!< Party PI Restriction Bits Structure
 														   0 RestrictCallingPartyName
 														   1 RestrictCallingPartyNumber
@@ -3186,16 +3060,16 @@ typedef union {
 														   5 RestrictOriginalCalledPartyNumber
 														   6 RestrictLastRedirectPartyName
 														   7 RestrictLastRedirectPartyNumber */
-		char participantName[StationMaxNameSize];							/*!< Participant Name */
-		char participantNumber[StationMaxDirnumSize];							/*!< Participant Number */
-		char conferenceName[StationMaxDisplayTextSize];							/*!< Conference Name*/
-	} AddParticipantReqMessage;										/*!< Add Participent to Conference Request Message*/
+		char participantName[StationMaxNameSize];
+		char participantNumber[StationMaxDirnumSize];
+		char conferenceName[StationMaxDisplayTextSize];
+	} AddParticipantReqMessage;
 
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
-		uint32_t lel_callReference;									/*!< Call Reference */
+		uint32_t lel_conferenceID;
+		uint32_t lel_callReference;
 		uint32_t lel_result;										/*!< Result ENUM(OK:0x00, ResourceNotAvailable: 0x01, ConferenceDoesNotExist: 0x02, DeplicateCallReference:0x03, SystemErr:0x04) */
-		uint32_t lel_bridgeParticipantID;								/*!< Birdge Participant ID */
+		uint32_t lel_bridgeParticipantID;
 	} AddParticipantResMessage;
 
 	struct {
@@ -3203,34 +3077,34 @@ typedef union {
 	} AuditConferenceReqMessage;
 
 	struct {
-		uint32_t lel_last;										/*!< last */
-		uint32_t lel_numberOfEntries;									/*!< Number Of Entries */
+		uint32_t lel_last;
+		uint32_t lel_numberOfEntries;
 		struct {
-			uint32_t lel_conferenceID;								/*!< Conference ID */
+			uint32_t lel_conferenceID;
 			uint32_t lel_resourceType;								/*!< Resource Type. Enum(Conf:0x00, IVR:0x01) */
-			uint32_t lel_numberOfReservedParticipants;						/*!< Number of Reserved Participants */
-			uint32_t lel_numberOfActiveParticipants;						/*!< Number of Active Participants */
-			uint32_t lel_appID;									/*!< App ID */
-			char appConfID[StationMaxDisplayTextSize];						/*!< app Conf ID */
-			char appData[StationMaxDirnumSize];							/*!< Add Data */
+			uint32_t lel_numberOfReservedParticipants;
+			uint32_t lel_numberOfActiveParticipants;
+			uint32_t lel_appID;
+			char appConfID[StationMaxDisplayTextSize];
+			char appData[StationMaxDirnumSize];
 		} conferenceEntry[];										/*!< variable size / max 32*/
 	} AuditConferenceResMessage;
 
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
+		uint32_t lel_conferenceID;
 	} AuditParticipantReqMessage;
 
 	struct {
 		uint32_t lel_result;										/*!< Result. Enum(OK:0x00, ConferenceDoesNotExist:0x01) */
-		uint32_t lel_last;										/*!< last */
-		uint32_t lel_conferenceID;									/*!< Conference ID */
-		uint32_t lel_numberOfEntries;									/*!< Number Of Entries */
+		uint32_t lel_last;
+		uint32_t lel_conferenceID;
+		uint32_t lel_numberOfEntries;
 		char participantEntry[];									/*!< variable size: max 256 */
 	} AuditParticipantResMessage;
 
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
-		uint32_t lel_callReference;									/*!< Call Reference */
+		uint32_t lel_conferenceID;
+		uint32_t lel_callReference;
 		uint32_t partyPIRestrictionBits;								/*!< Party PI Restriction Bits Structure
 														   0 RestrictCallingPartyName
 														   1 RestrictCallingPartyNumber
@@ -3240,14 +3114,14 @@ typedef union {
 														   5 RestrictOriginalCalledPartyNumber
 														   6 RestrictLastRedirectPartyName
 														   7 RestrictLastRedirectPartyNumber */
-		char participantName[StationMaxNameSize];							/*!< Participant Name */
-		char participantNumber[StationMaxDirnumSize];							/*!< Participant Number */
-		char conferenceName[StationMaxDisplayTextSize];							/*!< Conference Name*/
+		char participantName[StationMaxNameSize];
+		char participantNumber[StationMaxDirnumSize];
+		char conferenceName[StationMaxDisplayTextSize];
 	} ChangeParticipantReqMessage;
-	
+
 	struct {
-		uint32_t lel_conferenceID;									/*!< Conference ID */
-		uint32_t lel_callReference;									/*!< Call Reference */
+		uint32_t lel_conferenceID;
+		uint32_t lel_callReference;
 	} DropParticipantReqMessage;
 
 	struct {
@@ -3269,121 +3143,108 @@ typedef union {
 	} AnnouncementFinishMessage;
 
 	struct {
-		uint32_t lel_conferenceId;									/*!< Conference ID */
-		uint32_t lel_callReference;									/*!< Call Reference */
-		uint32_t lel_passThruPartyId;									/*!< Pass Through ID*/
+		uint32_t lel_conferenceId;
+		uint32_t lel_callReference;
+		uint32_t lel_passThruPartyId;
 		uint32_t lel_mediaTransportType;								/*!< Skinny mediaTransportType Enum */
-		uint32_t lel_ipv46;										/*!< ipv4 / ipv6 */
+		uint32_t lel_ipv46;
 		skinny_mediaType_t lel_mediaType;								/*!< Skinny mediaType Enum */
-	} PortRequestMessage;											/*!< Port Request Message Structure */
+	} PortRequestMessage;
 
 	struct {
 		union {
 			struct {
-				uint32_t lel_conferenceId;							/*!< Conference ID */
-				uint32_t lel_callReference;							/*!< Call Reference */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through ID*/
+				uint32_t lel_conferenceId;
+				uint32_t lel_callReference;
+				uint32_t lel_passThruPartyId;
 				uint32_t bel_ipAddr;								/*!< Ip Address Array (This field is apparently in big-endian format, even though most other fields are in little-endian format.) */
-				uint32_t lel_portNumber;							/*!< Port Number */
-				uint32_t lel_RTCPPortNumber;							/*!< RTCP Port Number */
+				uint32_t lel_portNumber;
+				uint32_t lel_RTCPPortNumber;
 			} v3;
 			struct {
-				uint32_t lel_conferenceId;							/*!< Conference ID */
-				uint32_t lel_callReference;							/*!< Call Reference */
-				uint32_t lel_passThruPartyId;							/*!< Pass Through ID*/
-				uint32_t lel_ipv46;								/*!< ipv4 / ipv6 */
+				uint32_t lel_conferenceId;
+				uint32_t lel_callReference;
+				uint32_t lel_passThruPartyId;
+				uint32_t lel_ipv46;
 				char bel_ipAddr[16];								/*!< This field is apparently in big-endian format, even though most other fields are in little-endian format. */
-				uint32_t lel_portNumber;							/*!< Port Number */
-				uint32_t lel_RTCPPortNumber;							/*!< RTCP Port Number */
+				uint32_t lel_portNumber;
+				uint32_t lel_RTCPPortNumber;
 				skinny_mediaType_t lel_mediaType;						/*!< Skinny Media Type (Enum) */
 			} v19;
 		};
-	} PortResponseMessage;											/*!< Port Response Message Structure */
+	} PortResponseMessage;
 
 	struct {
-		uint32_t lel_conferenceId;									/*!< Conference ID */
-		uint32_t lel_callReference;									/*!< Call Reference */
-		uint32_t lel_passThruPartyId;									/*!< Pass Through ID*/
+		uint32_t lel_conferenceId;
+		uint32_t lel_callReference;
+		uint32_t lel_passThruPartyId;
 		skinny_mediaType_t lel_mediaType;								/*!< Skinny Media Type (Enum) */
-	} PortCloseMessage;											/*!< Port Close Message Structure */
+	} PortCloseMessage;
 
 	struct {
 		uint8_t dummy;
-	} QoSResvNotifyMessage;											/*!< QoS Resv Notify Message Structure */
+	} QoSResvNotifyMessage;
 
 	struct {
 		uint8_t dummy;
-	} QoSErrorNotifyMessage;										/*!< QoS Error Notify Message Structure */
-
-
-	struct {
-		uint8_t dummy;
-	} QoSListenMessage;											/*!< QoS Listen Message Structure */
+	} QoSErrorNotifyMessage;
 
 	struct {
 		uint8_t dummy;
-	} QoSPathMessage;											/*!< QoS Path Message Structure */
+	} QoSListenMessage;
 
 	struct {
 		uint8_t dummy;
-	} QoSTeardownMessage;											/*!< QoS Teardown Message Structure */
+	} QoSPathMessage;
 
 	struct {
 		uint8_t dummy;
-	} UpdateDSCPMessage;											/*!< Update DSCP Message Structure */
+	} QoSTeardownMessage;
 
 	struct {
 		uint8_t dummy;
-	} QoSModifyMessage;											/*!< QoS Modify Message Structure */
+	} UpdateDSCPMessage;
 
 	struct {
 		uint8_t dummy;
-	} MwiResponseMessage;											/*!< Mwi Response Message Structure */
+	} QoSModifyMessage;
 
 	struct {
 		uint8_t dummy;
-	} CallCountRespMessage;											/*!< CallCount Response Message Structure */
+	} MwiResponseMessage;
+
+	struct {
+		uint8_t dummy;
+	} CallCountRespMessage;
 
 	struct {
 		uint32_t lel_callReference;
 		uint32_t lel_status;
-	} RecordingStatusMessage;										/*!< Recording Status Message Structure */
+	} RecordingStatusMessage;
+} sccp_data_t;
 
-	//struct {
-	//} UnknownVGMessage;
-} sccp_data_t;													/*!< SKINNY Data Structure */
-
-/*!
- * \brief SKINNY Message Header Structure
- */
+/* SKINNY Message Header Structure */
 struct sccp_header {
-	uint32_t length;											/*!< Message Length */
-	uint32_t lel_protocolVer;										/*!< Protocol Version Message */
+	uint32_t length;
+	uint32_t lel_protocolVer;
 	sccp_mid_t lel_messageId;											/*!< Message ID, the messageId is not part of the skinny header, so it is counted in length */
 };
 
-/*!
- * \brief SKINNY Message Structure
- */
+/* SKINNY Message Structure */
 struct sccp_msg {
-	sccp_header_t header;											/*!< Message Header */
-	sccp_data_t data;											/*!< Message [SCCP Data] */
+	sccp_header_t header;
+	sccp_data_t data;
 };
-
-//#define messagePtr sccp_msg_t * const
-//#define constMessagePtr const sccp_msg_t * const
 
 /* So in theory, a message should never be bigger than this.
  * If it is, we abort the connection */
 #define SCCP_MAX_PACKET sizeof(sccp_msg_t)
 #define SCCP_PACKET_HEADER sizeof(sccp_header_t)
 
-/*!
- * \brief SCCP Message Type Structure
- */
+/* SCCP Message Type Structure */
 #define offsize(TYPE, MEMBER) sizeof(((TYPE *)0)->MEMBER)
 struct messageinfo {
-	sccp_mid_t messageId;	
+	sccp_mid_t messageId;
 	const char *const text;
 	const size_t size;
 	skinny_msgType_t type;
@@ -3395,13 +3256,12 @@ extern const struct messageinfo spcp_messageinfo[];
 SCCP_INLINE struct messageinfo * SCCP_CALL lookupMsgInfoStruct(uint32_t messageId);
 SCCP_INLINE const char * SCCP_CALL msginfo2str(sccp_mid_t msgId);
 
-/*!
- * \brief SCCP Device Protocol Callback Structure
+/*
+ * SCCP Device Protocol Callback Structure
  *
  * Connect Specific CallBack-Functions to Particular SCCP Protocol Versions
  */
 typedef struct {
-	//const char *name;											/*! protocol name ( SCCP | SPCP ) */
 	const uint16_t type;											/*! (SCCP_PROTOCOL | SPCP_PROTOCOL) */
 	const uint8_t version;											/*! the protocol version number */
 	const uint16_t registrationFinishedMessageId;								/*! use this message id to determine that the device is fully registered */
@@ -3443,4 +3303,3 @@ SCCP_API uint8_t __CONST__ SCCP_CALL sccp_protocol_getMaxSupportedVersionNumber(
 SCCP_API const sccp_deviceProtocol_t * SCCP_CALL sccp_protocol_getDeviceProtocol(constDevicePtr device, int type);
 SCCP_API const char * const __CONST__ SCCP_CALL skinny_keymode2longstr(skinny_keymode_t keymode);
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

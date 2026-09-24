@@ -8,13 +8,10 @@
  */
 #pragma once
 
-/*!
- * \brief SCCP Mailbox Structure
- */
 struct sccp_mailbox {
 	char uniqueid[SCCP_MAX_MAILBOX_UNIQUEID];
-	SCCP_LIST_ENTRY (sccp_mailbox_t) list;									/*!< Mailbox Linked List Entry */
-};														/*!< SCCP Mailbox Structure */
+	SCCP_LIST_ENTRY (sccp_mailbox_t) list;
+};
 
 __BEGIN_C_EXTERN__
 typedef struct {
@@ -25,4 +22,3 @@ typedef struct {
 extern const VoicemailInterface iVoicemail;
 
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

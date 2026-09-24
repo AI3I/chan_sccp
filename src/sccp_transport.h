@@ -17,7 +17,7 @@ typedef struct ssl_st ssl_t;
 typedef struct sccp_socket_connection {
 	int     fd;
 	ssl_t * ssl;
-	sccp_mutex_t *ssl_lock; /* Owned by a TLS connection; shared on session transfer. */
+	sccp_mutex_t *ssl_lock;
 } sccp_socket_connection_t;
 
 struct sccp_transport {
@@ -38,9 +38,7 @@ struct sccp_transport {
 	sccp_socket_connection_t * (* const accept)(sccp_socket_connection_t * in_sc, struct sockaddr *, socklen_t * len, sccp_socket_connection_t * out_sc);
 	int (* const recv)(sccp_socket_connection_t * sc, void * buf, size_t buflen, int flags);
 	int (* const pending)(sccp_socket_connection_t * sc);
-	// int (*const recv_timeout)(int fd, void *buf, size_t buflen, int flags, int secs);
 	int (* const send)(sccp_socket_connection_t * sc, void * buf, size_t buflen, int flags);
-	// int (*const send_timeout)(int fd, void *buf, size_t buflen, int flags, int secs);
 	int (* const shutdown)(sccp_socket_connection_t * sc, int how);
 	int (* const close)(sccp_socket_connection_t * sc);
 	const sccp_transport_t * const (* const destroy)(uint8_t h);
@@ -52,4 +50,3 @@ const sccp_transport_t * const tls_init(void);
 #endif
 
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

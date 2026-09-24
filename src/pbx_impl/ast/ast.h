@@ -9,11 +9,10 @@
  *              See the LICENSE file at the top of the source tree.
  */
 #pragma once
-//#define REF_DEBUG 1
 
 #include <asterisk.h>
-#include <asterisk/pbx.h>			// AST_EXTENSION_NOT_INUSE in mapping below
-#ifdef HAVE_PBX_RTP_ENGINE_H			// sccp_callinfo, sccp_rtp
+#include <asterisk/pbx.h>
+#ifdef HAVE_PBX_RTP_ENGINE_H
 #  define new avoid_cxx_new_keyword
 #  include <asterisk/rtp_engine.h>
 #  undef new
@@ -27,7 +26,6 @@
 #include "sccp_protocol.h"
 
 #if defined(ASTERISK_CONF_1_21) || defined(ASTERISK_CONF_1_22) || defined(ASTERISK_CONF_1_23) || defined(ASTERISK_CONF_1_24)
-/* Asterisk 21 removed the macro extension/context channel API. */
 #define ast_channel_macroexten(chan) ("")
 #define ast_channel_macroexten_set(chan, val) ((void)0)
 #define ast_channel_macrocontext(chan) ("")
@@ -52,9 +50,6 @@ extern struct sccp_pbx_cb sccp_pbx;
 #define PBX_HANGUP_CAUSE_FACILITY_REJECTED AST_CAUSE_FACILITY_REJECTED
 #define PBX_HANGUP_CAUSE_CALL_REJECTED AST_CAUSE_CALL_REJECTED
 
-/*!
- * \brief PBX Hangup Types handled by sccp_astgenwrap_forceHangup
- */
 typedef enum {
 	PBX_QUEUED_HANGUP = 0,
 	PBX_SOFT_HANGUP = 1,
@@ -79,18 +74,16 @@ PBX_CHANNEL_TYPE *sccp_search_remotepeer_locked(int (*const found_cb) (PBX_CHANN
 #define pbx_format_enum_type uint64_t
 skinny_codec_t __CONST__ pbx_codec2skinny_codec(ast_format_type fmt);
 
-//ast_format_type skinny_codec2pbx_codec(skinny_codec_t codec);
 pbx_format_enum_type __CONST__ skinny_codec2pbx_codec(skinny_codec_t codec);
-//int skinny_codecs2pbx_codecs(const skinny_codec_t * const codecs);
 pbx_format_type __PURE__ skinny_codecs2pbx_codecs(const skinny_codec_t * const codecs);
 
-// support for old uin32_t format (only temporarily
+// support for old uint32_t format (only temporarily
 #define pbx_format2skinny_format (uint32_t)pbx_codec2skinny_codec
 #define skinny_format2pbx_format(_x) skinny_codec2pbx_codec((skinny_codec_t)(_x))
 
-/* 
- * sccp_free_ptr should be used when a function pointer for free() needs to be 
- * passed as the argument to a function. Otherwise, astmm will cause seg faults.
+/*
+ * sccp_free_ptr should be used when a function pointer for free() needs to be
+ * Otherwise, astmm will cause seg faults.
  */
 static void sccp_free_ptr(void *ptr) attribute_unused;
 static void sccp_free_ptr(void *ptr)
@@ -102,13 +95,10 @@ sccp_channel_t *get_sccp_channel_from_pbx_channel(const PBX_CHANNEL_TYPE * pbx_c
 boolean_t sccp_astgenwrap_requestQueueHangup(constChannelPtr c);
 boolean_t sccp_astgenwrap_requestHangup(constChannelPtr c);
 
-/***** database *****/
 boolean_t sccp_astwrap_addToDatabase(const char *family, const char *key, const char *value);
 boolean_t sccp_astwrap_getFromDatabase(const char *family, const char *key, char *out, int outlen);
 boolean_t sccp_astwrap_removeFromDatabase(const char *family, const char *key);
 boolean_t sccp_astwrap_removeTreeFromDatabase(const char *family, const char *key);
-
-/***** end - database *****/
 
 int sccp_astwrap_moh_start(PBX_CHANNEL_TYPE * pbx_channel, const char *mclass, const char *interpclass);
 void sccp_astwrap_moh_stop(PBX_CHANNEL_TYPE * pbx_channel);
@@ -133,4 +123,3 @@ void sccp_astgenwrap_set_named_pickupgroups(sccp_channel_t *channel, struct ast_
 #endif
 
 enum ast_pbx_result pbx_pbx_start(struct ast_channel *pbx_channel);
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

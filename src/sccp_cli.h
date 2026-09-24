@@ -9,7 +9,7 @@
  *              See the LICENSE file at the top of the source tree.
  *
  */
-#pragma once 
+#pragma once
 #include "sccp_cli_table_data.h"
 __BEGIN_C_EXTERN__
 #define CLI_AMI_LIST_WIDTH 46
@@ -21,4 +21,3 @@ SCCP_API int SCCP_CALL sccp_register_cli(void);
 SCCP_API int SCCP_CALL sccp_unregister_cli(void);
 void sccp_cli_table_print(sccp_cli_table_data_t *table, int fd, const char *title);
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

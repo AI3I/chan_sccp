@@ -1,8 +1,8 @@
 /*!
  * \file        sccp_labels.h
  * \brief       SCCP Labels Header
- * 
- * SCCP Button Number References and SCCP Display Number References 
+ *
+ * SCCP Button Number References and SCCP Display Number References
  *
  * \author      Sergio Chersovani <mlists [at] c-net.it>
  * \note        Reworked, but based on chan_sccp code.
@@ -12,7 +12,7 @@
  *              See the LICENSE file at the top of the source tree.
  */
 #pragma once
-#define SKINNY_LBL_EMPTY							0					/*< fake button */
+#define SKINNY_LBL_EMPTY							0
 #define SKINNY_LBL_REDIAL						 	1
 #define SKINNY_LBL_NEWCALL							2
 #define SKINNY_LBL_HOLD								3
@@ -71,7 +71,7 @@
 #define SKINNY_LBL_UNKNOWN_NUMBER					 	56
 #define SKINNY_LBL_RMLSTC						 	57					/* Remove Last Conference Participant from the Conference (Moderator Only) */
 #define SKINNY_LBL_VOICEMAIL					 		58
-#define SKINNY_LBL_IMMDIV						 	59					/* Immediate Divert to Voicemail */
+#define SKINNY_LBL_IMMDIV						 	59
 #define SKINNY_LBL_INTRCPT							60
 #define SKINNY_LBL_SETWTCH							61
 #define SKINNY_LBL_TRNSFVM							62
@@ -88,7 +88,7 @@
 #define SKINNY_LBL_SERVICE_IS_NOT_ACTIVE					73
 #define SKINNY_LBL_HIGH_TRAFFIC_TRY_AGAIN_LATER					74
 #define SKINNY_LBL_QUALITY_REPORT_TOOL						75
-#define SKINNY_LBL_MALICIOUS_CALL_IDENTIFICATION				76					/* MCID */
+#define SKINNY_LBL_MALICIOUS_CALL_IDENTIFICATION				76
 #define SKINNY_LBL_DIRTRFR							77
 #define SKINNY_LBL_SELECT						 	78
 #define SKINNY_LBL_CONFLIST							79
@@ -103,7 +103,7 @@
 #define SKINNY_LBL_VIDEO_MODE							88
 #define SKINNY_LBL_MAX_CALL_DURATION_TIMEOUT					89
 #define SKINNY_LBL_MAX_HOLD_DURATION_TIMEOUT					90
-#define SKINNY_LBL_OTHER_PICKUP							91 // OPICKUP
+#define SKINNY_LBL_OTHER_PICKUP							91
 #define SKINNY_LBL_HLOG								92
 #define SKINNY_LBL_LOGGED_OUT_OF_HUNT_GROUP					93
 #define SKINNY_LBL_PARK_SLOT_UNAVAILABLE					94
@@ -111,7 +111,6 @@
 #define SKINNY_LBL_NO_BANDWIDTH_AVAILABLE_FOR_PICKUP				96
 #define SKINNY_LBL_EXTERNAL_TRANSFER_RESTRICTED					97
 #define SKINNY_LBL_NO_LINE_AVAILABLE_FOR_PICKUP					98
-// new locally defined
 #define SKINNY_LBL_QUEUE							100
 #define SKINNY_LBL_DIAL								201
 #define SKINNY_LBL_MONITOR							202
@@ -121,9 +120,9 @@ SCCP_INLINE SCCP_CALL uint32_t labelstr2int(const char *str);
 
 #define SKINNY_DISP_EMPTY							""
 
-#define SKINNY_DISP_ACCT							"\36\02"				/* Set Account Code / During Call Setup or Connected Call / Should be added to CDR */
-#define SKINNY_DISP_FLASH							"\36\03"				/* Hook Flash */
-#define SKINNY_DISP_LOGIN							"\36\04"				/* Provides personal identification number (PIN) access to restricted phone features */
+#define SKINNY_DISP_ACCT							"\36\02"
+#define SKINNY_DISP_FLASH							"\36\03"
+#define SKINNY_DISP_LOGIN							"\36\04"
 #define SKINNY_DISP_DEVICE_IN_HOME_LOCATION					"\36\05"
 #define SKINNY_DISP_DEVICE_IN_ROAMING_LOCATION					"\36\06"
 #define SKINNY_DISP_ENTER_AUTHORIZATION_CODE					"\36\07"
@@ -141,7 +140,7 @@ SCCP_INLINE SCCP_CALL uint32_t labelstr2int(const char *str);
 #define SKINNY_DISP_SELECT_A_SERVICE						"\36\21"
 #define SKINNY_DISP_LOCAL_SERVICES						"\36\22"
 #define SKINNY_DISP_ENTER_SEARCH_CRITERIA					"\36\23"
-#define SKINNY_DISP_NIGHT_SERVICE						"\36\24"				/* We should provide access to Night Service via a Feature Option */
+#define SKINNY_DISP_NIGHT_SERVICE						"\36\24"
 #define SKINNY_DISP_NIGHT_SERVICE_ACTIVE					"\36\25"
 #define SKINNY_DISP_NIGHT_SERVICE_DISABLED					"\36\26"
 #define SKINNY_DISP_LOGIN_SUCCESSFUL						"\36\27"
@@ -179,7 +178,7 @@ SCCP_INLINE SCCP_CALL uint32_t labelstr2int(const char *str);
 #define SKINNY_DISP_END_CALL							"\36\63"
 #define SKINNY_DISP_CONFERENCE_LIST						"\36\64"
 #define SKINNY_DISP_QUALITY_REPORTING_TOOL					"\36\65"
-#define SKINNY_DISP_HUNT_GROUP							"\36\66"				/* HLOG */
+#define SKINNY_DISP_HUNT_GROUP							"\36\66"
 #define SKINNY_DISP_USE_LINE_OR_JOIN_TO_COMPLETE				"\36\67"
 
 #define SKINNY_DISP_DO_NOT_DISTURB						"\36\70"
@@ -195,13 +194,12 @@ SCCP_INLINE SCCP_CALL uint32_t labelstr2int(const char *str);
 #define SKINNY_DISP_CANNOT_SEND_CALL_TO_MOBILE					"\36\101"
 #define SKINNY_DISP_RECORD							"\36\103"
 #define SKINNY_DISP_CANNOT_MOVE_CONVERSATION					"\36\104"
-#define SKINNY_DISP_CW_OFF							"\36\105"				/* Call Waiting Off */
+#define SKINNY_DISP_CW_OFF							"\36\105"
 #define SKINNY_DISP_COACHING							"\36\106"
 #define SKINNY_DISP_RECORDING							"\36\117"
 
 #define SKINNY_DISP_RECORDING_FAILED						"\36\120"
 #define SKINNY_DISP_CONNECTING							"\36\121"
-
 
 #define SKINNY_DISP_REDIAL							"\200\1"
 #define SKINNY_DISP_NEWCALL							"\200\2"
@@ -275,7 +273,7 @@ SCCP_INLINE SCCP_CALL uint32_t labelstr2int(const char *str);
 #define SKINNY_DISP_DND								"\200\77"
 
 #define SKINNY_DISP_DIVALL							"\200\100"
-#define SKINNY_DISP_CALLBACK							"\200\101"				/*!< Call Completion */
+#define SKINNY_DISP_CALLBACK							"\200\101"
 #define SKINNY_DISP_NETWORK_CONGESTION_REROUTING				"\200\102"
 #define SKINNY_DISP_BARGE				 			"\200\103"
 #define SKINNY_DISP_FAILED_TO_SETUP_BARGE		 			"\200\104"
@@ -286,8 +284,8 @@ SCCP_INLINE SCCP_CALL uint32_t labelstr2int(const char *str);
 #define SKINNY_DISP_CALLPARK_REVERSION			 			"\200\110"
 #define SKINNY_DISP_SERVICE_IS_NOT_ACTIVE		 			"\200\111"
 #define SKINNY_DISP_HIGH_TRAFFIC_TRY_AGAIN_LATER				"\200\112"
-#define SKINNY_DISP_QUALITY_REPORT_TOOL						"\200\113"				/*<! Quality Request */
-#define SKINNY_DISP_MALICIOUS_CALL_IDENTIFICATION				"\200\114"				/* MCID */
+#define SKINNY_DISP_QUALITY_REPORT_TOOL						"\200\113"
+#define SKINNY_DISP_MALICIOUS_CALL_IDENTIFICATION				"\200\114"
 #define SKINNY_DISP_DIRTRFR							"\200\115"
 #define SKINNY_DISP_SELECT							"\200\116"
 #define SKINNY_DISP_CONFLIST							"\200\117"
@@ -305,13 +303,13 @@ SCCP_INLINE SCCP_CALL uint32_t labelstr2int(const char *str);
 #define SKINNY_DISP_MAX_CALL_DURATION_TIMEOUT					"\200\131"
 #define SKINNY_DISP_MAX_HOLD_DURATION_TIMEOUT					"\200\132"
 #define SKINNY_DISP_OPICKUP							"\200\133"
-#define SKINNY_DISP_HUNT_GROUP_LOG_IN_OUT					"\200\134"				/*<! Huntgroup/queue Login/Logout */
-#define SKINNY_DISP_LOGGED_OUT_OF_HUNT_GROUP			 		"\200\135"				/*<! - FS */
-#define SKINNY_DISP_PARK_SLOT_UNAVAILABLE					"\200\136"				/*<! - FS */
-#define SKINNY_DISP_NO_CALL_AVAILABLE_FOR_PICKUP				"\200\137"				/*<! - FS */
+#define SKINNY_DISP_HUNT_GROUP_LOG_IN_OUT					"\200\134"
+#define SKINNY_DISP_LOGGED_OUT_OF_HUNT_GROUP			 		"\200\135"
+#define SKINNY_DISP_PARK_SLOT_UNAVAILABLE					"\200\136"
+#define SKINNY_DISP_NO_CALL_AVAILABLE_FOR_PICKUP				"\200\137"
 
 #define SKINNY_DISP_EXTERNAL_TRANSFER_RESTRICTED				"\200\141"
-#define SKINNY_DISP_NO_LINE_AVAILABLE_FOR_PICKUP				"\200\142"				/*<! - FS */
+#define SKINNY_DISP_NO_LINE_AVAILABLE_FOR_PICKUP				"\200\142"
 #define SKINNY_DISP_PATH_REPLACEMENT_IN_PROGRESS				"\200\143"
 #define SKINNY_DISP_UNKNOWN_2							"\200\144"
 #define SKINNY_DISP_MAC_ADDRESS							"\200\145"
@@ -345,15 +343,12 @@ SCCP_INLINE SCCP_CALL uint32_t labelstr2int(const char *str);
 #define SKINNY_DISP_MESSAGES_URL						"\200\176"
 #define SKINNY_DISP_SERVICES_URL						"\200\177"
 
-// Need to be translated
-//#define SKINNY_DISP_MONITOR							"Record"
 #define SKINNY_DISP_DIAL							"Dial"
 #define SKINNY_DISP_CALL_PROGRESS						"Call Progress"
 #define SKINNY_DISP_SILENT							"Silent"
 #define SKINNY_DISP_NOANSWER                                                    "NoAnswer"
 #define SKINNY_DISP_ENTER_NUMBER_TO_FORWARD_TO					"Enter number to forward to"
 
-// Errors needing to be translated
 #define SKINNY_DISP_NO_LINES_REGISTERED						"No lines registered!"
 #define SKINNY_DISP_NO_LINE_TO_TRANSFER						"No line found to transfer"
 #define SKINNY_DISP_NO_LINE_AVAILABLE						"No Line Available"
@@ -368,4 +363,3 @@ SCCP_INLINE SCCP_CALL uint32_t labelstr2int(const char *str);
 #define SKINNY_DISP_PRIVATE_WITHOUT_LINE_CHANNEL				"Private without line or channel"
 #define SKINNY_DISP_NO_CHANNEL_TO_PERFORM_ACTION_ON				"No Channel to perform %s on !"
 #define SKINNY_GIVING_UP							"Giving Up"
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

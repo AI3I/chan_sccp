@@ -36,9 +36,6 @@
 #define sccp_log_and(_x) ({if ((sccp_globals->debug & (_x)) == (_x)) {sccp_log1
 __BEGIN_C_EXTERN__
 extern const char * SS_Memory_Allocation_Error;
-/*!
- * \brief SCCP Debug Category Enum
- */
 typedef enum
 {
 	/* *INDENT-OFF* */
@@ -99,4 +96,3 @@ SCCP_API void SCCP_CALL sccp_debug_filter_clear(void);
 SCCP_API boolean_t SCCP_CALL sccp_debug_filter_has(const char * device);
 SCCP_API char * SCCP_CALL sccp_debug_filter_devices(void);
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

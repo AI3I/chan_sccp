@@ -9,39 +9,36 @@
 #pragma once
 
 __BEGIN_C_EXTERN__
-/*!
- * \brief SCCP Event Structure
- */
 typedef struct sccp_event {
 	union {
 		struct {
 			sccp_line_t *line;									/*!< SCCP Line (required) */
-		} lineInstance;											/*!< Event Line Created/Destroyed Structure */
+		} lineInstance;
 		struct {
 			sccp_device_t *device;									/*!< SCCP Device (required) */
-		} deviceRegistered;										/*!< Event Device Registered Structure */
+		} deviceRegistered;
 		struct {
 			sccp_linedevice_t * ld;                                                                 /*!< SCCP device line (required) */
-		} deviceAttached;										/*!< Event Device Attached Structure */
+		} deviceAttached;
 		struct {
 			sccp_device_t *device;									/*!< SCCP device (required) */
-			sccp_linedevice_t * optional_linedevice;                                                /*!< SCCP ld (optional) */
+			sccp_linedevice_t * optional_linedevice;
 			sccp_feature_type_t featureType;							/*!< what feature is changed (required) */
-		} featureChanged;										/*!< Event feature changed Structure */
+		} featureChanged;
 		struct {
 			sccp_line_t * line;                                                                     /*!< SCCP line (required) */
-			sccp_device_t *optional_device;								/*!< SCCP device (optional) */
+			sccp_device_t *optional_device;
 			uint8_t state;										/*!< state (required) */
-		} lineStatusChanged;                                                                            /*!< Event feature changed Structure */
+		} lineStatusChanged;
 #if CS_TEST_FRAMEWORK
 		struct {
 			uint32_t value;
 			char *str;
-		} TestEvent;											/*!< Event feature changed Structure */
+		} TestEvent;
 #endif
-	};                                                                                                      /*!< SCCP Event Data Union */
-	sccp_event_type_t type;											/*!< Event Type */
-} sccp_event_t;													/*!< SCCP Event Structure */
+	};
+	sccp_event_type_t type;
+} sccp_event_t;
 
 typedef void (*sccp_event_callback_t) (const sccp_event_t * event);
 
@@ -54,4 +51,3 @@ SCCP_API boolean_t SCCP_CALL      _sccp_event_fire(sccp_event_t * event, boolean
 SCCP_API boolean_t SCCP_CALL sccp_event_unsubscribe(int eventType, sccp_event_callback_t cb);
 SCCP_API void SCCP_CALL sccp_event_module_stop(void);
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

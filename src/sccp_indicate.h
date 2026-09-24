@@ -33,4 +33,3 @@ SCCP_API void SCCP_CALL __sccp_indicate (constDevicePtr maybe_device, channelPtr
 #	define sccp_indicate(x, y, z)       __sccp_indicate (x, (channelPtr)y, z, FALSE, 0, NULL, 0, NULL)
 #	define sccp_indicate_force(x, y, z) __sccp_indicate (x, (channelPtr)y, z, TRUE, 0, NULL, 0, NULL)
 #endif
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

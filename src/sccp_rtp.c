@@ -10,78 +10,18 @@
  *
  */
 
-/*!
- * =============================
- * Example Networks
- * =============================
- * tokyo 200.0.0.254 / 172.20.0.0
- * 7905:172.20.0.5
- *
- * havana 150.0.0.254 / 192.168.0.0
- * 7970:192.168.0.5
- *
- * amsterdam 100.0.0.254 / 10.10.0.0 (IP-Forward) (NoNat)
- * (PBX):100.0.0.1 & 10.10.0.1)
- * 7941: 10.10.0.5
- * 7942: 10.10.0.6
- *
- * berlin 80.0.0.254 / 10.20.0.0 (Port Forward) (Nat) sccp.conf needs externip
- * (PBX): 10.20.0.1
- * 7941: 10.20.0.5
- *
- * ====================================
- * Example Calls
- * ====================================
- * amsterdam -> amsterdam via amsterdam : inDirectRTP
- * 172.20.0.5 ->                                           10.0.0.1:PBX:10.0.0.1                                           -> 10.0.0.6
- * leg1:                                                    us           them
- * leg2:                                                   them           us
- *
- * amsterdam -> amsterdam via amsterdam : DirectRTP
- * 172.20.0.5 ->                                           10.0.0.1:PBX:10.0.0.1                                           -> 10.0.0.6
- * leg1:us                                                                                                                      them
- * leg2:them                                                                                                                     us
- *
+/*
+ * ============================= Example Networks ============================= tokyo 200.0.0.254 / 172.20.0.0 7905:172.20.0.5
+ * havana 150.0.0.254 / 192.168.0.0 7970:192.168.0.5
+ * amsterdam 100.0.0.254 / 10.10.0.0 (IP-Forward) (NoNat) (PBX):100.0.0.1 & 10.10.0.1) 7941: 10.10.0.5 7942: 10.10.0.6
+ * berlin 80.0.0.254 / 10.20.0.0 (Port Forward) (Nat) sccp.conf needs externip (PBX): 10.20.0.1 7941: 10.20.0.5
  * tokyo -> amsterdam via amsterdam (Single NAT : IP-Forward) inDirectRTP
- * 172.20.0.5 -> 200.0.0.254 -> Internet ->               100.0.0.1:PBX:10.0.0.1                                           -> 10.0.0.5
- * leg1:              us                                                  them
- * leg2:                                                     them                                                                us
- *
  * tokyo -> amsterdam via amsterdam (Single NAT : IP-Forward) DirectRTP
- * 172.20.0.5 -> 200.0.0.254 -> Internet ->               100.0.0.1:PBX:10.0.0.1                                           -> 10.0.0.5
- * leg1:              us                                                                                                        them
- * leg2:             them                                                                                                        us
- *
  * tokyo -> havana via amsterdam (Single NAT : IP-Forward) inDirectRTP
- * 172.20.0.5 -> 200.0.0.254 -> Internet ->               100.0.0.1:PBX:100.0.0.1               -> Internet -> 150.0.0.254 -> 192.168.0.5
- * leg1:              us                                                  them
- * leg2:                                                    them                                                   us
- *
  * tokyo -> havana via amsterdam (Single NAT : IP-Forward) DirectRTP
- * 172.20.0.5 -> 200.0.0.254 -> Internet ->               100.0.0.1:PBX:100.0.0.1               -> Internet -> 150.0.0.254 -> 192.168.0.5
- * leg1:              us                                                                                          them
- * leg2:             them                                                                                          us
- *
  * tokyo -> havana via berlin (Double Nat : Port-Forward on PBX Location) inDirectRTP
- * 172.20.0.5 -> 200.0.0.254 -> Internet -> 80.0.0.254 -> 10.20.0.1:PBX:10.20.0.1 -> 80.0.0.254 -> Internet -> 150.0.0.254 -> 192.168.0.5
- * leg1:              us                                                               them
- * leg2:                                       them                                                                us
- *
  * tokyo -> havana via berlin (Double Nat : Port-Forward on PBX Location) DirectRTP
- * 172.20.0.5 -> 200.0.0.254 -> Internet -> 80.0.0.254 -> 10.20.0.1:PBX:10.20.0.1 -> 80.0.0.254 -> Internet -> 150.0.0.254 -> 192.168.0.5
- * leg1:              us                                                                                          them
- * leg2:             them                                                                                          us
- *
- * ====================================
- * How to name the addresses
- * ====================================
- * 172.20.0.5 / 192.168.0.5 = phone  			= physicalIP	=> (and phone_remote for the phone on the other side of the channel) This information does not get send to the pbx
- * 200.0.0.254 / 150.0.0.254 = d->session->sin		= reachableVia	=> (can be equal to physicalIP), remote ip-address + port of the connection (gotten from physicalIP)
-									=> written to phone(us) during openreceivechannel
-									=> written to phone_remote(them) during startmediatransmission
  * 100.0.0.254 / 100.0.0.254 = externalip		= rtp->remote	=> only required when double nat
- * 100.0.0.1 / 100.0.0.1 = d->session->ourip		= rtp->remote	=> local ip-address + port of the phone's connection
- * 10.0.0.1 =  d->session->ourip			= rtp->remote	=> local ip-address + port of the phone's connection
  */
 
 #include "config.h"
@@ -96,10 +36,6 @@
 
 SCCP_FILE_VERSION(__FILE__, "");
 
-/*!
- * \brief create a new rtp server
- * \todo refactor iPbx.rtp_???_server to include sccp_rtp_type_t
- */
 boolean_t sccp_rtp_createServer(constDevicePtr d, channelPtr c, sccp_rtp_type_t type)
 {
 	sccp_rtp_t * rtp = NULL;
@@ -164,9 +100,6 @@ boolean_t sccp_rtp_createServer(constDevicePtr d, channelPtr c, sccp_rtp_type_t 
 	return rtp->instance_active;
 }
 
-/*!
- * \brief request the port to be used for RTP, early on, so that we can use it during bridging, even before open_receive_ack has been received (directrtp)
- */
 int sccp_rtp_requestRTPPorts(constDevicePtr device, channelPtr channel)
 {
 	pbx_assert(device != NULL && channel != NULL);
@@ -185,23 +118,19 @@ int sccp_rtp_requestRTPPorts(constDevicePtr device, channelPtr channel)
 	return 1;
 }
 
-/*!
- * \brief Stop an RTP Source.
- * \param channel SCCP Channel
- */
 void sccp_rtp_stop(constChannelPtr channel)
 {
 	if (!channel) {
 		return;
 	}
 	if (iPbx.rtp_stop) {
-		sccp_rtp_t * const audio = (sccp_rtp_t *)&(channel->rtp.audio);                                        // discard const
+		sccp_rtp_t * const audio = (sccp_rtp_t *)&(channel->rtp.audio);
 		if (audio->instance && audio->instance_active) {
 			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_4 "%s: stopping Asterisk audio RTP for %s\n", channel->currentDeviceId, channel->designator);
 			iPbx.rtp_stop(audio->instance);
 			audio->instance_active = FALSE;
 		}
-		sccp_rtp_t * const video = (sccp_rtp_t *)&(channel->rtp.video);                                        // discard const
+		sccp_rtp_t * const video = (sccp_rtp_t *)&(channel->rtp.video);
 		if (video->instance && video->instance_active) {
 			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_4 "%s: stopping Asterisk video RTP for %s\n", channel->currentDeviceId, channel->designator);
 			iPbx.rtp_stop(video->instance);
@@ -212,10 +141,6 @@ void sccp_rtp_stop(constChannelPtr channel)
 	}
 }
 
-/*!
- * \brief Destroy RTP Source.
- * \param c SCCP Channel
- */
 void sccp_rtp_destroy(constChannelPtr c)
 {
 	sccp_rtp_t * audio = (sccp_rtp_t *)&(c->rtp.audio);
@@ -281,8 +206,7 @@ void sccp_rtp_setCallback(rtpPtr rtp, sccp_rtp_dir_t dir, scpp_rtp_direction_cb_
 	direction->cb                    = cb;
 }
 
-/* Note: this does unset callback in the process */
-/* Note: We should maybe move the callback to sccp_rtp_t instead of sccp_rtp_direction_t because it get's a little confusing in sccp_indicate CONNECTED */
+/* Note: We should maybe move the callback to sccp_rtp_t instead of sccp_rtp_direction_t because it gets a little confusing in sccp_indicate CONNECTED */
 static scpp_rtp_direction_cb_t rtp_fetchActiveCallback(rtpPtr rtp, sccp_rtp_dir_t dir)
 {
 	SCOPED_MUTEX(rtplock, (ast_mutex_t *)&rtp->lock);
@@ -299,21 +223,14 @@ boolean_t sccp_rtp_runCallback(rtpPtr rtp, sccp_rtp_dir_t dir, constChannelPtr c
 {
 	scpp_rtp_direction_cb_t callback = NULL;
 	if ((callback = rtp_fetchActiveCallback(rtp, dir))) {
-		callback(channel);                                        // note callback has to be called without rtp lock held
+		callback(channel);
 		return TRUE;
 	}
 	return FALSE;
 }
 
-/*!
- * \brief update the phones destination address (it's peer)
- * \param c SCCP Channel
- * \param rtp SCCP RTP
- * \param new_peer socket info to remote device
- */
 void sccp_rtp_set_peer(constChannelPtr c, rtpPtr rtp, struct sockaddr_storage * new_peer)
 {
-	/* validate socket */
 	if (sccp_netsock_getPort(new_peer) == 0) {
 		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_2 "%s: RTP peer not changed: the new address is not valid\n", c->currentDeviceId);
 		return;
@@ -329,24 +246,14 @@ void sccp_rtp_set_peer(constChannelPtr c, rtpPtr rtp, struct sockaddr_storage * 
 	sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_3 "%s: RTP remote address of call %s is now %s\n", c->currentDeviceId, c->designator, sccp_netsock_stringify(&rtp->phone_remote));
 
 	if (sccp_rtp_getState(rtp, SCCP_RTP_TRANSMISSION)) {
-		/* Shutdown any early-media or previous media on re-invite */
-		/*! \todo we should wait for the acknowledgement to get back. We don't have a function/procedure in place to do this at this moment in time (sccp_dev_send_wait) */
 		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_2 "%s: restarting media transmission for call %d\n", c->currentDeviceId, c->callid);
 
-		/*! \todo we should check if this is a video or audio rtp */
 		sccp_channel_updateMediaTransmission(c);
 	}
 }
 
-/*!
- * \brief update phones source rtp address
- * \param c SCCP Channel
- * \param rtp SCCP RTP
- * \param new_peer socket info to remote device
- */
 void sccp_rtp_set_phone(constChannelPtr c, rtpPtr rtp, struct sockaddr_storage * new_peer)
 {
-	/* validate socket */
 	if (sccp_netsock_getPort(new_peer) == 0) {
 		sccp_log((DEBUGCAT_RTP))(VERBOSE_PREFIX_2 "%s: phone RTP address not changed: the new address is not valid\n", c->currentDeviceId);
 		return;
@@ -355,12 +262,10 @@ void sccp_rtp_set_phone(constChannelPtr c, rtpPtr rtp, struct sockaddr_storage *
 	AUTO_RELEASE(sccp_device_t, device, sccp_channel_getDevice(c));
 
 	if (device) {
-		/* check if we have new infos */
 		char peerIpStr[NI_MAXHOST + NI_MAXSERV];
 		char remoteIpStr[NI_MAXHOST + NI_MAXSERV];
 		char phoneIpStr[NI_MAXHOST + NI_MAXSERV];
 		if (device->nat >= SCCP_NAT_ON) {
-			/* Rewrite ip-addres to the outside source address using the phones connection (device->sin) */
 			sccp_copy_string(peerIpStr, sccp_netsock_stringify(new_peer), sizeof(peerIpStr));
 			uint16_t port = sccp_netsock_getPort(new_peer);
 			sccp_session_getSas(device->session, new_peer);
@@ -368,17 +273,8 @@ void sccp_rtp_set_phone(constChannelPtr c, rtpPtr rtp, struct sockaddr_storage *
 			sccp_netsock_setPort(new_peer, port);
 		}
 
-		/*! \todo if we enable this, we get an audio issue when resume on the same device, so we need to force asterisk to update -MC */
-		/*
-		if (sccp_netsock_equals(new_peer, &c->rtp.audio.phone)) {
-			sccp_log((DEBUGCAT_RTP)) (VERBOSE_PREFIX_2 "%s: phone RTP address unchanged\n", c->currentDeviceId);
-			return;
-		}
-		*/
-
 		memcpy(&rtp->phone, new_peer, sizeof(rtp->phone));
 
-		// update pbx
 		if (iPbx.rtp_setPhoneAddress) {
 			iPbx.rtp_setPhoneAddress(rtp, new_peer, device->nat >= SCCP_NAT_ON ? 1 : 0);
 		}
@@ -393,7 +289,6 @@ void sccp_rtp_set_phone(constChannelPtr c, rtpPtr rtp, struct sockaddr_storage *
 	}
 }
 
-/*! \todo move the refreshing of the hostname->ip-address to another location (for example scheduler) to re-enable dns hostname lookup */
 int sccp_rtp_updateNatRemotePhone(constChannelPtr c, rtpPtr rtp)
 {
 	int res = 0;
@@ -409,13 +304,13 @@ int sccp_rtp_updateNatRemotePhone(constChannelPtr c, rtpPtr rtp)
 		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: NAT check: local %s (%s)\n", d->id, sccp_netsock_stringify(&sus), (usFamily == AF_INET6) ? "IPv6" : "IPv4");
 		sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: NAT check: remote %s (%s)\n", d->id, sccp_netsock_stringify(phone_remote), (remoteFamily == AF_INET6) ? "IPv6" : "IPv4");
 		if (d->nat >= SCCP_NAT_ON) {
-			uint16_t port = sccp_rtp_getServerPort(rtp);                                                            // get rtp server port
+			uint16_t port = sccp_rtp_getServerPort(rtp);
 			if (!sccp_netsock_getExternalAddr(phone_remote, remoteFamily)) {                                        // get externip/externhost ip-address (PBX behind NAT Firewall)
 				sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_2 "%s: externip/externhost not set; using the incoming interface address %s\n", d->id, sccp_netsock_stringify(&sus));
 				memcpy(phone_remote, &sus, sizeof(struct sockaddr_storage));
 			}
 			if (usFamily != remoteFamily) {
-				sccp_netsock_ipv4_mapped(phone_remote, phone_remote);                                        // we need this to convert mapped IPv4 to real IPv4 address
+				sccp_netsock_ipv4_mapped(phone_remote, phone_remote);
 			}
 			sccp_netsock_setPort(phone_remote, port);
 			sccp_log(DEBUGCAT_RTP)(VERBOSE_PREFIX_3 "%s: remote address now %s (%s)\n", d->id, sccp_netsock_stringify(phone_remote), (remoteFamily == AF_INET6) ? "IPv6" : "IPv4");
@@ -439,7 +334,6 @@ void sccp_rtp_print(constChannelPtr c, sccp_rtp_type_t type, struct ast_str * bu
 			break;
 #else
 		case SCCP_RTP_VIDEO:
-			/* built without video support: nothing to print */
 			pbx_str_reset(buf);
 			return;
 #endif
@@ -469,9 +363,6 @@ void sccp_rtp_print(constChannelPtr c, sccp_rtp_type_t type, struct ast_str * bu
 	}
 }
 
-/*!
- * \brief Get Audio Peer RTP Information
- */
 sccp_rtp_info_t sccp_rtp_getAudioPeerInfo(constChannelPtr c, sccp_rtp_t ** rtp)
 {
 	unsigned int result = SCCP_RTP_INFO_NORTP;
@@ -485,7 +376,6 @@ sccp_rtp_info_t sccp_rtp_getAudioPeerInfo(constChannelPtr c, sccp_rtp_t ** rtp)
 	*rtp = &(((sccp_channel_t *)c)->rtp.audio);
 
 	result = SCCP_RTP_INFO_AVAILABLE;
-	// \todo add apply_ha(d->ha, &sin) check here instead
 	if (device->directrtp && device->nat <= SCCP_NAT_AUTO_OFF && !c->conference) {
 		result |= SCCP_RTP_INFO_ALLOW_DIRECTRTP;
 	}
@@ -493,9 +383,6 @@ sccp_rtp_info_t sccp_rtp_getAudioPeerInfo(constChannelPtr c, sccp_rtp_t ** rtp)
 }
 
 #ifdef CS_SCCP_VIDEO
-/*!
- * \brief Get Video Peer RTP Information
- */
 sccp_rtp_info_t sccp_rtp_getVideoPeerInfo(constChannelPtr c, sccp_rtp_t ** rtp)
 {
 	unsigned int result = SCCP_RTP_INFO_NORTP;
@@ -515,9 +402,6 @@ sccp_rtp_info_t sccp_rtp_getVideoPeerInfo(constChannelPtr c, sccp_rtp_t ** rtp)
 	return (sccp_rtp_info_t)result;
 }
 
-/*!
- * \brief Get Video Peer
- */
 boolean_t sccp_rtp_getVideoPeer(constChannelPtr c, struct sockaddr_storage ** new_peer)
 {
 	sccp_rtp_t * video = (sccp_rtp_t *)&(c->rtp.video);
@@ -526,9 +410,6 @@ boolean_t sccp_rtp_getVideoPeer(constChannelPtr c, struct sockaddr_storage ** ne
 }
 #endif
 
-/*!
- * \brief Get Audio Peer
- */
 boolean_t sccp_rtp_getAudioPeer(constChannelPtr c, struct sockaddr_storage ** new_peer)
 {
 	sccp_rtp_t * audio = (sccp_rtp_t *)&(c->rtp.audio);
@@ -536,9 +417,6 @@ boolean_t sccp_rtp_getAudioPeer(constChannelPtr c, struct sockaddr_storage ** ne
 	return TRUE;
 }
 
-/*!
- * \brief Get Payload Type
- */
 int sccp_rtp_get_payloadType(constRtpPtr rtp, skinny_codec_t codec, boolean_t pbx_transmit)
 {
 	if (rtp && rtp->instance && iPbx.rtp_get_payloadType) {
@@ -547,16 +425,12 @@ int sccp_rtp_get_payloadType(constRtpPtr rtp, skinny_codec_t codec, boolean_t pb
 	return -1;
 }
 
-/*!
- * \brief Retrieve Phone Socket Information
- */
 boolean_t sccp_rtp_getUs(constRtpPtr rtp, struct sockaddr_storage * us)
 {
 	if (rtp->instance) {
 		iPbx.rtp_getUs(rtp->instance, us);
 		return TRUE;
 	}
-	// us = &rtp->phone_remote;
 	return FALSE;
 }
 
@@ -571,9 +445,6 @@ uint16_t sccp_rtp_getServerPort(constRtpPtr rtp)
 	return port;
 }
 
-/*!
- * \brief Retrieve Phone Socket Information
- */
 boolean_t sccp_rtp_getPeer(constRtpPtr rtp, struct sockaddr_storage * them)
 {
 	if (rtp->instance) {
@@ -583,9 +454,6 @@ boolean_t sccp_rtp_getPeer(constRtpPtr rtp, struct sockaddr_storage * them)
 	return FALSE;
 }
 
-/*!
- * \brief Get Sample Rate
- */
 int sccp_rtp_get_sampleRate(skinny_codec_t codec)
 {
 	if (iPbx.rtp_get_sampleRate) {
@@ -594,4 +462,3 @@ int sccp_rtp_get_sampleRate(skinny_codec_t codec)
 	return 3840;
 }
 
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

@@ -8,58 +8,38 @@
  */
 #pragma once
 
-/*!
- * \remarks
- * Purpose:	SCCP CallInfo
- * When to use: To Allocate / Destruct / Get & Set Callinfo fields
- * Relations:   
- */
-
 __BEGIN_C_EXTERN__
 
-/* forward declaration */
 struct sccp_callinfo;
 
-/* Definition of the functions associated with this type. */
 typedef struct tagCallInfo {
 	sccp_callinfo_t * const (*const Constructor)(uint8_t callInstance, const char * const designator);
 	sccp_callinfo_t * const (*const Destructor)(sccp_callinfo_t ** const ci);
 	sccp_callinfo_t * (*const CopyConstructor)(const sccp_callinfo_t * const src_ci);
 
 	/*
-	 * \brief callinfo setter with variable number of arguments
-	 * settting "" means to clear out a particular entry. provising a NULL pointer will skip updating the entry.
-	 * iCallInfo.Callinfo_setter(ci, SCCP_CALLINFO_LAST_REDIRECTINGPARTY_NUMBER, "test", SCCP_CALLINFO_LAST_REDIRECT_REASON, 4, SCCP_CALLINFO_KEY_SENTINEL);
-	 * SENTINEL is required to stop processing
-	 * \returns: number of changed fields
+	 * Key/value pairs ending with SCCP_CALLINFO_KEY_SENTINEL. "" clears an entry; NULL leaves it unchanged.
+	 * Example: iCallInfo.Setter(ci, SCCP_CALLINFO_LAST_REDIRECTINGPARTY_NUMBER, "123", SCCP_CALLINFO_LAST_REDIRECT_REASON, 4, SCCP_CALLINFO_KEY_SENTINEL);
 	 */
-	int (*const Setter)(sccp_callinfo_t * const ci, int key, ...);                                                                                     // key is a va_arg of type sccp_callinfo_key_t
-	int (*const CopyByKey)(const sccp_callinfo_t * const src_ci, sccp_callinfo_t * const dst_ci, int key, ...);                                        // key is a va_arg of type sccp_callinfo_key_t
-	/*
-	 * \brief send callinfo to device
-	 */
+	int (*const Setter)(sccp_callinfo_t * const ci, int key, ...);
+	int (*const CopyByKey)(const sccp_callinfo_t * const src_ci, sccp_callinfo_t * const dst_ci, int key, ...);
 	int (*const Send)(sccp_callinfo_t * const ci, const uint32_t callid, const skinny_calltype_t calltype, const uint8_t lineInstance, constDevicePtr device, boolean_t force);
 
 	/*
-	 * \brief callinfo getter with variable number of arguments, destination parameter needs to be prodided by reference
-	 * iCallInfo.Getter(ci, SCCP_CALLINFO_LAST_REDIRECTINGPARTY_NUMBER:, &name, SCCP_CALLINFO_LAST_REDIRECT_REASON, &readon, SCCP_CALLINFO_KEY_SENTINEL);
-	 * SENTINEL is required to stop processing
-	 * \returns: number of fields
+	 * Key/destination-pointer pairs ending with SCCP_CALLINFO_KEY_SENTINEL.
+	 * Example: iCallInfo.Getter(ci, SCCP_CALLINFO_LAST_REDIRECTINGPARTY_NUMBER, &number, SCCP_CALLINFO_LAST_REDIRECT_REASON, &reason, SCCP_CALLINFO_KEY_SENTINEL);
 	 */
-	int (*const Getter)(const sccp_callinfo_t * const ci, int key, ...);                                        // key is a va_arg of type sccp_callinfo_key_t
+	int (*const Getter)(const sccp_callinfo_t * const ci, int key, ...);
 
-	/* helpers */
 	int (*const SetCalledParty)(sccp_callinfo_t * const ci, const char name[StationMaxDirnumSize], const char number[StationMaxDirnumSize], const char voicemail[StationMaxDirnumSize]);
 	int (*const SetCallingParty)(sccp_callinfo_t * const ci, const char name[StationMaxDirnumSize], const char number[StationMaxDirnumSize], const char voicemail[StationMaxDirnumSize]);
 	int (*const SetOrigCalledParty)(sccp_callinfo_t * const ci, const char name[StationMaxDirnumSize], const char number[StationMaxDirnumSize], const char voicemail[StationMaxDirnumSize], const int reason);
 	int (*const SetOrigCallingParty)(sccp_callinfo_t * const ci, const char name[StationMaxDirnumSize], const char number[StationMaxDirnumSize]);
 	int (*const SetLastRedirectingParty)(sccp_callinfo_t * const ci, const char name[StationMaxDirnumSize], const char number[StationMaxDirnumSize], const char voicemail[StationMaxDirnumSize], const int reason);
 
-	/* debug */
 	void (*Print2log)(const sccp_callinfo_t * const ci, const char *const header);
 } CallInfoInterface;
 
 extern const CallInfoInterface iCallInfo;
 
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

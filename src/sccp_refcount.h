@@ -8,7 +8,6 @@
 
 #include "sccp_cli.h"
 
-/* forward declarations */
 struct mansession;
 struct message;
 
@@ -32,9 +31,6 @@ enum sccp_refcount_runstate {
 	SCCP_REF_STOPPED = 0,
 	SCCP_REF_DESTROYED = -1
 };
-
-//#if !defined(CS_ASTOBJ_REFCOUNT)
-//#endif
 
 SCCP_API void SCCP_CALL sccp_refcount_init(void);
 SCCP_API void SCCP_CALL sccp_refcount_destroy(void);
@@ -70,7 +66,6 @@ typedef struct {
 #	define __AUTO_RELEASE1(_type, _var, _initial, _file, _func, _line, _counter) __AUTO_RELEASE2(_type, _var, _initial, _file, _func, _line, _counter)
 #	define AUTO_RELEASE(_type, _var, _initial)                                 __AUTO_RELEASE1(_type, _var, _initial, __FILE__, __PRETTY_FUNCTION__, __LINE__, __COUNTER__)
 
-
 #define sccp_refcount_retain_type(_type, _x) 		({											\
 	pbx_assert(PTR_TYPE_CMP(const _type *const, (_x) ) == 1); 										\
 	(_type *)sccp_refcount_retain((_x), __FILE__, __LINE__, __PRETTY_FUNCTION__);								\
@@ -86,4 +81,3 @@ typedef struct {
 
 __END_C_EXTERN__
 
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off

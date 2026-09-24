@@ -20,7 +20,6 @@ typedef struct {
 	int (*const detachObserver)(sccp_device_t * device, const sccp_buttonconfig_t * const buttonConfig);
 	int (*const addSlot)(const char * parkinglot, int slot, struct message * m);
 	int (*const removeSlot)(const char * parkinglot, int slot);
-	// void (*const showCXML) (const char *parkinglot, constDevicePtr d, uint8_t instance);
 	void (*const handleButtonPress)(constDevicePtr d, const sccp_buttonconfig_t * const buttonConfig);
 	void (*const handleDevice2User)(const char * parkinglot, constDevicePtr d, const char * slot_exten, uint8_t instance, uint32_t transactionId);
 	void (*const notifyDevice)(constDevicePtr device, const sccp_buttonconfig_t * const buttonConfig);
@@ -28,4 +27,3 @@ typedef struct {
 
 extern const ParkingLotInterface iParkingLot;
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

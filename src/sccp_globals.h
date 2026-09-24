@@ -16,157 +16,143 @@ __BEGIN_C_EXTERN__
 SCCP_API char SCCP_VERSIONSTR[300];
 SCCP_API char SCCP_REVISIONSTR[30];
 
-// forward declaration (impl sccp_session.c)
 struct sccp_servercontext;
 
-/*!
- * \brief SCCP device-line subscriptionId
- * \note for addressing individual devices on shared line
- * \todo current size if 176 bits, could/should be reduced by using charptr instead
- * \todo at the moment subscriptionId is being copied from lines to channel and linedevices
- */
 struct subscriptionId {
 	char number[SCCP_MAX_EXTENSION];									/*!< will be added to cid */
 	char name[SCCP_MAX_EXTENSION];										/*!< will be added to cidName */
 	char label[SCCP_MAX_LABEL];										/*!< will be added to cidName */
-	char aux[SCCP_MAX_AUX];											/*!< auxiliary parameter. Allows for phone-specific behaviour on a line. */
-	boolean_t replaceCid;											/*!< Should cidnumber be replaced instead of appended to, controled by the '=' subscription flag */
+	char aux[SCCP_MAX_AUX];
+	boolean_t replaceCid;											/*!< Should cidnumber be replaced instead of appended to, controlled by the '=' subscription flag */
 };
 
-/*!
- * \brief SCCP Global Variable Structure
- */
 struct sccp_global_vars {
-	int keepalive;												/*!< KeepAlive */
-	int32_t debug;												/*!< Debug */
+	int keepalive;
+	int32_t debug;
 	int module_running;
-	pbx_rwlock_t lock;											/*!< Asterisk: Lock Me Up and Tie me Down */
+	pbx_rwlock_t lock;
 
-	sccp_threadpool_t *general_threadpool;									/*!< General Work Threadpool */
+	sccp_threadpool_t *general_threadpool;
 
-	SCCP_RWLIST_HEAD (, sccp_session_t) sessions;								/*!< SCCP Sessions */
-	SCCP_RWLIST_HEAD (, sccp_device_t) devices;								/*!< SCCP Devices */
-	SCCP_RWLIST_HEAD (, sccp_line_t) lines;									/*!< SCCP Lines */
+	SCCP_RWLIST_HEAD (, sccp_session_t) sessions;
+	SCCP_RWLIST_HEAD (, sccp_device_t) devices;
+	SCCP_RWLIST_HEAD (, sccp_line_t) lines;
 
-	sccp_mutex_t socket_lock;										/*!< Socket Lock */
-#ifndef SCCP_ATOMIC	
-	sccp_mutex_t usecnt_lock;										/*!< Use Counter Asterisk Lock */
+	sccp_mutex_t socket_lock;
+#ifndef SCCP_ATOMIC
+	sccp_mutex_t usecnt_lock;
 #endif
-	int usecnt;												/*!< Keep track of when we're in use. */
-	long int amaflags;											/*!< AmaFlags */
-	pthread_t mwiMonitorThread;										/*!< MWI Monitor Thread */
+	int usecnt;
+	long int amaflags;
+	pthread_t mwiMonitorThread;
 
-	char dateformat[SCCP_MAX_DATE_FORMAT];									/*!< Date Format */
+	char dateformat[SCCP_MAX_DATE_FORMAT];
 
 	struct sccp_servercontext * srvcontexts[2];
 
-	struct sccp_ha *ha;											/*!< Permit or deny connections to the main socket */
-	struct sockaddr_storage bindaddr;									/*!< Bind IP Address */
-	struct sockaddr_storage secbindaddr;                                                                    /*!< Bind IP Address */
+	struct sccp_ha *ha;
+	struct sockaddr_storage bindaddr;
+	struct sockaddr_storage secbindaddr;
 	char * cert_file;
-	struct sccp_ha *localaddr;										/*!< Localnet for Network Address Translation */
+	struct sccp_ha *localaddr;
 
-	struct sockaddr_storage externip;									/*!< External IP Address (\todo should change to an array of external ip's, because externhost could resolv to multiple ip-addresses (h_addr_list)) */
-	time_t externexpire;											/*!< External Expire */
-	uint16_t externrefresh;											/*!< External Refresh */
-	
-	boolean_t recorddigittimeoutchar;									/*!< Record Digit Time Out Char. Whether to include the digittimeoutchar in the call logs */
+	struct sockaddr_storage externip;
+	time_t externexpire;
+	uint16_t externrefresh;
+
+	boolean_t recorddigittimeoutchar;
 	uint8_t firstdigittimeout;										/*!< First Digit Timeout. Wait up to 16 seconds for first digit */
-	
-	uint8_t digittimeout;											/*!< Digit Timeout. How long to wait for following digits */
-	char digittimeoutchar;											/*!< Digit End Character. What char will force the dial (Normally '#') */
-	boolean_t simulate_enbloc;										/*!< Simulated Enbloc Dialing for older device to speed up dialing */
-	uint8_t autoanswer_ring_time;										/*!< Auto Answer Ring Time */
-	skinny_tone_t autoanswer_tone;										/*!< Auto Answer Tone */
-	skinny_tone_t remotehangup_tone;									/*!< Remote Hangup Tone */
-	skinny_tone_t transfer_tone;										/*!< Transfer Tone */
-	skinny_tone_t dnd_tone;											/*!< DND Tone */
-	skinny_tone_t callwaiting_tone;										/*!< Call Waiting Tone */
 
-	uint8_t callwaiting_interval;										/*!< Call Waiting Ring Interval */
-	uint8_t sccp_tos;											/*!< SCCP Socket Type of Service (TOS) (QOS) (Signaling) */
-	uint8_t audio_tos;											/*!< Audio Socket Type of Service (TOS) (QOS) (RTP) */
-	uint8_t video_tos;											/*!< Video Socket Type of Service (TOS) (QOS) (VRTP) */
-	uint8_t sccp_cos;											/*!< SCCP Socket Class of Service (COS) (QOS) (Signaling) */
-	uint8_t audio_cos;											/*!< Audio Socket Class of Service (COS) (QOS) (RTP) */
-	uint8_t video_cos;											/*!< Video Socket Class of Service (COS) (QOS) (VRTP) */
-	boolean_t dndFeature;											/*!< Do Not Disturb (DND) Mode: \see SCCP_DNDMODE_* */
+	uint8_t digittimeout;
+	char digittimeoutchar;
+	boolean_t simulate_enbloc;
+	uint8_t autoanswer_ring_time;
+	skinny_tone_t autoanswer_tone;
+	skinny_tone_t remotehangup_tone;
+	skinny_tone_t transfer_tone;
+	skinny_tone_t dnd_tone;
+	skinny_tone_t callwaiting_tone;
 
-	boolean_t transfer_on_hangup;										/*!< Complete transfer on hangup */
+	uint8_t callwaiting_interval;
+	uint8_t sccp_tos;
+	uint8_t audio_tos;
+	uint8_t video_tos;
+	uint8_t sccp_cos;
+	uint8_t audio_cos;
+	uint8_t video_cos;
+	boolean_t dndFeature;
+
+	boolean_t transfer_on_hangup;
 #ifdef CS_MANAGER_EVENTS
-	boolean_t callevents;											/*!< Call Events */
+	boolean_t callevents;
 #endif
-	boolean_t echocancel;											/*!< Echo Canel Support (Boolean, default=on) */
+	boolean_t echocancel;											/*!< Echo Cancel Support (Boolean, default=on) */
 	boolean_t silencesuppression;										/*!< Silence Suppression Support (Boolean, default=on)  */
 	boolean_t trustphoneip;											/*!< Trust Phone IP Support (Boolean, default=on) */
-	boolean_t privacy;											/*!< Privacy Support (Length=2) */
+	boolean_t privacy;
 	boolean_t mwioncall;											/*!< MWI On Call Support (Boolean, default=on) */
-	boolean_t directrtp;											/*!< Direct RTP */
-	boolean_t useoverlap;											/*!< Overlap Dial Support */
-	boolean_t transfer;											/*!< Transfer Feature Enabled */
+	boolean_t directrtp;
+	boolean_t useoverlap;
+	boolean_t transfer;
 	boolean_t cfwdall;                                                                                      /*!< Call Forward All Support (Boolean, default=on) */
 	boolean_t cfwdbusy;                                                                                     /*!< Call Forward on Busy Support (Boolean, default=on) */
 	boolean_t cfwdnoanswer;                                                                                 /*!< Call Forward on No-Answer Support (Boolean, default=on) */
-	uint16_t cfwdnoanswer_timeout;                                                                          /*!< Call Forward on No-Answer timeout */
-	char *meetmeopts;											/*!< Meetme Options to be Used */
+	uint16_t cfwdnoanswer_timeout;
+	char *meetmeopts;
 #if HAVE_ICONV
 	char *iconvcodepage;											/*!< Iconv Codepage to use during conversion from UTF-8, for old phone models */
-#endif	
-	sccp_group_t callgroup;											/*!< Call Group */
+#endif
+	sccp_group_t callgroup;
 #ifdef CS_SCCP_PICKUP
-	sccp_group_t pickupgroup;										/*!< PickUp Group */
+	sccp_group_t pickupgroup;
 	boolean_t directed_pickup;										/*!< Directed Pickup Extension Support (Boolean, default=on) */
-	char directed_pickup_context[SCCP_MAX_CONTEXT];								/*!< Directed Pickup Context to Use in DialPlan */
+	char directed_pickup_context[SCCP_MAX_CONTEXT];
 	boolean_t pickup_modeanswer;										/*!< Directed PickUp Mode Answer (boolean, default" on) */
 #ifdef CS_AST_HAS_NAMEDGROUP
-	char *namedcallgroup;											/*!< Named Call Group */
-	char *namedpickupgroup;											/*!< Named Pickup Group */
+	char *namedcallgroup;
+	char *namedpickupgroup;
 #endif
 #else
 	uint8_t _padding1[1];
 #endif
-	skinny_callHistoryDisposition_t callhistory_answered_elsewhere;						/*!< What to do with the call history for calls that were answered remotely */
-	skinny_ringtype_t ringtype;										/*!< RingType for incoming calls */
-	boolean_t meetme;											/*!< Meetme on/off */
+	skinny_callHistoryDisposition_t callhistory_answered_elsewhere;
+	skinny_ringtype_t ringtype;
+	boolean_t meetme;
 	boolean_t allowAnonymous;										/*!< Allow Anonymous/Guest Devices */
-	boolean_t earlyrtp;                                                                                     /*!< Channel State where to open the rtp media stream */
+	boolean_t earlyrtp;
 
-	skinny_lampmode_t mwilamp;										/*!< MWI/Lamp (Length:3) */
+	skinny_lampmode_t mwilamp;
 	sccp_blindtransferindication_t blindtransferindication;							/*!< Blind Transfer Indication Support (Boolean, default=on = SCCP_BLINDTRANSFER_MOH) */
-	sccp_nat_t nat;												/*!< Network Address Translation */
+	sccp_nat_t nat;
 	sccp_call_answer_order_t callanswerorder;								/*!< Call Answer Order */
 
-	struct ast_jb_conf *global_jbconf;									/*!< Global Jitter Buffer Configuration */
-	char *servername;											/*!< ServerName */
-	char *context;												/*!< Global / General Context */
+	struct ast_jb_conf *global_jbconf;
+	char *servername;
+	char *context;
 	skinny_capabilities_t global_preferences;
-	char *externhost;											/*!< External HostName */
-	char *musicclass;											/*!< Music Class */
-	char *language;												/*!< Language */
-	char *accountcode;											/*!< Account Code */
-	char *regcontext;											/*!< Context for auto-extension (DUNDI) */
+	char *externhost;
+	char *musicclass;
+	char *language;
+	char *accountcode;
+	char *regcontext;
 #ifdef CS_SCCP_REALTIME
-	char *realtimedevicetable;										/*!< Database Table Name for SCCP Devices */
-	char *realtimelinetable;											/*!< Database Table Name for SCCP Lines */
+	char *realtimedevicetable;
+	char *realtimelinetable;
 #endif
-	char used_context[SCCP_MAX_EXTENSION];									/*!< placeholder to check if context are already used in regcontext (DUNDI) */
+	char used_context[SCCP_MAX_EXTENSION];
 
-	char *config_file_name;											/*!< SCCP Config File Name in Use */
+	char *config_file_name;
 	struct ast_config *cfg;
-	sccp_hotline_t *hotline;										/*!< HotLine */
+	sccp_hotline_t *hotline;
 
 	char *token_fallback;											/*!< TokenReq fallback policy: true/false/odd/even/script */
-	int token_backoff_time;											/*!< Backoff time on TokenReject */
+	int token_backoff_time;
 	int server_priority;											/*!< Server Priority to fallback to */
 
-	boolean_t reload_in_progress;										/*!< Reload in Progress */
+	boolean_t reload_in_progress;
 	boolean_t pendingUpdate;
-};														/*!< SCCP Global Varable Structure */
+};
 
-/*!
- * \brief Scheduler Tasks
- * \note (NEW) Scheduler Implementation (NEW)
- */
 #define SCCP_SCHED_DEL(id) 												\
 ({															\
 	int _count = 0; 												\
@@ -176,12 +162,10 @@ struct sccp_global_vars {
 	if (_count == 10) { 												\
 		sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "SCCP: Unable to cancel schedule ID %d.\n", (id)); 		\
 	} 														\
-	(id) = -1; 			/* this might be seen as a side effect */					\
+	(id) = -1; \
 	(_sched_res); 	 												\
 })
 
-/* Global Allocations */
 SCCP_API struct sccp_global_vars *sccp_globals;
 
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

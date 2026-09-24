@@ -25,13 +25,7 @@ SCCP_FILE_VERSION(__FILE__, "");
 
 int __sccp_line_destroy(const void *ptr);
 
-/*!
- * \brief run before reload is start on lines * \note See \ref sccp_config_reload
- *
- * \callgraph
- * \callergraph
- *
- */
+/* run before reload is start on lines */
 void sccp_line_pre_reload(void)
 {
 	sccp_line_t *l = NULL;
@@ -39,7 +33,7 @@ void sccp_line_pre_reload(void)
 		if(GLOB(hotline)->line == l) { /* always remove hotline from ld */
 			sccp_log((DEBUGCAT_CONFIG + DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: removing hotline from the device\n", l->name);
 			sccp_linedevice_remove(NULL, l);
-		} else { /* Don't want to include the hotline line */
+		} else {
 #ifdef CS_SCCP_REALTIME
 			if (l->realtime == FALSE)
 #endif
@@ -53,14 +47,8 @@ void sccp_line_pre_reload(void)
 	SCCP_LIST_TRAVERSE_SAFE_END;
 }
 
-/*!
- * \brief run after the new line config is loaded during the reload process
- * \note See \ref sccp_config_reload
- * \todo to be implemented correctly (***)
- *
- * \callgraph
- * \callergraph
- * 
+/*
+ * run after the new line config is loaded during the reload process
  */
 void sccp_line_post_reload(void)
 {
@@ -73,7 +61,6 @@ void sccp_line_post_reload(void)
 		AUTO_RELEASE(sccp_line_t, l , sccp_line_retain(line));
 
 		if (l) {
-			// existing lines
 			sccp_linedevice_t * ld = NULL;
 			SCCP_LIST_LOCK(&l->devices);
 			SCCP_LIST_TRAVERSE(&l->devices, ld, list) {
@@ -94,16 +81,6 @@ void sccp_line_post_reload(void)
 	SCCP_RWLIST_TRAVERSE_SAFE_END;
 }
 
-/*!
- * \brief Build Default SCCP Line.
- *
- * Creates an SCCP Line with default/global values
- *
- * \return Default SCCP Line
- *
- * \callgraph
- * \callergraph
- */
 linePtr sccp_line_create(const char * name)
 {
 	sccp_line_t *l = NULL;
@@ -113,7 +90,7 @@ linePtr sccp_line_create(const char * name)
 		sccp_line_release(&l);						/* explicit release of found line */
 		return NULL;
 	}
-	
+
 	l = (sccp_line_t *) sccp_refcount_object_alloc(sizeof(sccp_line_t), SCCP_REF_LINE, name, __sccp_line_destroy);
 	if (!l) {
 		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, name);
@@ -128,26 +105,21 @@ linePtr sccp_line_create(const char * name)
 	return l;
 }
 
-/*!
+/*
  * Add a line to global line list.
- * \param line line pointer
- * \since 20091202 - MC
- * 
- * \note needs to be called with a retained line
- * \note adds a retained line to the list (refcount + 1)
+ * needs to be called with a retained line
+ * adds a retained line to the list (refcount + 1)
  */
 void sccp_line_addToGlobals(constLinePtr line)
 {
 	AUTO_RELEASE(sccp_line_t, l , sccp_line_retain(line));
 	if (l) {
-		/* add to list */
 		SCCP_RWLIST_WRLOCK(&GLOB(lines));
 		sccp_line_retain(l);										/* add retained line to the list */
 		SCCP_RWLIST_INSERT_SORTALPHA(&GLOB(lines), l, list, cid_num);
 		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "line %s added\n", l->name);
 		SCCP_RWLIST_UNLOCK(&GLOB(lines));
 
-		/* emit event */
 		sccp_event_t *event = sccp_event_allocate(SCCP_EVENT_LINEINSTANCE_CREATED);
 		if (event) {
 			event->lineInstance.line = sccp_line_retain(l);
@@ -158,12 +130,10 @@ void sccp_line_addToGlobals(constLinePtr line)
 	}
 }
 
-/*!
+/*
  * Remove a line from the global line list.
- * \param line SCCP line pointer
- * 
- * \note needs to be called with a retained line
- * \note removes the retained line within the list (refcount - 1)
+ * needs to be called with a retained line
+ * removes the retained line within the list (refcount - 1)
  */
 void sccp_line_removeFromGlobals(sccp_line_t * line)
 {
@@ -175,19 +145,14 @@ void sccp_line_removeFromGlobals(sccp_line_t * line)
 
 		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "line %s removed\n", removed_line->name);
 
-		sccp_line_release(&removed_line);								/* explicit release */
+		sccp_line_release(&removed_line);
 	} else {
 		pbx_log(LOG_ERROR, "SCCP: sccp_line_removeFromGlobals() was called without a line (caller bug)\n");
 	}
 }
 
-/*!
- * \brief create a hotline
- * 
- */
 void *sccp_create_hotline(void)
 {
-
 	GLOB(hotline) = (sccp_hotline_t *) sccp_malloc(sizeof(sccp_hotline_t));
 	if (!GLOB(hotline)) {
 		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
@@ -210,14 +175,6 @@ void *sccp_create_hotline(void)
 	return NULL;
 }
 
-/*!
- * \brief Kill all Channels of a specific Line
- * \param l SCCP Line
- *
- * \callgraph
- * \callergraph
- *
- */
 void sccp_line_kill_channels(linePtr l)
 {
 	sccp_channel_t *c = NULL;
@@ -233,42 +190,20 @@ void sccp_line_kill_channels(linePtr l)
 	SCCP_LIST_UNLOCK(&l->channels);
 }
 
-/*!
- * \brief Clean Line
- *
- *  clean up memory allocated by the line.
- *  if destroy is true, line will be removed from global device list
- *
- * \param l SCCP Line
- * \param remove_from_global as boolean_t
- *
- * \callgraph
- * \callergraph
- * 
- */
 void sccp_line_clean(linePtr l, boolean_t remove_from_global)
 {
 	sccp_line_kill_channels(l);
-	sccp_linedevice_remove(NULL, l);                                        // removing all devices from this line.
+	sccp_linedevice_remove(NULL, l);
 	if (remove_from_global) {
 		sccp_event_t *event = sccp_event_allocate(SCCP_EVENT_LINEINSTANCE_DESTROYED);
 		if(event) {
 			event->lineInstance.line = sccp_line_retain(l);
 			sccp_event_syncFire(event);
 		}
-		sccp_line_removeFromGlobals(l);					// final release
+		sccp_line_removeFromGlobals(l);
 	}
 }
 
-/*!
- * \brief Free a Line as scheduled command
- * \param ptr SCCP Line Pointer
- * \return success as int
- *
- * \callgraph
- * \callergraph
- * 
- */
 int __sccp_line_destroy(const void *ptr)
 {
 	sccp_mailbox_t *mailbox = NULL;
@@ -279,17 +214,13 @@ int __sccp_line_destroy(const void *ptr)
 
 	sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG)) (VERBOSE_PREFIX_1 "%s: line freed\n", l->name);
 
-	// cleaning l->channels
 	sccp_line_kill_channels(l);
 
-	// cleaning l->devices
 	sccp_linedevice_remove(NULL, l);
 
-	// cleanup mailboxes (l->mailboxes)
 	{
 		SCCP_LIST_LOCK(&l->mailboxes);
 		while ((mailbox = SCCP_LIST_REMOVE_HEAD(&l->mailboxes, list))) {
-			//sccp_mwi_unsubscribeMailbox(mailbox);
 			sccp_free(mailbox);
 		}
 		SCCP_LIST_UNLOCK(&l->mailboxes);
@@ -299,21 +230,17 @@ int __sccp_line_destroy(const void *ptr)
 		SCCP_LIST_HEAD_DESTROY(&l->mailboxes);
 	}
 
-	// cleanup variables
 	if (l->variables) {
 		pbx_variables_destroy(l->variables);
 		l->variables = NULL;
 	}
 
-	// cleanup dynamically allocated memory by sccp_config
 	sccp_config_cleanup_dynamically_allocated_memory(l, SCCP_CONFIG_LINE_SEGMENT);
 
-	// cleanup regcontext
 	if (l->regcontext) {
 		sccp_free(l->regcontext);
 	}
 
-	// destroy attached channels (if any / should be none)
 	SCCP_LIST_LOCK(&l->channels);
 	sccp_channel_t *channel;
 	while ((channel = SCCP_LIST_REMOVE_HEAD(&l->channels, list))) {
@@ -325,7 +252,6 @@ int __sccp_line_destroy(const void *ptr)
 	SCCP_LIST_UNLOCK(&l->channels);
 	SCCP_LIST_HEAD_DESTROY(&l->channels);
 
-	// destroy attached devices (if any / should be none)
 	SCCP_LIST_LOCK(&l->devices);
 	sccp_linedevice_t *linedevice;
 	while ((linedevice = SCCP_LIST_REMOVE_HEAD(&l->devices, list))) {
@@ -345,7 +271,6 @@ void sccp_line_copyCodecSetsFromLineToChannel(constLinePtr l, constDevicePtr may
 	if(!l || !c) {
 		return;
 	}
-	/* work already done in sccp_line_copyCodecSetsFromDeviceToLine during sccp_line_addDevice */
 	if (!l->preferences_set_on_line_level && maybe_d) {
 		memcpy(&c->preferences.audio, &maybe_d->preferences.audio, sizeof(c->preferences.audio));
 		memcpy(&c->preferences.video, &maybe_d->preferences.video, sizeof(c->preferences.video));
@@ -361,7 +286,6 @@ void sccp_line_copyCodecSetsFromLineToChannel(constLinePtr l, constDevicePtr may
 		memcpy(&c->capabilities.video, &l->capabilities.video, sizeof(c->capabilities.video));
 	}
 
-	// use a minimal default set, all devices should be able to support (last resort)
 	if (c->preferences.audio[0] == SKINNY_CODEC_NONE) {
 		pbx_log(LOG_NOTICE, "%s: neither the line nor its devices have codec preferences; using the global allow/disallow list\n", c->designator);
 		memcpy(&c->preferences.audio, &GLOB(global_preferences), sizeof(c->preferences.audio));
@@ -383,8 +307,6 @@ void sccp_line_updatePreferencesFromDevicesToLine(sccp_line_t * l)
 	if(!l) {
 		return;
 	}
-	// sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_3 "%s: Update line preferences\n", l->name);
-	// combine all preferences
 	SCCP_LIST_LOCK(&l->devices);
 	SCCP_LIST_TRAVERSE(&l->devices, ld, list) {
 		if (first) {
@@ -397,14 +319,12 @@ void sccp_line_updatePreferencesFromDevicesToLine(sccp_line_t * l)
 			if (!l->preferences_set_on_line_level) {
 				skinny_codec_t temp[SKINNY_MAX_CAPABILITIES] = {SKINNY_CODEC_NONE};
 				if(sccp_codec_getReducedSet(l->preferences.audio, ld->device->preferences.audio, temp) == 0) {
-					// zero matching codecs we have to combine
 					sccp_codec_combineSets(l->preferences.audio, ld->device->preferences.audio);
 				} else {
 					memcpy(&l->preferences.audio, &temp, sizeof *temp);
 				}
 				memset(&temp, SKINNY_CODEC_NONE, sizeof *temp);
 				if(sccp_codec_getReducedSet(l->preferences.video, ld->device->preferences.video, temp) == 0) {
-					// zero matching codecs we have to combine
 					sccp_codec_combineSets(l->preferences.video, ld->device->preferences.video);
 				} else {
 					memcpy(&l->preferences.video, &temp, sizeof *temp);
@@ -427,8 +347,6 @@ void sccp_line_updateCapabilitiesFromDevicesToLine(linePtr l)
 	if (!l) {
 		return;
 	}
-	// sccp_log(DEBUGCAT_CODEC)(VERBOSE_PREFIX_3 "%s: Update line capabilities \n", l->name);
-	// combine all capabilities
 	SCCP_LIST_LOCK(&l->devices);
 	SCCP_LIST_TRAVERSE(&l->devices, ld, list) {
 		if (first) {
@@ -441,7 +359,6 @@ void sccp_line_updateCapabilitiesFromDevicesToLine(linePtr l)
 		}
 	}
 	SCCP_LIST_UNLOCK(&l->devices);
-	// use a minimal default set, all devices should be able to support (last resort)
 	if (l->capabilities.audio[0] == SKINNY_CODEC_NONE) {
 		sccp_log((DEBUGCAT_LINE | DEBUGCAT_CODEC))(VERBOSE_PREFIX_3 "%s: no capabilities from the line or its devices; using alaw and ulaw\n", l->name);
 		l->capabilities.audio[0] = SKINNY_CODEC_G711_ALAW_64K;
@@ -471,19 +388,6 @@ void sccp_line_updateLineCapabilitiesByDevice(constDevicePtr d)
 	}
 }
 
-/*!
- * \brief Set a Call Forward on a specific Line
- * \param line SCCP Line
- * \param device device that requested the forward
- * \param type Call Forward Type as uint8_t
- * \param number Number to which should be forwarded
- * \todo we should check, that extension is reachable on line
- *
- * \callgraph
- * \callergraph
- * 
- * \todo implement cfwd_noanswer
- */
 void sccp_line_cfwd(constLinePtr line, constDevicePtr device, sccp_cfwd_t type, char * number)
 {
 	if (!line || !device) {
@@ -498,15 +402,6 @@ void sccp_line_cfwd(constLinePtr line, constDevicePtr device, sccp_cfwd_t type, 
 	}
 }
 
-/*! * \brief Add a Channel to a Line
- *
- * \param line SCCP Line
- * \param channel SCCP Channel
- *
- * \warning
- *  - line->channels is not always locked
- *
- */
 void sccp_line_addChannel(constLinePtr line, constChannelPtr channel)
 {
 	if (!line || !channel) {
@@ -517,7 +412,6 @@ void sccp_line_addChannel(constLinePtr line, constChannelPtr channel)
 	AUTO_RELEASE(sccp_line_t, l , sccp_line_retain(line));
 
 	if (l) {
-		//l->statistic.numberOfActiveChannels++;
 		SCCP_LIST_LOCK(&l->channels);
 		if ((c = sccp_channel_retain(channel))) {							// Add into list retained
 #if CS_REFCOUNT_DEBUG
@@ -525,25 +419,15 @@ void sccp_line_addChannel(constLinePtr line, constChannelPtr channel)
 #endif
 			sccp_log((DEBUGCAT_LINE)) (VERBOSE_PREFIX_1 "SCCP: call %d added to line %s\n", c->callid, l->name);
 			if (GLOB(callanswerorder) == SCCP_ANSWER_OLDEST_FIRST) {
-				SCCP_LIST_INSERT_TAIL(&l->channels, c, list);					// add to list
+				SCCP_LIST_INSERT_TAIL(&l->channels, c, list);
 			} else {
-				SCCP_LIST_INSERT_HEAD(&l->channels, c, list);					// add to list
+				SCCP_LIST_INSERT_HEAD(&l->channels, c, list);
 			}
 		}
 		SCCP_LIST_UNLOCK(&l->channels);
 	}
 }
 
-/*!
- * \brief Remove a Channel from a Line
- *
- * \param line SCCP Line
- * \param channel SCCP Channel
- * 
- * \warning
- *  - line->channels is not always locked
- * 
- */
 void sccp_line_removeChannel(constLinePtr line, sccp_channel_t * channel)
 {
 	if (!line || !channel) {
@@ -567,7 +451,6 @@ void sccp_line_removeChannel(constLinePtr line, sccp_channel_t * channel)
 	}
 }
 
-/*=================================================================================== MWI EVENT HANDLING ==============*/
 void sccp_line_setMWI(constLinePtr l, int newmsgs, int oldmsgs)
 {
 	AUTO_RELEASE(sccp_line_t, line, sccp_line_retain(l));
@@ -579,15 +462,7 @@ void sccp_line_setMWI(constLinePtr l, int newmsgs, int oldmsgs)
 		}
 	}
 }
-/*=================================================================================== FIND FUNCTIONS ==============*/
 
-/*!
- * \brief Find Line by Name
- *
- * \callgraph
- * \callergraph
- * 
- */
 linePtr sccp_line_find_byname(const char * name, uint8_t useRealtime)
 {
 	sccp_line_t *l = NULL;
@@ -610,26 +485,9 @@ linePtr sccp_line_find_byname(const char * name, uint8_t useRealtime)
 
 #ifdef CS_SCCP_REALTIME
 
-/*!
- * \brief Find Line via Realtime
- *
- * \callgraph
- * \callergraph
- */
 #if DEBUG
-/*!
- * \param name Line Name
- * \param filename Debug FileName
- * \param lineno Debug LineNumber
- * \param func Debug Function Name
- * \return SCCP Line
- */
 linePtr __sccp_line_find_realtime_byname(const char * name, const char * filename, int lineno, const char * func)
 #	else
-/*!
- * \param name Line Name
- * \return SCCP Line
- */
 linePtr sccp_line_find_realtime_byname(const char * name)
 #	endif
 {
@@ -651,10 +509,10 @@ linePtr sccp_line_find_realtime_byname(const char * name)
 
 		sccp_log((DEBUGCAT_LINE)) (VERBOSE_PREFIX_4 "SCCP: creating realtime line %s\n", name);
 
-		if ((l = sccp_line_create(name))) {								/* already retained */
+		if ((l = sccp_line_create(name))) {
 			sccp_config_applyLineConfiguration(l, variable);
 			l->realtime = TRUE;
-			sccp_line_addToGlobals(l);								// can return previous instance on doubles
+			sccp_line_addToGlobals(l);
 			pbx_variables_destroy(v);
 		} else {
 			pbx_log(LOG_ERROR, "SCCP: realtime line '%s' not created: out of memory\n", name);
@@ -667,31 +525,9 @@ linePtr sccp_line_find_realtime_byname(const char * name)
 }
 #endif
 
-/*!
- * \brief Find Line by Instance on device
- *
- * \todo No ID Specified only instance, should this function be renamed ?
- *
- * \callgraph
- * \callergraph
- * 
- */
 #if DEBUG
-/*!
- * \param d SCCP Device
- * \param instance line instance as int
- * \param filename Debug FileName
- * \param lineno Debug LineNumber
- * \param func Debug Function Name
- * \return SCCP Line (can be null)
- */
 linePtr __sccp_line_find_byid(constDevicePtr d, uint16_t instance, const char * filename, int lineno, const char * func)
 #else
-/*!
- * \param d SCCP Device
- * \param instance line instance as int
- * \return SCCP Line (can be null)
- */
 linePtr sccp_line_find_byid(constDevicePtr d, uint16_t instance)
 #endif
 {
@@ -720,31 +556,9 @@ linePtr sccp_line_find_byid(constDevicePtr d, uint16_t instance)
 	return l;
 }
 
-/*!
- * \brief Find Line by ButtonIndex on device
- *
- * \todo No ID Specified only instance, should this function be renamed ?
- *
- * \callgraph
- * \callergraph
- * 
- */
 #if DEBUG
-/*!
- * \param d SCCP Device
- * \param buttonIndex Button Index as uint16_t
- * \param filename Debug FileName
- * \param lineno Debug LineNumber
- * \param func Debug Function Name
- * \return SCCP Line (can be null)
- */
 linePtr __sccp_line_find_byButtonIndex(constDevicePtr d, uint16_t buttonIndex, const char * filename, int lineno, const char * func)
 #else
-/*!
- * \param d SCCP Device
- * \param instance line instance as int
- * \return SCCP Line (can be null)
- */
 linePtr sccp_line_find_byButtonIndex(constDevicePtr d, uint16_t buttonIndex)
 #endif
 {
@@ -755,7 +569,7 @@ linePtr sccp_line_find_byButtonIndex(constDevicePtr d, uint16_t buttonIndex)
 	}
 
 	sccp_log((DEBUGCAT_LINE + DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: looking up line on button %d\n", DEV_ID_LOG(d), buttonIndex);
-	
+
 	if (buttonIndex > 0 && buttonIndex < StationMaxButtonTemplateSize && d->buttonTemplate[buttonIndex - 1].type == SKINNY_BUTTONTYPE_LINE && d->buttonTemplate[buttonIndex - 1].ptr ) {
 #if DEBUG
 		l = (sccp_line_t *)sccp_refcount_retain(d->buttonTemplate[buttonIndex - 1].ptr, filename, lineno, func);
@@ -772,4 +586,3 @@ linePtr sccp_line_find_byButtonIndex(constDevicePtr d, uint16_t buttonIndex)
 
 	return l;
 }
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

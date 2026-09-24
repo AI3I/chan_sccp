@@ -11,10 +11,7 @@ SCCP_FILE_VERSION(__FILE__, "");
 #endif
 #endif
 
-/* One lock protects the queue and admission state. Workers are joinable and
- * never free pool storage. A bounded, fixed pool avoids asynchronous retirement
- * and the old resizing races; the startup CPU-based sizing is retained.
- */
+/* Workers are joinable and never free pool storage; the pool size is set once from the CPU count at startup. */
 struct sccp_threadpool {
 	pbx_mutex_t lock;
 	pbx_cond_t work;
@@ -28,7 +25,6 @@ struct sccp_threadpool {
 static void *sccp_threadpool_worker(void *data)
 {
 	sccp_threadpool_t *pool = data;
-	/* Destruction is cooperative; cancellation cannot interrupt a callback. */
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 	pbx_mutex_lock(&pool->lock);
 	for (;;) {

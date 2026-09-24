@@ -119,4 +119,3 @@ SCCP_INLINE skinny_stimulus_t SCCP_CALL sccp_cfwd2stimulus(const sccp_cfwd_t typ
 SCCP_API void SCCP_CALL sccp_do_backtrace(void);
 #endif
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

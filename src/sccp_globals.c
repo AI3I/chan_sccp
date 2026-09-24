@@ -15,9 +15,5 @@ SCCP_FILE_VERSION(__FILE__, "");
 char SCCP_VERSIONSTR[300];
 char SCCP_REVISIONSTR[30];
 
-/*!
- * \brief       Global variables
- */
 struct sccp_global_vars *sccp_globals = 0;
 
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

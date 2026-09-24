@@ -33,21 +33,16 @@ SCCP_FILE_VERSION(__FILE__, "");
 #  include <execinfo.h>
 #    include <asterisk/backtrace.h>
 #endif
-#include <asterisk/ast_version.h>		// ast_get_version
-#ifdef HAVE_PBX_ACL_H				// ast_ha, AST_SENSE_ALLOW
+#include <asterisk/ast_version.h>
+#ifdef HAVE_PBX_ACL_H
 #  include <asterisk/acl.h>
 #endif
 
-/*!
- * \brief Print out a messagebuffer
- * \param messagebuffer Pointer to Message Buffer as char
- * \param len Lenght as Int
- */
 void sccp_dump_packet(const unsigned char * const messagebuffer, int len)
 {
-	static const int numcolumns = 16;									// number output columns
+	static const int numcolumns = 16;
 
-	if (len <= 0 || !messagebuffer || !sccp_strlen((const char *) messagebuffer)) {				// safe quard
+	if (len <= 0 || !messagebuffer || !sccp_strlen((const char *) messagebuffer)) {
 		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_1 "SCCP: packet dump skipped: no message buffer\n");
 		return;
 	}
@@ -55,7 +50,7 @@ void sccp_dump_packet(const unsigned char * const messagebuffer, int len)
 	int cur = 0;
 	int hexcolumnlength = 0;
 	const char *hex = "0123456789ABCDEF";
-	char hexout[(numcolumns * 3) + (numcolumns / 8) + 1];							// 3 char per hex value + grouping + endofline
+	char hexout[(numcolumns * 3) + (numcolumns / 8) + 1];
 	char * hexptr = NULL;
 	char chrout[numcolumns + 1];
 	char * chrptr = NULL;
@@ -63,23 +58,21 @@ void sccp_dump_packet(const unsigned char * const messagebuffer, int len)
 	unsigned char * bufptr     = (unsigned char *)messagebuffer;
 
 	do {
-		// memset(hexout, 0, sizeof(hexout));
 		memset(hexout, 0, (numcolumns * 3) + (numcolumns / 8) + 1);
-		// memset(chrout, 0, sizeof(chrout));
 		memset(chrout, 0, numcolumns + 1);
 		hexptr = hexout;
 		chrptr = chrout;
 		for (col = 0; col < numcolumns && (cur + col) < len; col++) {
-			*hexptr++ = hex[(*bufptr >> 4) & 0xF];                                                  // lookup first part of hex value and add to hexptr
-			*hexptr++ = hex[(*bufptr) & 0xF];                                                       // lookup second part of a hex value and add to hexptr
-			*hexptr++ = ' ';									// add space to hexptr
+			*hexptr++ = hex[(*bufptr >> 4) & 0xF];
+			*hexptr++ = hex[(*bufptr) & 0xF];
+			*hexptr++ = ' ';
 			if ((col + 1) % 8 == 0) {
-				*hexptr++ = ' ';								// group by blocks of eight
+				*hexptr++ = ' ';
 			}
-			*chrptr++ = isprint(*bufptr) ? *bufptr : '.';                                        // add character or . to chrptr
+			*chrptr++ = isprint(*bufptr) ? *bufptr : '.';
 			bufptr++;
 		}
-		hexcolumnlength = (numcolumns * 3) + (numcolumns / 8) - 1;					// numcolums + block spaces - 1
+		hexcolumnlength = (numcolumns * 3) + (numcolumns / 8) - 1;
 		pbx_str_append(&output_buf, 0, VERBOSE_PREFIX_1 "%08X - %-*.*s - %s\n", cur, hexcolumnlength, hexcolumnlength, hexout, chrout);
 		cur += col;
 	} while (cur < (len - 1));
@@ -92,10 +85,6 @@ void sccp_dump_msg(const sccp_msg_t * const msg)
 	sccp_dump_packet((unsigned char *) msg, letohl(msg->header.length) + 8);
 }
 
-/*!
- * \brief Clear all Addons from AddOn Linked List
- * \param d SCCP Device
- */
 void sccp_addons_clear(devicePtr d)
 {
 	sccp_addon_t * addon = NULL;
@@ -103,7 +92,6 @@ void sccp_addons_clear(devicePtr d)
 	if (!d) {
 		return;
 	}
-	// while ((AST_LIST_REMOVE_HEAD(&d->addons, list))) ;
 	while ((addon = SCCP_LIST_REMOVE_HEAD(&d->addons, list))) {
 		sccp_free(addon);
 	}
@@ -111,10 +99,6 @@ void sccp_addons_clear(devicePtr d)
 	d->addons.last = NULL;
 }
 
-/*!
- * \brief Put SCCP into Safe Sleep for [num] milli_seconds
- * \param ms MilliSeconds
- */
 void sccp_safe_sleep(int ms)
 {
 	struct timeval start = pbx_tvnow();
@@ -126,11 +110,6 @@ void sccp_safe_sleep(int ms)
 }
 
 #ifndef HAVE_PBX_STRINGS_H
-/*!
- * \brief Asterisk Skip Blanks
- * \param str as Character
- * \return String without Blanks
- */
 char *pbx_skip_blanks(char *str)
 {
 	while (*str && *str < 33)
@@ -139,12 +118,6 @@ char *pbx_skip_blanks(char *str)
 	return str;
 }
 
-/*!
- * \brief Asterisk Trim Blanks
- * Remove Blanks from the beginning and end of a string
- * \param str as Character
- * \return String without Beginning or Ending Blanks
- */
 char *pbx_trim_blanks(char *str)
 {
 	char *work = str;
@@ -157,11 +130,7 @@ char *pbx_trim_blanks(char *str)
 	return str;
 }
 
-/*!
- * \brief Asterisk Non Blanks
- * \param str as Character
- * \return Only the Non Blank Characters
- */
+/* Returns Only the Non Blank Characters */
 char *pbx_skip_nonblanks(char *str)
 {
 	while (*str && *str > 32)
@@ -170,11 +139,6 @@ char *pbx_skip_nonblanks(char *str)
 	return str;
 }
 
-/*!
- * \brief Asterisk Strip
- * \param s as Character
- * \return String without all Blanks
- */
 char *pbx_strip(char *s)
 {
 	s = pbx_skip_blanks(s);
@@ -187,14 +151,6 @@ char *pbx_strip(char *s)
 
 #ifndef CS_AST_HAS_APP_SEPARATE_ARGS
 
-/*!
- * \brief Separate App Args
- * \param buf Buffer as Char
- * \param delim Delimiter as Char
- * \param array Array as Char Array
- * \param arraylen Array Length as Int
- * \return argc Unsigned Int
- */
 unsigned int sccp_app_separate_args(char *buf, char delim, char **array, int arraylen)
 {
 	int argc = 0;
@@ -231,22 +187,11 @@ unsigned int sccp_app_separate_args(char *buf, char delim, char **array, int arr
 }
 #endif
 
-/*!
- * \brief Handle Feature Change Event for persistent feature storage
- * \param event SCCP Event
- *
- * \callgraph
- * \callergraph
- * 
- * \warning
- *  - device->buttonconfig is not always locked
- *  - line->devices is not always locked
- */
 void sccp_util_featureStorageBackend(const sccp_event_t * const event)
 {
 	char family[25];
-	char cfwdDeviceLineStore[60];										/* backward compatibiliy SCCP/Device/Line */
-	char cfwdLineDeviceStore[60];										/* new format cfwd: SCCP/Line/Device */
+	char cfwdDeviceLineStore[60];
+	char cfwdLineDeviceStore[60];
 	sccp_linedevice_t * ld = NULL;
 	sccp_device_t * device = NULL;
 
@@ -280,7 +225,6 @@ void sccp_util_featureStorageBackend(const sccp_event_t * const event)
 					sccp_log((DEBUGCAT_CORE))(VERBOSE_PREFIX_3 "%s: all call forwards removed from the database (result %d)\n", DEV_ID_LOG(device), res);
 				} else {
 					sccp_cfwd_t cfwd = sccp_feature2cfwd(event->featureChanged.featureType);
-					// const char * cfwdstr = sccp_cfwd2str(cfwd);
 					char cfwdstr[15] = "";
 					snprintf(cfwdstr, 14, "cfwd%s", sccp_cfwd2str(cfwd));
 					res |= iPbx.feature_removeFromDatabase(cfwdDeviceLineStore, cfwdstr);
@@ -295,7 +239,6 @@ void sccp_util_featureStorageBackend(const sccp_event_t * const event)
 			}
 			break;
 		case SCCP_FEATURE_DND:
-			// sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: change dnd to %s\n", DEV_ID_LOG(device), device->dndFeature.status ? "on" : "off");
 			if (device->dndFeature.previousStatus != device->dndFeature.status) {
 				if (!device->dndFeature.status) {
 					sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: DND off saved\n", DEV_ID_LOG(device));
@@ -340,17 +283,6 @@ void sccp_util_featureStorageBackend(const sccp_event_t * const event)
 	}
 }
 
-/*!
- * \brief Parse Composed ID
- * \param labelString LabelString as string
- * \param maxLength Maximum Length as unsigned int
- * \param subscriptionId SubscriptionId as sccp_subscription_id_t (ByRef) [out]
- * \param extension char array [SCCP_MAX_EXTENSION] [out]
- * \return int containing number of matched subcription elements
- *
- * \callgraph
- * \callergraph
- */
 int sccp_parseComposedId(const char *labelString, unsigned int maxLength, sccp_subscription_id_t *subscriptionId, char extension[SCCP_MAX_EXTENSION])
 {
 	pbx_assert(NULL != labelString && NULL != subscriptionId && NULL != extension);
@@ -363,7 +295,7 @@ int sccp_parseComposedId(const char *labelString, unsigned int maxLength, sccp_s
 
 	for (stringIterator = labelString; stringIterator < labelString + maxLength && !endDetected; stringIterator++) {
 		switch (state) {
-			case EXTENSION:										// parsing of main id
+			case EXTENSION:
 				pbx_assert(i < SCCP_MAX_EXTENSION);
 				switch (*stringIterator) {
 					case '\0':
@@ -390,9 +322,7 @@ int sccp_parseComposedId(const char *labelString, unsigned int maxLength, sccp_s
 				}
 				break;
 
-			case ID:										// parsing of sub id number
-
-                                // button = line, 98099@=98041:cid_name#label !default
+			case ID:
 
                                 // 98099 is the linename
                                 // @ starts a subscriptionid
@@ -421,7 +351,7 @@ int sccp_parseComposedId(const char *labelString, unsigned int maxLength, sccp_s
 						}
 						break;
 					case ':':
-						subscriptionId->number[i] = '\0';				// assign cidnum
+						subscriptionId->number[i] = '\0';
 						i = 0;
 						state = CIDNAME;
 						res++;
@@ -445,7 +375,7 @@ int sccp_parseComposedId(const char *labelString, unsigned int maxLength, sccp_s
 				}
 				break;
 
-			case CIDNAME:										// parsing of sub id name
+			case CIDNAME:
 				pbx_assert(i < sizeof(subscriptionId->name));
 				switch (*stringIterator) {
 					case '\0':
@@ -472,7 +402,7 @@ int sccp_parseComposedId(const char *labelString, unsigned int maxLength, sccp_s
 				}
 				break;
 
-			case LABEL:										// parsing of sub id name
+			case LABEL:
 				pbx_assert(i < sizeof(subscriptionId->label));
 				switch (*stringIterator) {
 					case '\0':
@@ -493,7 +423,7 @@ int sccp_parseComposedId(const char *labelString, unsigned int maxLength, sccp_s
 				}
 				break;
 
-			case AUX:										// parsing of auxiliary parameter
+			case AUX:
 				pbx_assert(i < sizeof(subscriptionId->aux));
 				switch (*stringIterator) {
 					case '\0':
@@ -517,14 +447,6 @@ int sccp_parseComposedId(const char *labelString, unsigned int maxLength, sccp_s
 	return res;
 }
 
-/*!
- * \brief Match Subscription ID
- * \param channel SCCP Channel
- * \param subscriptionIdNum Subscription ID Number for ld
- * \return result as boolean
- *
- * \callgraph * \callergraph
- */
 boolean_t __PURE__ sccp_util_matchSubscriptionId(constChannelPtr channel, const char * subscriptionIdNum)
 {
 	boolean_t result = TRUE;
@@ -535,51 +457,31 @@ boolean_t __PURE__ sccp_util_matchSubscriptionId(constChannelPtr channel, const 
 	   only if a non-trivial subscription id is specified with the calling channel,
 	   which is not the default subscription id of the shared line denoting all devices,
 	   the phones are addressed individually. (-DD) */
-	filterPhones = FALSE;											/* set the default to call all phones */
+	filterPhones = FALSE;
 
-	/* First condition: Non-trivial subscriptionId specified for matching in call. */
 	if (sccp_strlen(channel->subscriptionId.number) != 0) {
-		/* Second condition: SubscriptionId does not match default subscriptionId of line. */
 		if (0 != strncasecmp(channel->subscriptionId.number, channel->line->defaultSubscriptionId.number, sccp_strlen(channel->subscriptionId.number))) {
 			filterPhones = TRUE;
 		}
 	}
 
 	if (FALSE == filterPhones) {
-		/* Accept phone for calling if all phones shall be called. */
 		result = TRUE;
-	} else if (0 != sccp_strlen(subscriptionIdNum) &&								/* We already know that we won't search for a trivial subscriptionId. */
-		   (0 != strncasecmp(channel->subscriptionId.number, subscriptionIdNum, sccp_strlen(channel->subscriptionId.number)))) {	/* Do the match! */
+	} else if (0 != sccp_strlen(subscriptionIdNum) &&
+		   (0 != strncasecmp(channel->subscriptionId.number, subscriptionIdNum, sccp_strlen(channel->subscriptionId.number)))) {
 		result = FALSE;
 	}
 	return result;
 }
 
-/*!
- * \brief Compare the information of two socket with one another
- * \param s0 Socket Information
- * \param s1 Socket Information
- * \return success as int
- *
- * \retval FALSE on diff
- * \retval TRUE on equal
- */
 gcc_inline boolean_t sccp_netsock_equals(const struct sockaddr_storage * const s0, const struct sockaddr_storage *const s1)
 {
 	if ((s0->ss_family == s1->ss_family && sccp_netsock_cmp_addr(s0, s1) == 0) && sccp_netsock_cmp_port(s0, s1) == 0) {
 		return TRUE;
-	} 
+	}
 	return FALSE;
 }
 
-/*!
- * \brief SCCP version of strlen_zero
- * \param data String to be checked
- * \return zerolength as boolean
- *
- * \retval FALSE on non zero length
- * \retval TRUE on zero length
- */
 gcc_inline boolean_t sccp_strlen_zero(const char *data)
 {
 	if (!data || (*data == '\0')) {
@@ -589,11 +491,6 @@ gcc_inline boolean_t sccp_strlen_zero(const char *data)
 	return FALSE;
 }
 
-/*!
- * \brief SCCP version of strlen
- * \param data String to be checked
- * \return length as int
- */
 gcc_inline size_t sccp_strlen(const char *data)
 {
 	if (!data || (*data == '\0')) {
@@ -602,17 +499,6 @@ gcc_inline size_t sccp_strlen(const char *data)
 	return strlen(data);
 }
 
-/*!
- * \brief SCCP version of strequals
- * \note Takes into account zero length strings, if both strings are zero length returns TRUE
- * \param data1 String to be checked
- * \param data2 String to be checked
- * \return !strcmp as boolean_t
- *
- * \retval booleant_t on !strcmp
- * \retval TRUE on both zero length
- * \retval FALSE on one of the the parameters being zero length
- */
 gcc_inline boolean_t sccp_strequals(const char *data1, const char *data2)
 {
 	if (sccp_strlen_zero(data1) && sccp_strlen_zero(data2)) {
@@ -623,17 +509,6 @@ gcc_inline boolean_t sccp_strequals(const char *data1, const char *data2)
 	return FALSE;
 }
 
-/*!
- * \brief SCCP version of strcaseequals
- * \note Takes into account zero length strings, if both strings are zero length returns TRUE
- * \param data1 String to be checked
- * \param data2 String to be checked
- * \return !strcasecmp as boolean_t
- *
- * \retval boolean_t on strcaseequals
- * \retval TRUE on both zero length
- * \retval FALSE on one of the the parameters being zero length
- */
 gcc_inline boolean_t sccp_strcaseequals(const char *data1, const char *data2)
 {
 	if (sccp_strlen_zero(data1) && sccp_strlen_zero(data2)) {
@@ -659,9 +534,6 @@ int __PURE__ sccp_strIsNumeric(const char *s)
 	return 0;
 }
 
-/* "Keepalive (s)" -> "Keepalive", "DND feature enabled" -> "DNDFeatureEnabled", "IPAddress" stays: a CLI
- * label or field name as an AMI key. Each word starts upper case, the rest keeps its case; parenthesized
- * parts (units) are dropped; any other non-alphanumeric character starts a new word. */
 gcc_inline void sccp_camelcase(char * instr)
 {
 	boolean_t capsNext = TRUE;
@@ -683,11 +555,6 @@ gcc_inline void sccp_camelcase(char * instr)
 	instr[j] = '\0';
 }
 
-/*!
- * \brief Free a list of Host Access Rules
- * \param ha The head of the list of HAs to free
- * \retval void
- */
 void sccp_free_ha(struct sccp_ha *ha)
 {
 	struct sccp_ha * hal = NULL;
@@ -699,34 +566,10 @@ void sccp_free_ha(struct sccp_ha *ha)
 	}
 }
 
-/* Helper functions for ipv6 / apply_ha / append_ha */
-/*!
- * \brief
- * Isolate a 32-bit section of an IPv6 address
- *
- * An IPv6 address can be divided into 4 32-bit chunks. This gives
- * easy access to one of these chunks.
- *
- * \param sin6 A pointer to a struct sockaddr_in6
- * \param index Which 32-bit chunk to operate on. Must be in the range 0-3.
- */
+/* Must be in the range 0-3. */
 #define V6_WORD(sin6, index) ((uint32_t *)&((sin6)->sin6_addr))[(index)]
 
-/*!
- * \brief
- * Apply a netmask to an address and store the result in a separate structure.
- *
- * When dealing with IPv6 addresses, one cannot apply a netmask with a simple
- * logical and operation. Furthermore, the incoming address may be an IPv4 address
- * and need to be mapped properly before attempting to apply a rule.
- *
- * \param netaddr The IP address to apply the mask to.
- * \param netmask The netmask configured in the host access rule.
- * \param result [out] The resultant address after applying the netmask to the given address
- *
- * \retval 0 Successfully applied netmask
- * \retval -1 Failed to apply netmask
- */
+/* An IPv4 address may arrive IPv4-mapped and must be converted before the rule is applied. */
 static int apply_netmask(const struct sockaddr_storage *netaddr, const struct sockaddr_storage *netmask, struct sockaddr_storage *result)
 {
 	int res = 0;
@@ -765,43 +608,17 @@ static int apply_netmask(const struct sockaddr_storage *netaddr, const struct so
 	return res;
 }
 
-/*!
- * \brief Apply a set of rules to a given IP address
- *
- * \param ha The head of the list of host access rules to follow
- * \param addr A sockaddr_in whose address is considered when matching rules
- * \retval AST_SENSE_ALLOW The IP address passes our ACL
- * \retval AST_SENSE_DENY The IP address fails our ACL  
- */
 int sccp_apply_ha(const struct sccp_ha *ha, const struct sockaddr_storage *addr)
 {
 	return sccp_apply_ha_default(ha, addr, AST_SENSE_ALLOW);
 }
 
-/*!
- * \brief Apply a set of rules to a given IP address
- *
- * \details
- * The list of host access rules is traversed, beginning with the
- * input rule. If the IP address given matches a rule, the "sense"
- * of that rule is used as the return value. Note that if an IP
- * address matches multiple rules that the last one matched will be
- * the one whose sense will be returned.
- *
- * \param ha The head of the list of host access rules to follow
- * \param addr An sockaddr_storage whose address is considered when matching rules
- * \param defaultValue int value
- * \retval AST_SENSE_ALLOW The IP address passes our ACL
- * \retval AST_SENSE_DENY The IP address fails our ACL
- */
 int sccp_apply_ha_default(const struct sccp_ha *ha, const struct sockaddr_storage *addr, int defaultValue)
 {
-	/* Start optimistic */
 	int res = defaultValue;
 	const struct sccp_ha * current_ha = NULL;
 
 	for (current_ha = ha; current_ha; current_ha = current_ha->next) {
-
 		struct sockaddr_storage result;
 		struct sockaddr_storage mapped_addr;
 		const struct sockaddr_storage * addr_to_use = NULL;
@@ -815,67 +632,33 @@ int sccp_apply_ha_default(const struct sccp_ha *ha, const struct sockaddr_storag
 					}
 					addr_to_use = &mapped_addr;
 				} else {
-					/* An IPv4 ACL does not apply to an IPv6 address */
 					continue;
 				}
 			} else {
-				/* Address is IPv4 and ACL is IPv4. No biggie */
 				addr_to_use = addr;
 			}
 		} else {
 			if (sccp_netsock_is_IPv6(addr) && !sccp_netsock_is_mapped_IPv4(addr)) {
 				addr_to_use = addr;
 			} else {
-				/* Address is IPv4 or IPv4 mapped but ACL is IPv6. Skip */
 				continue;
 			}
 		}
-		// char *straddr = pbx_strdupa(sccp_netsock_stringify_addr(&current_ha->netaddr));
-		// char *strmask = pbx_strdupa(sccp_netsock_stringify_addr(&current_ha->netmask));
-		// sccp_log(DEBUGCAT_HIGH)(VERBOSE_PREFIX_3 "%s:%s/%s\n", AST_SENSE_DENY == current_ha->sense ? "deny" : "permit", straddr, strmask);
 
-		/* For each rule, if this address and the netmask = the net address
-		   apply the current rule */
 		if (apply_netmask(addr_to_use, &current_ha->netmask, &result)) {
 			/* Unlikely to happen since we know the address to be IPv4 or IPv6 */
 			continue;
 		}
 		if (sccp_netsock_cmp_addr(&result, &current_ha->netaddr) == 0) {
-			//sccp_log(DEBUGCAT_HIGH)(VERBOSE_PREFIX_3 "SCCP: apply_ha_default: result: %s\n", sccp_netsock_stringify_addr(&result));
-			//sccp_log(DEBUGCAT_HIGH)(VERBOSE_PREFIX_3 "SCCP: apply_ha_default: current_ha->netaddr: %s\n", sccp_netsock_stringify_addr(&current_ha->netaddr));
 			res = current_ha->sense;
 		}
 	}
 	return res;
 }
 
-/*!
- * \brief
- * Parse an IPv4 or IPv6 address string.
- *
- * \details
- * Parses a string containing an IPv4 or IPv6 address followed by an optional
- * port (separated by a colon) into a struct ast_sockaddr. The allowed formats
- * are the following:
- *
- * a.b.c.d
- * a.b.c.d:port
- * a:b:c:...:d 
- * [a:b:c:...:d]
- * [a:b:c:...:d]:port
- *
- * Host names are NOT allowed.
- *
- * \param[out] addr The resulting ast_sockaddr. This MAY be NULL from 
- * functions that are performing validity checks only, e.g. ast_parse_arg().
- * \param str The string to parse
- * \param flags If set to zero, a port MAY be present. If set to
- * PARSE_PORT_IGNORE, a port MAY be present but will be ignored. If set to
- * PARSE_PORT_REQUIRE, a port MUST be present. If set to PARSE_PORT_FORBID, a
- * port MUST NOT be present.
- *
- * \retval 1 Success
- * \retval 0 Failure
+/*
+ * addr may be NULL for validity checks only (e.g. ast_parse_arg()).
+ * flags: 0 = a port is optional, PARSE_PORT_REQUIRE = a port is required, PARSE_PORT_FORBID = no port allowed.
  */
 int sccp_sockaddr_storage_parse(struct sockaddr_storage *addr, const char *str, int flags)
 {
@@ -901,7 +684,7 @@ int sccp_sockaddr_storage_parse(struct sockaddr_storage *addr, const char *str, 
 	hints.ai_flags = AI_NUMERICHOST;
 #endif
 	if ((e = getaddrinfo(host, port, &hints, &res))) {
-		if (e != EAI_NONAME) {										/* if this was just a host name rather than a ip address, don't print error */
+		if (e != EAI_NONAME) {
 			pbx_log(LOG_WARNING, "SCCP: could not resolve '%s' port '%s': %s\n", host, S_OR(port, ""), gai_strerror(e));
 		}
 		return 0;
@@ -924,22 +707,6 @@ int sccp_sockaddr_storage_parse(struct sockaddr_storage *addr, const char *str, 
 	return 1;
 }
 
-/*!
- * \brief
- * Parse a netmask in CIDR notation
- *
- * \details
- * For a mask of an IPv4 address, this should be a number between 0 and 32. For
- * a mask of an IPv6 address, this should be a number between 0 and 128. This
- * function creates an IPv6 sockaddr_storage from the given netmask. For masks of
- * IPv4 addresses, this is accomplished by adding 96 to the original netmask.   
- *
- * \param[out] addr The sockaddr_stroage produced from the CIDR netmask
- * \param is_v4 Tells if the address we are masking is IPv4.
- * \param mask_str The CIDR mask to convert
- * \retval -1 Failure
- * \retval 0 Success
- */
 static int parse_cidr_mask(struct sockaddr_storage *addr, int is_v4, const char *mask_str)
 {
 	int mask = 0;
@@ -953,10 +720,6 @@ static int parse_cidr_mask(struct sockaddr_storage *addr, int is_v4, const char 
 			return -1;
 		}
 		sin.sin_family = AF_INET;
-		/* If mask is 0, then we already have the
-		 * appropriate all 0s address in sin from
-		 * the above memset.
-		 */
 		if (mask != 0) {
 			sin.sin_addr.s_addr = htonl(0xFFFFFFFF << (32 - mask));
 		}
@@ -984,18 +747,6 @@ static int parse_cidr_mask(struct sockaddr_storage *addr, int is_v4, const char 
 	return 0;
 }
 
-/*!
- * \brief Add a new rule to a list of HAs
- *
- * \param sense Either "permit" or "deny" (Actually any 'p' word will result
- * in permission, and any other word will result in denial)
- * \param stuff The IP address and subnet mask, separated with a '/'. The subnet
- * mask can either be in dotted-decimal format or in CIDR notation (i.e. 0-32).
- * \param path The head of the HA list to which we wish to append our new rule. If
- * NULL is passed, then the new rule will become the head of the list
- * \param[out] error The integer error points to will be set non-zero if an error occurs
- * \return The head of the HA list
- */
 struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp_ha *path, int *error)
 {
 	struct sccp_ha * ha = NULL;
@@ -1035,12 +786,6 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 		}
 		return ret;
 	}
-	/*
-	   sccp_log(DEBUGCAT_HIGH)(VERBOSE_PREFIX_2 "SCCP: deny/permit address %s\n", sccp_netsock_stringify_addr(&ha->netaddr));
-	 */
-	/* If someone specifies an IPv4-mapped IPv6 address,
-	 * we just convert this to an IPv4 ACL
-	 */
 	if (sccp_netsock_ipv4_mapped(&ha->netaddr, &ha->netaddr)) {
 		sccp_log((DEBUGCAT_CONFIG))(VERBOSE_PREFIX_3 "SCCP: deny/permit entry %s is IPv4-mapped; treated as an IPv4 entry\n", address);
 	}
@@ -1052,7 +797,6 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 	} else if (strchr(mask, ':') || strchr(mask, '.')) {
 		int mask_is_v4 = 0;
 
-		/* Mask is of x.x.x.x or x:x:x:x:x:x:x:x variety */
 		sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: deny/permit mask %s\n", mask);
 		if (!sccp_sockaddr_storage_parse(&ha->netmask, mask, PARSE_PORT_FORBID)) {
 			pbx_log(LOG_WARNING, "SCCP: deny/permit entry %s: '%s' is not a valid netmask; entry ignored\n", address, mask);
@@ -1063,9 +807,6 @@ struct sccp_ha *sccp_append_ha(const char *sense, const char *stuff, struct sccp
 			return ret;
 		}
 		sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_2 "SCCP: deny/permit mask %s = %s\n", mask, sccp_netsock_stringify_addr(&ha->netmask));
-		/* If someone specifies an IPv4-mapped IPv6 netmask,
-		 * we just convert this to an IPv4 ACL
-		 */
 		if (sccp_netsock_ipv4_mapped(&ha->netmask, &ha->netmask)) {
 			sccp_log((DEBUGCAT_CONFIG))(VERBOSE_PREFIX_3 "SCCP: deny/permit netmask %s is IPv4-mapped; treated as an IPv4 netmask\n", mask);
 		}
@@ -1180,7 +921,6 @@ AST_TEST_DEFINE(chan_sccp_acl_tests)
 	sccp_sockaddr_storage_parse(&sasffff, "fe80::ffff:0:ffff:0", PARSE_PORT_FORBID);
 	pbx_test_validate(test, sccp_netsock_is_IPv6(&sasffff));
 
-	// test 1
 	pbx_test_status_update(test, "test 1: ha deny all\n");
 	ha = sccp_append_ha("deny", "0.0.0.0/0.0.0.0", ha, &error);
 	pbx_test_validate(test, error == 0);
@@ -1189,7 +929,6 @@ AST_TEST_DEFINE(chan_sccp_acl_tests)
 	pbx_test_validate(test, sccp_apply_ha(ha, (struct sockaddr_storage *) &sas172) == AST_SENSE_DENY);
 	pbx_test_validate(test, sccp_apply_ha(ha, (struct sockaddr_storage *) &sas200) == AST_SENSE_DENY);
 
-	// test 2
 	pbx_test_status_update(test, "test 2: previous + permit 10.15.15.0/255.255.255.0\n");
 	ha = sccp_append_ha("permit", "10.15.15.0/255.255.255.0", ha, &error);
 	pbx_test_validate(test, error == 0);
@@ -1198,7 +937,6 @@ AST_TEST_DEFINE(chan_sccp_acl_tests)
 	pbx_test_validate(test, sccp_apply_ha(ha, (struct sockaddr_storage *) &sas172) == AST_SENSE_DENY);
 	pbx_test_validate(test, sccp_apply_ha(ha, (struct sockaddr_storage *) &sas200) == AST_SENSE_DENY);
 
-	// test 3
 	pbx_test_status_update(test, "test 3: previous + second permit 10.15.15.0/255.255.255.0\n");
 	ha = sccp_append_ha("permit", "10.15.15.0/255.255.255.0", ha, &error);
 	pbx_test_validate(test, error == 0);
@@ -1209,7 +947,6 @@ AST_TEST_DEFINE(chan_sccp_acl_tests)
 	sccp_free_ha(ha);
 	ha = NULL;
 
-	// test 4
 	pbx_test_status_update(test, "test 4: deny all + permit 10.0.0.0/255.255.255.0\n");
 	ha = sccp_append_ha("deny", "0.0.0.0/0.0.0.0", ha, &error);
 	pbx_test_validate(test, error == 0);
@@ -1220,7 +957,6 @@ AST_TEST_DEFINE(chan_sccp_acl_tests)
 	pbx_test_validate(test, sccp_apply_ha(ha, (struct sockaddr_storage *) &sas172) == AST_SENSE_DENY);
 	pbx_test_validate(test, sccp_apply_ha(ha, (struct sockaddr_storage *) &sas200) == AST_SENSE_DENY);
 
-	// test 5
 	pbx_test_status_update(test, "test 5: previous + 172.16.0.0/255.255.0.0\n");
 	ha = sccp_append_ha("permit", "172.16.0.0/255.0.0.0", ha, &error);
 	pbx_test_validate(test, error == 0);
@@ -1229,7 +965,6 @@ AST_TEST_DEFINE(chan_sccp_acl_tests)
 	pbx_test_validate(test, sccp_apply_ha(ha, (struct sockaddr_storage *) &sas172) != AST_SENSE_DENY);
 	pbx_test_validate(test, sccp_apply_ha(ha, (struct sockaddr_storage *) &sas200) == AST_SENSE_DENY);
 
-	// test 6
 	pbx_test_status_update(test, "test 6: previous + deny_all at the end\n");
 	ha = sccp_append_ha("deny", "0.0.0.0/0.0.0.0", ha, &error);
 	pbx_test_validate(test, error == 0);
@@ -1240,7 +975,6 @@ AST_TEST_DEFINE(chan_sccp_acl_tests)
 	sccp_free_ha(ha);
 	ha = NULL;
 
-	// test 7: ipv6
 	pbx_test_status_update(test, "test 7: IPv6: deny 0.0.0.0/0.0.0.0,::,::/0::\n");
 	ha = sccp_append_ha("deny", "0.0.0.0/0.0.0.0", ha, &error);
 	pbx_test_validate(test, error == 0);
@@ -1248,9 +982,6 @@ AST_TEST_DEFINE(chan_sccp_acl_tests)
 	pbx_test_validate(test, error == 0);
 	ha = sccp_append_ha("deny", "::/0", ha, &error);
 	pbx_test_validate(test, error == 0);
-	//pbx_test_status_update(test, "test 7: deny !fe80::/64\n");			/* we cannot parse this format yes (asterisk-13) */
-	//ha = sccp_append_ha("deny", "!fe80::/64", ha, &error);
-	//pbx_test_validate(test, error == 0);
 	pbx_test_status_update(test, "      : previous + permit fe80::ffff:0:0:0/80\n");
 	ha = sccp_append_ha("permit", "fe80::ffff:0:0:0/80", ha, &error);
 	pbx_test_validate(test, error == 0);
@@ -1285,15 +1016,10 @@ AST_TEST_DEFINE(chan_sccp_acl_invalid_tests)
 
 	pbx_test_status_update(test, "Executing invalid acl test tests...\n");
 
-	// test invalid
 	const char * invalid_acls[] = {
-		/* Negative netmask */
 		"1.3.3.7/-1",
-		/* Netmask too large */
 		"1.3.3.7/33",
-		/* Netmask waaaay too large */
 		"1.3.3.7/92342348927389492307420",
-		/* Netmask non-numeric */
 		"1.3.3.7/California",
 		/* Too many octets in Netmask */
 		"1.3.3.7/255.255.255.255.255",
@@ -1301,7 +1027,6 @@ AST_TEST_DEFINE(chan_sccp_acl_invalid_tests)
 		"57.60.278.900/31",
 		/* Octets in IP address exceed 255 and are negative */
 		"400.32.201029.-6/24",
-		/* Invalidly formatted IP address */
 		"EGGSOFDEATH/4000",
 		/* Too many octets in IP address */
 		"33.4.7.8.3/300030",
@@ -1309,17 +1034,12 @@ AST_TEST_DEFINE(chan_sccp_acl_invalid_tests)
 		"1.2.3.4/6.7.8.9.0",
 		/* Too many octets in IP address */
 		"3.1.4.1.5.9/3",
-		/* IPv6 address has multiple double colons */
 		"ff::ff::ff/3",
-		/* IPv6 address is too long */
 		"1234:5678:90ab:cdef:1234:5678:90ab:cdef:1234/56",
-		/* IPv6 netmask is too large */
 		"::ffff/129",
 		/* IPv4-mapped IPv6 address has too few octets */
 		"::ffff:255.255.255/128",
-		/* Leading and trailing colons for IPv6 address */
 		":1234:/15",
-		/* IPv6 address and IPv4 netmask */
 		"fe80::1234/255.255.255.0",
 	};
 	uint8_t i = 0;
@@ -1341,13 +1061,6 @@ AST_TEST_DEFINE(chan_sccp_acl_invalid_tests)
 }
 #endif
 
-/*!
- * \brief Print Group
- * \param buf Buf as char
- * \param buflen Buffer Lendth as int
- * \param group Group as sccp_group_t
- * \return Result as char
- */
 void sccp_print_group(struct ast_str *buf, int buflen, sccp_group_t group)
 {
 	unsigned int i = 0;
@@ -1369,7 +1082,6 @@ void sccp_print_group(struct ast_str *buf, int buflen, sccp_group_t group)
 	}
 }
 
-
 int __PURE__ sccp_strversioncmp(const char *s1, const char *s2)
 {
 	static const char *digits = "0123456789";
@@ -1385,7 +1097,6 @@ int __PURE__ sccp_strversioncmp(const char *s1, const char *s2)
 	p1 = strcspn(s1, digits);
 	p2 = strcspn(s2, digits);
 	while (p1 == p2 && s1[p1] != '\0' && s2[p2] != '\0') {
-		/* Different prefix */
 		ret = strncmp(s1, s2, p1);
 		if(ret != 0) {
 			return ret;
@@ -1420,13 +1131,11 @@ int __PURE__ sccp_strversioncmp(const char *s1, const char *s2)
 			p1 = strspn(s1, digits);
 			p2 = strspn(s2, digits);
 
-			/* Catch empty strings */
 			if (p1 == 0 && p2 > 0) {
 				return 1;
 			} if (p2 == 0 && p1 > 0) {
 				return -1;
 			}
-			/* Prefixes are not same */
 			if (*s1 != *s2 && *s1 != '0' && *s2 != '0') {
 				if (p1 < p2) {
 					return 1;
@@ -1459,7 +1168,6 @@ int __PURE__ sccp_strversioncmp(const char *s1, const char *s2)
 		if(ret != 0) {
 			return ret;
 		}
-		/* Numbers are equal or not present, try with next ones. */
 		s1 += p1;
 		s2 += p2;
 		p1 = strcspn(s1, digits);
@@ -1495,31 +1203,24 @@ gcc_inline void sccp_copy_string(char *dst, const char *src, size_t size)
 	*dst = '\0';
 }
 
-/* 
- * \brief trim white space from beginning and ending of string
- * \note This function returns a pointer to a substring of the original string.
- * If the given string was allocated dynamically, the caller must not overwrite
- * that pointer with the returned value, since the original pointer must be
- * deallocated using the same allocator with which it was allocated.  The return
- * value must NOT be deallocated using free() etc.
+/*
+ * If the given string was allocated dynamically, the caller must not overwrite that pointer with the returned value, since the original pointer must be deallocated using the same allocator with which it was allocated.
+ * The return value must NOT be deallocated using free() etc.
  */
 char *sccp_trimwhitespace(char *str)
 {
 	char * end = NULL;
 
-	// Trim leading space
 	while (isspace(*str)) {
 		str++;
 	}
-	if (*str == 0) {											// All spaces
+	if (*str == 0) {
 		return str;
 	}
-	// Trim trailing space
 	end = str + sccp_strlen(str) - 1;
 	while (end > str && isspace(*end)) {
 		end--;
 	}
-	// Write new null terminator
 	*(end + 1) = 0;
 	return str;
 }
@@ -1540,7 +1241,6 @@ gcc_inline int sccp_atoi(const char * const buf, size_t buflen)
 
 int sccp_random(void)
 {
-	/* potentially replace with our own implementation */
 	return (int)pbx_random();
 }
 
@@ -1585,10 +1285,8 @@ boolean_t sccp_append_variable(PBX_VARIABLE_TYPE *params, const char *key, const
 	return res;
 }
 
-
 gcc_inline int sccp_utf8_columnwidth(int width, const char *const ms)
 {
-	// don't use setlocale() as that is global to the process
 	int res = 0;
 	locale_t locale = newlocale(LC_ALL_MASK, "", NULL);
 	locale_t old_locale = uselocale(locale);
@@ -1712,7 +1410,7 @@ void sccp_do_backtrace(void)
 	if (!(btbuf = pbx_str_alloca(DEFAULT_PBX_STR_BUFFERSIZE * 2))) {
 		return;
 	}
-	
+
 	pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "================================================================================\n");
 	pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "OPERATING SYSTEM: %s, ARCHITECTURE: %s, KERNEL: %s\nASTERISK: %s\nCHAN_SCCP: %s, revision %s, built by %s on %s\n", BUILD_OS, BUILD_MACHINE, BUILD_KERNEL, pbx_get_version(), SCCP_VERSION, SCCP_REVISIONSTR, BUILD_USER, BUILD_DATE);
 	pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, "--------------------------------------------------------------------------(bt)--\n");
@@ -1722,11 +1420,10 @@ void sccp_do_backtrace(void)
 	if (strings) {
 		for (i = 1; i < size; i++) {
 #ifdef CS_AST_BACKTRACE_VECTOR_STRING
-			//struct ast_vector_string * strings;
 			pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, " (bt) > %s\n", AST_VECTOR_GET(strings, i));
 #else
 			pbx_str_append(&btbuf, DEFAULT_PBX_STR_BUFFERSIZE, " (bt) > %s\n", strings[i]);
-#endif			
+#endif
 		}
 		bt_free(strings);
 
@@ -1736,4 +1433,3 @@ void sccp_do_backtrace(void)
 #endif	// HAVE_EXECINFO_H && HAVE_BKTR
 }
 #endif // DEBUG
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

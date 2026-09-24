@@ -15,20 +15,12 @@
 #include <asterisk/core_unreal.h>
 #include "ast_announce.h"
 
-//ASTERISK_FILE_VERSION(__FILE__, "");
-
-/* ------------------------------------------------------------------- */
-/*! ConfBridge announcer channel private. */
 struct announce_pvt {
-	/*! Unreal channel driver base class values. */
 	struct ast_unreal_pvt base;
-	/*! Conference bridge associated with this announcer. */
-	// struct ast_bridge *bridge;
 };
 
 static int announce_call(struct ast_channel *chan, const char *addr, int timeout)
 {
-	/* Make sure anyone calling ast_call() for this channel driver is going to fail. */
 	return -1;
 }
 
@@ -41,7 +33,6 @@ static int announce_hangup(struct ast_channel *ast)
 		return -1;
 	}
 
-	/* give the pvt a ref to fulfill calling requirements. */
 	ao2_ref(p, +1);
 	res = ast_unreal_hangup(&p->base, ast);
 	ao2_ref(p, -1);
@@ -53,8 +44,6 @@ static void announce_pvt_destructor(void *vdoomed)
 {
 	struct announce_pvt *doomed = (struct announce_pvt *)vdoomed;
 
-	// ao2_cleanup(doomed->bridge);
-	// doomed->bridge = NULL;
 	ast_unreal_destructor(&doomed->base);
 }
 
@@ -63,7 +52,6 @@ static struct ast_channel *announce_request(const char *type, struct ast_format_
 	struct ast_channel *chan;
 	const char *conf_name = data;
 
-	/* Allocate a new private structure and then Asterisk channels */
 	struct announce_pvt *pvt = (struct announce_pvt *) ast_unreal_alloc(sizeof(*pvt), announce_pvt_destructor, cap);
 	if (!pvt) {
 		return NULL;
@@ -173,7 +161,6 @@ int sccpconf_announce_channel_push(struct ast_channel *ast, struct ast_bridge *b
 	}
 	ast_set_flag(&features->feature_flags, AST_BRIDGE_CHANNEL_FLAG_IMMOVABLE);
 
-	// Impart the output channel into the bridge
 	if (ast_bridge_impart(bridge, chan, NULL, features, AST_BRIDGE_IMPART_CHAN_DEPARTABLE)) {
 		ast_bridge_features_destroy(features);
 		ast_channel_unref(chan);
@@ -187,4 +174,3 @@ int sccpconf_announce_channel_push(struct ast_channel *ast, struct ast_bridge *b
 	return 0;
 }
 
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

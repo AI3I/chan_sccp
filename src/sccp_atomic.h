@@ -39,12 +39,6 @@
 #endif
 
 #else														/* SCCP_ATOMIC */
-//#define CAS32_TYPE			int
-//#if defined (__i386__) || defined(__x86_64__)
-//#define ATOMIC_INCR(_a,_b,_c)	 	ast_atomic_fetchadd_int(_a, _b)
-//#define ATOMIC_DECR(_a,_b,_c)	 	ast_atomic_fetchadd_int(_a, -_b)
-//#define ATOMIC_FETCH(_a,_c)		ast_atomic_fetchadd_int(_a, 0)
-//#else
 #	define ATOMIC_INCR(_a, _b, _c)                                                                                             \
 		({                                                                                                                  \
 			CAS32_TYPE __res = 0;                                                                                       \
@@ -69,7 +63,6 @@
 		})
 #	define ATOMIC_DECR(_a, _b, _c) ATOMIC_INCR(_a, -_b, _c)
 #	define ATOMIC_FETCH(_a, _c)    ATOMIC_INCR(_a, 0, _c)
-//#endif
 #	define CAS32(_a, _b, _c, _d)                                                                                                   \
 		({                                                                                                                      \
 			CAS32_TYPE __res = -298;                                                                                        \
@@ -101,4 +94,3 @@
 			__res;                                                                                                           \
 		})
 #endif														/* SCCP_ATOMIC */
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

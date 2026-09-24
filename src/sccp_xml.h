@@ -10,7 +10,6 @@
 #include "forward_declarations.h"
 
 __BEGIN_C_EXTERN__
-/* interface */
 typedef struct {
 	xmlDoc * (* const createDoc)(void);
 	xmlDoc * (* const createDocFromStr)(const char * inbuf, int length);
@@ -32,4 +31,3 @@ typedef struct {
 
 extern const XMLInterface iXML;
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

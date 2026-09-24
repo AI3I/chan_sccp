@@ -32,15 +32,6 @@ SCCP_FILE_VERSION(__FILE__, "");
 #include "sccp_devstate.h"
 #include "sccp_featureParkingLot.h"
 
-/*!
- * \remarks
- * Purpose:     SCCP Actions
- * When to use: Only methods directly related to sccp actions should be stored in this source file.
- *              Actions handle all the message interactions from and to SCCP phones
- * Relations:   Other Function wanting to communicate to phones
- *              Phones Requesting function to be performed
- */
-
 #if defined(HAVE_UNALIGNED_BUSERROR)
 #include <asterisk/unaligned.h>
 #endif
@@ -50,7 +41,7 @@ SCCP_FILE_VERSION(__FILE__, "");
 #include <spawn.h>
 #include <sys/wait.h>
 #include <time.h>
-#ifdef HAVE_PBX_ACL_H				// AST_SENSE_ALLOW
+#ifdef HAVE_PBX_ACL_H
 #  include <asterisk/acl.h>
 #endif
 #include <math.h>
@@ -188,7 +179,6 @@ done:
 	return result;
 }
 
-/* prototypes */
 void handle_unknown_message(constSessionPtr s, devicePtr d, constMessagePtr msg_in)			__NONNULL(1,2,3);
 void handle_dialedphonebook_message(constSessionPtr s, devicePtr d, constMessagePtr msg_in)		__NONNULL(1,2,3);
 void handle_alarm(constSessionPtr s, devicePtr d, constMessagePtr msg_in)				__NONNULL(1,3);
@@ -234,14 +224,7 @@ void handle_mediaTransmissionFailure(constSessionPtr s, devicePtr d, constMessag
 void handle_miscellaneousCommandMessage(constSessionPtr s, devicePtr d, constMessagePtr msg_in)		__NONNULL(1,2,3);
 void handle_hookflash(constSessionPtr s, devicePtr d, constMessagePtr msg_in)				__NONNULL(1,2,3);
 
-/*!
- * \brief Local Function to check for Valid Session, Message and Device
- * \param s SCCP Session
- * \param msg SCCP Msg
- * \param msgtypestr Message
- * \param deviceIsNecessary Is a valid device necessary for this message to be processed, if it is, the device is retain during execution of this particular message parser
- * \return -1 or retained Device;
- */
+/* Returns -1 or the device, retained for this message when deviceIsNecessary */
 gcc_inline static devicePtr check_session_message_device(constSessionPtr s, constMessagePtr msg, const char * msgtypestr, boolean_t deviceIsNecessary)
 {
 	int errors = 0;
@@ -280,18 +263,13 @@ gcc_inline static devicePtr check_session_message_device(constSessionPtr s, cons
 	return NULL;
 }
 
-/*!
- * \brief SCCP Message Handler Callback
- *
- * Used to map SKinny Message Id's to their Handling Implementations
- */
 struct messageMap_cb {
 	void (*const messageHandler_cb)(constSessionPtr s, devicePtr d, constMessagePtr msg);
 	boolean_t deviceIsNecessary;
 };
 
 static const struct messageMap_cb sccpMessagesCbMap[SCCP_MESSAGE_HIGH_BOUNDARY + 1] = {
-	[KeepAliveMessage] = {handle_KeepAliveMessage, FALSE},						// on 7985,6911 phones and tokenmsg, a KeepAliveMessage is send before register/token 
+	[KeepAliveMessage] = {handle_KeepAliveMessage, FALSE},						// on 7985,6911 phones and tokenmsg, a KeepAliveMessage is send before register/token
 	[OffHookMessage] = {handle_offhook, TRUE},
 	[OnHookMessage] = {handle_onhook, TRUE},
 	[HookFlashMessage] = {handle_hookflash, TRUE},
@@ -345,14 +323,8 @@ static const struct messageMap_cb sccpMessagesCbMap[SCCP_MESSAGE_HIGH_BOUNDARY +
 
 static const struct messageMap_cb spcpMessagesCbMap[SPCP_MESSAGE_HIGH_BOUNDARY + 1- SPCP_MESSAGE_OFFSET] = {
 	[SPCPRegisterTokenRequest - SPCP_MESSAGE_OFFSET] = {handle_SPCPTokenReq, FALSE},
-	//[UnknownVGMessage - SPCP_MESSAGE_OFFSET] = {NULL, FALSE},
 };
 
-/*!
- * \brief       Controller function to handle Received Messages
- * \param       msg Message as sccp_msg_t
- * \param       s Session as sccp_session_t
- */
 int sccp_handle_message(constMessagePtr msg, constSessionPtr s)
 {
 	const struct messageMap_cb *messageMap_cb = NULL;
@@ -370,12 +342,10 @@ int sccp_handle_message(constMessagePtr msg, constSessionPtr s)
 
 	mid = letohl(msg->header.lel_messageId);
 
-	/* search for message handler */
-	//if ((mid >= SCCP_MESSAGE_LOW_BOUNDARY && mid <= SCCP_MESSAGE_HIGH_BOUNDARY)) {
 	if (mid <= SCCP_MESSAGE_HIGH_BOUNDARY) {
 		messageMap_cb = &sccpMessagesCbMap[mid];
 	} else if ((mid >= SPCP_MESSAGE_LOW_BOUNDARY && mid <= SPCP_MESSAGE_HIGH_BOUNDARY)) {
-		messageMap_cb = &spcpMessagesCbMap[mid - SPCP_MESSAGE_OFFSET]; 
+		messageMap_cb = &spcpMessagesCbMap[mid - SPCP_MESSAGE_OFFSET];
 	} else {
 		pbx_log(LOG_WARNING, "%s: received message ID 0x%04X, outside the known SCCP and SPCP ranges; ignored\n", sccp_session_getDesignator(s), mid);
 		handle_unknown_message(s, NULL, msg);
@@ -402,12 +372,6 @@ int sccp_handle_message(constMessagePtr msg, constSessionPtr s)
 	return 0;
 }
 
-/*!
- * \brief Handle BackSpace Event for Device
- * \param d SCCP Device as sccp_device_t
- * \param lineInstance Line Instance as uint8_t
- * \param callid Call ID as uint32_t
- */
 void sccp_handle_backspace(constDevicePtr d, const uint8_t lineInstance, const uint32_t callid)
 {
 	pbx_assert(d != NULL && d->session != NULL);
@@ -424,17 +388,10 @@ void sccp_handle_backspace(constDevicePtr d, const uint8_t lineInstance, const u
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: backspace sent on line instance %u, call %u\n", d->id, lineInstance, callid);
 }
 
-/*!
- * \brief Handle DialTone Without Lock
- * \param d SCCP Device (retained)
- * \param l SCCP Line (retained)
- * \param channel SCCP Channel (retained)
- */
 void sccp_handle_dialtone(constDevicePtr d, constLinePtr l, constChannelPtr channel)
 {
 	pbx_assert(d != NULL && l != NULL && channel != NULL);
 
-	//pbx_log(LOG_WARNING, "%s: handle dialtone on %s. Current state: %s\n", DEV_ID_LOG(d), channel->designator, sccp_channelstate2str(channel->state));
 	if (channel->softswitch_action != SCCP_SOFTSWITCH_DIAL || channel->scheduler.hangup_id > -1 || channel->state == SCCP_CHANNELSTATE_DIALING) {
 		return;
 	}
@@ -451,23 +408,11 @@ void sccp_handle_dialtone(constDevicePtr d, constLinePtr l, constChannelPtr chan
 	}
 }
 
-
-/*!
- * \brief Log a registering device whose type is missing from the device table
- */
 static void log_unknown_devicetype(const char *deviceName, uint32_t deviceType)
 {
 	pbx_log(LOG_WARNING, "%s: device type %u is not in chan_sccp's device table; continuing, but button layout, softkeys and features may not match this phone\n", deviceName, deviceType);
 }
 
-/* ============================================================================================================================ Local Handlers */
-
-/*!
- * \brief Handle Unknown Message
- * \param no_s SCCP Session = NULL
- * \param no_d SCCP Device = NULL
- * \param msg_in SCCP Message
- */
 void handle_unknown_message(constSessionPtr no_s, devicePtr no_d, constMessagePtr msg_in)
 {
 	sccp_mid_t mid = letohl(msg_in->header.lel_messageId);
@@ -476,7 +421,6 @@ void handle_unknown_message(constSessionPtr no_s, devicePtr no_d, constMessagePt
 		sccp_dump_msg(msg_in);
 	}
 }
-
 
 /*
  * Interesting values for Last =
@@ -513,30 +457,17 @@ void handle_unknown_message(constSessionPtr no_s, devicePtr no_d, constMessagePt
  * 31 File Authorization Failed
  */
 
-/*!
- * \brief Handle Alarm
- * \param s SCCP Session = NULL
- * \param no_d SCCP Device = NULL
- * \param msg_in SCCP Message
- *
- */
 void handle_alarm(constSessionPtr s, devicePtr no_d, constMessagePtr msg_in)
 {
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: alarm: severity %s (%d), %s [%d/%d]\n", 
-		skinny_alarm2str(letohl(msg_in->data.AlarmMessage.lel_alarmSeverity)), 
-		letohl(msg_in->data.AlarmMessage.lel_alarmSeverity), 
-		msg_in->data.AlarmMessage.text, 
-		letohl(msg_in->data.AlarmMessage.lel_parm1), 
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: alarm: severity %s (%d), %s [%d/%d]\n",
+		skinny_alarm2str(letohl(msg_in->data.AlarmMessage.lel_alarmSeverity)),
+		letohl(msg_in->data.AlarmMessage.lel_alarmSeverity),
+		msg_in->data.AlarmMessage.text,
+		letohl(msg_in->data.AlarmMessage.lel_parm1),
 		letohl(msg_in->data.AlarmMessage.lel_parm2)
 	);
 }
 
-/*!
- * \brief Handle Unknown Message
- * \param s SCCP Session = NULL
- * \param no_d SCCP Device = NULL
- * \param msg_in SCCP Message
- */
 void handle_XMLAlarmMessage(constSessionPtr s, devicePtr no_d, constMessagePtr msg_in)
 {
 	sccp_mid_t mid = letohl(msg_in->header.lel_messageId);
@@ -545,14 +476,6 @@ void handle_XMLAlarmMessage(constSessionPtr s, devicePtr no_d, constMessagePtr m
 	char lastProtocolEventSent[101];
 	char lastProtocolEventReceived[101];
 
-	/*
-	   char *deviceName = "";
-	   char neighborIpv4Address[15];
-	   char neighborIpv6Address[41];
-	   char neighborDeviceID[StationMaxNameSize];
-	   char neighborPortID[StationMaxNameSize];
-	 */
-
 	char *xmlData = pbx_strdupa((char *) &msg_in->data.XMLAlarmMessage);
 	char *state = "";
 	char *line = "";
@@ -560,11 +483,6 @@ void handle_XMLAlarmMessage(constSessionPtr s, devicePtr no_d, constMessagePtr m
 	for (line = strtok_r(xmlData, "\n", &state); line != NULL; line = strtok_r(NULL, "\n", &state)) {
 		sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s\n", line);
 
-		/*
-		   if (sscanf(line, "<String name=\"%[a-zA-Z]\">", deviceName) == 1) {
-		   sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "device name: %s\n", deviceName);
-		   }
-		 */
 		if (sscanf(line, "<Alarm Name=\"%[a-zA-Z]\">", alarmName) == 1) {
 			sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "alarm type: %s\n", alarmName);
 		}
@@ -577,23 +495,6 @@ void handle_XMLAlarmMessage(constSessionPtr s, devicePtr no_d, constMessagePtr m
 		if (sscanf(line, "<String name=\"LastProtocolEventReceived\">%[^<]</String>", lastProtocolEventReceived) == 1) {
 			sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "last event received: %s\n", lastProtocolEventReceived);
 		}
-
-		/* We might want to capture this information for later use (For example in a VideoAdvantage like project) */
-
-		/*
-		   if (sscanf(line, "<String name=\"NeighborIPv4Address\">%[^<]</String>", neighborIpv4Address) == 1) {
-		   sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "neighbor IPv4 address: %s\n", neighborIpv4Address);
-		   }
-		   if (sscanf(line, "<String name=\"NeighborIPv6Address\">%[^<]</String>", neighborIpv6Address) == 1) {
-		   sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "neighbor IPv6 address: %s\n", neighborIpv6Address);
-		   }
-		   if (sscanf(line, "<String name=\"NeighborDeviceID\">%[^<]</String>", neighborDeviceID) == 1) {
-		   sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "neighbor device ID: %s\n", neighborDeviceID);
-		   }
-		   if (sscanf(line, "<String name=\"NeighborPortID\">%[^<]</String>", neighborPortID) == 1) {
-		   sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "neighbor port ID: %s\n", neighborPortID);
-		   }
-		 */
 	}
 	if ((GLOB(debug) & DEBUGCAT_MESSAGE) != 0) {								// only show when debugging messages
 		pbx_log(LOG_WARNING, "SCCP: received %s (0x%04X), %d bytes\n", msginfo2str(mid), mid, msg_in->header.length);
@@ -601,39 +502,16 @@ void handle_XMLAlarmMessage(constSessionPtr s, devicePtr no_d, constMessagePtr m
 	}
 }
 
-/*!
- * \brief Handle LocationInfo Message send by Wireless devices like 792X
- * \param s SCCP Session = NULL
- * \param d SCCP Device = NULL
- * \param msg_in SCCP Message
- */
 void handle_LocationInfoMessage(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	char *xmldata = pbx_strdupa(msg_in->data.LocationInfoMessage.xmldata);
 	sccp_log(DEBUGCAT_DEVICE)(VERBOSE_PREFIX_2 "SCCP: location info (Wi-Fi): %s\n", xmldata);
-	
+
 	if ((GLOB(debug) & DEBUGCAT_MESSAGE) != 0) {								// only show when debugging messages
 		sccp_dump_msg(msg_in);
         }
 }
 
-/*!
- * \brief Handle Token Request
- *
- * If a fall-back server has been entered in the phones cnf.xml file and the phone has fallen back to a secondary server
- * it will send a tokenreq to the primary every so often (secondary keep alive timeout ?). Once the primary server sends
- * a token acknowledgement the switches back.
- *
- * \param s SCCP Session
- * \param no_d SCCP Device = NULL
- * \param msg_in SCCP Message
- *
- * \callgraph
- * \callergraph
- *
- * \todo Implement a decision when to send RegisterTokenAck and when to send RegisterTokenReject
- *       If sending RegisterTokenReject what should the lel_tokenRejWaitTime (BackOff time) be
- */
 void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg_in)
 {
 	char deviceName[sizeof(msg_in->data.RegisterTokenRequest.sId.deviceName) + 1];
@@ -658,7 +536,6 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 
 	sccp_log((DEBUGCAT_MESSAGE | DEBUGCAT_ACTION | DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_2 "%s: token request, instance %d, type %s (%d)\n", deviceName, deviceInstance, skinny_devicetype2str(deviceType), deviceType);
 	{
-		// Search for already known device->sessions
 		AUTO_RELEASE(sccp_device_t, tmpdevice , sccp_device_find_byid(deviceName, FALSE));
 		if (tmpdevice) {
 			skinny_registrationstate_t state = sccp_device_getRegistrationState(tmpdevice);
@@ -681,7 +558,6 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 		}
 	}
 
-	// Search for the device (including realtime), if does not exist and hotline is requested create one.
 	AUTO_RELEASE(sccp_device_t, device, sccp_device_find_byid(deviceName, TRUE));
 	if (!device && GLOB(allowAnonymous)) {
 		device = sccp_device_createAnonymous(deviceName) /*ref_replace*/;
@@ -691,7 +567,6 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 		sccp_device_addToGlobals(device);
 	}
 
-	/* no configuation for this device and no anonymous devices allowed */
 	if (!device) {
 		pbx_log(LOG_NOTICE, "%s: token request refused: no such device in sccp.conf or realtime, and hotline_enabled is off\n", deviceName);
 		sccp_session_tokenReject(s, token_backoff_time);
@@ -716,7 +591,6 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 		goto EXIT;
 	}
 
-	/* accepting token by default */
 	boolean_t sendAck = TRUE;
 	if (!sccp_strlen_zero(GLOB(token_fallback))) {
 		if (sccp_false(GLOB(token_fallback))) {
@@ -752,8 +626,6 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 		sccp_log((DEBUGCAT_DEVICE))(VERBOSE_PREFIX_3 "%s: fallback is not set; token granted\n", deviceName);
 	}
 
-	/* some test to detect active calls */
-	//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: serverPriority: %d, unknown: %d, active call? %s\n", deviceName, serverPriority, letohl(msg_in->data.RegisterTokenRequest.unknown), (letohl(msg_in->data.RegisterTokenRequest.unknown) & 0x6) ? "yes" : "no");
 	device->keepalive = device->keepaliveinterval = device->keepalive ? device->keepalive : GLOB(keepalive);
 
 	sccp_device_setRegistrationState(device, SKINNY_DEVICE_RS_TOKEN);
@@ -768,27 +640,11 @@ void handle_token_request(constSessionPtr s, devicePtr no_d, constMessagePtr msg
 	device->status.token = (sendAck) ? SCCP_TOKEN_STATE_ACK : SCCP_TOKEN_STATE_REJ;
 EXIT:
 	if(device) {
-		device->registrationTime = time(0);                                        // last time device tried sending token
+		device->registrationTime = time(0);
 	}
 }
 
-/*!
- * \brief Handle Token Request for SPCP phones
- *
- * If a fall-back server has been entered in the phones cnf.xml file and the phone has fallen back to a secondary server
- * it will send a tokenreq to the primary every so often (secondary keep alive timeout ?). Once the primary server sends
- * a token acknowledgement the switches back.
- *
- * \param s SCCP Session
- * \param no_d SCCP Device = NULL
- * \param msg_in SCCP Message
- *
- * \callgraph
- * \callergraph
- *
- * \todo Implement a decision when to send RegisterTokenAck and when to send RegisterTokenReject
- *       If sending RegisterTokenReject what should the lel_tokenRejWaitTime (BackOff time) be
- */
+/* A phone that has fallen back to a secondary server (fallback server in its cnf.xml) keeps sending token requests to the primary. */
 void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_in)
 {
 	char *deviceName = "";
@@ -811,7 +667,6 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 	}
 	sccp_log((DEBUGCAT_DEVICE))(VERBOSE_PREFIX_2 "%s: token request, instance %d, type %s (%d)\n", deviceName, deviceInstance, skinny_devicetype2str(deviceType), deviceType);
 
-	/* ip address range check */
 	struct sockaddr_storage sas = { 0 };
 	sccp_session_getSas(s, &sas);
 	if (GLOB(ha) && !sccp_apply_ha(GLOB(ha), &sas)) {
@@ -821,7 +676,6 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 	}
 
 	{
-		// Search for already known device-sessions
 		AUTO_RELEASE(sccp_device_t, tmpdevice , sccp_device_find_byid(deviceName, FALSE));
 		if (tmpdevice) {
 			skinny_registrationstate_t state = sccp_device_getRegistrationState(tmpdevice);
@@ -844,7 +698,6 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 		}
 	}
 
-	// search for all devices including realtime
 	AUTO_RELEASE(sccp_device_t, device, sccp_device_find_byid(deviceName, TRUE));
 	if (!device && GLOB(allowAnonymous)) {
 		device = sccp_device_createAnonymous(msg_in->data.SPCPRegisterTokenRequest.sId.deviceName) /*ref_replace*/;
@@ -854,7 +707,6 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 		sccp_device_addToGlobals(device);
 	}
 
-	/* no configuation for this device and no anonymous devices allowed */
 	if (!device) {
 		pbx_log(LOG_NOTICE, "%s: token request refused: no such device in sccp.conf or realtime, and hotline_enabled is off\n", deviceName);
 		sccp_session_tokenRejectSPCP(s, 60);
@@ -877,7 +729,6 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 		goto EXIT;
 	}
 
-	/* obsolete, see above */
 	if (device->session && device->session != s) {
 		pbx_log(LOG_NOTICE, "%s: token request refused: the device is already registered on another connection; both connections are closed\n", device->id);
 		sccp_device_setRegistrationState(device, SKINNY_DEVICE_RS_FAILED);
@@ -886,8 +737,6 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 		goto EXIT;
 	}
 
-	/* all checks passed, assign session to device */
-	// device->session = s;
 	device->keepalive = device->keepaliveinterval = device->keepalive ? device->keepalive : GLOB(keepalive);
 	sccp_device_setRegistrationState(device, SKINNY_DEVICE_RS_TOKEN);
 	device->status.token = SCCP_TOKEN_STATE_ACK;
@@ -895,19 +744,10 @@ void handle_SPCPTokenReq(constSessionPtr s, devicePtr no_d, constMessagePtr msg_
 	sccp_session_tokenAckSPCP(s, 65535);
 EXIT:
 	if(device) {
-		device->registrationTime = time(0);                                        // last time device tried sending token
+		device->registrationTime = time(0);
 	}
 }
 
-/*!
- * \brief Handle Device Registration
- * \param s SCCP Session
- * \param maybe_d SCCP Device
- * \param msg_in SCCP Message
- *
- * \callgraph
- * \callergraph
- */
 void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_in)
 {
 	char * phone_ipv4 = NULL;
@@ -919,18 +759,11 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 
 	sccp_copy_string(deviceName, msg_in->data.RegisterMessage.sId.deviceName, StationMaxDeviceNameSize);
 	skinny_devicetype_t deviceType = letohl(msg_in->data.RegisterMessage.lel_deviceType);
-	//uint32_t maxStreams = letohl(msg_in->data.RegisterMessage.lel_maxStreams);
-	//uint32_t activeStreams = letohl(msg_in->data.RegisterMessage.lel_activeStreams);
 	StationProtocolFeatures_t protocolFeatures = msg_in->data.RegisterMessage.protocolFeatures;
 	uint8_t protocolVer = protocolFeatures.protocolVersion;
-	//uint32_t maxConferences = letohl(msg_in->data.RegisterMessage.lel_maxConferences);
-	//uint32_t activeConferences = letohl(msg_in->data.RegisterMessage.lel_activeConferences);
 	uint8_t macAddress[12];
 
 	memcpy(macAddress, msg_in->data.RegisterMessage.macAddress, 12);
-	//uint32_t ipV4AddressScope = letohl(msg_in->data.RegisterMessage.lel_ipV4AddressScope);
-	//uint32_t maxNumberOfLines = letohl(msg_in->data.RegisterMessage.lel_maxNumberOfLines);
-	//uint32_t ipV6AddressScope = letohl(msg_in->data.RegisterMessage.lel_ipV6AddressScope);
 
 	if (GLOB(reload_in_progress)) {
 		pbx_log(LOG_NOTICE, "%s: registration refused because a configuration reload is in progress\n", deviceName);
@@ -943,13 +776,12 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 	}
 	sccp_log((DEBUGCAT_MESSAGE | DEBUGCAT_ACTION | DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_1 "%s: registering, instance %d, user ID %d, type %s (%d), protocol %d, firmware '%s'\n", deviceName, deviceInstance, userid, skinny_devicetype2str(deviceType), deviceType, protocolVer, msg_in->data.RegisterMessage.loadInfo);
 
-	// search for all devices including realtime
 	AUTO_RELEASE(sccp_device_t, device, maybe_d ? sccp_device_retain(maybe_d) : sccp_device_find_byid(deviceName, TRUE));
 	if (device) {
 		skinny_registrationstate_t state = sccp_device_getRegistrationState(device);
 		if (
 			sccp_session_check_crossdevice(s, device) ||
-			state == SKINNY_DEVICE_RS_PROGRESS || state == SKINNY_DEVICE_RS_OK || 
+			state == SKINNY_DEVICE_RS_PROGRESS || state == SKINNY_DEVICE_RS_OK ||
 			(state == SKINNY_DEVICE_RS_TOKEN && time(0) - device->registrationTime > 60)
 		) {
 			pbx_log(LOG_NOTICE, "%s: registration refused: the device still has another connection (registration state %s); closing it so the phone can retry\n", DEV_ID_LOG(device), skinny_registrationstate2str(state));
@@ -961,9 +793,6 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 		}
 	}
 
-	/*! \todo We need a fix here. If deviceName was provided and specified in sccp.conf we should not continue to anonymous,
-	 * but we cannot depend on one of the standard find functions for this, because they return null in two different cases (non-existent and refcount<0).
-	 */
 	if (!device && GLOB(allowAnonymous)) {
 		device = sccp_device_createAnonymous(deviceName) /*ref_replace*/;
 		if(device) {
@@ -985,7 +814,6 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 			goto FUNC_EXIT;
 		}
 
-		/* check ACLs for this device */
 		if (device->checkACL(device) == FALSE) {
 			struct sockaddr_storage sas = { 0 };
 			sccp_session_getSas(s, &sas);
@@ -994,16 +822,12 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 			sccp_session_reject(s, "IP Not Authorized");
 			goto FUNC_EXIT;
 		}
-
 	} else {
 		pbx_log(LOG_NOTICE, "%s: registration refused: no such device in sccp.conf or realtime, and hotline_enabled is off\n", deviceName);
 		sccp_session_reject(s, "Device Unknown");
 		return;
 	}
 
-	//device->device_features = letohl(msg_in->data.RegisterMessage.phone_features) & SKINNY_PHONE_FEATURES_MASK;
-	//device->device_features = letohl(msg_in->data.RegisterMessage.lel_phone_features);
-	//device->device_features = msg_in->data.RegisterMessage.lel_phone_features;
 	device->device_features = protocolFeatures;
 	device->linesRegistered = FALSE;
 
@@ -1015,7 +839,6 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 		phone_ipv6 = pbx_strdupa(sccp_netsock_stringify_host(&device->ipv6));
 	}
 
-	/* set our IPv4 address */
 	if(msg_in->data.RegisterMessage.stationIpAddr != 0) {
 		device->ipv4.ss_family = AF_INET;
 		struct sockaddr_in * sin4 = (struct sockaddr_in *)&device->ipv4;
@@ -1024,11 +847,6 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 		phone_ipv4 = pbx_strdupa(sccp_netsock_stringify_host(&device->ipv4));
 		sccp_session_setOurIP4Address(s, &device->ipv4);
 	}
-
-	/* */
-	//sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: device load_info='%s', maxNumberOfLines='%d', supports dynamic_messages='%s', supports abbr_dial='%s'\n", deviceName, msg_in->data.RegisterMessage.loadInfo, maxNumberOfLines, (device->device_features & SKINNY_PHONE_FEATURES_DYNAMIC_MESSAGES) == 0 ? "no" : "yes", (device->device_features & SKINNY_PHONE_FEATURES_ABBRDIAL) == 0 ? "no" : "yes");
-	//sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: ipv4Address: %s, ipV4AddressScope: %d, ipv6Address: %s, ipV6AddressScope: %d\n", deviceName, phone_ipv4, ipV4AddressScope, phone_ipv6, ipV6AddressScope);
-	//sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: maxStreams: %d, activeStreams: %d, maxConferences: %d, activeConferences: %d\n", deviceName, maxStreams, activeStreams, maxConferences, activeConferences);
 
 	/* auto NAT detection if NAT is not set as device configuration */
 	if (SCCP_NAT_AUTO == device->nat || SCCP_NAT_AUTO_OFF == device->nat || SCCP_NAT_AUTO_ON == device->nat) {
@@ -1042,22 +860,18 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 
 		if (session_sas.ss_family == AF_INET) {
 			char *session_ipv4 = pbx_strdupa(sccp_netsock_stringify_host(&session_sas));
-			if (GLOB(localaddr) && sccp_apply_ha_default(GLOB(localaddr), &session_sas, AST_SENSE_DENY) != AST_SENSE_ALLOW) {	// if device->sin falls in localnet scope
+			if (GLOB(localaddr) && sccp_apply_ha_default(GLOB(localaddr), &session_sas, AST_SENSE_DENY) != AST_SENSE_ALLOW) {
 				sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: NAT detected: session address %s (phone reports %s) is outside localnet (%s); RTP uses externip/externhost\n", deviceName, session_ipv4, phone_ipv4, pbx_str_buffer(ha_localnet_buf));
 				device->nat = SCCP_NAT_AUTO_ON;
-			} else if(sccp_netsock_cmp_addr(&session_sas, &device->ipv4)) {                                        // compare device->sin to the phones reported ipaddr
+			} else if(sccp_netsock_cmp_addr(&session_sas, &device->ipv4)) {
 				sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: NAT detected: session address %s differs from the address the phone reports (%s); RTP uses externip/externhost\n", deviceName, session_ipv4, phone_ipv4);
 				device->nat = SCCP_NAT_AUTO_ON;
-			//} else {
-			//	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Device not behind NAT. Device IP '%s' falls in localnet scope\n", deviceName, phone_ipv4);
 			}
 		} else {
 			char *session_ipv6 = pbx_strdupa(sccp_netsock_stringify_host(&session_sas));
 			if(sccp_netsock_cmp_addr(&session_sas, &device->ipv6)) {
 				sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: NAT detected: session address %s differs from the address the phone reports (%s); RTP uses externip/externhost\n", deviceName, session_ipv6, phone_ipv6);
 				device->nat = SCCP_NAT_AUTO_ON;
-			//} else {
-			//	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Device not behind NAT. Device IP '%s' same as it's session: '%s'\n", deviceName, phone_ipv6, session_ipv6);
 			}
 		}
 	} else {
@@ -1066,7 +880,6 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 
 	device->skinny_type = deviceType;
 
-	// device->session = s;
 	sccp_session_resetLastKeepAlive(s);
 	device->protocolversion = protocolVer;
 	device->status.token = SCCP_TOKEN_STATE_NOTOKEN;
@@ -1082,56 +895,27 @@ void handle_register(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_i
 	}
 
 	device->protocol = sccp_protocol_getDeviceProtocol(device, sccp_session_getProtocol(s));
-	//uint8_t ourMaxProtocolCapability = sccp_protocol_getMaxSupportedVersionNumber(sccp_session_getProtocol(s));
 
-	//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_4 "%s: Asked for our protocol capability (%d).\n", DEV_ID_LOG(device), ourMaxProtocolCapability);
-	//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_4 "%s: Phone protocol capability : %d\n", DEV_ID_LOG(device), protocolVer);
-	//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_4 "%s: Our protocol capability   : %d\n", DEV_ID_LOG(device), ourMaxProtocolCapability);
-	//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Joint protocol capability : %d\n", DEV_ID_LOG(device), device->protocol->version);
-
-	/* we need some entropy for keepalive, to reduce the number of devices sending keepalive at one time
-	 * smaller random segment, keeping keepalive toward the upperbound */
 	device->keepalive = device->keepalive ? device->keepalive : GLOB(keepalive);
 	device->keepaliveinterval = ((device->keepalive / 4) * 3) + (sccp_random() % (device->keepalive / 4)) + 1;
 
 	device->inuseprotocolversion = device->protocol->version;
 	sccp_device_preregistration(device);
 
-	//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Ask the phone to send keepalive message every %d seconds\n", DEV_ID_LOG(device), device->keepaliveinterval);
 	device->protocol->sendRegisterAck(device, device->keepaliveinterval, device->keepaliveinterval, GLOB(dateformat));
 
 	sccp_dev_set_registered(device, SKINNY_DEVICE_RS_PROGRESS);
 
-	/*
-	   Ask for the capabilities of the device
-	   to proceed with registration according to sccp protocol specification 3.0
-	 */
-	//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: (sccp_handle_register) asking for capabilities\n", DEV_ID_LOG(device));
 	sccp_dev_sendmsg(device, CapabilitiesReqMessage);
 	return;
 
 FUNC_EXIT:
-/*
-#if CS_REFCOUNT_DEBUG
-	if (device) {
-		pbx_str_t *buf = pbx_str_create(DEFAULT_PBX_STR_BUFFERSIZE);
-		sccp_refcount_gen_report(device, &buf);
-		pbx_log(LOG_NOTICE, "%s: reference report at registration (realtime: %s):\n%s\n", deviceName, device && device->realtime ? "yes" : "no", pbx_str_buffer(buf));
-		sccp_free(buf);
-	}
-#endif
-*/
 	sccp_session_stopthread(s, SKINNY_DEVICE_RS_FAILED);
 	if (device) {
 		device->session = NULL;
 	}
 }
 
-/*!
- * \brief Make Button Template for Device
- * \param d SCCP Device as sccp_device_t
- * \return Linked List of ButtonDefinitions
- */
 static btnlist *sccp_make_button_template(devicePtr d)
 {
 	int i = 0;
@@ -1146,7 +930,7 @@ static btnlist *sccp_make_button_template(devicePtr d)
 	}
 	sccp_dev_build_buttontemplate(d, btn);
 
-	uint16_t speeddialInstance = SCCP_FIRST_SPEEDDIALINSTANCE;						/* starting instance for speeddial is 1 */
+	uint16_t speeddialInstance = SCCP_FIRST_SPEEDDIALINSTANCE;
 	uint16_t lineInstance = SCCP_FIRST_LINEINSTANCE;
 	uint16_t serviceInstance = SCCP_FIRST_SERVICEINSTANCE;
 	boolean_t defaultLineSet = FALSE;
@@ -1154,15 +938,11 @@ static btnlist *sccp_make_button_template(devicePtr d)
 	if (!d->isAnonymous) {
 		SCCP_LIST_LOCK(&d->buttonconfig);
 		SCCP_LIST_TRAVERSE(&d->buttonconfig, buttonconfig, list) {
-			//sccp_log((DEBUGCAT_BUTTONTEMPLATE)) (VERBOSE_PREFIX_3 "\n%s: searching for position of button type %d\n", DEV_ID_LOG(d), buttonconfig->type);
-
 			if (buttonconfig->instance > 0) {
-			//if (buttonconfig->instance > 0 || buttonconfig->pendingDelete) {
 				continue;
 			}
 			for (i = 0; i < StationMaxButtonTemplateSize; i++) {
-				if (!(btn[i].type >= SCCP_BUTTONTYPE_MULTI && btn[i].type <= SCCP_BUTTONTYPE_ABBRDIAL)) { 
-					// skip already used up buttons
+				if (!(btn[i].type >= SCCP_BUTTONTYPE_MULTI && btn[i].type <= SCCP_BUTTONTYPE_ABBRDIAL)) {
 					continue;
 				}
 
@@ -1170,7 +950,6 @@ static btnlist *sccp_make_button_template(devicePtr d)
 					if (btn[i].type == SCCP_BUTTONTYPE_MULTI || btn[i].type == SCCP_BUTTONTYPE_LINE) {
 						btn[i].type = SKINNY_BUTTONTYPE_LINE;
 
-						/* search line (create new line, if necessary (realtime)) */
 						/*! retains new line in btn[i].ptr, finally released in sccp_dev_clean */
 						if ((btn[i].ptr = sccp_line_find_byname(buttonconfig->button.line.name, TRUE))) {
 							buttonconfig->instance = btn[i].instance = lineInstance++;
@@ -1184,14 +963,11 @@ static btnlist *sccp_make_button_template(devicePtr d)
 							buttonconfig->instance = btn[i].instance = 0;
 							pbx_log(LOG_WARNING, "%s: button %d refers to line '%s', which is not defined; button left unused\n", DEV_ID_LOG(d), i + 1, buttonconfig->button.line.name);
 						}
-
-						//sccp_log((DEBUGCAT_BUTTONTEMPLATE)) (VERBOSE_PREFIX_3 "%s: Add line %s on position %d\n", DEV_ID_LOG(d), buttonconfig->button.line.name, buttonconfig->instance);
 					} else {
 						sccp_log((DEBUGCAT_BUTTONTEMPLATE)) (VERBOSE_PREFIX_3 "%s: line button %d (%s) skipped: no line buttons left on this model\n", d->id, buttonconfig->index + 1, buttonconfig->label);
 						btn[i].type = SKINNY_BUTTONTYPE_UNUSED;
 					}
 					break;
-
 				} else if (buttonconfig->type == EMPTY) {
 					if (btn[i].type == SCCP_BUTTONTYPE_MULTI || btn[i].type == SCCP_BUTTONTYPE_LINE || btn[i].type == SCCP_BUTTONTYPE_SPEEDDIAL) {
 						btn[i].type = SKINNY_BUTTONTYPE_UNUSED;
@@ -1201,7 +977,6 @@ static btnlist *sccp_make_button_template(devicePtr d)
 						btn[i].type = SKINNY_BUTTONTYPE_UNUSED;
 					}
 					break;
-
 				} else if (buttonconfig->type == SERVICE) {
 					if (btn[i].type == SCCP_BUTTONTYPE_MULTI) {
 						btn[i].type = SKINNY_BUTTONTYPE_SERVICEURL;
@@ -1211,19 +986,16 @@ static btnlist *sccp_make_button_template(devicePtr d)
 						btn[i].type = SKINNY_BUTTONTYPE_UNUSED;
 					}
 					break;
-
 				} else if (buttonconfig->type == SPEEDDIAL && !sccp_strlen_zero(buttonconfig->label)) {
 					if ((btn[i].type == SCCP_BUTTONTYPE_MULTI || btn[i].type == SCCP_BUTTONTYPE_SPEEDDIAL)) {
-
-//						buttonconfig->instance = btn[i].instance = i + 1;
 						if (!sccp_strlen_zero(buttonconfig->button.speeddial.hint)
-						    && btn[i].type == SCCP_BUTTONTYPE_MULTI				/* we can set our feature */
+						    && btn[i].type == SCCP_BUTTONTYPE_MULTI
 						    ) {
 #ifdef CS_DYNAMIC_SPEEDDIAL
 							if (d->inuseprotocolversion >= 15) {
 								btn[i].type = SKINNY_BUTTONTYPE_BLFSPEEDDIAL;
 								buttonconfig->instance = btn[i].instance = speeddialInstance++;
-							} else 
+							} else
 #endif
 							{
 								btn[i].type = SKINNY_BUTTONTYPE_LINE;
@@ -1232,18 +1004,15 @@ static btnlist *sccp_make_button_template(devicePtr d)
 						} else {
 							btn[i].type = SKINNY_BUTTONTYPE_SPEEDDIAL;
 							buttonconfig->instance = btn[i].instance = speeddialInstance++;
-
 						}
 					} else if (btn[i].type == SCCP_BUTTONTYPE_ABBRDIAL) {
 						btn[i].type = SKINNY_BUTTONTYPE_SPEEDDIAL;
 						buttonconfig->instance = btn[i].instance = speeddialInstance++;
-	 					//sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_2 "%s: Assigned Speeddial %d to AbbrDial %d\n", d->id, i, buttonconfig->instance);
 					} else {
 						sccp_log((DEBUGCAT_BUTTONTEMPLATE)) (VERBOSE_PREFIX_3 "%s: speeddial button %d (%s) skipped: no buttons left on this model\n", d->id, buttonconfig->index + 1, buttonconfig->label);
 						btn[i].type = SKINNY_BUTTONTYPE_UNUSED;
 					}
  					break;
-
 				} else if (buttonconfig->type == FEATURE && !sccp_strlen_zero(buttonconfig->label)) {
 					if (btn[i].type == SCCP_BUTTONTYPE_MULTI) {
 						buttonconfig->instance = btn[i].instance = speeddialInstance++;
@@ -1282,7 +1051,6 @@ static btnlist *sccp_make_button_template(devicePtr d)
 
 							case SCCP_FEATURE_PARKINGLOT:
 #ifdef CS_SCCP_PARK
-								//if (iParkingLot.attachObserver && iParkingLot.attachObserver(buttonconfig->button.feature.options, d, buttonconfig->instance)) {
 								if (iParkingLot.attachObserver) {
 									if (d->inuseprotocolversion > 15) {
 										btn[i].type = SKINNY_BUTTONTYPE_MULTIBLINKFEATURE;
@@ -1372,7 +1140,6 @@ static btnlist *sccp_make_button_template(devicePtr d)
 							default:
 								btn[i].type = SKINNY_BUTTONTYPE_FEATURE;
 								break;
-
 						}
 					} else {
 						sccp_log(DEBUGCAT_BUTTONTEMPLATE)(VERBOSE_PREFIX_3 "%s: feature button %d (%s) skipped: no buttons left on this model\n", d->id, buttonconfig->index + 1, buttonconfig->label);
@@ -1381,11 +1148,9 @@ static btnlist *sccp_make_button_template(devicePtr d)
 					break;
 				}
 			}
-			//sccp_log_and((DEBUGCAT_BUTTONTEMPLATE + DEBUGCAT_FEATURE_BUTTON)) (VERBOSE_PREFIX_3 "%s: Configured %d Phone Button [%.2d] = %s(%d), label:%s\n", d->id, buttonconfig->index + 1, buttonconfig->instance, skinny_buttontype2str(btn[i].type), btn[i].type, buttonconfig->label);
 		}
 		SCCP_LIST_UNLOCK(&d->buttonconfig);
 	} else {
-		/* reserve one line as hotline */
 		buttonconfig = SCCP_LIST_FIRST(&d->buttonconfig);
 		btn[i].type = SKINNY_BUTTONTYPE_LINE;
 		btn[i].ptr = sccp_line_retain(GLOB(hotline)->line);
@@ -1393,7 +1158,6 @@ static btnlist *sccp_make_button_template(devicePtr d)
 		sccp_linedevice_create(d, btn[i].ptr, btn[i].instance, buttonconfig->button.line.subscriptionId);
 	}
 
-	// all non defined buttons are set to UNUSED
 	for (i = 0; i < StationMaxButtonTemplateSize; i++) {
 		if (btn[i].type == SCCP_BUTTONTYPE_MULTI || btn[i].type == SCCP_BUTTONTYPE_ABBRDIAL) {
 			btn[i].type = SKINNY_BUTTONTYPE_UNUSED;
@@ -1412,15 +1176,6 @@ static btnlist *sccp_make_button_template(devicePtr d)
 	return btn;
 }
 
-/*!
- * \brief Handle Available Lines
- * \param s SCCP Session
- * \param d SCCP Device
- * \param none SCCP Message
- *
- * \callgraph
- * \callergraph
- */
 void sccp_handle_AvailableLines(constSessionPtr s, devicePtr d, constMessagePtr none)
 {
 	uint8_t i = 0;
@@ -1430,7 +1185,6 @@ void sccp_handle_AvailableLines(constSessionPtr s, devicePtr d, constMessagePtr 
 
 	line_count = 0;
 
-	/** \todo why do we get the message twice  */
 	if (d->linesRegistered) {
 		return;
 	}
@@ -1442,7 +1196,6 @@ void sccp_handle_AvailableLines(constSessionPtr s, devicePtr d, constMessagePtr 
 		return;
 	}
 
-	/* count the available lines on the phone */
 	for (i = 0; i < StationMaxButtonTemplateSize; i++) {
 		if ((btn[i].type == SKINNY_BUTTONTYPE_LINE) || (btn[i].type == SCCP_BUTTONTYPE_MULTI)) {
 			line_count++;
@@ -1454,12 +1207,6 @@ void sccp_handle_AvailableLines(constSessionPtr s, devicePtr d, constMessagePtr 
 	d->linesRegistered = TRUE;
 }
 
-/*!
- * \brief Handle Accessory Status Message
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_accessorystatus_message(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	sccp_accessory_t accessory = letohl(msg_in->data.AccessoryStatusMessage.lel_AccessoryID);
@@ -1468,18 +1215,9 @@ void handle_accessorystatus_message(constSessionPtr s, devicePtr d, constMessage
 	sccp_device_setAccessoryStatus(d, accessory, state);
 
 	// these devices don't generate an offhook stimulus
-	//if (d->skinny_type == SKINNY_DEVICETYPE_CISCO6901) {
-	//	handle_offhook(s, d, msg_in);
-	//}
 	// use <alwaysUsePrimeLineVoiceMail>true</alwaysUsePrimeLineVoiceMail> in sep-file instead
 }
 
-/*!
- * \brief Handle Device Unregister
- * \param s SCCP Session
- * \param device SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_unregister(constSessionPtr s, devicePtr device, constMessagePtr msg_in)
 {
 	sccp_msg_t *msg_out = NULL;
@@ -1504,7 +1242,7 @@ void handle_unregister(constSessionPtr s, devicePtr device, constMessagePtr msg_
 	msg_out->data.UnregisterAckMessage.lel_status = SKINNY_UNREGISTERSTATUS_OK;
 	sccp_session_send2(s, msg_out);								// send directly to session, skipping device check
 	sccp_log_and((DEBUGCAT_MESSAGE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: unregister acknowledged\n", DEV_ID_LOG(d));
-	
+
 	sched_yield();
 	if (s) {
 		sccp_session_stopthread(s, SKINNY_DEVICE_RS_NONE);
@@ -1513,15 +1251,6 @@ void handle_unregister(constSessionPtr s, devicePtr device, constMessagePtr msg_
 	}
 }
 
-/*!
- * \brief Handle Button Template Request for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param none SCCP Message
- *
- * \warning
- *   - device->buttonconfig is not always locked
- */
 void sccp_handle_button_template_req(constSessionPtr s, devicePtr d, constMessagePtr none)
 {
 	btnlist * btn = NULL;
@@ -1539,13 +1268,11 @@ void sccp_handle_button_template_req(constSessionPtr s, devicePtr d, constMessag
 		return;
 	}
 
-	/* pre-attach lines. We will wait for button template req if the phone does support it */
 	/* the template is built once per registration (sccp_dev_clean frees it); a repeated request
 	 * resends it, because a rebuild skips the buttons that already have an instance and loses the lines */
 	btn = d->buttonTemplate;
 	if (!btn) {
 		btn = d->buttonTemplate = sccp_make_button_template(d);
-		/* update lineButtons array */
 		sccp_linedevice_createButtonsArray(d);
 	}
 
@@ -1570,7 +1297,6 @@ void sccp_handle_button_template_req(constSessionPtr s, devicePtr d, constMessag
 		switch (btn[i].type) {
 			case SCCP_BUTTONTYPE_HINT:
 			case SCCP_BUTTONTYPE_LINE:
-				/* we do not need a line if it is not configured */
 				if (msg_out->data.ButtonTemplateMessage.definition[i].instanceNumber == 0) {
 					msg_out->data.ButtonTemplateMessage.definition[i].buttonDefinition = SKINNY_BUTTONTYPE_UNDEFINED;
 				} else {
@@ -1608,24 +1334,16 @@ void sccp_handle_button_template_req(constSessionPtr s, devicePtr d, constMessag
 
 	sccp_log((DEBUGCAT_BUTTONTEMPLATE + DEBUGCAT_SPEEDDIAL))(VERBOSE_PREFIX_3 "%s: assigning instances to unconfigured speeddials\n", d->id);
 	SCCP_LIST_TRAVERSE(&d->buttonconfig, config, list) {
-		/* we found an unconfigured speeddial */
 		if (config->type == SPEEDDIAL && config->instance == 0) {
 			config->instance = speeddialInstance++;
 		} else if (config->type == SPEEDDIAL && config->instance != 0) {
 			speeddialInstance = config->instance + 1;
 		}
 	}
-	/* done */
 
 	sccp_dev_send(d, msg_out);
 }
 
-/*!
- * \brief Handle Line Number for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_line_number(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	sccp_speed_t k;
@@ -1636,7 +1354,6 @@ void handle_line_number(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 	char * fullyQualifiedDisplayName = "";
 	sccp_log((DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: configuring line %d\n", d->id, lineNumber);
 
-	/* the description on the top bar off the phone is taken from the device description or the first default line description whichever is provided (-MC) */
 	AUTO_RELEASE(sccp_line_t, l , sccp_line_find_byid(d, lineNumber));
 	if(l) {
 		dirNumber = l->name;
@@ -1645,7 +1362,6 @@ void handle_line_number(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 		else if(!sccp_strlen_zero(l->description))
 			fullyQualifiedDisplayName = l->description;
 	} else {
-		/* if we find no regular line - it can be a speeddial with hint */
 		sccp_dev_speed_find_byindex(d, lineNumber, TRUE, &k);
 		if(!k.valid) {
 			pbx_log(LOG_WARNING, "%s: phone asked for button %d, which is neither a line nor a speeddial with a hint; sent an empty line status\n", sccp_session_getDesignator(s), lineNumber);
@@ -1682,12 +1398,6 @@ void handle_line_number(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 	d->protocol->sendLineStatResp(d, lineNumber, dirNumber, fullyQualifiedDisplayName, displayName);
 }
 
-/*!
- * \brief Handle SpeedDial Status Request for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_speed_dial_stat_req(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	sccp_speed_t k;
@@ -1714,14 +1424,6 @@ void handle_speed_dial_stat_req(constSessionPtr s, devicePtr d, constMessagePtr 
 	sccp_dev_send(d, msg_out);
 }
 
-/*!
- * \brief Handle LastNumberRedial Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_lastnumberredial(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: redial button pressed\n", d->id);
@@ -1736,7 +1438,6 @@ static void handle_stimulus_lastnumberredial(constDevicePtr d, constLinePtr l, c
 			sccp_channel_stop_schedule_digittimout(channel);
 			sccp_copy_string(channel->dialedNumber, d->redialInformation.number, sizeof(d->redialInformation.number));
 			sccp_pbx_softswitch(channel);
-			//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Redial the number %s\n", d->id, d->redialInformation.number);
 		} else {
 			sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: redial ignored: a call is in progress\n", d->id);
 		}
@@ -1746,11 +1447,6 @@ static void handle_stimulus_lastnumberredial(constDevicePtr d, constLinePtr l, c
 	}
 }
 
-/*!
- * \brief Handle SpeedDial for Device
- * \param d SCCP Device as sccp_device_t
- * \param k SCCP SpeedDial as sccp_speed_t
- */
 static void handle_speeddial(constDevicePtr d, const sccp_speed_t * k)
 {
 	int len = 0;
@@ -1762,7 +1458,6 @@ static void handle_speeddial(constDevicePtr d, const sccp_speed_t * k)
 
 	AUTO_RELEASE(sccp_channel_t, channel , sccp_device_getActiveChannel(d));
 	if (channel) {
-		//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: applying to channel:%s with state %s\n", DEV_ID_LOG(d), channel->designator, sccp_channelstate2str(channel->state));
 		if (channel->state == SCCP_CHANNELSTATE_OFFHOOK || channel->state == SCCP_CHANNELSTATE_GETDIGITS || channel->state == SCCP_CHANNELSTATE_SPEEDDIAL) {
 			sccp_channel_stop_schedule_digittimout(channel);
 			len = sccp_strlen(channel->dialedNumber);
@@ -1771,7 +1466,6 @@ static void handle_speeddial(constDevicePtr d, const sccp_speed_t * k)
 			return;
 		}
 		if (channel->state >= SCCP_CHANNELSTATE_DIALING && channel->state <= SCCP_CHANNELSTATE_CONNECTEDCONFERENCE) {
-			//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: put call %d on hold %d\n", DEV_ID_LOG(d), channel->callid, channel->state);
 			if (!sccp_channel_hold(channel)) {
 				pbx_log(LOG_WARNING, "%s: speeddial not dialed: could not put active call %s on hold\n", d->id, channel->designator);
 				return;
@@ -1785,10 +1479,8 @@ static void handle_speeddial(constDevicePtr d, const sccp_speed_t * k)
 		}
 	}
 
-	/* \todo check Remote RINGING + gpickup */
 	AUTO_RELEASE(sccp_line_t, l, d->defaultLineInstance > 0 ? sccp_line_find_byid(d, d->defaultLineInstance) : sccp_dev_getActiveLine(d));
 	if (!l) {
-		//sccp_log_and((DEBUGCAT_LINE + DEBUGCAT_HIGH)) (VERBOSE_PREFIX_3 "using first line with instance: %u\n", d->defaultLineInstance);
 		l = sccp_line_find_byid(d, SCCP_FIRST_LINEINSTANCE) /*ref_replace*/;
 	}
 	if (l) {
@@ -1796,14 +1488,6 @@ static void handle_speeddial(constDevicePtr d, const sccp_speed_t * k)
 	}
 }
 
-/*!
- * \brief Handle Speeddial Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_speeddial(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: speeddial button pressed\n", d->id);
@@ -1819,14 +1503,6 @@ static void handle_stimulus_speeddial(constDevicePtr d, constLinePtr l, const ui
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
-/*!
- * \brief Handle Speeddial Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_blfspeeddial(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: BLF speeddial button pressed\n", d->id);
@@ -1842,28 +1518,18 @@ static void handle_stimulus_blfspeeddial(constDevicePtr d, constLinePtr l, const
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
-/*!
- * \brief Handle Line Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_line(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: line button pressed\n", d->id);
 
-	/* Mandatory adhoc for Anonymous Phones */
 	if (d->isAnonymous) {
-		sccp_feat_adhocDial(d, GLOB(hotline)->line);							/* use adhoc dial feature with hotline */
+		sccp_feat_adhocDial(d, GLOB(hotline)->line);
 		return;
 	}
 
 	/* for 7960's we use line keys to display hinted speeddials (Trick), without a hint it would have been a speeddial */
 	if (!l) {
 		sccp_speed_t k;
-		//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: Handle (BLF) Speeddial Stimulus. Looking for a speeddial-instance:%d with hint\n", d->id, instance);
 		sccp_dev_speed_find_byindex(d, instance, TRUE, &k);
 		if (k.valid) {
 			handle_speeddial(d, &k);
@@ -1876,8 +1542,7 @@ static void handle_stimulus_line(constDevicePtr d, constLinePtr l, const uint16_
 	}
 
 	/*
-	 * \note Check speeddial before handling adHoc allows speeddials to be used and makes adHoc Non-Mandatory (This is a personal Preference - DdG). 
-	 * To make adhoc mandatory you can close it down in the dialplan. 
+	 * Check speeddial before handling adHoc allows speeddials to be used and makes adHoc Non-Mandatory (This is a personal Preference - DdG).
 	 */
 	if (!sccp_strlen_zero(l->adhocNumber)) {
 		sccp_feat_adhocDial(d, l);
@@ -1886,30 +1551,22 @@ static void handle_stimulus_line(constDevicePtr d, constLinePtr l, const uint16_
 
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: line button pressed on line %s\n", d->id, l->name);
 	{
-		/* see if have an active call on this instance / callid / device, if not dealing with older device */
 		AUTO_RELEASE(sccp_channel_t, channel, (instance && callId) ? sccp_find_channel_by_lineInstance_and_callid(d, instance, callId) : sccp_device_getActiveChannel(d));
 		if (channel) {
-			//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: got active channel %s, line stimulus on line: %s\n", d->id, channel->designator, l->name);
 			AUTO_RELEASE(sccp_device_t, check_device , sccp_channel_getDevice(channel));
 			if (check_device == d) {							// check to see if we own the channel (otherwise it would be a shared line owned by another device)
-				if (SCCP_CHANNELSTATE_IsConnected(channel->state)) {				/* incoming call on other line */
+				if (SCCP_CHANNELSTATE_IsConnected(channel->state)) {
 					if (!sccp_channel_hold(channel)) {
 						pbx_log(LOG_WARNING, "%s: line button ignored: could not put active call %s on hold\n", d->id, channel->designator);
 						return;
 					}
-					//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: call:%s put on hold\n", d->id, channel->designator);
-					/* continue to handle the inactive line and/or shared line (below) */
 				} else {
-					/* if not an active call, close it down, and handle the rest down below */
-					//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Call:%s not in progress. Ending Call\n", d->id, channel->designator);
 					sccp_channel_endcall(channel);
 					sccp_dev_deactivate_cplane(d);
-					if (l == channel->line) {						/* active channel and stimulated line are different -> close the active channel and continue */
+					if (l == channel->line) {
 						sccp_log((DEBUGCAT_ACTION))(VERBOSE_PREFIX_3 "%s: line button pressed on the same line as unconnected call %s; call ended\n", d->id, channel->designator);
 						return;
 					}
-					//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Active Call:%s and line:%s pressed are different => shared line handling\n", d->id, channel->designator, l->name);
-					/* continue to handle the inactive line and/or shared line (below) */
 				}
 			} else {
 				sccp_log((DEBUGCAT_ACTION))(VERBOSE_PREFIX_3 "%s: active call %s belongs to %s (shared line); handling the line button for this device only\n", d->id, channel->designator, check_device->id);
@@ -1923,46 +1580,38 @@ static void handle_stimulus_line(constDevicePtr d, constLinePtr l, const uint16_
 		AUTO_RELEASE(sccp_device_t, device , sccp_device_retain(d));
 
 		if (!SCCP_LIST_GETSIZE(&l->channels)) {
-			//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: no activate channel on line %s\n -> New Call\n", DEV_ID_LOG(d), (l) ? l->name : "(nil)");
 			sccp_dev_setActiveLine(device, l);
 			sccp_dev_set_cplane(device, instance, 1);
 			channel = sccp_channel_newcall(l, device, NULL, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL) /*ref_replace*/;
 		} else if((channel = sccp_channel_find_bystate_on_line(l, SCCP_CHANNELSTATE_RINGING)) /*ref_replace*/) {
-			//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: Answering incoming/ringing line %d\n", device->id, instance);
 			sccp_channel_answer(device, channel);
 			sccp_dev_set_cplane(device, instance, 1);
 		} else if(l->statistic.numberOfHeldChannels >= 1 && (channel = sccp_channel_find_bystate_on_line(l, SCCP_CHANNELSTATE_HOLD)) /*ref_replace*/) {
 			if (l->statistic.numberOfHeldChannels == 1) {
-				//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: Resume channel %s on line %d\n", device->id, channel->designator, instance);
 				sccp_dev_setActiveLine(device, l);
 				sccp_channel_resume(device, channel, FALSE);
 			} else {
-				if (d->useHookFlash() && d->transfer && d->transferChannels.transferer == channel) {	// deal with single line phones like 6901, which do not have softkeys
+				if (d->useHookFlash() && d->transfer && d->transferChannels.transferer == channel) {
 					// 6901 is cancelling the transfer by pressing the line key (see cisco manual for 6901)
-					//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: We are the middle of a transfer, pressed hold on the transferer channel(%s) -> cancel transfer\n", d->id, channel->designator);
 					AUTO_RELEASE(sccp_channel_t, resumeChannel, sccp_channel_retain(d->transferChannels.transferee));
 					if (resumeChannel) {
 						sccp_channel_endcall(d->transferChannels.transferer);
 						sccp_channel_resume(d, resumeChannel, FALSE);
 					}
 				} else {
-					//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: Multiple calls on hold, just switching to line %d and let user decide\n", device->id, instance);
 					sccp_dev_setActiveLine(device, l);
-					/* select the first channel on hold, but do not resume */
 					sccp_device_sendcallstate(d, instance, channel->callid, SKINNY_CALLSTATE_HOLD, SKINNY_CALLPRIORITY_NORMAL, SKINNY_CALLINFO_VISIBILITY_DEFAULT);
 				}
 			}
 			sccp_dev_set_cplane(device, instance, 1);
 		} else if((channel = sccp_channel_find_bystate_on_line(l, SCCP_CHANNELSTATE_CONNECTED)) /*ref_replace*/) {
-			//sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: no activate channel on line %s for this phone, but remote has one or more-> %s ONHOOKSTEALABLE\n", DEV_ID_LOG(d), (l) ? l->name : "(nil)", d->currentLine ? "hide" : "show");
-			//sccp_device_sendCallHistoryDisposition(d, instance, channel->callid, SKINNY_CALL_HISTORY_DISPOSITION_IGNORE);						// does not work on all device types, sadly
-			sccp_device_sendcallstate(d, instance, channel->callid, SKINNY_CALLSTATE_CONNECTED, SKINNY_CALLPRIORITY_LOW, SKINNY_CALLINFO_VISIBILITY_HIDDEN);	// suppress missed call entry in phonebook
-			if (d->currentLine == NULL) {	/* remote phone is on call and not activated herer, show remote call */
+			sccp_device_sendcallstate(d, instance, channel->callid, SKINNY_CALLSTATE_CONNECTED, SKINNY_CALLPRIORITY_LOW, SKINNY_CALLINFO_VISIBILITY_HIDDEN);
+			if (d->currentLine == NULL) {
 				sccp_dev_setActiveLine(device, l);
 				sccp_device_sendcallstate(d, instance, channel->callid, SKINNY_CALLSTATE_CONNECTED, SKINNY_CALLPRIORITY_NORMAL, SKINNY_CALLINFO_VISIBILITY_DEFAULT);
 				sccp_softkey_setSoftkeyState((sccp_device_t *)d, KEYMODE_ONHOOKSTEALABLE, SKINNY_LBL_BARGE, TRUE);
 				sccp_dev_set_keyset(device, instance, channel->callid, KEYMODE_ONHOOKSTEALABLE);
-			} else {			/* remote phone is on call and already activated, hide remote call */
+			} else {
 				sccp_dev_setActiveLine(device, NULL);
 				sccp_device_sendcallstate(d, instance, channel->callid, SKINNY_CALLSTATE_CONNECTED, SKINNY_CALLPRIORITY_LOW, SKINNY_CALLINFO_VISIBILITY_DEFAULT);
 			}
@@ -1974,17 +1623,8 @@ static void handle_stimulus_line(constDevicePtr d, constLinePtr l, const uint16_
 	}
 }
 
-/*!
- * \brief Handle Hold Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t 
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_hold(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
-	/* this is the hard hold button. When we are here we are putting on hold the active_channel */
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: hold/resume button pressed on line %d\n", d->id, instance);
 
 	AUTO_RELEASE(sccp_channel_t, channel1 , NULL);
@@ -1999,7 +1639,7 @@ static void handle_stimulus_hold(constDevicePtr d, constLinePtr l, const uint16_
 			if (channel2->calltype == SKINNY_CALLTYPE_OUTBOUND) {
 				sccp_channel_endcall(channel2);
 			} else {
-				return;										/* new since 2014-6-5: Prevent accidental resume when we have in inbound call we are trying to answeer */
+				return;										/* new since 2014-6-5: Prevent accidental resume when we have in inbound call we are trying to answer */
 			}
 		}
 		sccp_channel_resume(d, channel1, TRUE);
@@ -2009,14 +1649,6 @@ static void handle_stimulus_hold(constDevicePtr d, constLinePtr l, const uint16_
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
-/*!
- * \brief Handle Transfer Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_transfer(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: transfer button pressed\n", d->id);
@@ -2034,28 +1666,12 @@ static void handle_stimulus_transfer(constDevicePtr d, constLinePtr l, const uin
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
-/*!
- * \brief Handle Voicemail Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId Call ID as uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_voicemail(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: voicemail button pressed\n", d->id);
 	sccp_feat_voicemail(d, instance);
 }
 
-/*!
- * \brief Handle Conference Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_conference(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: conference button pressed\n", d->id);
@@ -2069,14 +1685,6 @@ static void handle_stimulus_conference(constDevicePtr d, constLinePtr l, const u
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
-/*!
- * \brief Handle Forward All Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_forwardAll(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: call forward all button pressed\n", d->id);
@@ -2090,14 +1698,6 @@ static void handle_stimulus_forwardAll(constDevicePtr d, constLinePtr l, const u
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
-/*!
- * \brief Handle Forward Busy Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_forwardBusy(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: call forward busy button pressed\n", d->id);
@@ -2111,14 +1711,6 @@ static void handle_stimulus_forwardBusy(constDevicePtr d, constLinePtr l, const 
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
-/*!
- * \brief Handle Forward NoAnswer Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_forwardNoAnswer(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: call forward no answer button pressed\n", d->id);
@@ -2132,14 +1724,6 @@ static void handle_stimulus_forwardNoAnswer(constDevicePtr d, constLinePtr l, co
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
-/*!
- * \brief Handle Call Park Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_callpark(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: park button pressed\n", d->id);
@@ -2157,20 +1741,10 @@ static void handle_stimulus_callpark(constDevicePtr d, constLinePtr l, const uin
 	sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 }
 
-/*!
- * \brief Handle Group Call Pickup Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_groupcallpickup(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: group pickup button pressed\n", d->id);
 #ifdef CS_SCCP_PICKUP
-	/*! \todo use feature map or sccp_feat_handle_directed_pickup */
-	//sccp_feat_handle_directed_pickup(l, 1, d);
 	AUTO_RELEASE(sccp_channel_t, maybe_c , sccp_find_channel_by_lineInstance_and_callid(d, instance, callId));
 	AUTO_RELEASE(sccp_channel_t, channel , sccp_channel_getEmptyChannel(l, d, maybe_c, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));
 	if (channel) {
@@ -2182,27 +1756,15 @@ static void handle_stimulus_groupcallpickup(constDevicePtr d, constLinePtr l, co
 		sccp_pbx_softswitch(channel);
 	}
 
-	//if (!(channel = sccp_channel_newcall(l, d, "pickupexten", SKINNY_CALLTYPE_OUTBOUND, NULL, NULL))) {
-	//        pbx_log(LOG_ERROR, "%s: (grouppickup) Cannot start a new channel\n", d->id);
-	//}
 #else
 	sccp_log((DEBUGCAT_FEATURE + DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "SCCP: group pickup button ignored: chan_sccp was built without pickup support\n");
 #endif
 }
 
-/*!
- * \brief Handle Feature Action for Device
- * \param d SCCP Device as sccp_device_t
- * \param instance Instance as int
- * \param toggleState as boolean
- *
- * \warning
- *   - device->buttonconfig is not always locked
- */
 static void handle_feature_action(constDevicePtr d, const int instance, const boolean_t toggleState)
 {
 	sccp_buttonconfig_t *config = NULL;
-	sccp_cfwd_t status = SCCP_CFWD_NONE; /* state of cfwd */
+	sccp_cfwd_t status = SCCP_CFWD_NONE;
 
 	if (!d) {
 		return;
@@ -2212,12 +1774,8 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 
 	SCCP_LIST_TRAVERSE(&d->buttonconfig, config, list) {
 		if (config->instance == instance && config->type == FEATURE) {
-			// sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: toggle status from %d\n", d->id, config->button.feature.status);
-			// config->button.feature.status = (config->button.feature.status == 0) ? 1 : 0;
-			// sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 " to %d\n", config->button.feature.status);
 			break;
 		}
-
 	}
 
 	if (!config || !config->type || config->type != FEATURE) {
@@ -2225,38 +1783,31 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 		return;
 	}
 
-	/* notice: we use this function for request and changing status -> so just change state if toggleState==TRUE -MC */
 	char featureOption[255] = "";
 
 	if (config->button.feature.options && !sccp_strlen_zero(config->button.feature.options)) {
 		sccp_copy_string(featureOption, config->button.feature.options, sizeof(featureOption));
 	}
 
-	//sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: FeatureID = %d, Option: %s\n", d->id, config->button.feature.id, featureOption);
 	switch (config->button.feature.id) {
 		case SCCP_FEATURE_PRIVACY:
 			{
 				uint32_t res = 0;
 				if (!d->privacyFeature.enabled) {
-					//sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: privacy feature is disabled, ignore this change\n", d->id);
 					break;
 				}
 
 				if (sccp_strcaseequals(config->button.feature.options, "callpresent")) {
 					res = d->privacyFeature.status & SCCP_PRIVACYFEATURE_CALLPRESENT;
-					sccp_featureConfiguration_t *privacyFeature = (sccp_featureConfiguration_t * const)&d->privacyFeature;		/* discard const */
+					sccp_featureConfiguration_t *privacyFeature = (sccp_featureConfiguration_t * const)&d->privacyFeature;
 
-					//sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: device->privacyFeature.status=%d\n", d->id, d->privacyFeature.status);
-					//sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: result=%d\n", d->id, res);
 					if (res) {
-						/* switch off */
 						privacyFeature->status &= ~SCCP_PRIVACYFEATURE_CALLPRESENT;
 						config->button.feature.status = 0;
 					} else {
 						privacyFeature->status |= SCCP_PRIVACYFEATURE_CALLPRESENT;
 						config->button.feature.status = 1;
 					}
-					//sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: device->privacyFeature.status=%d\n", d->id, d->privacyFeature.status);
 				} else {
 					pbx_log(LOG_WARNING, "%s: privacy button option '%s' is not supported (only 'callpresent'); button press ignored\n", d->id, config->button.feature.options ? config->button.feature.options : "");
 				}
@@ -2267,9 +1818,7 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 			if (TRUE == toggleState) {
 				config->button.feature.status = (config->button.feature.status == 0) ? 1 : 0;
 			}
-			// Ask for activation of the feature.
 			if (!sccp_strlen_zero(config->button.feature.options)) {
-				// Now set the feature status. Note that the button status has already been toggled above.
 				if (config->button.feature.status) {
 					status = SCCP_CFWD_ALL;
 				}
@@ -2292,7 +1841,7 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 				config->button.feature.status = (config->button.feature.status == 0) ? 1 : 0;
 			}
 
-			sccp_featureConfiguration_t *dndFeature = (sccp_featureConfiguration_t *const)&d->dndFeature;		/* discard const */
+			sccp_featureConfiguration_t *dndFeature = (sccp_featureConfiguration_t *const)&d->dndFeature;
 			if (sccp_strcaseequals(config->button.feature.options, "silent")) {
 				dndFeature->status = (config->button.feature.status) ? SCCP_DNDMODE_SILENT : SCCP_DNDMODE_OFF;
 			} else if (sccp_strcaseequals(config->button.feature.options, "busy")) {
@@ -2312,7 +1861,6 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 						break;
 				}
  			}
-			//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: dndmode %d is %s\n", d->id, d->dndFeature.status, (d->dndFeature.status) ? "on" : "off");
 			sccp_dev_check_displayprompt(d);
 			break;
 #ifdef CS_SCCP_FEATURE_MONITOR
@@ -2327,9 +1875,6 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 
 #ifdef CS_DEVSTATE_FEATURE
 
-		/**
-		  * Handling of custom devicestate toggle buttons.
-		  */
 		case SCCP_FEATURE_DEVSTATE:
 			sccp_log((DEBUGCAT_CORE + DEBUGCAT_FEATURE_BUTTON))(VERBOSE_PREFIX_3 "%s: devstate feature %s is now %s\n", DEV_ID_LOG(d),
 									    config->button.feature.options ? config->button.feature.options : "", config->button.feature.status ? "On" : "Off");
@@ -2346,7 +1891,6 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 #endif
 		case SCCP_FEATURE_PARKINGLOT:
 #ifdef CS_SCCP_PARK
-			//sccp_log((DEBUGCAT_CORE + DEBUGCAT_FEATURE_BUTTON)) (VERBOSE_PREFIX_3 "%s: ParkingLot:'%s' Action, State: '%s'\n", DEV_ID_LOG(d), config->button.feature.options ? config->button.feature.options : "", config->button.feature.status ? "On" : "Off");
 			if (TRUE == toggleState && iParkingLot.handleButtonPress) {
 				iParkingLot.handleButtonPress(d, config);
 			}
@@ -2369,7 +1913,7 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 				}
 				rithm = (rithm + 1) % 7;
 
-				sccp_featureConfiguration_t *priFeature = (sccp_featureConfiguration_t *const)&d->priFeature;		/* discard const */
+				sccp_featureConfiguration_t *priFeature = (sccp_featureConfiguration_t *const)&d->priFeature;
 
 				priFeature->status = ((icon + 1) << 16) | ((color + 1) << 8) | (rithm + 1);
 				sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: priority feature status: icon %d, color %d, rhythm %d, total %d\n", d->id, icon, color, rithm, priFeature->status);
@@ -2379,23 +1923,13 @@ static void handle_feature_action(constDevicePtr d, const int instance, const bo
 		default:
 			pbx_log(LOG_WARNING, "%s: feature button %d has feature id %d, which has no handler; button press ignored\n", d->id, config->instance, config->button.feature.id);
 			break;
-
 	}
 
 	if (config) {
-		//sccp_log((DEBUGCAT_FEATURE_BUTTON + DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: Got Feature Status Request.  Index = %d Status: %d\n", d->id, instance, config->button.feature.status);
 		sccp_feat_changed(d, NULL, config->button.feature.id);
 	}
 }
 
-/*!
- * \brief Handle Featere Action Stimulus
- * \param d SCCP Device
- * \param l SCCP Line
- * \param instance uint8_t
- * \param callId uint32_t
- * \param stimulusstatus uint32_t
- */
 static void handle_stimulus_feature(constDevicePtr d, constLinePtr l, const uint16_t instance, const uint32_t callId, const uint32_t stimulusstatus)
 {
 	sccp_log_and((DEBUGCAT_CORE + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: feature button pressed (status %d)\n", d->id, stimulusstatus);
@@ -2466,15 +2000,6 @@ static const struct _skinny_stimulusMap_cb {
 	/* clang-format on */
 };
 
-/*!
- * \brief Handle Stimulus for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- *
- * \callgraph
- * \callergraph
- */
 void handle_stimulus(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	AUTO_RELEASE(sccp_line_t, l , NULL);
@@ -2490,12 +2015,11 @@ void handle_stimulus(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 	}
 
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: stimulus %s (%d), instance %d, call %d, status %d\n", d->id, skinny_stimulus2str(stimulus), stimulus, instance, callId, stimulusStatus);
-	
+
 	if(!instance && stimulus == SKINNY_STIMULUS_LASTNUMBERREDIAL && d->redialInformation.lineInstance > 0) {
 		instance = d->redialInformation.lineInstance;
 	}
-	/* SPA phones always send instance=1 when the hard hold button is pressed, instead of the active lineinstance. 
-	 * Using callid to find the correct line, and resetting the instance */
+	/* SPA phones always send instance=1 when the hard hold button is pressed, instead of the active lineinstance. */
 	if (stimulus == SKINNY_STIMULUS_HOLD && sccp_session_getProtocol(s) == SPCP_PROTOCOL) {
 		AUTO_RELEASE(sccp_channel_t, c, sccp_channel_find_byid(callId));
 		if (c) {
@@ -2507,7 +2031,7 @@ void handle_stimulus(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 			}
 		}
 	}
-	if (!instance) {											/*! \todo also use the callReference if available */
+	if (!instance) {
 		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: stimulus for instance 0; using active line %d\n", d->id, instance);
 		if((l = sccp_dev_getActiveLine(d)) /*ref_replace*/) {
 			instance = sccp_device_find_index_for_line(d, l->name);
@@ -2516,7 +2040,6 @@ void handle_stimulus(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 		}
 	}
 	if (!l) {
-		// \todo ADD Use of CallReference !!!!
 		l = sccp_line_find_byid(d, instance) /*ref_replace*/;
 	}
 
@@ -2532,12 +2055,6 @@ void handle_stimulus(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 	}
 }
 
-/*!
- * \brief Handle Off Hook Event for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_offhook(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	if (d->isAnonymous) {
@@ -2551,55 +2068,34 @@ void handle_offhook(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 		return;
 	}
 
-	/* we need this for callwaiting, hold, answer and stuff */
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: off hook\n", d->id);
 	sccp_device_setDeviceState(d, SCCP_DEVICESTATE_OFFHOOK);
 
-	/* checking for registered lines */
 	if (!d->configurationStatistic.numberOfLines) {
 		pbx_log(LOG_NOTICE, "%s: phone went off-hook, but it has no lines registered; reject tone played\n", sccp_session_getDesignator(s));
 		sccp_dev_displayprompt(d, 0, 0, SKINNY_DISP_NO_LINES_REGISTERED, SCCP_DISPLAYSTATUS_TIMEOUT);
 		sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, 0, 0, SKINNY_TONEDIRECTION_USER);
 		return;
 	}
-	/* end line check */
 
-	/* \todo This should be changed, to handle and atomic version of sccp_channel_answer if it would return Success/Failed
-	 * (think of two phones on a shared line, picking up at the same time) 
-	 */
 	AUTO_RELEASE(sccp_channel_t, ringing_channel, sccp_channel_find_bystate_on_device(d, SCCP_CHANNELSTATE_RINGING));
 	if(ringing_channel) {
-		/* Answer the ringing channel. */
-		// sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Answer channel:%s\n", d->id, ringing_channel->designator);
 		sccp_channel_answer(d, ringing_channel);
 	} else {
-		/* use default line if it is set */
 		AUTO_RELEASE(sccp_line_t, l, d->defaultLineInstance > 0 ? sccp_line_find_byid(d, d->defaultLineInstance) : sccp_dev_getActiveLine(d));
 		if (!l) {
-			//sccp_log_and((DEBUGCAT_LINE + DEBUGCAT_HIGH)) (VERBOSE_PREFIX_3 "using first line with instance: %u\n", d->defaultLineInstance);
 			l = sccp_line_find_byid(d, SCCP_FIRST_LINEINSTANCE) /*ref_replace*/;
 		}
 		if (l) {
-			//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Using line %s\n", d->id, l->name);
 			AUTO_RELEASE(sccp_channel_t, new_channel,
-				     sccp_channel_newcall(l, d, (!sccp_strlen_zero(l->adhocNumber) ? l->adhocNumber : NULL), SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));                                        // implicit release
+				     sccp_channel_newcall(l, d, (!sccp_strlen_zero(l->adhocNumber) ? l->adhocNumber : NULL), SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));
 		}
 	}
 }
 
-
-/*!
- * \brief Handle On Hook Event for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- *
- * \warning
- *   - device->buttonconfig is not always locked
- *
- * \note
- *   - protocolversion < 15 phones send buttonIndex instead of lineInstance
- *   - protocolversion >= 15 phones don't send lineInstance nor callif on onhook (more like device state)
+/*
+ * Handle On Hook Event for Session
+ * protocolversion < 15 phones send buttonIndex instead of lineInstance protocolversion >= 15 phones don't send lineInstance nor callif on onhook (more like device state)
  */
 void handle_onhook(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
@@ -2614,7 +2110,6 @@ void handle_onhook(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 		return;
 	}
 
-	/* we need this for callwaiting, hold, answer and stuff */
 	sccp_device_setDeviceState(d, SCCP_DEVICESTATE_ONHOOK);
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: on hook (button %d, call %d)\n", DEV_ID_LOG(d), buttonIndex, callid);
 
@@ -2629,12 +2124,6 @@ void handle_onhook(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 	}
 }
 
-/*!
- * \brief Handle HookFlash Event for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_hookflash(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	pbx_assert(d != NULL);
@@ -2654,29 +2143,12 @@ void handle_hookflash(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 	}
 }
 
-/*!
- * \brief Handle On Hook Event for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- * \note this is used just in protocol v3 stuff, it has been included in 0x004A AccessoryStatusMessage
- */
 void handle_headset(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
-	/*
-	 * this is used just in protocol v3 stuff
-	 * it has been included in 0x004A AccessoryStatusMessage
-	 */
 	sccp_accessorystate_t headsetmode = letohl(msg_in->data.HeadsetStatusMessage.lel_hsMode);
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: accessory %s is %s (%u)\n", sccp_session_getDesignator(s), sccp_accessory2str(SCCP_ACCESSORY_HEADSET), sccp_accessorystate2str(headsetmode), 0);
 }
 
-/*!
- * \brief Handle Capabilities for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_capabilities_res(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	pbx_assert(d != NULL);
@@ -2693,54 +2165,35 @@ void handle_capabilities_res(constSessionPtr s, devicePtr d, constMessagePtr msg
 		codec = letohl(msg_in->data.CapabilitiesResMessage.caps[i].lel_payloadCapability);
 		if (codec2type(codec) == SKINNY_CODEC_TYPE_AUDIO) {
 			d->capabilities.audio[numAudioCodecs++] = codec;
-			//sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: Added audio codec %-25s (%d)\n", d->id, codec2str(codec), codec);
 		} else
 #ifdef CS_SCCP_VIDEO
 		if (codec2type(codec) == SKINNY_CODEC_TYPE_VIDEO) {
 			d->capabilities.video[numVideoCodecs++] = codec;
-			//sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: Added video codec %-25s (%d)\n", d->id, codec2str(codec), codec);
 		} else
 #endif
 		{
-			//sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: Skipped codec %-25s (%d)\n", d->id, codec2str(codec), codec);
 		}
 	}
 
 	if ((SKINNY_CODEC_NONE == d->preferences.audio[0])) {
-		/* we have no preferred codec, use capabilities -MC */
 		memcpy(&d->preferences.audio, &d->capabilities.audio, sizeof(d->preferences.audio));
 	}
-	
-	//char cap_buf[512];
-	//sccp_codec_multiple2str(cap_buf, sizeof(cap_buf) - 1, d->capabilities.audio, ARRAY_LEN(d->capabilities.audio));
-	//sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: audio capabilities: %s (%d)\n", DEV_ID_LOG(d), cap_buf, numAudioCodecs);
+
 #ifdef CS_SCCP_VIDEO
-	//if (d->capabilities.video[0] != SKINNY_CODEC_NONE) {
-		//sccp_codec_multiple2str(cap_buf, sizeof(cap_buf) - 1, d->capabilities.video, ARRAY_LEN(d->capabilities.video));
-		//sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: video capabilities: %s (%d)\n", DEV_ID_LOG(d), cap_buf, numVideoCodecs);
-	//}
 #endif
 	sccp_line_updateLineCapabilitiesByDevice(d);
 }
 
-/*!
- * \brief Handle Soft Key Template Request Message for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param none SCCP Message
- */
 void sccp_handle_soft_key_template_req(constSessionPtr s, devicePtr d, constMessagePtr none)
 {
 	sccp_msg_t *msg_out = NULL;
 
-	/* ok the device support the softkey map */
 	d->softkeysupport = 1;
 
 	int arrayLen = ARRAY_LEN(softkeysmap);
 	int dummy_len = arrayLen * (sizeof(StationSoftKeyDefinition));
 	int hdr_len = sizeof(msg_out->data.SoftKeyTemplateResMessage);
 
-	/* create message */
 	msg_out = sccp_build_packet(SoftKeyTemplateResMessage, hdr_len + dummy_len);
 	if (!msg_out) {
 		return;
@@ -2758,8 +2211,7 @@ void sccp_handle_soft_key_template_req(constSessionPtr s, devicePtr d, constMess
 				sccp_copy_string(msg_out->data.SoftKeyTemplateResMessage.definition[i].softKeyLabel, label2str(softkeysmap[i]), StationMaxSoftKeyLabelSize);
 				break;
 			case SKINNY_LBL_VIDEO_MODE:
-				//sccp_copy_string(msg_out->data.SoftKeyTemplateResMessage.definition[i].softKeyLabel, label2str(softkeysmap[i]), StationMaxSoftKeyLabelSize);
-				msg_out->data.SoftKeyTemplateResMessage.definition[i].softKeyLabel[0] = (char)128;	/* adding "\200" upfront to indicate that we are using an embedded/xml label */
+				msg_out->data.SoftKeyTemplateResMessage.definition[i].softKeyLabel[0] = (char)128;
 				msg_out->data.SoftKeyTemplateResMessage.definition[i].softKeyLabel[1] = softkeysmap[i];	/* this works on 7970 */
 				break;
 #ifdef CS_SCCP_CONFERENCE
@@ -2774,7 +2226,7 @@ void sccp_handle_soft_key_template_req(constSessionPtr s, devicePtr d, constMess
 #endif
 				/* fall through */
 			default:
-				msg_out->data.SoftKeyTemplateResMessage.definition[i].softKeyLabel[0] = (char)128;		/* adding "\200" upfront to indicate that we are using an embedded/xml label */
+				msg_out->data.SoftKeyTemplateResMessage.definition[i].softKeyLabel[0] = (char)128;
 				msg_out->data.SoftKeyTemplateResMessage.definition[i].softKeyLabel[1] = softkeysmap[i];
 		}
 		msg_out->data.SoftKeyTemplateResMessage.definition[i].lel_softKeyEvent = htolel(i + 1);
@@ -2785,18 +2237,8 @@ void sccp_handle_soft_key_template_req(constSessionPtr s, devicePtr d, constMess
 	sccp_dev_send(d, msg_out);
 }
 
-/*!
- * \brief Handle Set Soft Key Request Message for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- *
- * \warning
- *   - device->buttonconfig is not always locked
- */
 void handle_soft_key_set_req(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
-
 	int iKeySetCount = 0;
 	sccp_msg_t *msg_out = NULL;
 	uint8_t i = 0;
@@ -2808,7 +2250,6 @@ void handle_soft_key_set_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 	uint8_t directed_pickup = 0;
 #endif
 
-	/* set softkey definition */
 	sccp_softKeySetConfiguration_t * softkeyset = NULL;
 	d->softkeyset = NULL;
 
@@ -2817,16 +2258,14 @@ void handle_soft_key_set_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 		SCCP_LIST_LOCK(&softKeySetConfig);
 		SCCP_LIST_TRAVERSE(&softKeySetConfig, softkeyset, list) {
 			if (sccp_strcaseequals(d->softkeyDefinition, softkeyset->name)) {
-				//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: using softkeyset: %s (%p)!\n", d->id, softkeyset->name, softkeyset);
 				d->softkeyset = softkeyset;
 				d->softKeyConfiguration.modes = softkeyset->modes;
 				d->softKeyConfiguration.size = softkeyset->numberOfSoftKeySets;
 			}
 		}
 		SCCP_LIST_UNLOCK(&softKeySetConfig);
-		//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: d->softkeyDefinition=%s!\n", d->id, d->softkeyDefinition);
 	}
-	
+
 	if (!d->softkeyset) {
 		pbx_log(LOG_WARNING, "%s: softkeyset=%s is not defined in sccp.conf; using the 'default' softkey set\n", d->id, d->softkeyDefinition);
 		SCCP_LIST_LOCK(&softKeySetConfig);
@@ -2840,7 +2279,6 @@ void handle_soft_key_set_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 		SCCP_LIST_UNLOCK(&softKeySetConfig);
 	}
 
-	/* end softkey definition */
 	const softkey_modes *v = d->softKeyConfiguration.modes;
 	const uint8_t v_count = d->softKeyConfiguration.size;
 	const uint8_t * b = NULL;
@@ -2851,7 +2289,6 @@ void handle_soft_key_set_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 	}
 	msg_out->data.SoftKeySetResMessage.lel_softKeySetOffset = htolel(0);
 
-	/* look for line trnsvm */
 	sccp_buttonconfig_t * buttonconfig = NULL;
 
 	SCCP_LIST_TRAVERSE(&d->buttonconfig, buttonconfig, list) {
@@ -2885,22 +2322,9 @@ void handle_soft_key_set_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 		}
 	}
 
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: softkey count: %d\n", d->id, v_count);
-
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: TRANSFER        is %s\n", d->id, (d->transfer) ? "enabled" : "disabled");
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: DND             is %s\n", d->id, (d->dndFeature.status) ? sccp_dndmode2str(d->dndFeature.status) : "disabled");
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: PRIVATE         is %s\n", d->id, (d->privacyFeature.enabled) ? "enabled" : "disabled");
 #ifdef CS_SCCP_PARK
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: PARK            is  %s\n", d->id, (d->park) ? "enabled" : "disabled");
 #endif
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: CFWDALL         is  %s\n", d->id, (d->cfwdall) ? "enabled" : "disabled");
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: CFWDBUSY        is  %s\n", d->id, (d->cfwdbusy) ? "enabled" : "disabled");
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: CFWDNOANSWER    is  %s\n", d->id, (d->cfwdnoanswer) ? "enabled" : "disabled");
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: TRNSFVM/IDIVERT is  %s\n", d->id, (trnsfvm) ? "enabled" : "disabled");
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: MEETME          is  %s\n", d->id, (meetme) ? "enabled" : "disabled");
 #ifdef CS_SCCP_PICKUP
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: PICKUPGROUP     is  %s\n", d->id, (pickupgroup) ? "enabled" : "disabled");
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: PICKUPEXTEN     is  %s\n", d->id, (directed_pickup) ? "enabled" : "disabled");
 #endif
 	size_t buffersize = 20 + (15 * sizeof(softkeysmap));
 	pbx_str_t *outputStr = pbx_str_create(buffersize);
@@ -2917,7 +2341,6 @@ void handle_soft_key_set_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 
 		for (c = 0, cp = 0; c < v->count; c++, cp++) {
 			msg_out->data.SoftKeySetResMessage.definition[v->id].softKeyTemplateIndex[cp] = 0;
-			/* look for the SKINNY_LBL_ number in the softkeysmap */
 			if ((b[c] == SKINNY_LBL_PARK) && (!d->park)) {
 				continue;
 			}
@@ -2988,7 +2411,6 @@ void handle_soft_key_set_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 					break;
 				}
 			}
-
 		}
 
 		sccp_log((DEBUGCAT_DEVICE | DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: %s\n", d->id, ast_str_buffer(outputStr));
@@ -2998,41 +2420,27 @@ void handle_soft_key_set_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 	};
 	sccp_free(outputStr);
 
-	/* disable videomode and join softkey for all softkeysets */
 	for (i = 0; i < KEYMODE_ONHOOKSTEALABLE; i++) {
 		sccp_softkey_setSoftkeyState(d, (skinny_keymode_t) i, SKINNY_LBL_VIDEO_MODE, FALSE);
 		sccp_softkey_setSoftkeyState(d, (skinny_keymode_t) i, SKINNY_LBL_JOIN, FALSE);
 	}
 
-	//sccp_log((DEBUGCAT_DEVICE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "There are %d SoftKeySets.\n", iKeySetCount);
-
 	msg_out->data.SoftKeySetResMessage.lel_softKeySetCount = htolel(iKeySetCount);
-	msg_out->data.SoftKeySetResMessage.lel_totalSoftKeySetCount = htolel(iKeySetCount);			// <<-- for now, but should be: iTotalKeySetCount;
+	msg_out->data.SoftKeySetResMessage.lel_totalSoftKeySetCount = htolel(iKeySetCount);
 
 	sccp_dev_send(d, msg_out);
 	sccp_dev_set_keyset(d, 0, 0, KEYMODE_ONHOOK);
 }
 
-/*!
- * \brief Handle Dialed PhoneBook Message for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_dialedphonebook_message(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
-	/* this is from CCM7 dump */
 	sccp_msg_t *msg_out = NULL;
 
-	// sccp_BFLState_t state;
-
-	uint32_t transactionID = letohl(msg_in->data.SubscriptionStatReqMessage.lel_transactionID);										
-	uint32_t featureID = letohl(msg_in->data.SubscriptionStatReqMessage.lel_featureID);		/* LineInstance / BLF: 0x01 */
-	uint32_t timer = letohl(msg_in->data.SubscriptionStatReqMessage.lel_timer);			/* all 32 bits used */
+	uint32_t transactionID = letohl(msg_in->data.SubscriptionStatReqMessage.lel_transactionID);
+	uint32_t featureID = letohl(msg_in->data.SubscriptionStatReqMessage.lel_featureID);
+	uint32_t timer = letohl(msg_in->data.SubscriptionStatReqMessage.lel_timer);
 	char *subscriptionID = pbx_strdupa(msg_in->data.SubscriptionStatReqMessage.subscriptionID);
 
-
-	// Sending 0x152 Ack Message.
 	REQ(msg_out, SubscriptionStatMessage);
 	if (!msg_out) {
 		return;
@@ -3040,24 +2448,22 @@ void handle_dialedphonebook_message(constSessionPtr s, devicePtr d, constMessage
 	msg_out->data.SubscriptionStatMessage.lel_transactionID = htolel(transactionID);
 	msg_out->data.SubscriptionStatMessage.lel_featureID = htolel(featureID);
 	msg_out->data.SubscriptionStatMessage.lel_timer = htolel(timer);
-	/* we could actually run a match against the pbx dialplan if we had a context (default line ?), and return OK / RouteFail depending on the outcome */
-	msg_out->data.SubscriptionStatMessage.lel_cause = 0;						/*!< Cause (Enum): 
-														OK: 0x00, 
-														RouteFail:0x01, 
-														AuthFail:0x02, 
-														Timeout:0x03, 
-														TrunkTerm:0x04, 
-														TrunkForbidden:0x05, 
+	msg_out->data.SubscriptionStatMessage.lel_cause = 0;						/*!< Cause (Enum):
+														OK: 0x00,
+														RouteFail:0x01,
+														AuthFail:0x02,
+														Timeout:0x03,
+														TrunkTerm:0x04,
+														TrunkForbidden:0x05,
 														Throttle:0x06
 													*/
 	sccp_dev_send(d, msg_out);
 
-	/* sometimes a phone sends an ' ' entry, I think we can ignore this one */
 	if (sccp_strlen(subscriptionID) <= 1) {
 		return;
 	}
 
-	AUTO_RELEASE(sccp_line_t, line , sccp_line_find_byid(d, featureID));				
+	AUTO_RELEASE(sccp_line_t, line , sccp_line_find_byid(d, featureID));
 
 	if (line) {
 		REQ(msg_out, NotificationMessage);
@@ -3067,8 +2473,8 @@ void handle_dialedphonebook_message(constSessionPtr s, devicePtr d, constMessage
 		skinny_busylampfield_state_t status = iPbx.getExtensionState(subscriptionID, line->context);
 
 		msg_out->data.NotificationMessage.lel_transactionID = htolel(transactionID);
-		msg_out->data.NotificationMessage.lel_featureID = htolel(featureID);				/* lineInstance */
-		if(status == SKINNY_BLF_STATUS_ALERTING) {                                                      /* Apparently Alerting does not show correctly -> converting to INUSE */
+		msg_out->data.NotificationMessage.lel_featureID = htolel(featureID);
+		if(status == SKINNY_BLF_STATUS_ALERTING) {
 			msg_out->data.NotificationMessage.lel_status = htolel(SKINNY_BLF_STATUS_INUSE);
 		} else {
 			msg_out->data.NotificationMessage.lel_status = htolel(status);
@@ -3077,21 +2483,10 @@ void handle_dialedphonebook_message(constSessionPtr s, devicePtr d, constMessage
 		sccp_log((DEBUGCAT_HINT + DEBUGCAT_ACTION))(VERBOSE_PREFIX_3 "%s: sending notification for %s@%s, state %s\n", DEV_ID_LOG(d), subscriptionID,
 							    line->context ? line->context : "<not set>", skinny_busylampfield_state2str(status));
 
-		/* take transactionID apart */
 		// only used in debug logging below
-		// uint32_t tr_index = transactionID >> 4;								/* just 28 bits filled */
-		// uint32_t unknown1 = (transactionID | 0xFFFFFFF0) ^ 0xFFFFFFF0;					/* just 4 bits filled */
-		// sccp_log((DEBUGCAT_HINT + DEBUGCAT_ACTION)) (VERBOSE_PREFIX_3 "%s: Device sent Dialed PhoneBook Rec.'%u' (%u) dn '%s' (timer:0x%08X) line instance '%d'.\n", DEV_ID_LOG(d), tr_index, unknown1,
-		// subscriptionID, timer, featureID);
 	}
 }
 
-/*!
- * \brief Handle Time/Date Request Message for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param none SCCP Message
- */
 void sccp_handle_time_date_req(constSessionPtr s, devicePtr d, constMessagePtr none)
 {
 	pbx_assert(s != NULL);
@@ -3106,7 +2501,7 @@ void sccp_handle_time_date_req(constSessionPtr s, devicePtr d, constMessagePtr n
 	struct timeval when = { timer, 0 };
 	struct ast_tm tm;
 	ast_localtime(&when, &tm, NULL);
-	
+
 	msg_out->data.DefineTimeDate.lel_year = htolel(tm.tm_year + 1900);
 	msg_out->data.DefineTimeDate.lel_month = htolel(tm.tm_mon + 1);
 	msg_out->data.DefineTimeDate.lel_dayOfWeek = htolel(tm.tm_wday);
@@ -3117,26 +2512,19 @@ void sccp_handle_time_date_req(constSessionPtr s, devicePtr d, constMessagePtr n
 	msg_out->data.DefineTimeDate.lel_milliseconds = htolel(0);
 	msg_out->data.DefineTimeDate.lel_systemTime = htolel(timer);
 	sccp_dev_send(d, msg_out);
-	//sccp_log_and((DEBUGCAT_MESSAGE + DEBUGCAT_ACTION + DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: Send date/time\n", DEV_ID_LOG(d));
 }
 
-/*!
- * \brief Handle KeyPad Button for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_keypad_button(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	pbx_assert(d != NULL);
 	char resp = '\0';
 	int len = 0;
-	
+
 	enum sccp_cili {
 		SCCP_CILI_HAS_NEITHER,
 		SCCP_CILI_HAS_CALLID,
 		SCCP_CILI_HAS_LINEINSTANCE,
-	}; 
+	};
 
 	int digit = letohl(msg_in->data.KeypadButtonMessage.lel_kpButton);
 	switch (digit) {
@@ -3160,7 +2548,7 @@ void handle_keypad_button(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 	uint8_t CallIdAndLineInstance = SCCP_CILI_HAS_NEITHER;
 	uint8_t lineInstance = 0;
 	uint32_t callid = 0;
-	if (msg_in->header.length >= 16) {									/* get callid and lineInstance if available. set bitfield accordingly */
+	if (msg_in->header.length >= 16) {
 		lineInstance = letohl(msg_in->data.KeypadButtonMessage.lel_lineInstance);
 		CallIdAndLineInstance |= lineInstance ? SCCP_CILI_HAS_LINEINSTANCE : 0;
 		if (msg_in->header.length >= 20) {
@@ -3216,10 +2604,9 @@ void handle_keypad_button(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 	if (!l && channel && channel->line) {
 		l = sccp_line_retain(channel->line) /*ref_replace*/;
 	}
-	
+
 	{ /* check if we have all required structures and states for error conditions */
 		if (!channel) {
-			/*! When a call is already being ended, sometimes users misdial, should lower the ERROR to NOTICE status */
 			sccp_log((DEBUGCAT_ACTION))(VERBOSE_PREFIX_3 "%s: key pressed with no active call (often while a call is ending); ignored\n", DEV_ID_LOG(d));
 			return;
 		}
@@ -3244,7 +2631,6 @@ void handle_keypad_button(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: digit %08x (%d) on line %s, call %d, state %d, DTMF mode %s\n", DEV_ID_LOG(d), digit, digit, l->name, channel->callid, channel->state, sccp_dtmfmode2str(channel->dtmfmode));
 
-	/* added PROGRESS to make sending digits possible during progress state (Pavel Troller) */
 	if (channel->state == SCCP_CHANNELSTATE_CONNECTED || channel->state == SCCP_CHANNELSTATE_CONNECTEDCONFERENCE || channel->state == SCCP_CHANNELSTATE_PROCEED || channel->state == SCCP_CHANNELSTATE_RINGOUT) {
 		/* we have to unlock 'cause the senddigit lock the channel */
 		if (channel->dtmfmode == SCCP_DTMFMODE_SKINNY && iPbx.send_digit) {
@@ -3258,22 +2644,19 @@ void handle_keypad_button(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 
 	len = sccp_strlen(channel->dialedNumber);
 	if (len + 1 >= (SCCP_MAX_EXTENSION)) {
-		/*! \todo Shouldn't we only skip displaying the number to the phone (Maybe even showing '...' at the end), but still dial it ? */
 		sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "%s: digit dropped: the dialed number is at its maximum length\n", channel->designator);
 		sccp_dev_displayprompt(d, lineInstance, channel->callid, SKINNY_DISP_NO_MORE_DIGITS, SCCP_DISPLAYSTATUS_TIMEOUT);
 	} else if (((channel->state == SCCP_CHANNELSTATE_OFFHOOK) || (channel->state == SCCP_CHANNELSTATE_GETDIGITS) || (channel->state == SCCP_CHANNELSTATE_DIGITSFOLL)) && !iPbx.getChannelPbx(channel)) {
-		/* enbloc emulation */
-		//double max_deviation = SCCP_SIM_ENBLOC_DEVIATION;
 		int max_time_per_digit = SCCP_SIM_ENBLOC_MAX_PER_DIGIT;
 		double variance = 0;
 		double std_deviation = 0;
 		int minimum_digit_before_check = SCCP_SIM_ENBLOC_MIN_DIGIT;
 		int lpbx_digit_usecs = 0;
 		int number_of_digits = len;
-		int timeout_if_enbloc = SCCP_SIM_ENBLOC_TIMEOUT;						// new timeout if we have established we should enbloc dialing
+		int timeout_if_enbloc = SCCP_SIM_ENBLOC_TIMEOUT;
 
 		sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_1 "SCCP: enbloc detection: digit timeout %d s, scheduler wait %d ms\n", channel->enbloc.digittimeout, iPbx.sched_wait(channel->scheduler.digittimeout_id));
-		if (GLOB(simulate_enbloc) && !channel->enbloc.deactivate && number_of_digits >= 1) {		// skip the first digit (first digit had longer delay than the rest)
+		if (GLOB(simulate_enbloc) && !channel->enbloc.deactivate && number_of_digits >= 1) {
 			if ((int)channel->enbloc.digittimeout < (iPbx.sched_wait(channel->scheduler.digittimeout_id))) {
 				lpbx_digit_usecs = (channel->enbloc.digittimeout * 1000) - (iPbx.sched_wait(channel->scheduler.digittimeout_id));
 			} else {
@@ -3283,10 +2666,9 @@ void handle_keypad_button(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 			channel->enbloc.totaldigittime += lpbx_digit_usecs;
 			channel->enbloc.totaldigittimesquared += pow(lpbx_digit_usecs, 2);
 			sccp_log((DEBUGCAT_ACTION)) (VERBOSE_PREFIX_1 "SCCP: enbloc detection: digit time %d ms, total dial time %d ms, %d digits\n", lpbx_digit_usecs, channel->enbloc.totaldigittime, number_of_digits);
-			if (number_of_digits >= 2) {								// prevent div/0
+			if (number_of_digits >= 2) {
 				if (number_of_digits >= minimum_digit_before_check) {				// minimal number of digits before checking
 					if (lpbx_digit_usecs < max_time_per_digit) {
-						// wellford one-pass variance method
 						double mean = (double)channel->enbloc.totaldigittime / (double)number_of_digits;
 						variance = ( (double) channel->enbloc.totaldigittimesquared - ((double)number_of_digits * pow(mean, 2)) ) / ((double)number_of_digits - 1);
 						std_deviation = sqrt(variance);
@@ -3296,7 +2678,7 @@ void handle_keypad_button(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 						if (fabs(lpbx_digit_usecs - mean) <= std_deviation) {
 							if ((int)channel->enbloc.digittimeout > timeout_if_enbloc) {	// only display message and change timeout once
 								sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_1 "SCCP: enbloc detection: fast dialing, digit timeout now 2 s\n");
-								channel->enbloc.digittimeout = timeout_if_enbloc;	// set new digittimeout
+								channel->enbloc.digittimeout = timeout_if_enbloc;
 							}
 						} else {
 							sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_1 "SCCP: enbloc detection stopped: more than one standard deviation (%2.2f) from the mean (%2.2f)\n", std_deviation, mean);
@@ -3310,27 +2692,24 @@ void handle_keypad_button(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 			}
 		}
 
-		/* add digit to dialed number */
 		channel->dialedNumber[len++] = resp;
 		channel->dialedNumber[len] = '\0';
 		sccp_channel_schedule_digittimeout(channel, channel->enbloc.digittimeout);
 
-		if (GLOB(digittimeoutchar) == resp) {								// we dial on digit timeout char !
+		if (GLOB(digittimeoutchar) == resp) {
 			sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: dial-now key '%c' pressed; dialing\n", GLOB(digittimeoutchar));
 			channel->dialedNumber[len] = '\0';
 			sccp_channel_stop_schedule_digittimout(channel);
 			sccp_safe_sleep(100);									// we would hear last keypad stroke before starting all
 			sccp_pbx_softswitch(channel);
 		}
-		if (sccp_pbx_helper(channel) == SCCP_EXTENSION_EXACTMATCH) {					// we dial when helper says we have a match
+		if (sccp_pbx_helper(channel) == SCCP_EXTENSION_EXACTMATCH) {
 			sccp_channel_stop_schedule_digittimout(channel);
 			sccp_safe_sleep(100);									// we would hear last keypad stroke before starting all
 			sccp_pbx_softswitch(channel);								// channel will be released by hangup
 		}
 		sccp_handle_dialtone(d, l, channel);
-
-	} else if (iPbx.getChannelPbx(channel) || channel->state == SCCP_CHANNELSTATE_DIALING) {		/* Overlap Dialing (\todo should we check &GLOB(allowoverlap) here ? */
-		/* add digit to dialed number */
+	} else if (iPbx.getChannelPbx(channel) || channel->state == SCCP_CHANNELSTATE_DIALING) {
 		channel->dialedNumber[len++] = resp;
 		channel->dialedNumber[len] = '\0';
 		if (channel->dtmfmode == SCCP_DTMFMODE_SKINNY && iPbx.send_digit) {
@@ -3342,12 +2721,6 @@ void handle_keypad_button(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 	}
 }
 
-/*!
- * \brief Handle Soft Key Event for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_soft_key_event(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	pbx_assert(d != NULL);
@@ -3375,7 +2748,6 @@ void handle_soft_key_event(constSessionPtr s, devicePtr d, constMessagePtr msg_i
 
 	AUTO_RELEASE(sccp_line_t, l, NULL);
 	AUTO_RELEASE(sccp_channel_t, c, NULL);
-	/* we have no line and call information -> use default line */
 	if (!lineInstance && !callid && (event == SKINNY_LBL_NEWCALL || event == SKINNY_LBL_REDIAL)) {
 		if (d->defaultLineInstance > 0) {
 			lineInstance = d->defaultLineInstance;
@@ -3395,24 +2767,21 @@ void handle_soft_key_event(constSessionPtr s, devicePtr d, constMessagePtr msg_i
 #ifdef CS_EXPERIMENTAL
 	if (lineInstance && callid) {
 		AUTO_RELEASE(sccp_channel_t, check_channel, sccp_device_getActiveChannel(d));
-		// if device->active_channel->callid does not match and is in offhook channelstate -> hangup
 		if (check_channel && check_channel->callid != callid && check_channel->state <= SCCP_CHANNELSTATE_OFFHOOK) {
 			sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: call %s is not in progress; ending it\n", d->id, check_channel->designator);
 			if (d->transfer && d->transferChannels.transferer == check_channel && event == SKINNY_LBL_ENDCALL) {
 				// intervene with ENDCALL send by a line button press (7970)
-				// hangup the new call instance, and return to the transferee
 				AUTO_RELEASE(sccp_channel_t, resumeChannel, sccp_channel_retain(d->transferChannels.transferee));
 				if (resumeChannel) {
 					sccp_channel_endcall(d->transferChannels.transferer);
 					sccp_channel_resume(d, resumeChannel, FALSE);
 				}
-				return;	// do not process the ENDCALL even any further
+				return;
 			} else {
 				sccp_channel_endcall(check_channel);
 				sccp_dev_deactivate_cplane(d);
 			}
 		}
-		// switch to requested line and channel
 		if (c) {
 			sccp_dev_setActiveLine(d, c->line);
 		}
@@ -3431,7 +2800,6 @@ void handle_soft_key_event(constSessionPtr s, devicePtr d, constMessagePtr msg_i
 			pbx_log(LOG_NOTICE, "%s: softkey %s pressed with no call (line %d, call %d); reject tone played\n", d->id, label2str(event), lineInstance, callid);
 		}
 
-		/* disable callplane for this device */
 		if (d->indicate && d->indicate->onhook) {
 			d->indicate->onhook(d, lineInstance, callid);
 		}
@@ -3442,7 +2810,7 @@ static channelPtr __get_channel_from_callReference_or_passThruParty(devicePtr d,
 {
 	sccp_channel_t * channel = NULL;
 
-	if ((channel = sccp_device_getActiveChannel(d))) {					// reduce the amount of searching by first checking active_channel
+	if ((channel = sccp_device_getActiveChannel(d))) {
 		if (										// make sure this is the intended channel
 			(passThruPartyId && channel->passthrupartyid != passThruPartyId) ||
 			(callReference && channel->callid != callReference) ||
@@ -3467,12 +2835,6 @@ static channelPtr __get_channel_from_callReference_or_passThruParty(devicePtr d,
 	return channel;
 }
 
-/*!
- * \brief Handle Start Media Transmission Acknowledgement for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_port_response(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	uint32_t conferenceId = 0;
@@ -3491,7 +2853,7 @@ void handle_port_response(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 		pbx_log(LOG_WARNING, "%s: phone returned RTP address 0.0.0.0:0, meaning it has no free RTP ports; this call will have no audio\n", d->id);
 		return;
 	}
-	sccp_log(DEBUGCAT_RTP) (VERBOSE_PREFIX_3 "%s: port response: remote RTP %s, conference %d, party %u, call %u, RTCP port %d, media %s\n", d->id, 
+	sccp_log(DEBUGCAT_RTP) (VERBOSE_PREFIX_3 "%s: port response: remote RTP %s, conference %d, party %u, call %u, RTCP port %d, media %s\n", d->id,
 		sccp_netsock_stringify(&sas), conferenceId, passThruPartyId, callReference, RTCPPortNumber, skinny_mediaType2str(mediaType));
 
 	AUTO_RELEASE(sccp_channel_t, channel , __get_channel_from_callReference_or_passThruParty(d, callReference, 0, passThruPartyId));
@@ -3511,22 +2873,15 @@ void handle_port_response(constSessionPtr s, devicePtr d, constMessagePtr msg_in
 				pbx_log(LOG_WARNING, "%s: port response for media type %s, which is not supported; ignored\n", d->id, skinny_mediaType2str(mediaType));
 				return;
 		}
-		
+
 		if (channel && !sccp_netsock_equals(&sas, &rtp->phone_remote)) {
 			sccp_log(DEBUGCAT_RTP) (VERBOSE_PREFIX_3 "%s: port response passed to RTP\n", channel->designator);
 			rtp->RTCPPortNumber=RTCPPortNumber;
 			sccp_rtp_set_phone(channel, rtp, &sas);
-			//rtp->reception.state = SCCP_RTP_STATUS_PORTSET;
 		}
 	}
 }
 
-/*!
- * \brief Handle Start Media Transmission Acknowledgement for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_openReceiveChannelAck(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	skinny_mediastatus_t mediastatus = SKINNY_MEDIASTATUS_Unknown;
@@ -3566,7 +2921,6 @@ void handle_openReceiveChannelAck(constSessionPtr s, devicePtr d, constMessagePt
 		}
 		sccp_rtp_setState(audio, SCCP_RTP_RECEPTION, resultingChannelState);
 	} else {
-		// we successfully opened receive channel, but have no channel active -> close receive (maybe the call was already (being) terminated)
 		if (mediastatus == SKINNY_MEDIASTATUS_Ok) {
 			callReference = callReference ? callReference : passThruPartyId ^ 0xFFFFFFFF;
 			sccp_msg_t *msg = NULL;
@@ -3583,12 +2937,6 @@ void handle_openReceiveChannelAck(constSessionPtr s, devicePtr d, constMessagePt
 	}
 }
 
-/*!
- * \brief Handle Start Media Transmission Acknowledgement
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_startMediaTransmissionAck(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	skinny_mediastatus_t mediastatus = SKINNY_MEDIASTATUS_Unknown;
@@ -3629,7 +2977,6 @@ void handle_startMediaTransmissionAck(constSessionPtr s, devicePtr d, constMessa
 		}
 		sccp_rtp_setState(audio, SCCP_RTP_TRANSMISSION, resultingChannelState);
 	} else {
-		// we successfully opened receive channel, but have no channel active -> close receive (maybe the call was already (being) terminated)
 		if (mediastatus == SKINNY_MEDIASTATUS_Ok) {
 			callReference = callReference ? callReference : (callReference1 ? callReference1 : passThruPartyId ^ 0xFFFFFFFF);
 			sccp_msg_t *msg = NULL;
@@ -3655,12 +3002,6 @@ void handle_startMediaTransmissionAck(constSessionPtr s, devicePtr d, constMessa
 	}
 }
 
-/*!
- * \brief Handle Open Multi Media Receive Acknowledgement
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_OpenMultiMediaReceiveAck(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	skinny_mediastatus_t mediastatus = SKINNY_MEDIASTATUS_Unknown;
@@ -3703,7 +3044,6 @@ void handle_OpenMultiMediaReceiveAck(constSessionPtr s, devicePtr d, constMessag
 		}
 		sccp_rtp_setState(video, SCCP_RTP_RECEPTION, resultingChannelState);
 	} else {
-		// we successfully opened receive channel, but have no channel active -> close receive (maybe the call was already (being) terminated)
 		if (mediastatus == SKINNY_MEDIASTATUS_Ok) {
 			callReference = callReference ? callReference : passThruPartyId ^ 0xFFFFFFFF;
 			sccp_msg_t *msg = NULL;
@@ -3720,12 +3060,6 @@ void handle_OpenMultiMediaReceiveAck(constSessionPtr s, devicePtr d, constMessag
 	}
 }
 
-/*!
- * \brief Handle Start Multi Media Transmission Acknowledgement
- * \param s SCCP Session as sccp_session_t
- * \param d SCCP Device as sccp_device_t
- * \param msg_in SCCP Message
- */
 void handle_startMultiMediaTransmissionAck(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	struct sockaddr_storage sas = { 0 };
@@ -3746,7 +3080,6 @@ void handle_startMultiMediaTransmissionAck(constSessionPtr s, devicePtr d, const
 		sccp_rtp_t * video = &(channel->rtp.video);
 		switch (mediastatus) {
 			case SKINNY_MEDIASTATUS_Ok:
-				//sccp_rtp_set_phone(channel, &channel->rtp.video, &sas);
 				resultingChannelState = sccp_channel_multiMediaTransmissionStarted(d, channel);
 				iPbx.queue_control(channel->owner, AST_CONTROL_VIDUPDATE);
 				break;
@@ -3771,7 +3104,6 @@ void handle_startMultiMediaTransmissionAck(constSessionPtr s, devicePtr d, const
 		}
 		sccp_rtp_setState(video, SCCP_RTP_TRANSMISSION, resultingChannelState);
 	} else {
-		// we successfully opened receive channel, but have no channel active -> close receive (maybe the call was already (being) terminated)
 		if (mediastatus == SKINNY_MEDIASTATUS_Ok) {
 			callReference = callReference ? callReference : passThruPartyId ^ 0xFFFFFFFF;
 			sccp_msg_t *msg = NULL;
@@ -3797,53 +3129,19 @@ void handle_startMultiMediaTransmissionAck(constSessionPtr s, devicePtr d, const
 	}
 }
 
-/*!
- * \brief Handle Start Multi Media Transmission Acknowledgement
- * \param s SCCP Session as sccp_session_t
- * \param d SCCP Device as sccp_device_t
- * \param msg_in SCCP Message
- */
 void handle_mediaTransmissionFailure(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	sccp_dump_msg(msg_in);
-	/*
-
-	struct sockaddr_storage ss = { 0 };
-	uint32_t confID = 0, partyID = 0, callRef = 0;
-	d->protocol->parseMediaTransmissionFailure((const sccp_msg_t *) msg_in, &confID, &partyID, &ss, &callRef);
-
-	AUTO_RELEASE(sccp_channel_t, c , sccp_channel_find_bypassthrupartyid(partyID));
-
-	if (c) {
-		pbx_log(LOG_ERROR, "%s: phone reported a media transmission failure on call %s; call ended\n", d->id, c->designator);
-		// if directrtp: switch back to indirect rtp
-		// else
-		// 	hangup
-			sccp_channel_endcall(c);
-	}
-	*/
 
 	sccp_log((DEBUGCAT_RTP)) (VERBOSE_PREFIX_3 "%s: media transmission failure reported by the phone (not handled)\n", DEV_ID_LOG(d));
 }
 
-/*!
- * \brief Handle IpPort Message
- * \param no_s SCCP Session = NULL
- * \param no_d SCCP Device = NULL
- * \param msg_in SCCP Message
- */
 void handle_ipport(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	d->rtpPort = letohl(msg_in->data.IpPortMessage.lel_rtpMediaPort);
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: phone wants RTP port %d for media\n", d->id, d->rtpPort);
 }
 
-/*!
- * \brief Handle Version for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_version(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	sccp_msg_t *msg_out = NULL;
@@ -3854,31 +3152,14 @@ void handle_version(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 	}
 	sccp_copy_string(msg_out->data.VersionMessage.requiredVersion, d->imageversion, sizeof(msg_out->data.VersionMessage.requiredVersion));
 	sccp_dev_send(d, msg_out);
-	//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Sending version number: %s\n", d->id, d->imageversion);
 }
 
-/*!
- * \brief Handle Connection Statistics for Session
- * \param s SCCP Session
- * \param device SCCP Device
- * \param msg_in SCCP Message
- *
- * \section sccp_statistics Phone Audio Statistics
- *
- * MOS LQK = Mean Opinion Score for listening Quality (5=Excellent -> 1=BAD)
- * Max MOS LQK = Baseline or highest MOS LQK score observed from start of the voice stream. These codecs provide the following maximum MOS LQK score under normal conditions with no frame loss: (G.711 gives 4.5, G.729 A /AB gives 3.7)
- * MOS LQK Version = Version of the Cisco proprietary algorithm used to calculate MOS LQK scores.
- * CS = Concealement seconds
- * Cumulative Conceal Ratio = Total number of concealment frames divided by total number of speech frames received from start of the voice stream.
- * Interval Conceal Ratio = Ratio of concealment frames to speech frames in preceding 3-second interval of active speech. If using voice activity detection (VAD), a longer interval might be required to accumulate 3 seconds of active speech.
+/*
+ * Handle Connection Statistics for Session MOS LQK = Mean Opinion Score for listening Quality (5=Excellent -> 1=BAD) Max MOS LQK = Baseline or highest MOS LQK score observed from start of the voice stream.
+ * These codecs provide the following maximum MOS LQK score under normal conditions with no frame loss: (G.711 gives 4.5, G.729 A /AB gives 3.7) MOS LQK Version = Version of the Cisco proprietary algorithm used to calculate MOS LQK scores.
+ * If using voice activity detection (VAD), a longer interval might be required to accumulate 3 seconds of active speech.
  * Max Conceal Ratio = Highest interval concealment ratio from start of the voice stream.
- * Conceal Secs = Number of seconds that have concealment events (lost frames) from the start of the voice stream (includes severely concealed seconds).
- * Severely Conceal Secs = Number of seconds that have more than 5 percent concealment events (lost frames) from the start of the voice stream.
- * Latency1 = Estimate of the network latency, expressed in milliseconds. Represents a running average of the round-trip delay, measured when RTCP receiver report blocks are received.
  * Max Jitter = Maximum value of instantaneous jitter, in milliseconds.
- * Sender Size = RTP packet size, in milliseconds, for the transmitted stream.
- * Rcvr Size = RTP packet size, in milliseconds, for the received stream.
- * Rcvr Discarded = RTP packets received from network but discarded from jitter buffers.
  */
 void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessagePtr msg_in)
 {
@@ -3893,7 +3174,6 @@ void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessa
 	AUTO_RELEASE(sccp_device_t, d , sccp_device_retain(device));
 
 	if (d) {
-		// update last_call_statistics
 		sccp_call_statistics_t *call_stats = d->call_statistics;
 
 		if (protocol_version < 20) {
@@ -3920,7 +3200,7 @@ void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessa
 			if (QualityStatsSize) {
 				sccp_copy_string(QualityStats, msg_in->data.ConnectionStatisticsRes.v20.QualityStats, QualityStatsSize);
 			}
-		} else {											// odd
+		} else {
 			// ConnectionStatisticsRes_V22 has irregular packing (single byte packing), need to access unaligned data (using get_unaligned_uint32 for sparc62 / buserror machines
 #if defined(HAVE_UNALIGNED_BUSERROR)
 			call_stats[SCCP_CALLSTATISTIC_LAST].num = letohl(get_unaligned_uint32((const void *) &msg_in->data.ConnectionStatisticsRes.v22.lel_CallIdentifier));
@@ -3966,7 +3246,6 @@ void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessa
 				       &call_stats[SCCP_CALLSTATISTIC_LAST].interval_concealement_ratio, &call_stats[SCCP_CALLSTATISTIC_LAST].cumulative_concealement_ratio, &call_stats[SCCP_CALLSTATISTIC_LAST].max_concealement_ratio, &call_stats[SCCP_CALLSTATISTIC_LAST].concealed_seconds, &call_stats[SCCP_CALLSTATISTIC_LAST].severely_concealed_seconds, &call_stats[SCCP_CALLSTATISTIC_LAST].variance_opinion_score_listening_quality);
 			}
 		}
-		/* keep this call in the device's quality history (MLQKmn / minMos is stored in mean_opinion_score_listening_quality) */
 		sccp_call_quality_t * entry = &d->call_history.entry[d->call_history.next];
 		entry->ended                      = time(NULL);
 		entry->callid                     = call_stats[SCCP_CALLSTATISTIC_LAST].num;
@@ -3987,7 +3266,6 @@ void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessa
 			       entry->callid, entry->packets_sent, entry->packets_received, entry->packets_lost, entry->jitter, entry->latency, entry->mos_average, entry->mos_minimum,
 			       (int)entry->concealed_seconds, (int)entry->severely_concealed_seconds);
 
-		// update avg_call_statistics
 		call_stats[SCCP_CALLSTATISTIC_AVG].packets_sent = CALC_AVG(call_stats[SCCP_CALLSTATISTIC_LAST].packets_sent, call_stats[SCCP_CALLSTATISTIC_AVG].packets_sent, call_stats[SCCP_CALLSTATISTIC_AVG].num);
 		call_stats[SCCP_CALLSTATISTIC_AVG].packets_received = CALC_AVG(call_stats[SCCP_CALLSTATISTIC_LAST].packets_received, call_stats[SCCP_CALLSTATISTIC_AVG].packets_received, call_stats[SCCP_CALLSTATISTIC_AVG].num);
 		call_stats[SCCP_CALLSTATISTIC_AVG].packets_lost = CALC_AVG(call_stats[SCCP_CALLSTATISTIC_LAST].packets_lost, call_stats[SCCP_CALLSTATISTIC_AVG].packets_lost, call_stats[SCCP_CALLSTATISTIC_AVG].num);
@@ -4015,17 +3293,6 @@ void handle_ConnectionStatistics(constSessionPtr s, devicePtr device, constMessa
 	}
 }
 
-/*!
- * \brief Handle Server Resource Message for Session
- * old protocol function replaced by the SEP file server addesses list
- *
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- *
- * \todo extend ServerResMessage to be able to return multiple servers (cluster)
- * \todo Handle IPv6
- */
 void handle_ServerResMessage(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	pbx_assert(d != NULL);
@@ -4060,12 +3327,6 @@ void handle_ServerResMessage(constSessionPtr s, devicePtr d, constMessagePtr msg
 	sccp_dev_send(d, msg_out);
 }
 
-/*!
- * \brief Handle Config Status Message for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_ConfigStatMessage(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	sccp_msg_t *msg_out = NULL;
@@ -4099,12 +3360,7 @@ void handle_ConfigStatMessage(constSessionPtr s, devicePtr d, constMessagePtr ms
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: sending config status: %d lines, %d speeddials\n", DEV_ID_LOG(d), lines, speeddials);
 }
 
-/*!
- * \brief Handle Enbloc Call Messsage (Dial in one block, instead of number by number)
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
+/* Handle Enbloc Call Message (Dial in one block, instead of number by number) */
 void handle_EnblocCallMessage(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	int len = 0;
@@ -4121,7 +3377,6 @@ void handle_EnblocCallMessage(constSessionPtr s, devicePtr d, constMessagePtr ms
 
 			if (channel) {
 				if ((channel->state == SCCP_CHANNELSTATE_DIALING) || (channel->state == SCCP_CHANNELSTATE_OFFHOOK)) {
-					/* for anonymous devices we just want to call the extension defined in hotline->exten -> ignore dialed number -MC */
 					if (d->isAnonymous) {
 						return;
 					}
@@ -4137,24 +3392,18 @@ void handle_EnblocCallMessage(constSessionPtr s, devicePtr d, constMessagePtr ms
 				}
 				return;
 			}
-			if (!lineInstance) {									// v3 - v16 don't provide lineinstance during enbloc
+			if (!lineInstance) {
 				lineInstance = d->defaultLineInstance ? d->defaultLineInstance : SCCP_FIRST_LINEINSTANCE;
 			}
 
 			AUTO_RELEASE(sccp_linedevice_t, ld, sccp_linedevice_findByLineinstance(d, lineInstance));
 			if(ld) {
-				AUTO_RELEASE(sccp_channel_t, new_channel, sccp_channel_newcall(ld->line, d, calledParty, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));                                        // implicit release
+				AUTO_RELEASE(sccp_channel_t, new_channel, sccp_channel_newcall(ld->line, d, calledParty, SKINNY_CALLTYPE_OUTBOUND, NULL, NULL));
 				sccp_channel_stop_schedule_digittimout(new_channel);
 			}
 		}
 	}
 }
-/*!
- * \brief Handle Forward Status Request for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_forward_stat_req(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	sccp_msg_t *msg_out = NULL;
@@ -4170,8 +3419,6 @@ void handle_forward_stat_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 		return;
 	}
 
-	/* speeddial with hint. Sending empty forward message */
-	//sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: Send Forward Status. Instance: %d\n", d->id, instance);
 	REQ(msg_out, ForwardStatMessage);
 	if (!msg_out) {
 		return;
@@ -4180,15 +3427,6 @@ void handle_forward_stat_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 	sccp_dev_send(d, msg_out);
 }
 
-/*!
- * \brief Handle Feature Status Request for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- *
- * \warning
- *   - device->buttonconfig is not always locked
- */
 void handle_feature_stat_req(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	sccp_buttonconfig_t *config = NULL;
@@ -4199,10 +3437,6 @@ void handle_feature_stat_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 	sccp_log((DEBUGCAT_FEATURE)) (VERBOSE_PREFIX_3 "%s: feature status request: index %d, capabilities %d\n", d->id, featureIndex, capabilities);
 
 #ifdef CS_DYNAMIC_SPEEDDIAL
-	/*
-	 * the new speeddial style uses feature to display state
-	 * unfortunately we dont know how to handle this on non-dynamic phones
-	 */
 	sccp_speed_t k;
 
 	if ((capabilities == 1 && d->inuseprotocolversion >= 15)) {
@@ -4218,7 +3452,6 @@ void handle_feature_stat_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 			msg->data.FeatureStatDynamicMessage.lel_lineInstance = htolel(featureIndex);
 			msg->data.FeatureStatDynamicMessage.lel_buttonType = htolel(SKINNY_BUTTONTYPE_BLFSPEEDDIAL);
 			msg->data.FeatureStatDynamicMessage.stateVal.lel_uint32 = htolel(0);
-			// msg->data.FeatureStatDynamicMessage.stateVal.lel_uint32 = htolel(0x020304);
 			d->copyStr2Locale(d, msg->data.FeatureStatDynamicMessage.textLabel, k.name, sizeof(msg->data.FeatureStatDynamicMessage.textLabel));
 			sccp_dev_send(d, msg);
 			return;
@@ -4233,12 +3466,6 @@ void handle_feature_stat_req(constSessionPtr s, devicePtr d, constMessagePtr msg
 	}
 }
 
-/*!
- * \brief Handle Feature Status Request for Session
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_services_stat_req(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	sccp_msg_t * msg_out = NULL;
@@ -4249,7 +3476,6 @@ void handle_services_stat_req(constSessionPtr s, devicePtr d, constMessagePtr ms
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: service URL status request: index %d\n", d->id, urlIndex);
 
 	if ((config = sccp_dev_serviceURL_find_byindex(d, urlIndex))) {
-		/* \todo move ServiceURLStatMessage impl to sccp_protocol.c */
 		if (d->inuseprotocolversion < 7) {
 			REQ(msg_out, ServiceURLStatMessage);
 			if (!msg_out) {
@@ -4257,7 +3483,6 @@ void handle_services_stat_req(constSessionPtr s, devicePtr d, constMessagePtr ms
 			}
 			msg_out->data.ServiceURLStatMessage.lel_serviceURLIndex = htolel(urlIndex);
 			sccp_copy_string(msg_out->data.ServiceURLStatMessage.URL, config->button.service.url, sccp_strlen(config->button.service.url) + 1);
-			//sccp_copy_string(msg_out->data.ServiceURLStatMessage.label, config->label, sccp_strlen(config->label) + 1);
 			d->copyStr2Locale(d, msg_out->data.ServiceURLStatMessage.label, config->label, sccp_strlen(config->label) + 1);
 		} else {
 			int URL_len = sccp_strlen(config->button.service.url);
@@ -4354,7 +3579,7 @@ static void handle_updatecapabilities_dissect_videocapabiltyunion(constDevicePtr
 				sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %-7s annexNandW: %d\n", DEV_ID_LOG(d), "", annexNandW);
 			}
 			break;
-		case SKINNY_CODEC_H263P:		/* Vieo */
+		case SKINNY_CODEC_H263P:
 			{
 				int modelNumber= letohl(capability->h263P.lel_modelNumber);
 				int bandwidth = letohl(capability->h263P.lel_bandwidth);
@@ -4384,19 +3609,9 @@ static void handle_updatecapabilities_dissect_videocapabiltyunion(constDevicePtr
 }
 #endif
 
-/*!
- * \brief Handle Update Capabilities Message
- *
- * This message is often used to add video and data capabilities to client. Atm we just use it for audio and video caps.
+/*
  * Will be better to store audio codec max packet size and video bandwidth and size.
  * In future we will parse also data caps to support T.38 and NSE with ATA186/188 devices.
- *
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- *
- * \since 20090708
- * \author Federico
  */
 void handle_updatecapabilities_message(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
@@ -4409,7 +3624,6 @@ void handle_updatecapabilities_message(constSessionPtr s, devicePtr d, constMess
 		uint8_t audio_capabilities = 0;
 		skinny_codec_t audio_codec = SKINNY_CODEC_NONE;
 		uint32_t maxFramesPerPacket = 0;
-		/* parsing audio caps */
 		audio_capabilities = letohl(msg_in->data.UpdateCapabilitiesMessage.v3.lel_audioCapCount);
 		int RTPPayloadFormat = letohl(msg_in->data.UpdateCapabilitiesMessage.v3.lel_RTPPayloadFormat);
 		sccp_log((DEBUGCAT_CORE + DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %d audio capabilities, RTP payload format %d\n", DEV_ID_LOG(d), audio_capabilities, RTPPayloadFormat);
@@ -4420,12 +3634,12 @@ void handle_updatecapabilities_message(constSessionPtr s, devicePtr d, constMess
 				audio_codec = letohl(msg_in->data.UpdateCapabilitiesMessage.v3.audioCaps[audio_capability].lel_payloadCapability);
 				if (codec2type(audio_codec) == SKINNY_CODEC_TYPE_AUDIO) {
 					maxFramesPerPacket = letohl(msg_in->data.UpdateCapabilitiesMessage.v3.audioCaps[audio_capability].lel_maxFramesPerPacket);
-					d->capabilities.audio[audio_capability] = audio_codec;		/** store our audio capabilities */
+					d->capabilities.audio[audio_capability] = audio_codec;
 					sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %7d %-25s %-6d\n", DEV_ID_LOG(d), audio_codec, codec2str(audio_codec), maxFramesPerPacket);
 				} else {
 					sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %7d %-25s (skipped)\n", DEV_ID_LOG(d), audio_codec, codec2str(audio_codec));
 				}
-				
+
 				if (audio_codec == SKINNY_CODEC_G723_1) {
 					sccp_log_and((DEBUGCAT_DEVICE + DEBUGCAT_HIGH))(VERBOSE_PREFIX_3 "%s: %7s bitRate: %d\n", DEV_ID_LOG(d), "", letohl(msg_in->data.UpdateCapabilitiesMessage.v3.audioCaps[audio_capability].payloads.lel_g723BitRate));
 				} else {
@@ -4453,12 +3667,10 @@ void handle_updatecapabilities_message(constSessionPtr s, devicePtr d, constMess
 
 		uint8_t video_capability = 0;
 		skinny_codec_t video_codec = SKINNY_CODEC_NONE;
-		boolean_t previousVideoSupport = sccp_device_isVideoSupported(d);					/* to check if this update changes the video capabilities */
+		boolean_t previousVideoSupport = sccp_device_isVideoSupported(d);
 
-		/* parsing video caps */
 		video_capabilities = letohl(msg_in->data.UpdateCapabilitiesMessage.v3.lel_videoCapCount);
 
-		/* enable video mode button if device has video capability */
 		if (video_capabilities > 0 && video_capabilities <= SKINNY_MAX_VIDEO_CAPABILITIES) {
 			sccp_log((DEBUGCAT_CORE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: video softkey enabled\n", DEV_ID_LOG(d));
 
@@ -4466,8 +3678,7 @@ void handle_updatecapabilities_message(constSessionPtr s, devicePtr d, constMess
 			for (video_capability = 0; video_capability < video_capabilities; video_capability++) {
 				video_codec = letohl(msg_in->data.UpdateCapabilitiesMessage.v3.videoCaps[video_capability].lel_payloadCapability);
 				if (codec2type(video_codec) == SKINNY_CODEC_TYPE_VIDEO) {
-					d->capabilities.video[video_capability] = video_codec;		/** store our video capabilities */
-					//sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %7d %-25s\n", DEV_ID_LOG(d), video_codec, codec2str(video_codec));
+					d->capabilities.video[video_capability] = video_codec;
 #if DEBUG
 					char transmitReceiveStr[5];
 					snprintf(transmitReceiveStr, sizeof(transmitReceiveStr), "%c-%c", (letohl(msg_in->data.UpdateCapabilitiesMessage.v3.videoCaps[video_capability].lel_transmitOrReceive) & SKINNY_TRANSMITRECEIVE_RECEIVE) ? '<' : ' ', (letohl(msg_in->data.UpdateCapabilitiesMessage.v3.videoCaps[video_capability].lel_transmitOrReceive) & SKINNY_TRANSMITRECEIVE_TRANSMIT) ? '>' : ' ');
@@ -4500,16 +3711,9 @@ void handle_updatecapabilities_message(constSessionPtr s, devicePtr d, constMess
 		sccp_line_updateLineCapabilitiesByDevice(d);
 	}
 }
-/*!
- * \brief Handle Update Capabilities Message
- *
- * This message is often used to add video and data capabilities to client. Atm we just use it for audio and video caps.
+/*
  * Will be better to store audio codec max packet size and video bandwidth and size.
  * In future we will parse also data caps to support T.38 and NSE with ATA186/188 devices.
- *
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
  */
 void handle_updatecapabilities_V2_message(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
@@ -4520,7 +3724,6 @@ void handle_updatecapabilities_V2_message(constSessionPtr s, devicePtr d, constM
 	skinny_codec_t audio_codec = SKINNY_CODEC_NONE;
 	uint32_t maxFramesPerPacket = 0;
 
-	/* parsing audio caps */
 	audio_capabilities = letohl(msg_in->data.UpdateCapabilitiesV2Message.lel_audioCapCount);
 	int RTPPayloadFormat = letohl(msg_in->data.UpdateCapabilitiesV2Message.lel_RTPPayloadFormat);
 	sccp_log((DEBUGCAT_CORE + DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %d audio capabilities, RTP payload format %d (v2)\n", DEV_ID_LOG(d), audio_capabilities, RTPPayloadFormat);
@@ -4531,7 +3734,7 @@ void handle_updatecapabilities_V2_message(constSessionPtr s, devicePtr d, constM
 			audio_codec = letohl(msg_in->data.UpdateCapabilitiesV2Message.audioCaps[audio_capability].lel_payloadCapability);
 			if (codec2type(audio_codec) == SKINNY_CODEC_TYPE_AUDIO) {
 				maxFramesPerPacket = letohl(msg_in->data.UpdateCapabilitiesV2Message.audioCaps[audio_capability].lel_maxFramesPerPacket);
-				d->capabilities.audio[audio_capability] = audio_codec;		/** store our audio capabilities */
+				d->capabilities.audio[audio_capability] = audio_codec;
 				sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %7d %-25s %-6d\n", DEV_ID_LOG(d), audio_codec, codec2str(audio_codec), maxFramesPerPacket);
 			} else {
 				sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %7d %-25s (skipped)\n", DEV_ID_LOG(d), audio_codec, codec2str(audio_codec));
@@ -4554,12 +3757,10 @@ void handle_updatecapabilities_V2_message(constSessionPtr s, devicePtr d, constM
 
 	uint8_t video_capability = 0;
 	skinny_codec_t video_codec = SKINNY_CODEC_NONE;
-	boolean_t previousVideoSupport = sccp_device_isVideoSupported(d);					/* to check if this update changes the video capabilities */
+	boolean_t previousVideoSupport = sccp_device_isVideoSupported(d);
 
-	/* parsing video caps */
 	video_capabilities = letohl(msg_in->data.UpdateCapabilitiesV2Message.lel_videoCapCount);
 
-	/* enable video mode button if device has video capability */
 	if (video_capabilities > 0 && video_capabilities <= SKINNY_MAX_VIDEO_CAPABILITIES) {
 		sccp_log((DEBUGCAT_CORE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: video softkey enabled\n", DEV_ID_LOG(d));
 
@@ -4567,8 +3768,7 @@ void handle_updatecapabilities_V2_message(constSessionPtr s, devicePtr d, constM
 		for (video_capability = 0; video_capability < video_capabilities; video_capability++) {
 			video_codec = letohl(msg_in->data.UpdateCapabilitiesV2Message.videoCaps[video_capability].lel_payloadCapability);
 			if (codec2type(video_codec) == SKINNY_CODEC_TYPE_VIDEO) {
-				d->capabilities.video[video_capability] = video_codec;		/** store our video capabilities */
-				//sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %7d %-25s\n", DEV_ID_LOG(d), video_codec, codec2str(video_codec));
+				d->capabilities.video[video_capability] = video_codec;
 #if DEBUG
 				char transmitReceiveStr[5];
 				snprintf(transmitReceiveStr, sizeof(transmitReceiveStr), "%c-%c", (letohl(msg_in->data.UpdateCapabilitiesV2Message.videoCaps[video_capability].lel_transmitOrReceive) & SKINNY_TRANSMITRECEIVE_RECEIVE) ? '<' : ' ', (letohl(msg_in->data.UpdateCapabilitiesV2Message.videoCaps[video_capability].lel_transmitOrReceive) & SKINNY_TRANSMITRECEIVE_TRANSMIT) ? '>' : ' ');
@@ -4601,16 +3801,9 @@ void handle_updatecapabilities_V2_message(constSessionPtr s, devicePtr d, constM
 	sccp_line_updateLineCapabilitiesByDevice(d);
 }
 
-/*!
- * \brief Handle Update Capabilities Message
- *
- * This message is often used to add video and data capabilities to client. Atm we just use it for audio and video caps.
+/*
  * Will be better to store audio codec max packet size and video bandwidth and size.
  * In future we will parse also data caps to support T.38 and NSE with ATA186/188 devices.
- *
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
  */
 void handle_updatecapabilities_V3_message(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
@@ -4621,7 +3814,6 @@ void handle_updatecapabilities_V3_message(constSessionPtr s, devicePtr d, constM
 	skinny_codec_t audio_codec = SKINNY_CODEC_NONE;
 	uint32_t maxFramesPerPacket = 0;
 
-	/* parsing audio caps */
 	audio_capabilities = letohl(msg_in->data.UpdateCapabilitiesV3Message.lel_audioCapCount);
 	int RTPPayloadFormat = letohl(msg_in->data.UpdateCapabilitiesV3Message.lel_RTPPayloadFormat);
 	sccp_log((DEBUGCAT_CORE + DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %d audio capabilities, RTP payload format %d (v3)\n", DEV_ID_LOG(d), audio_capabilities, RTPPayloadFormat);
@@ -4632,11 +3824,11 @@ void handle_updatecapabilities_V3_message(constSessionPtr s, devicePtr d, constM
 			audio_codec = letohl(msg_in->data.UpdateCapabilitiesV3Message.audioCaps[audio_capability].lel_payloadCapability);
 			if (codec2type(audio_codec) == SKINNY_CODEC_TYPE_AUDIO) {
 				maxFramesPerPacket = letohl(msg_in->data.UpdateCapabilitiesV3Message.audioCaps[audio_capability].lel_maxFramesPerPacket);
-				d->capabilities.audio[audio_capability] = audio_codec;		/** store our audio capabilities */
+				d->capabilities.audio[audio_capability] = audio_codec;
 				sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %7d %-25s %-6d\n", DEV_ID_LOG(d), audio_codec, codec2str(audio_codec), maxFramesPerPacket);
 			} else {
 				sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %7d %-25s (skipped)\n", DEV_ID_LOG(d), audio_codec, codec2str(audio_codec));
-			}	
+			}
 			if (audio_codec == SKINNY_CODEC_G723_1) {
 				sccp_log_and((DEBUGCAT_DEVICE + DEBUGCAT_HIGH))(VERBOSE_PREFIX_3 "%s: %7s bitRate: %d\n", DEV_ID_LOG(d), "", letohl(msg_in->data.UpdateCapabilitiesV3Message.audioCaps[audio_capability].payloads.lel_g723BitRate));
 			} else {
@@ -4656,12 +3848,10 @@ void handle_updatecapabilities_V3_message(constSessionPtr s, devicePtr d, constM
 
 	uint8_t video_capability = 0;
 	skinny_codec_t video_codec = SKINNY_CODEC_NONE;
-	boolean_t previousVideoSupport = sccp_device_isVideoSupported(d);					/* to check if this update changes the video capabilities */
+	boolean_t previousVideoSupport = sccp_device_isVideoSupported(d);
 
-	/* parsing video caps */
 	video_capabilities = letohl(msg_in->data.UpdateCapabilitiesV3Message.lel_videoCapCount);
 
-	/* enable video mode button if device has video capability */
 	if (video_capabilities > 0 && video_capabilities <= SKINNY_MAX_VIDEO_CAPABILITIES) {
 		sccp_log((DEBUGCAT_CORE + DEBUGCAT_SOFTKEY)) (VERBOSE_PREFIX_3 "%s: video softkey enabled\n", DEV_ID_LOG(d));
 
@@ -4669,8 +3859,7 @@ void handle_updatecapabilities_V3_message(constSessionPtr s, devicePtr d, constM
 		for (video_capability = 0; video_capability < video_capabilities; video_capability++) {
 			video_codec = letohl(msg_in->data.UpdateCapabilitiesV3Message.videoCaps[video_capability].lel_payloadCapability);
 			if (codec2type(video_codec) == SKINNY_CODEC_TYPE_VIDEO) {
-				d->capabilities.video[video_capability] = video_codec;		/** store our video capabilities */
-				//sccp_log((DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "%s: %7d %-25s\n", DEV_ID_LOG(d), video_codec, codec2str(video_codec));
+				d->capabilities.video[video_capability] = video_codec;
 #if DEBUG
 				char transmitReceiveStr[5];
 				snprintf(transmitReceiveStr, sizeof(transmitReceiveStr), "%c-%c", (letohl(msg_in->data.UpdateCapabilitiesV3Message.videoCaps[video_capability].lel_transmitOrReceive) & SKINNY_TRANSMITRECEIVE_RECEIVE) ? '<' : ' ', (letohl(msg_in->data.UpdateCapabilitiesV3Message.videoCaps[video_capability].lel_transmitOrReceive) & SKINNY_TRANSMITRECEIVE_TRANSMIT) ? '>' : ' ');
@@ -4709,34 +3898,22 @@ void handle_updatecapabilities_V3_message(constSessionPtr s, devicePtr d, constM
 	sccp_line_updateLineCapabilitiesByDevice(d);
 }
 
-/*!
- * \brief Handle Keep Alive Message
- * \param s SCCP Session
- * \param maybe_d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_KeepAliveMessage(constSessionPtr s, devicePtr maybe_d, constMessagePtr msg_in)
 {
 	sccp_msg_t *msg_out = sccp_build_packet(KeepAliveAckMessage, 0);
 	if (!msg_out) {
 		return;
 	}
-	sccp_session_send2(s, msg_out);					/* device existence is not guaranteed */
+	sccp_session_send2(s, msg_out);
 }
 
-/*!
- * \brief Handle Extension Device Capabilities
- * \param s SCCP Session
- * \param maybe_d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_extension_devicecaps(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
-	uint32_t instance = letohl(msg_in->data.ExtensionDeviceCaps.lel_instance); 
+	uint32_t instance = letohl(msg_in->data.ExtensionDeviceCaps.lel_instance);
 	uint32_t type = letohl(msg_in->data.ExtensionDeviceCaps.lel_type);
 	uint32_t maxAllowed = letohl(msg_in->data.ExtensionDeviceCaps.lel_maxAllowed);
 	const char * text = msg_in->data.ExtensionDeviceCaps.text;
-	
+
 	sccp_log(DEBUGCAT_ACTION + DEBUGCAT_DEVICE)(VERBOSE_PREFIX_3 "%s: add-on: instance %d, type %d, max allowed %d\n", d->id, instance, type, maxAllowed);
 	sccp_log(DEBUGCAT_ACTION + DEBUGCAT_DEVICE)(VERBOSE_PREFIX_3 "%s: add-on text '%s'\n", d->id, text);
 	SCCP_LIST_LOCK(&d->addons);
@@ -4750,7 +3927,7 @@ void handle_extension_devicecaps(constSessionPtr s, devicePtr d, constMessagePtr
 		addon->type = SKINNY_DEVICETYPE_UNDEFINED;
 		if (sccp_session_getProtocol(s) == SCCP_PROTOCOL) {
 			switch(type) {
-				case 1: 
+				case 1:
 					addon->type = SKINNY_DEVICETYPE_CISCO_ADDON_7914;
 					break;
 				case 2:
@@ -4769,12 +3946,6 @@ void handle_extension_devicecaps(constSessionPtr s, devicePtr d, constMessagePtr
 	SCCP_LIST_UNLOCK(&d->addons);
 }
 
-/*!
- * \brief Handle Device to User Message
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_device_to_user(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	uint32_t appID = 0;
@@ -4802,7 +3973,6 @@ void handle_device_to_user(constSessionPtr s, devicePtr d, constMessagePtr msg_i
 
 	if (lineInstance == 0 && callReference == 0) {
 		if (dataLength) {
-			/* split data by "/" */
 			char str_action[11] = "";
 
 			char str_transactionID[11] = "";
@@ -4817,26 +3987,22 @@ void handle_device_to_user(constSessionPtr s, devicePtr d, constMessagePtr msg_i
 	} else {
 		sccp_log((DEBUGCAT_ACTION + DEBUGCAT_MESSAGE + DEBUGCAT_DEVICE + DEBUGCAT_CONFERENCE)) (VERBOSE_PREFIX_3 "%s: device-to-user data for app %d: '%s' (%d bytes)\n", d->id, appID, data, dataLength);
 		switch (appID) {
-			case APPID_CONFERENCE:									// Handle Conference App
+			case APPID_CONFERENCE:
 #ifdef CS_SCCP_CONFERENCE
-				conferenceID = lineInstance;							// conferenceId is passed on via lineInstance
-				participantID = sccp_atoi(data, sizeof(data));					// participantId is passed on in the data segment
-				//sccp_log((DEBUGCAT_ACTION + DEBUGCAT_MESSAGE)) (VERBOSE_PREFIX_3 "%s: Handle ConferenceList Info for AppID %d , CallID %d, Transaction %d, Conference %d, Participant: %d\n", d->id, appID, callReference, transactionID, conferenceID, participantID);
+				conferenceID = lineInstance;
+				participantID = sccp_atoi(data, sizeof(data));
 				sccp_conference_handle_device_to_user(d, callReference, transactionID, conferenceID, participantID);
 #endif
 				break;
-			case APPID_CONFERENCE_INVITE:								// Handle Conference Invite
-#ifdef CS_SCCP_CONFERENCE	/* Not Implemented */
-				conferenceID = lineInstance;							// conferenceId is passed on via lineInstance
-				participantID = sccp_atoi(data, sizeof(data));					// participantId is passed on in the data segment
-				//sccp_log((DEBUGCAT_ACTION + DEBUGCAT_MESSAGE)) (VERBOSE_PREFIX_3 "%s: Handle ConferenceList Info for AppID %d , CallID %d, Transaction %d, Conference %d, Participant: %d\n", d->id, appID, callReference, transactionID, conferenceID, participantID);
-				//sccp_conference_handle_device_to_user(d, callReference, transactionID, conferenceID, participantID);
+			case APPID_CONFERENCE_INVITE:
+#ifdef CS_SCCP_CONFERENCE
+				conferenceID = lineInstance;
+				participantID = sccp_atoi(data, sizeof(data));
 #endif
 				break;
-			case APPID_VISUALPARKINGLOT:								// Handle Conference Invite
+			case APPID_VISUALPARKINGLOT:
 #ifdef CS_SCCP_PARK
 				{
-					//sccp_log((DEBUGCAT_ACTION + DEBUGCAT_MESSAGE)) (VERBOSE_PREFIX_3 "%s: Handle VisualParkingLot Info for AppID %d , Transaction %d, Action: %s, Observer:%d, Data:%s\n", d->id, appID, transactionID, d->dtu_softkey.action, lineInstance, data);
 					char parkinglot[11] = "";
 
 					char slot_exten[11] = "";
@@ -4855,12 +4021,6 @@ void handle_device_to_user(constSessionPtr s, devicePtr d, constMessagePtr msg_i
 	}
 }
 
-/*!
- * \brief Handle Device to User Message
- * \param s SCCP Session
- * \param d SCCP Device
- * \param msg_in SCCP Message
- */
 void handle_device_to_user_response(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	if ((GLOB(debug) & DEBUGCAT_MESSAGE) != 0) {
@@ -4890,12 +4050,6 @@ void handle_device_to_user_response(constSessionPtr s, devicePtr d, constMessage
 	}
 }
 
-/*!
- * \brief Handle Miscellaneous Command Message
- * \param s SCCP Session as sccp_session_t
- * \param d SCCP Device as sccp_device_t
- * \param msg_in SCCP Message
- */
 void handle_miscellaneousCommandMessage(constSessionPtr s, devicePtr d, constMessagePtr msg_in)
 {
 	skinny_miscCommandType_t commandType = 0;
@@ -4912,7 +4066,7 @@ void handle_miscellaneousCommandMessage(constSessionPtr s, devicePtr d, constMes
 			case SKINNY_MISCCOMMANDTYPE_VIDEOFASTUPDATEPICTURE:
 				iPbx.queue_control(channel->owner, AST_CONTROL_VIDUPDATE);
 				break;
-			case SKINNY_MISCCOMMANDTYPE_VIDEOFASTUPDATEGOB:		/* Group Of Pictures */
+			case SKINNY_MISCCOMMANDTYPE_VIDEOFASTUPDATEGOB:
 				sccp_log((DEBUGCAT_RTP)) (VERBOSE_PREFIX_3 "%s: video fast update GOB: first %d, count %d\n",
 							  channel ? channel->currentDeviceId : "--",
 							  letohl(msg_in->data.MiscellaneousCommandMessage.data.videoFastUpdateGOB.lel_firstGOB),
@@ -4972,4 +4126,3 @@ void handle_miscellaneousCommandMessage(constSessionPtr s, devicePtr d, constMes
 		}
 	}
 }
-// kate: indent-width 4; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets on;

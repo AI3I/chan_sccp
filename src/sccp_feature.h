@@ -3,24 +3,20 @@
  * \brief       SCCP Feature Header
  * \author      Federico Santulli <fsantulli [at] users.sourceforge.net >
  * \author      Diederik de Groot <ddegroot [at] users.sourceforge.net >
- * \note        This program is free software and may be modified and distributed under the terms of the GNU Public License. 
+ * \note        This program is free software and may be modified and distributed under the terms of the GNU Public License.
  *              See the LICENSE file at the top of the source tree.
  * \since       2009-01-16
  */
 #pragma once
 __BEGIN_C_EXTERN__
 
-/*!
- * \brief SCCP Feature Configuration Structure
- */
 struct sccp_feature_configuration {
-	uint32_t previousStatus;										//!< Feature Previous State
-	uint32_t status;											//!< Feature State
-	boolean_t enabled;											//!< Feature Enabled
-	boolean_t initialized;											//!< Feature Enabled
+	uint32_t previousStatus;
+	uint32_t status;
+	boolean_t enabled;
+	boolean_t initialized;
 };
 
-// callforward
 SCCP_API void SCCP_CALL sccp_feat_handle_callforward(constLinePtr l, constDevicePtr d, sccp_cfwd_t type, channelPtr maybe_c, uint32_t lineInstance);
 
 #ifdef CS_SCCP_PICKUP
@@ -44,4 +40,3 @@ SCCP_API void SCCP_CALL sccp_feat_adhocDial(constDevicePtr d, constLinePtr line)
 SCCP_API void SCCP_CALL sccp_feat_changed(constDevicePtr device, constLineDevicePtr maybe_ld, sccp_feature_type_t featureType);
 SCCP_API void SCCP_CALL sccp_feat_monitor(constDevicePtr device, constLinePtr no_line, uint32_t no_lineInstance, constChannelPtr maybe_channel);
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

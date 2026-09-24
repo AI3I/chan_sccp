@@ -14,9 +14,6 @@
 
 __BEGIN_C_EXTERN__
 
-/*!
- * \brief SKINNY Codecs (ENUM)
- */
 typedef enum
 {
 	/* *INDENT-OFF* */
@@ -46,7 +43,7 @@ typedef enum
 	SKINNY_CODEC_G722_1_32K          = 0x0028,
 	SKINNY_CODEC_G722_1_24K          = 0x0029,
 	SKINNY_CODEC_AAC                 = 0x002A,
-	SKINNY_CODEC_MP4A_LATM_128       = 0x002B,                                        // AAC-LD
+	SKINNY_CODEC_MP4A_LATM_128       = 0x002B,
 	SKINNY_CODEC_MP4A_LATM_64        = 0x002C,
 	SKINNY_CODEC_MP4A_LATM_56        = 0x002D,
 	SKINNY_CODEC_MP4A_LATM_48        = 0x002E,
@@ -59,9 +56,9 @@ typedef enum
 	SKINNY_CODEC_G726_24K            = 0x0053,
 	SKINNY_CODEC_G726_16K            = 0x0054,
 	SKINNY_CODEC_G729_ANNEX_B        = 0x0055,
-	SKINNY_CODEC_G729_B_LOW          = 0x0056,                                        // ILBC
+	SKINNY_CODEC_G729_B_LOW          = 0x0056,
 	SKINNY_CODEC_ISAC                = 0x0059,
-	SKINNY_CODEC_OPUS                = 0x005a,                                        // New
+	SKINNY_CODEC_OPUS                = 0x005a,
 	SKINNY_CODEC_AMR                 = 0x0061,
 	SKINNY_CODEC_AMR_WB              = 0x0062,
 	SKINNY_CODEC_H261                = 0x0064,
@@ -82,11 +79,11 @@ typedef enum
 	SKINNY_CODEC_H264_FEC            = 0x0073,
 	SKINNY_CODEC_CLEAR_CHAN          = 0x0078,
 	SKINNY_CODEC_UNIVERSAL_XCODER    = 0x00DE,
-	SKINNY_CODEC_DTMF_OOB_RFC2833    = 0x0101,                                        // OUTOFBAND / DTMF 0x101 / RFC2833_DYNAMIC_PAYLOAD
+	SKINNY_CODEC_DTMF_OOB_RFC2833    = 0x0101,
 	SKINNY_CODEC_DTMF_PASSTHROUGH    = 0x0102,
 	SKINNY_CODEC_DTMF_DYNAMIC        = 0x0103,
-	SKINNY_CODEC_DTMF_OOB            = 0x0104,                                        // OUTOFBAND
-	SKINNY_CODEC_DTMF_IB_RFC2833     = 0x0105,                                        // INBAND
+	SKINNY_CODEC_DTMF_OOB            = 0x0104,
+	SKINNY_CODEC_DTMF_IB_RFC2833     = 0x0105,
 	SKINNY_CODEC_CFB_TONES           = 0x0106,
 	SKINNY_CODEC_DTMF_NOAUDIO        = 0x012B,
 	SKINNY_CODEC_V150_LC_MODEM_RELAY = 0x012C,
@@ -95,9 +92,6 @@ typedef enum
 	/* *INDENT-ON* */
 } skinny_codec_t;
 
-/*!
- * \brief SKINNY Codec Types (ENUM)
- */
 typedef enum
 {
 	/* *INDENT-OFF* */
@@ -110,26 +104,23 @@ typedef enum
 	/* *INDENT-ON* */
 } skinny_payload_type_t;
 
-/*!
- * \brief SKINNY Codec Structure
- */
 struct skinny_codec {
 	skinny_codec_t        codec;
 	skinny_payload_type_t codec_type;
-	const char * const    key;                                                // used in sccp.conf
-	const char * const    name;                                               // used in sccp.conf
-	const char * const    text;                                               // used to display the codec name
-	const char *          mimesubtype;                                        // rfc mime sub-type e.g. L16
+	const char * const    key;
+	const char * const    name;
+	const char * const    text;
+	const char *          mimesubtype;
 	uint32_t              sample_rate;
 	uint32_t              sound_quality;
 	int32_t               rtp_payload_type;
 };
 
 typedef struct {
-	skinny_codec_t audio[SKINNY_MAX_CAPABILITIES]; /*!< SCCP Audio Codec Preferences */
-	skinny_codec_t video[SKINNY_MAX_CAPABILITIES]; /*!< SCCP Video Codec Preferences */
-	boolean_t      audio_inherited;                /*!< (Temp) If audio codecs were inherited from global */
-	boolean_t      video_inherited;                /*!< (Temp) If video codecs were inherited from global */
+	skinny_codec_t audio[SKINNY_MAX_CAPABILITIES];
+	skinny_codec_t video[SKINNY_MAX_CAPABILITIES];
+	boolean_t      audio_inherited;
+	boolean_t      video_inherited;
 } skinny_capabilities_t;
 
 extern const struct skinny_codec        skinny_codecs[];
@@ -148,4 +139,3 @@ SCCP_API void SCCP_CALL           sccp_codec_combineSets(skinny_codec_t base[SKI
 SCCP_API skinny_codec_t SCCP_CALL sccp_codec_findBestJoint(constChannelPtr c, const skinny_codec_t ourPreferences[], const skinny_codec_t remotePeerPreferences[], boolean_t fallback);
 
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

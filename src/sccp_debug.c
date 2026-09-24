@@ -13,9 +13,6 @@
 SCCP_FILE_VERSION(__FILE__, "");
 const char * SS_Memory_Allocation_Error = "%s: out of memory; operation not done\n";
 
-/*!
- * \brief SCCP Verbose Level Structure
- */
 struct sccp_debug_category const sccp_debug_categories[32] = {
 	/* clang-format off */
 	{"all",			"all debug levels", 			DEBUGCAT_ALL,},
@@ -53,14 +50,6 @@ struct sccp_debug_category const sccp_debug_categories[32] = {
 	/* clang-format on */
 };
 
-/*!
- * \brief Parse a debug categories line to debug int
- * \param arguments Array of Arguments
- * \param startat Start Point in the Arguments Array
- * \param argc Count of Arguments
- * \param new_debug_value as uint32_t
- * \return new_debug_value as uint32_t
- */
 int32_t sccp_parse_debugline(char * arguments[], int startat, int argc, int32_t new_debug_value)
 {
 	int        argi         = 0;
@@ -79,12 +68,10 @@ int32_t sccp_parse_debugline(char * arguments[], int startat, int argc, int32_t 
 			} else if (!strcasecmp(argument, "all")) {
 				new_debug_value = subtract ? 0 : DEBUGCAT_ALL;
 			} else {
-				// parse comma separated debug_var
 				boolean_t matched   = FALSE;
 				char *    tokenrest = NULL;
 				char *    token     = strtok_r(argument, delimiters, &tokenrest);
 				while (token != NULL) {
-					// match debug level name to enum
 					for (i = 0; i < ARRAY_LEN(sccp_debug_categories); i++) {
 						if (strcasecmp(token, sccp_debug_categories[i].key) == 0) {
 							if (subtract) {
@@ -110,9 +97,6 @@ int32_t sccp_parse_debugline(char * arguments[], int startat, int argc, int32_t 
 	return new_debug_value;
 }
 
-/*!
- * \brief Is name a debug category (or one of the keywords none, off, no, all)
- */
 boolean_t sccp_debug_is_category(const char * name)
 {
 	if (!strcasecmp(name, "none") || !strcasecmp(name, "off") || !strcasecmp(name, "no") || !strcasecmp(name, "all")) {
@@ -126,11 +110,7 @@ boolean_t sccp_debug_is_category(const char * name)
 	return FALSE;
 }
 
-/*!
- * \brief Write the current debug value to debug categories
- * \param debugvalue DebugValue as uint32_t
- * \return string containing list of categories comma separated (you need to free it)
- */
+/* Returns string containing list of categories comma separated (you need to free it) */
 char * sccp_get_debugcategories(int32_t debugvalue)
 {
 	char * res    = NULL;
@@ -141,7 +121,7 @@ char * sccp_get_debugcategories(int32_t debugvalue)
 		if ((debugvalue & sccp_debug_categories[i].category) == sccp_debug_categories[i].category) {
 			size_t new_size = size;
 
-			new_size += strlen(sccp_debug_categories[i].key) + 1 /*sizeof(sep) */ + 1;
+			new_size += strlen(sccp_debug_categories[i].key) + 1 + 1;
 			tmpres = (char *)sccp_realloc(res, new_size);
 			if (tmpres == NULL) {
 				pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
@@ -150,7 +130,6 @@ char * sccp_get_debugcategories(int32_t debugvalue)
 			}
 			res = tmpres;
 			if (size == 0) {
-				// strlcpy(res, sccp_debug_categories[i].key, new_size);
 				snprintf(res, new_size - 1, "%s", sccp_debug_categories[i].key);
 			} else {
 				snprintf(res + strlen(res), new_size - 1, ",%s", sccp_debug_categories[i].key);
@@ -163,9 +142,6 @@ char * sccp_get_debugcategories(int32_t debugvalue)
 	return res;
 }
 
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;
-
-/* ------------------------------------------------------------------------------------------------ per-device debug - */
 #define SCCP_DEBUG_FILTER_MAX_DEVICES 32
 typedef struct {
 	char device[StationMaxDeviceNameSize];
@@ -204,7 +180,6 @@ void sccp_debug_log_filtered(const char * file, int line, const char * function,
 	}
 }
 
-/* mark device (or update its match strings); FALSE when the table is full */
 boolean_t sccp_debug_filter_set(const char * device, const char * const matches[], int nmatches)
 {
 	boolean_t res = FALSE;
@@ -269,7 +244,6 @@ boolean_t sccp_debug_filter_has(const char * device)
 	return res;
 }
 
-/* marked devices, comma separated (caller frees), or NULL when none */
 char * sccp_debug_filter_devices(void)
 {
 	char * res = NULL;

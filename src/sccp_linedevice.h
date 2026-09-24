@@ -15,28 +15,22 @@
 #define sccp_linedevice_release(_x)        sccp_refcount_release_type(sccp_linedevice_t, _x)
 #define sccp_linedevice_refreplace(_x, _y) sccp_refcount_refreplace_type(sccp_linedevice_t, _x, _y)
 #define sccp_line_refreplace(_x, _y)       sccp_refcount_refreplace_type(sccp_line_t, _x, _y)
-/*!
- * \brief SCCP cfwd information
- */
 struct sccp_cfwd_information {
 	boolean_t enabled;
 	char number[SCCP_MAX_EXTENSION];
 };
 
-/*!
- * \brief SCCP Line-Devices Structure
- */
 struct sccp_linedevice {
-	devicePtr device;                                                               //!< SCCP Device
-	linePtr line;                                                                   //!< SCCP Line
-	SCCP_LIST_ENTRY(sccp_linedevice_t) list;                                        //!< Device Linked List Entry
+	devicePtr device;
+	linePtr line;
+	SCCP_LIST_ENTRY(sccp_linedevice_t) list;
 
-	sccp_cfwd_information_t cfwd[SCCP_CFWD_SENTINEL];                                        //!< cfwd information
+	sccp_cfwd_information_t cfwd[SCCP_CFWD_SENTINEL];
 
 	sccp_subscription_id_t subscriptionId;                                        //!< for addressing individual devices on shared line
-	char label[SCCP_MAX_LABEL];                                                   //!<
+	char label[SCCP_MAX_LABEL];
 	uint8_t lineInstance;                                                         //!< line instance of this->line on this->device
-}; /*!< SCCP Line-Device Structure */
+};
 
 SCCP_API void SCCP_CALL sccp_linedevice_create(constDevicePtr d, constLinePtr line, uint8_t lineInstance, sccp_subscription_id_t * subscriptionId);
 SCCP_API void SCCP_CALL sccp_linedevice_remove(constDevicePtr device, linePtr l);

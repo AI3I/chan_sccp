@@ -8,15 +8,12 @@
 #pragma once
 #include "config.h"
 
-// type redefinitions
 #define pbx_variable ast_variable
 #define pbx_context ast_context
 #define pbx_module ast_module
-// sccp redefinitions
 #define sccp_malloc ast_malloc
 #define sccp_calloc ast_calloc
 #define sccp_realloc ast_realloc
-//#define sccp_strdup ast_strdup
 #define sccp_free(_x) {ast_free((void *)(_x)); (_x) = NULL; }
 #define sccp_asprintf ast_asprintf
 #define sccp_vasprintf ast_vasprintf
@@ -30,7 +27,6 @@
 #define pbx_assert assert
 #endif
 
-/* Lock Macro's */
 #define sccp_mutex_init(_x)          		pbx_mutex_init((_x))
 #define sccp_mutex_destroy(_x)       		pbx_mutex_destroy((_x))
 #define sccp_mutex_lock(_x)			pbx_mutex_lock((_x))
@@ -59,7 +55,6 @@
 #endif
 #define SCOPED_WRLOCK(varname, lock) SCOPED_LOCK(varname, (lock), pbx_rwlock_wrlock, pbx_rwlock_unlock)
 
-// SCCP_FILE_VERSION definition
 #if defined(LOW_MEMORY)
 #  define SCCP_FILE_VERSION(_file, _version)
 #else
@@ -70,17 +65,14 @@
 #  endif
 #endif
 
-// codec / format redefinitions
 #define pbx_codec_pref_index ast_codec_pref_index
 #define pbx_codec_pref_getsize ast_codec_pref_getsize
 #define pbx_codec2str ast_codec2str
 
-// application / module / cli redefinitions
 #define pbx_channel_register ast_channel_register
 #define pbx_channel_register_ex ast_channel_register_ex
 #define pbx_channel_unregister ast_channel_unregister
 
-// general redefinitions
 #define pbx_check_hangup ast_check_hangup
 #define pbx_check_hangup_locked ast_check_hangup_locked
 #define pbx_channel_lock ast_channel_lock
@@ -203,13 +195,6 @@ typedef struct ast_event pbx_event_t;
 #define pbx_event_get_ie_str ast_event_get_ie_str
 #define pbx_event_get_ie_uint ast_event_get_ie_uint
 #define pbx_event_new ast_event_new
-/*
-#if defined( CS_AST_HAS_STASIS )
-#define pbx_event_sub stasis_subscription
-#else
-#define pbx_event_sub ast_event_sub
-#endif
-*/
 #if defined( HAVE_PBX_STASIS_H )
 #define pbx_event_sub stasis_subscription
 #define pbx_mwi_state_type ast_mwi_state_type
@@ -245,12 +230,10 @@ typedef struct pbx_event_sub pbx_event_subscription_t;
 #define pbx_matchmore_extension ast_matchmore_extension
 #define pbx_moh_stop ast_moh_stop
 
-//#define pbx_mutex_t ast_mutex_t
 #define pbx_mutex_destroy(_x) ast_mutex_destroy((ast_mutex_t *)(_x))
 #define pbx_mutex_init(_x) ast_mutex_init((ast_mutex_t *)(_x))
 #define pbx_mutex_init_notracking(_x) ast_mutex_init_notracking((ast_mutex_t *)(_x))
 
-//#define pbx_rwlock_t ast_rwlock_t
 #define pbx_rwlock_destroy(_x) ast_rwlock_destroy((ast_rwlock_t *)(_x))
 #define pbx_rwlock_init(_x) ast_rwlock_init((ast_rwlock_t *)(_x))
 #define pbx_rwlock_init_notracking(_x) ast_rwlock_init_notracking((ast_rwlock_t *)(_x))
@@ -279,7 +262,6 @@ typedef struct pbx_event_sub pbx_event_subscription_t;
 #define pbx_party_name_free ast_party_name_free
 #define pbx_party_number_free ast_party_number_free
 #define pbx_pbx_run ast_pbx_run
-// #define pbx_pbx_start ast_pbx_start
 #define pbx_poll ast_poll
 #define pbx_print_group ast_print_group
 #define pbx_print_namedgroup ast_print_namedgroup
@@ -391,8 +373,7 @@ typedef struct pbx_event_sub pbx_event_subscription_t;
 #define pbx_test_flag ast_test_flag
 #define pbx_set2_flag ast_set2_flag
 
-// Fixes for asterisk-trunk, need to sorted later
-#define pbx_channel_flags(_a) (_a)										/* needed in asterisk trunk */
+#define pbx_channel_flags(_a) (_a)
 #define pbx_channel_uniqueid(_a) (_a)->uniqueid
 #define pbx_channel_call_forward(_a) (_a)->call_forward
 #define pbx_channel_appl(_a) (_a)->appl
@@ -454,4 +435,3 @@ typedef struct pbx_event_sub pbx_event_subscription_t;
 #define pbx_create_callid             (pbx_callid_t) ast_create_callid
 #define pbx_callid_threadassoc_remove ast_callid_threadassoc_remove
 
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

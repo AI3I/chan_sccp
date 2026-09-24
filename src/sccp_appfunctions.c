@@ -25,7 +25,7 @@
 SCCP_FILE_VERSION(__FILE__, "");
 
 #include <asterisk/callerid.h>
-#include <asterisk/module.h>                                        // ast_register_application2
+#include <asterisk/module.h>
 #ifdef HAVE_PBX_APP_H
 #	include <asterisk/app.h>
 #endif
@@ -348,30 +348,17 @@ SCCP_FILE_VERSION(__FILE__, "");
 PBX_THREADSTORAGE(coldata_buf);
 PBX_THREADSTORAGE(colnames_buf);
 
-/*!
- * \brief ${SCCPDevice()} Dialplan function - reads device data
- * \param chan Asterisk Channel
- * \param cmd Command as char
- * \param data Extra data as char
- * \param output Buffer as chan*
- * \param len Lenght as size_t
- * \return Status as int
- *
- * \author Diederik de Groot <ddegroot@users.sourceforce.net>
- *
- * \called_from_asterisk
- */
 static int sccp_func_sccpdevice(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, char * data, char * output, size_t len)
 {
 	pbx_str_t * coldata   = pbx_str_thread_get(&coldata_buf, 16);
 	pbx_str_t * colnames  = pbx_str_thread_get(&colnames_buf, 16);
-	char *      colname   = NULL;                                        // we should make this a finite length
+	char *      colname   = NULL;
 	uint16_t    buf_len   = 1024;
 	char        buf[1024] = "";
 	char *      token     = NULL;
 	int         addcomma  = 0;
 
-	if ((colname = strchr(data, ':'))) { /*! \todo Will be deprecated after 1.4 */
+	if ((colname = strchr(data, ':'))) {
 		static int deprecation_warning = 0;
 		*colname++                     = '\0';
 		if (deprecation_warning++ % 10 == 0) {
@@ -420,12 +407,10 @@ static int sccp_func_sccpdevice(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, ch
 				continue;
 			}
 
-			/** copy request tokens for HASH() */
 			if (pbx_str_strlen(colnames)) {
 				pbx_str_append(&colnames, 0, ",");
 			}
 			pbx_str_append_escapecommas(&colnames, 0, token, sccp_strlen(token));
-			/** */
 
 			if (!strcasecmp(token, "ip")) {
 				sccp_session_t * s = d->session;
@@ -487,8 +472,6 @@ static int sccp_func_sccpdevice(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, ch
 			} else if (!strcasecmp(token, "transfer_channel")) {
 				snprintf(buf, buf_len, "%d", d->transferChannels.transferee->callid);
 #ifdef CS_SCCP_CONFERENCE
-				//			} else if (!strcasecmp(token, "conference_id")) {
-				//				snprintf(buf, buf_len, "%d", d->conference->id);
 			} else if (!strcasecmp(token, "allow_conference")) {
 				snprintf(buf, buf_len, "%s", d->allow_conference ? "ON" : "OFF");
 			} else if (!strcasecmp(token, "conf_play_general_announce")) {
@@ -578,8 +561,8 @@ static int sccp_func_sccpdevice(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, ch
 			} else if (!strncasecmp(token, "codec[", 6)) {
 				char * codecnum = NULL;
 
-				codecnum      = token + 6;                                                     // move past the '['
-				codecnum      = strsep(&codecnum, "]");                                        // trim trailing ']' if any
+				codecnum      = token + 6;
+				codecnum      = strsep(&codecnum, "]");
 				int codec_int = sccp_atoi(codecnum, strlen(codecnum));
 				if (skinny_codecs[codec_int].key) {
 					sccp_copy_string(buf, codec2name((skinny_codec_t)codec_int), buf_len);
@@ -591,14 +574,12 @@ static int sccp_func_sccpdevice(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, ch
 				buf[0] = '\0';
 			}
 
-			/** copy buf to coldata */
 			pbx_str_append_escapecommas(&coldata, 0, buf, buf_len);
 			token = strtok_r(NULL, delims, &tokenrest);
 			if (token != NULL) {
 				pbx_str_append(&coldata, 0, ",");
 			}
 			buf[0] = '\0';
-			/** */
 		}
 
 		pbx_builtin_setvar_helper(chan, "~ODBCFIELDS~", pbx_str_buffer(colnames)); /* setvar ODBCFIELDS so that results can be used by HASH() and ARRAY() */
@@ -607,26 +588,11 @@ static int sccp_func_sccpdevice(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, ch
 	return 0;
 }
 
-/*! \brief Stucture to declare a dialplan function: SCCPDevice */
 static struct pbx_custom_function sccpdevice_function = {
 	.name = "SCCPDevice",
 	.read = sccp_func_sccpdevice,
 };
 
-/*!
- * \brief  ${SCCPLine()} Dialplan function - reads sccp line data
- * \param chan Asterisk Channel
- * \param cmd Command as char
- * \param data Extra data as char
- * \param output Buffer as chan*
- * \param len Lenght as size_t
- * \return Status as int
- *
- * \author Diederik de Groot <ddegroot@users.sourceforce.net>
- *
- * \called_from_asterisk
- *
- */
 static int sccp_func_sccpline(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, char * data, char * output, size_t len)
 {
 	pbx_str_t * coldata   = pbx_str_thread_get(&coldata_buf, 16);
@@ -637,7 +603,7 @@ static int sccp_func_sccpline(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, char
 	char *      token     = NULL;
 	int         addcomma  = 0;
 
-	if ((colname = strchr(data, ':'))) { /*! \todo Will be deprecated after 1.4 */
+	if ((colname = strchr(data, ':'))) {
 		static int deprecation_warning = 0;
 		*colname++                     = '\0';
 		if (deprecation_warning++ % 10 == 0) {
@@ -689,12 +655,10 @@ static int sccp_func_sccpline(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, char
 				continue;
 			}
 
-			/** copy request tokens for HASH() */
 			if (pbx_str_strlen(colnames)) {
 				pbx_str_append(&colnames, 0, ",");
 			}
 			pbx_str_append_escapecommas(&colnames, 0, token, sccp_strlen(token));
-			/** */
 
 			if (!strcasecmp(token, "id")) {
 				sccp_copy_string(buf, l->id, len);
@@ -833,14 +797,12 @@ static int sccp_func_sccpline(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, char
 				buf[0] = '\0';
 			}
 
-			/** copy buf to coldata */
 			pbx_str_append_escapecommas(&coldata, 0, buf, buf_len);
 			token = strtok_r(NULL, delims, &tokenrest);
 			if (token != NULL) {
 				pbx_str_append(&coldata, 0, ",");
 			}
 			buf[0] = '\0';
-			/** */
 		}
 
 		pbx_builtin_setvar_helper(chan, "~ODBCFIELDS~", pbx_str_buffer(colnames)); /* setvar ODBCFIELDS so that results can be used by HASH() and ARRAY() */
@@ -849,25 +811,11 @@ static int sccp_func_sccpline(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, char
 	return 0;
 }
 
-/*! \brief Stucture to declare a dialplan function: SCCPLine */
 static struct pbx_custom_function sccpline_function = {
 	.name = "SCCPLine",
 	.read = sccp_func_sccpline,
 };
 
-/*!
- * \brief  ${SCCPChannel()} Dialplan function - reads sccp line data
- * \param chan Asterisk Channel
- * \param cmd Command as char
- * \param data Extra data as char
- * \param output Buffer as chan*
- * \param len Lenght as size_t
- * \return Status as int
- *
- * \author Diederik de Groot <ddegroot@users.sourceforce.net>
- *
- * \called_from_asterisk
- */
 static int sccp_func_sccpchannel(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, char * data, char * output, size_t len)
 {
 	PBX_CHANNEL_TYPE * ast       = NULL;
@@ -878,7 +826,7 @@ static int sccp_func_sccpchannel(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, c
 	char               buf[1024] = "";
 	char *             token     = NULL;
 
-	if ((colname = strchr(data, ':'))) { /*! \todo Will be deprecated after 1.4 */
+	if ((colname = strchr(data, ':'))) {
 		static int deprecation_warning = 0;
 		*colname++                     = '\0';
 		if (deprecation_warning++ % 10 == 0) {
@@ -900,7 +848,6 @@ static int sccp_func_sccpchannel(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, c
 		c = get_sccp_channel_from_pbx_channel(chan) /*ref_replace*/;
 	} else if (iPbx.getChannelByName(data, &ast) && ast) {
 		c = get_sccp_channel_from_pbx_channel(ast) /*ref_replace*/;
-		/* continue with sccp channel */
 		pbx_channel_unref(ast);
 	} else {
 		uint32_t callid = sccp_atoi(data, strlen(data));
@@ -923,12 +870,10 @@ static int sccp_func_sccpchannel(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, c
 				continue;
 			}
 
-			/** copy request tokens for HASH() */
 			if (pbx_str_strlen(colnames)) {
 				pbx_str_append(&colnames, 0, ",");
 			}
 			pbx_str_append_escapecommas(&colnames, 0, token, sccp_strlen(token));
-			/** */
 
 			if (!strcasecmp(token, "callid") || !strcasecmp(token, "id")) {
 				snprintf(buf, buf_len, "%d", c->callid);
@@ -988,8 +933,6 @@ static int sccp_func_sccpchannel(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, c
 				sccp_copy_string(buf, c->privacy ? "yes" : "no", len);
 			} else if (!strcasecmp(token, "softswitch_action")) {
 				snprintf(buf, buf_len, "%s (%d)", sccp_softswitch2str(c->softswitch_action), c->softswitch_action);
-				// } else if (!strcasecmp(token, "monitorEnabled")) {
-				// sccp_copy_string(buf, c->monitorEnabled ? "yes" : "no", len);
 			} else if (!strcasecmp(token, "videomode")) {
 				snprintf(buf, buf_len, "%s", sccp_video_mode2str(c->videomode));
 #ifdef CS_SCCP_CONFERENCE
@@ -1038,8 +981,8 @@ static int sccp_func_sccpchannel(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, c
 			} else if (!strncasecmp(token, "codec[", 6)) {
 				char * codecnum = NULL;
 
-				codecnum      = token + 6;                                                     // move past the '['
-				codecnum      = strsep(&codecnum, "]");                                        // trim trailing ']' if any
+				codecnum      = token + 6;
+				codecnum      = strsep(&codecnum, "]");
 				int codec_int = sccp_atoi(codecnum, strlen(codecnum));
 				if (skinny_codecs[codec_int].key) {
 					sccp_copy_string(buf, codec2name((skinny_codec_t)codec_int), buf_len);
@@ -1051,14 +994,12 @@ static int sccp_func_sccpchannel(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, c
 				buf[0] = '\0';
 			}
 
-			/** copy buf to coldata */
 			pbx_str_append_escapecommas(&coldata, 0, buf, buf_len);
 			token = strtok_r(NULL, delims, &tokenrest);
 			if (token != NULL) {
 				pbx_str_append(&coldata, 0, ",");
 			}
 			buf[0] = '\0';
-			/** */
 		}
 
 		pbx_builtin_setvar_helper(chan, "~ODBCFIELDS~", pbx_str_buffer(colnames)); /* setvar ODBCFIELDS so that results can be used by HASH() and ARRAY() */
@@ -1067,21 +1008,11 @@ static int sccp_func_sccpchannel(PBX_CHANNEL_TYPE * chan, NEWCONST char * cmd, c
 	return 0;
 }
 
-/*! \brief Stucture to declare a dialplan function: SCCPChannel */
 static struct pbx_custom_function sccpchannel_function = {
 	.name = "SCCPChannel",
 	.read = sccp_func_sccpchannel,
 };
 
-/*!
- * \brief       Set the Preferred Codec for a SCCP channel via the dialplan
- * \param       chan Asterisk Channel
- * \param       data single codec name
- * \return      Success as int
- *
- * \called_from_asterisk
- * \deprecated
- */
 static int sccp_app_prefcodec(PBX_CHANNEL_TYPE * chan, const char * data)
 {
 	AUTO_RELEASE(sccp_channel_t, c, get_sccp_channel_from_pbx_channel(chan));
@@ -1098,15 +1029,6 @@ static int sccp_app_prefcodec(PBX_CHANNEL_TYPE * chan, const char * data)
 }
 static char * prefcodec_name = "SCCPSetCodec";
 
-/*!
- * \brief       Set the Name and Number of the Called Party to the Calling Phone
- * \param       chan Asterisk Channel
- * \param       data CallerId in format "Name" \<number\>
- * \return      Success as int
- *
- * \called_from_asterisk
- * \deprecated
- */
 static int sccp_app_calledparty(PBX_CHANNEL_TYPE * chan, const char * data)
 {
 	char * text = (char *)data;
@@ -1137,15 +1059,6 @@ static int sccp_app_calledparty(PBX_CHANNEL_TYPE * chan, const char * data)
 }
 static char * calledparty_name = "SCCPSetCalledParty";
 
-/*!
- * \brief       It allows you to send a message to the calling device.
- * \author      Frank Segtrop <fs@matflow.net>
- * \param       chan asterisk channel
- * \param       data message to sent - if empty clear display
- * \version     20071112_1944
- *
- * \called_from_asterisk
- */
 static int sccp_app_setmessage(PBX_CHANNEL_TYPE * chan, const char * data)
 {
 	AUTO_RELEASE(sccp_channel_t, c, get_sccp_channel_from_pbx_channel(chan));
@@ -1196,12 +1109,10 @@ int sccp_register_dialplan_functions(void)
 {
 	int result = 0;
 
-	/* Register application functions */
 	result = iPbx.register_application(calledparty_name, sccp_app_calledparty);
 	result |= iPbx.register_application(setmessage_name, sccp_app_setmessage);
 	result |= iPbx.register_application(prefcodec_name, sccp_app_prefcodec);
 
-	/* Register dialplan functions */
 	result |= iPbx.register_function(&sccpdevice_function);
 	result |= iPbx.register_function(&sccpline_function);
 	result |= iPbx.register_function(&sccpchannel_function);
@@ -1213,12 +1124,10 @@ int sccp_unregister_dialplan_functions(void)
 {
 	int result = 0;
 
-	/* Unregister applications functions */
 	result = iPbx.unregister_application(calledparty_name);
 	result |= iPbx.unregister_application(setmessage_name);
 	result |= iPbx.unregister_application(prefcodec_name);
 
-	/* Unregister dial plan functions */
 	result |= iPbx.unregister_function(&sccpdevice_function);
 	result |= iPbx.unregister_function(&sccpline_function);
 	result |= iPbx.unregister_function(&sccpchannel_function);
@@ -1226,4 +1135,3 @@ int sccp_unregister_dialplan_functions(void)
 	return result;
 }
 
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

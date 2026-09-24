@@ -14,7 +14,6 @@
 #include <sys/socket.h>
 #endif
 
-/* forward declaration */
 struct ast_sockaddr;
 
 #define SCCP_SOCKADDR_STR_ADDR           (1 << 0)
@@ -28,13 +27,8 @@ struct ast_sockaddr;
 #define SCCP_SOCKADDR_STR_DEFAULT_REMOTE  (SCCP_SOCKADDR_STR_DEFAULT | SCCP_SOCKADDR_STR_REMOTE)
 #define SCCP_SOCKADDR_STR_FORMAT_MASK     (SCCP_SOCKADDR_STR_ADDR | SCCP_SOCKADDR_STR_PORT | SCCP_SOCKADDR_STR_BRACKETS)
 
-/*!
- * \brief SCCP Host Access Rule Structure
- *
- * internal representation of acl entries In principle user applications would have no need for this,
- * but there is sometimes a need to extract individual items, e.g. to print them, and rather than defining iterators to
- * navigate the list, and an externally visible 'struct ast_ha_entry', at least in the short term it is more convenient to make the whole
- * thing public and let users play with them.
+/*
+ * internal representation of acl entries In principle user applications would have no need for this, but there is sometimes a need to extract individual items, e.g. to print them, and rather than defining iterators to
  */
 struct sccp_ha {
 	struct sockaddr_storage netaddr;
@@ -61,10 +55,8 @@ SCCP_API int SCCP_CALL sccp_netsock_cmp_addr(const struct sockaddr_storage *a, c
 SCCP_API int SCCP_CALL sccp_netsock_cmp_port(const struct sockaddr_storage *a, const struct sockaddr_storage *b);
 SCCP_API int SCCP_CALL sccp_netsock_split_hostport(char *str, char **host, char **port, int flags);
 
-/* helper: easy replacement for inet_ntop for use in sccp_log functions (threadsafe) */
 char *__netsock_stringify_fmt(const struct sockaddr_storage *sockAddrStorage, int format);
 
-/* begin sccp_netsock_stringify_fmt short cuts */
 static inline char * SCCP_CALL sccp_netsock_stringify(const struct sockaddr_storage *sockAddrStorage)
 {
 	return __netsock_stringify_fmt(sockAddrStorage, SCCP_SOCKADDR_STR_DEFAULT);
@@ -100,8 +92,6 @@ static inline char * SCCP_CALL sccp_netsock_stringify_port(const struct sockaddr
 	return __netsock_stringify_fmt(sockAddrStorage, SCCP_SOCKADDR_STR_PORT);
 }
 
-/* end sccp_netsock_stringify_fmt short cuts */
 SCCP_API void SCCP_CALL sccp_netsock_setoptions(int new_socket, int reuse, int linger, int keepalive, int sndtimeout, int rcvtimeout);
 SCCP_API void * SCCP_CALL sccp_netsock_thread(void *ignore);
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

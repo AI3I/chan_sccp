@@ -15,29 +15,26 @@
 __BEGIN_C_EXTERN__
 typedef void (*scpp_rtp_direction_cb_t)(constChannelPtr c);
 
-/* Note: We should maybe move the callback to sccp_rtp_t instead of sccp_rtp_direction_t because it get's a little confusing in sccp_indicate CONNECTED */
-/* Note: In the process of making this private, using "_" to signal the has to be locked when reading/writing */
+/* Note: We should maybe move the callback to sccp_rtp_t instead of sccp_rtp_direction_t because it gets a little confusing in sccp_indicate CONNECTED */
+/* Note: In the process of making this private, using "_" to signal the must be locked when reading/writing */
 typedef struct sccp_rtp_direction {
 	uint16_t _state;
 	skinny_codec_t format;
 	scpp_rtp_direction_cb_t cb;
 } sccp_rtp_direction_t;
 
-/*!
- * \brief SCCP RTP Structure
- */
 struct sccp_rtp {
 	sccp_mutex_t lock;
-	PBX_RTP_TYPE *instance;											/*!< pbx rtp instance pointer */
+	PBX_RTP_TYPE *instance;
 	boolean_t instance_active;
-	sccp_rtp_type_t type;											/* audio/video/data */
-	sccp_rtp_direction_t reception;										/* receive rtp / ORC */
-	sccp_rtp_direction_t transmission;									/* transmit rtp / SMT */
-	struct sockaddr_storage phone;										/*!< our phone information (openreceive) */
-	struct sockaddr_storage phone_remote;									/*!< phone destination address (starttransmission) */
+	sccp_rtp_type_t type;
+	sccp_rtp_direction_t reception;
+	sccp_rtp_direction_t transmission;
+	struct sockaddr_storage phone;
+	struct sockaddr_storage phone_remote;
 	uint16_t RTCPPortNumber;										/*!< RTCP Port used by the phone */
- 	boolean_t directMedia;											/*!< Show if we are running in directmedia mode (set in pbx_impl during rtp bridging) */
-};														/*!< SCCP RTP Structure */
+ 	boolean_t directMedia;
+};
 
 SCCP_API boolean_t SCCP_CALL sccp_rtp_createServer(constDevicePtr d, channelPtr c, sccp_rtp_type_t type);
 SCCP_API int SCCP_CALL sccp_rtp_requestRTPPorts(constDevicePtr device, channelPtr channel);
@@ -63,11 +60,9 @@ SCCP_API void SCCP_CALL sccp_rtp_setState(rtpPtr rtp, sccp_rtp_dir_t dir, sccp_r
 SCCP_API void SCCP_CALL sccp_rtp_setCallback(rtpPtr rtp, sccp_rtp_dir_t dir, scpp_rtp_direction_cb_t cb);
 SCCP_API boolean_t SCCP_CALL sccp_rtp_runCallback(rtpPtr rtp, sccp_rtp_dir_t dir, constChannelPtr c);
 
-/* Direction is from Asterisk's perspective; -1 means no usable mapping. */
 SCCP_API int SCCP_CALL sccp_rtp_get_payloadType(constRtpPtr rtp, skinny_codec_t codec, boolean_t pbx_transmit);
 SCCP_API boolean_t SCCP_CALL sccp_rtp_getUs(constRtpPtr rtp, struct sockaddr_storage * us);
 SCCP_API boolean_t SCCP_CALL sccp_rtp_getPeer(constRtpPtr rtp, struct sockaddr_storage * them);
 SCCP_API uint16_t SCCP_CALL sccp_rtp_getServerPort(constRtpPtr rtp);
 SCCP_API int SCCP_CALL sccp_rtp_get_sampleRate(skinny_codec_t codec);
 __END_C_EXTERN__
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

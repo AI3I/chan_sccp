@@ -1,5 +1,32 @@
 # chan_sccp-modern Health Audit
 
+## Changed — code comments cut to the ones that explain why (2026-09-24)
+
+About 4,900 comments (roughly 8,000 lines) were removed from `src/`:
+commented-out code (about 800 lines and 50 blocks), Doxygen boilerplate
+(`\param X SCCP Device`, `\return Result as int`, `\callgraph`, briefs that
+repeat the function name), struct member comments that repeat the field name,
+section banners, editor modelines, `\todo`/`\note`/`\warning`/`\since`/
+`\deprecated` tags, dated "added since" markers and comments restating the
+next line. Kept, as plain sentences without tags: comments that state a
+reason or a constraint (locking and reference-count rules, phone and firmware
+quirks, protocol limits, workarounds), value meanings on protocol fields,
+`Locks:` notes, `/*ref_replace*/` markers, fall-through and formatter
+directives, `#endif` annotations, the packet layouts in `sccp_protocol.h`, the
+file headers (GPL notice and author attribution) and the `/*** DOCUMENTATION`
+blocks that generate the XML docs. About 25 misspellings in the remaining
+comments were fixed.
+
+The removal was scripted (a comment tokenizer that skips strings, with
+whole-line deletion) and each step was checked by a build; the four
+DOCUMENTATION blocks, which one pass damaged, were restored byte-for-byte from
+the previous commit.
+
+Validation: default and `--disable-debug` builds (the latter showed that a
+debug-only helper was called outside `#if DEBUG`; fixed), `make check` in
+both, XML documentation regenerated (42 AMI actions), full `alltests.sh all`
+on wadsworth. Not deployed.
+
 ## Changed — second sweep of log and CLI text (2026-09-24)
 
 Every `sccp_log` debug message (about 1,300) was rewritten, not just the
@@ -67,12 +94,6 @@ Decisions from the message pass, all taken as proposed:
 Validation: wadsworth, full `alltests.sh all` clean; label fallback checked
 with temporary label-less lines (sccp.conf restored); `make check` passes.
 Not deployed.
-
-## To do (requested 2026-09-24)
-
-- **Code comments.** Many `/* */` comments in the C files are meaningless,
-  ungrammatical or wrong. Fix, update or add them where they carry real
-  information; delete the rest.
 
 ## Added — provisioning and support commands (2026-09-24)
 

@@ -21,12 +21,6 @@
 #include <asterisk/unaligned.h>
 SCCP_FILE_VERSION(__FILE__, "");
 
-/*!
- * \brief Build an SCCP Message Packet
- * \param[in] t SCCP Message Text
- * \param[out] pkt_len Packet Length
- * \return SCCP Message
- */
 messagePtr __attribute__((malloc)) sccp_build_packet(sccp_mid_t t, size_t pkt_len)
 {
 	int padding = ((pkt_len + 8) % 4);
@@ -41,13 +35,9 @@ messagePtr __attribute__((malloc)) sccp_build_packet(sccp_mid_t t, size_t pkt_le
 	msg->header.length = htolel(pkt_len + 4 + padding);
 	msg->header.lel_messageId = htolel(t);
 
-	// sccp_log(DEBUGCAT_DEVICE)("SCCP: (sccp_build_packet) created packet type:0x%x, msg_size=%lu, hdr_len=%lu\n", t, pkt_len + SCCP_PACKET_HEADER + padding, pkt_len + 4 + padding)
 	return msg;
 }
 
-/* CallInfo Message */
-
-/* =================================================================================================================== Send Messages */
 static void sccp_protocol_sendCallInfoV3 (const sccp_callinfo_t * const ci, const uint32_t callid, const skinny_calltype_t calltype, const uint8_t lineInstance, const uint8_t callInstance, const skinny_callsecuritystate_t callsecurityState, constDevicePtr device)
 {
  	pbx_assert(device != NULL);
@@ -79,12 +69,6 @@ static void sccp_protocol_sendCallInfoV3 (const sccp_callinfo_t * const ci, cons
 		SCCP_CALLINFO_PRESENTATION, &presentation,
 		SCCP_CALLINFO_KEY_SENTINEL);
 
-	// 7920's exception. They don't seem to reverse the interpretation of the presentation flag
-	// if (device->skinny_type == SKINNY_DEVICETYPE_CISCO7920) {
-	//	msg->data.CallInfoMessage.partyPIRestrictionBits = presentation ? 0x0 : 0xf;
-	//} else {
-	//	msg->data.CallInfoMessage.partyPIRestrictionBits = presentation ? 0xf : 0x0;
-	//}
 	msg->data.CallInfoMessage.partyPIRestrictionBits         = presentation == CALLERID_PRESENTATION_ALLOWED ? 0x0 : 0xf;
 	msg->data.CallInfoMessage.lel_lineInstance = htolel(lineInstance);
 	msg->data.CallInfoMessage.lel_callReference = htolel(callid);
@@ -94,10 +78,6 @@ static void sccp_protocol_sendCallInfoV3 (const sccp_callinfo_t * const ci, cons
 	msg->data.CallInfoMessage.lel_originalCdpnRedirectReason = htolel(originalCdpnRedirectReason);
 	msg->data.CallInfoMessage.lel_lastRedirectingReason = htolel(lastRedirectingReason);
 
-	//sccp_log((DEBUGCAT_CHANNEL | DEBUGCAT_LINE | DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: Send callinfo(V3) for %s channel %d/%d on line instance %d\n", (device) ? device->id : "(null)", skinny_calltype2str(calltype), callid, callInstance, lineInstance);
-	//if ((GLOB(debug) & (DEBUGCAT_CHANNEL | DEBUGCAT_LINE | DEBUGCAT_INDICATE)) != 0) {
-	//	iCallInfo.Print2log(ci, "SCCP: (sendCallInfoV3)");
-	//}
 	sccp_dev_send(device, msg);
 }
 
@@ -114,7 +94,7 @@ static void sccp_protocol_sendCallInfoV7 (const sccp_callinfo_t * const ci, cons
 	memset(data_len, 0, dataSize * sizeof(int));
 
 	memset(data, 0, dataSize * StationMaxNameSize);
-	
+
 	int originalCdpnRedirectReason = 0;
 	int lastRedirectingReason = 0;
 	sccp_callerid_presentation_t presentation = CALLERID_PRESENTATION_ALLOWED;
@@ -136,7 +116,6 @@ static void sccp_protocol_sendCallInfoV7 (const sccp_callinfo_t * const ci, cons
 		SCCP_CALLINFO_PRESENTATION, &presentation,
 		SCCP_CALLINFO_KEY_SENTINEL);
 
-
 	for (i = 0; i < dataSize; i++) {
 		data_len[i] = strlen(data[i]);
 		dummy_len += data_len[i];
@@ -151,9 +130,6 @@ static void sccp_protocol_sendCallInfoV7 (const sccp_callinfo_t * const ci, cons
 	msg->data.CallInfoDynamicMessage.lel_callReference = htolel(callid);
 	msg->data.CallInfoDynamicMessage.lel_callType = htolel(calltype);
 	msg->data.CallInfoDynamicMessage.partyPIRestrictionBits = (presentation == CALLERID_PRESENTATION_ALLOWED) ? 0x0 : 0xf;
-	//! note callSecurityStatus:
-	// when indicating ringout we should set SKINNY_CALLSECURITYSTATE_UNKNOWN
-	// when indicating connected we should set SKINNY_CALLSECURITYSTATE_NOTAUTHENTICATED
 	msg->data.CallInfoDynamicMessage.lel_callSecurityStatus = htolel(callsecurityState);
 	msg->data.CallInfoDynamicMessage.lel_callInstance = htolel(callInstance);
 	msg->data.CallInfoDynamicMessage.lel_originalCdpnRedirectReason = htolel(originalCdpnRedirectReason);
@@ -176,11 +152,6 @@ static void sccp_protocol_sendCallInfoV7 (const sccp_callinfo_t * const ci, cons
 		memcpy(&msg->data.CallInfoDynamicMessage.dummy, &buffer[0], bufferSize);
 	}
 
-	//sccp_log((DEBUGCAT_CHANNEL | DEBUGCAT_LINE | DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: Send callinfo(V7) for %s channel %d/%d on line instance %d\n", (device) ? device->id : "(null)", skinny_calltype2str(calltype), callid, callInstance, lineInstance);
-	//if ((GLOB(debug) & (DEBUGCAT_CHANNEL | DEBUGCAT_LINE | DEBUGCAT_INDICATE)) != 0) {
-	//	iCallInfo.Print2log(ci, "SCCP: (sendCallInfoV7)");
-	//	sccp_dump_msg(msg);
-	//}
 	sccp_dev_send(device, msg);
 }
 
@@ -225,7 +196,7 @@ static void sccp_protocol_sendCallInfoV16 (const sccp_callinfo_t * const ci, con
 		return;
 	}
 	for (field = 0; field < dataSize; field++) {
-		data_len = strlen(data[field]) + 1; 		//add NULL terminator
+		data_len = strlen(data[field]) + 1;
 		memcpy(dummy + dummy_len, data[field], data_len);
 		dummy_len += data_len;
 	}
@@ -245,23 +216,10 @@ static void sccp_protocol_sendCallInfoV16 (const sccp_callinfo_t * const ci, con
 	msg->data.CallInfoDynamicMessage.lel_lastRedirectingReason	= htolel(lastRedirectingReason);
 	memcpy(&msg->data.CallInfoDynamicMessage.dummy, dummy, dummy_len);
 	sccp_free(dummy);
-	
-	//sccp_log((DEBUGCAT_CHANNEL | DEBUGCAT_LINE | DEBUGCAT_INDICATE)) (VERBOSE_PREFIX_3 "%s: Send callinfo(V20) for %s channel %d/%d on line instance %d\n", (device) ? device->id : "(null)", skinny_calltype2str(calltype), callid, callInstance, lineInstance);
-	//if ((GLOB(debug) & (DEBUGCAT_CHANNEL | DEBUGCAT_LINE | DEBUGCAT_INDICATE)) != 0) {
-	//	iCallInfo.Print2log(ci, "SCCP: (sendCallInfoV16)");
-	//	sccp_dump_msg(msg);
-	//}
+
 	sccp_dev_send(device, msg);
 }
 
-/* done - CallInfoMessage */
-
-
-/* DialedNumber Message */
-
-/*!
- * \brief Send DialedNumber Message (V3)
- */
 static void sccp_protocol_sendDialedNumberV3(constDevicePtr device, const uint8_t lineInstance, const uint32_t callid, const char dialedNumber[SCCP_MAX_EXTENSION])
 {
 	sccp_msg_t *msg = NULL;
@@ -280,10 +238,6 @@ static void sccp_protocol_sendDialedNumberV3(constDevicePtr device, const uint8_
 	sccp_log(DEBUGCAT_CHANNEL) (VERBOSE_PREFIX_3 "%s: sending dialed number %s, call %d, line instance %d\n", device->id, dialedNumber, callid, lineInstance);
 }
 
-/*!
- * \brief Send DialedNumber Message (V18)
- *
- */
 static void sccp_protocol_sendDialedNumberV18(constDevicePtr device, const uint8_t lineInstance, const uint32_t callid, const char dialedNumber[SCCP_MAX_EXTENSION])
 {
 	sccp_msg_t *msg = NULL;
@@ -301,13 +255,6 @@ static void sccp_protocol_sendDialedNumberV18(constDevicePtr device, const uint8
 	sccp_log(DEBUGCAT_CHANNEL) (VERBOSE_PREFIX_3 "%s: sending dialed number %s, call %d, line instance %d\n", device->id, dialedNumber, callid, lineInstance);
 }
 
-/* done - DialedNumber Message */
-
-/* Display Prompt Message */
-
-/*!
- * \brief Send Display Prompt Message (Static)
- */
 static void sccp_protocol_sendStaticDisplayprompt(constDevicePtr device, uint8_t lineInstance, uint32_t callid, uint8_t timeout, const char *message)
 {
 	sccp_msg_t *msg = NULL;
@@ -325,9 +272,6 @@ static void sccp_protocol_sendStaticDisplayprompt(constDevicePtr device, uint8_t
 	sccp_log((DEBUGCAT_DEVICE | DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: prompt on line %d, call %d, timeout %d\n", device->id, lineInstance, callid, timeout);
 }
 
-/*!
- * \brief Send Display Prompt Message (Dynamic)
- */
 static void sccp_protocol_sendDynamicDisplayprompt(constDevicePtr device, uint8_t lineInstance, uint32_t callid, uint8_t timeout, const char *message)
 {
 	sccp_msg_t *msg = NULL;
@@ -347,13 +291,6 @@ static void sccp_protocol_sendDynamicDisplayprompt(constDevicePtr device, uint8_
 	sccp_log((DEBUGCAT_DEVICE | DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: prompt on line %d, call %d, timeout %d\n", device->id, lineInstance, callid, timeout);
 }
 
-/* done - display prompt */
-
-/* Display Notify  Message */
-
-/*!
- * \brief Send Display Notify Message (Static)
- */
 static void sccp_protocol_sendStaticDisplayNotify(constDevicePtr device, uint8_t timeout, const char *message)
 {
 	sccp_msg_t *msg = NULL;
@@ -369,9 +306,6 @@ static void sccp_protocol_sendStaticDisplayNotify(constDevicePtr device, uint8_t
 	sccp_log((DEBUGCAT_DEVICE | DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: notify, timeout %d\n", device->id, timeout);
 }
 
-/*!
- * \brief Send Display Notify Message (Dynamic)
- */
 static void sccp_protocol_sendDynamicDisplayNotify(constDevicePtr device, uint8_t timeout, const char *message)
 {
 	sccp_msg_t *msg = NULL;
@@ -391,13 +325,6 @@ static void sccp_protocol_sendDynamicDisplayNotify(constDevicePtr device, uint8_
 	sccp_log((DEBUGCAT_DEVICE | DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: notify, timeout %d\n", device->id, timeout);
 }
 
-/* done - display notify */
-
-/* Display Priority Notify Message */
-
-/*!
- * \brief Send Priority Display Notify Message (Static)
- */
 static void sccp_protocol_sendStaticDisplayPriNotify(constDevicePtr device, uint8_t priority, uint8_t timeout, const char *message)
 {
 	sccp_msg_t *msg = NULL;
@@ -414,9 +341,6 @@ static void sccp_protocol_sendStaticDisplayPriNotify(constDevicePtr device, uint
 	sccp_log((DEBUGCAT_DEVICE | DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: notify, timeout %d\n", device->id, timeout);
 }
 
-/*!
- * \brief Send Priority Display Notify Message (Dynamic)
- */
 static void sccp_protocol_sendDynamicDisplayPriNotify(constDevicePtr device, uint8_t priority, uint8_t timeout, const char *message)
 {
 	sccp_msg_t *msg = NULL;
@@ -435,14 +359,6 @@ static void sccp_protocol_sendDynamicDisplayPriNotify(constDevicePtr device, uin
 	sccp_log((DEBUGCAT_DEVICE | DEBUGCAT_LINE)) (VERBOSE_PREFIX_3 "%s: notify, timeout %d\n", device->id, timeout);
 }
 
-/* done - display notify */
-
-/* callForwardStatus Message */
-
-/*!
- * \brief Send Call Forward Status Message
- * \todo need more information about lel_activeForward and lel_forwardAllActive values.
- */
 static void sccp_protocol_sendCallForwardStatus(constDevicePtr device, const sccp_linedevice_t * ld)
 {
 	sccp_msg_t *msg = NULL;
@@ -474,10 +390,6 @@ static void sccp_protocol_sendCallForwardStatus(constDevicePtr device, const scc
 	sccp_dev_send(device, msg);
 }
 
-/*!
- * \brief Send Call Forward Status Message (V19)
- * \todo need more information about lel_activeForward and lel_forwardAllActive values.
- */
 static void sccp_protocol_sendCallForwardStatusV18(constDevicePtr device, const sccp_linedevice_t * ld)
 {
 	sccp_msg_t *msg = NULL;
@@ -487,11 +399,10 @@ static void sccp_protocol_sendCallForwardStatusV18(constDevicePtr device, const 
 		return;
 	}
 	// activeForward / lel_forwardAllActive =  used 4 before... tcpdump shows 2(enbloc ?) or 8(single keypad ?)
-	// msg->data.ForwardStatMessage.v18.lel_activeForward = (ld->cfwdAll.enabled || ld->cfwdBusy.enabled) ? htolel(2) : 0;   // should this be 2 instead ?
 	msg->data.ForwardStatMessage.v18.lel_lineNumber = htolel(ld->lineInstance);
 	if(ld->cfwd[SCCP_CFWD_ALL].enabled) {
 		msg->data.ForwardStatMessage.v18.lel_activeForward = 2;
-		msg->data.ForwardStatMessage.v18.lel_forwardAllActive = htolel(2);	// needs more information about the possible values and their meaning // 2 ?
+		msg->data.ForwardStatMessage.v18.lel_forwardAllActive = htolel(2);
 		sccp_copy_string(msg->data.ForwardStatMessage.v18.cfwdallnumber, ld->cfwd[SCCP_CFWD_ALL].number, sizeof(msg->data.ForwardStatMessage.v18.cfwdallnumber));
 	} else if(ld->cfwd[SCCP_CFWD_BUSY].enabled) {
 		msg->data.ForwardStatMessage.v18.lel_activeForward = 2;
@@ -511,17 +422,9 @@ static void sccp_protocol_sendCallForwardStatusV18(constDevicePtr device, const 
 		sccp_copy_string(msg->data.ForwardStatMessage.v18.cfwdnoanswernumber, "", sizeof(msg->data.ForwardStatMessage.v18.cfwdnoanswernumber));
 	}
 
-	//msg->data.ForwardStatMessage.v18.lel_unknown = 0x000000FF;
 	sccp_dev_send(device, msg);
 }
 
-/* done - send callForwardStatus */
-
-/* registerAck Message */
-
-/*!
- * \brief Send Register Acknowledgement Message (V3)
- */
 static void sccp_protocol_sendRegisterAckV3(constDevicePtr device, uint8_t keepAliveInterval, uint8_t secondaryKeepAlive, char *dateformat)
 {
 	sccp_msg_t *msg = NULL;
@@ -531,7 +434,6 @@ static void sccp_protocol_sendRegisterAckV3(constDevicePtr device, uint8_t keepA
 		return;
 	}
 
-	/* just for documentation */
 	msg->data.RegisterAckMessage.protocolFeatures.protocolVersion = device->protocol->version;
 	msg->data.RegisterAckMessage.protocolFeatures.phoneFeatures[0] = 0x00;
 	msg->data.RegisterAckMessage.protocolFeatures.phoneFeatures[1] = 0x00;
@@ -548,9 +450,6 @@ static void sccp_protocol_sendRegisterAckV3(constDevicePtr device, uint8_t keepA
 	sccp_dev_send(device, msg);
 }
 
-/*!
- * \brief Send Register Acknowledgement Message (V4)
- */
 static void sccp_protocol_sendRegisterAckV4(constDevicePtr device, uint8_t keepAliveInterval, uint8_t secondaryKeepAlive, char *dateformat)
 {
 	sccp_msg_t *msg = NULL;
@@ -576,9 +475,6 @@ static void sccp_protocol_sendRegisterAckV4(constDevicePtr device, uint8_t keepA
 	sccp_dev_send(device, msg);
 }
 
-/*!
- * \brief Send Register Acknowledgement Message (V11)
- */
 static void sccp_protocol_sendRegisterAckV11(constDevicePtr device, uint8_t keepAliveInterval, uint8_t secondaryKeepAlive, char *dateformat)
 {
 	sccp_msg_t *msg = NULL;
@@ -603,14 +499,10 @@ static void sccp_protocol_sendRegisterAckV11(constDevicePtr device, uint8_t keep
 	}
 	sccp_dev_send(device, msg);
 }
-/* done - registerACK */
 
-/*!
- * \brief Send Open Receive Channel (V3)
- */
 static void sccp_protocol_sendOpenReceiveChannelV3(constDevicePtr device, constChannelPtr channel)
 {
-	int packetSize = 20;											/*! \todo calculate packetSize */
+	int packetSize = 20;
 	sccp_msg_t *msg = sccp_build_packet(OpenReceiveChannel, sizeof(msg->data.OpenReceiveChannel.v3));
 	if (!msg) {
 		return;
@@ -622,7 +514,6 @@ static void sccp_protocol_sendOpenReceiveChannelV3(constDevicePtr device, constC
 	msg->data.OpenReceiveChannel.v3.lel_codecType = htolel(channel->rtp.audio.reception.format);
 	msg->data.OpenReceiveChannel.v3.lel_vadValue = htolel(channel->line->echocancel);
 	msg->data.OpenReceiveChannel.v3.lel_callReference = htolel(channel->callid);
-	//msg->data.OpenReceiveChannel.v3.lel_remotePortNumber = htolel(4000);
 	if (SCCP_DTMFMODE_SKINNY == channel->dtmfmode) {
 		msg->data.OpenReceiveChannel.v3.lel_RFC2833Type = htolel(0);
 	} else {
@@ -630,7 +521,6 @@ static void sccp_protocol_sendOpenReceiveChannelV3(constDevicePtr device, constC
 	}
 	msg->data.OpenReceiveChannel.v3.lel_dtmfType = htolel(10);;
 
-	/* Source Ip Address */
 	struct sockaddr_storage sas;
 
 	memcpy(&sas, &channel->rtp.audio.phone_remote, sizeof(struct sockaddr_storage));
@@ -644,12 +534,9 @@ static void sccp_protocol_sendOpenReceiveChannelV3(constDevicePtr device, constC
 	sccp_dev_send(device, msg);
 }
 
-/*!
- * \brief Send Open Receive Channel (V17)
- */
 static void sccp_protocol_sendOpenReceiveChannelV17(constDevicePtr device, constChannelPtr channel)
 {
-	int packetSize = 20;											/*! \todo calculate packetSize */
+	int packetSize = 20;
 	sccp_msg_t *msg = sccp_build_packet(OpenReceiveChannel, sizeof(msg->data.OpenReceiveChannel.v17));
 	if (!msg) {
 		return;
@@ -668,10 +555,8 @@ static void sccp_protocol_sendOpenReceiveChannelV17(constDevicePtr device, const
 	}
 	msg->data.OpenReceiveChannel.v17.lel_dtmfType = htolel(10);;
 
-	/* Source Ip Address */
 	struct sockaddr_storage sas;
 
-	//memcpy(&sas, &device->session->sin, sizeof(struct sockaddr_storage));
 	memcpy(&sas, &channel->rtp.audio.phone_remote, sizeof(struct sockaddr_storage));
 	sccp_netsock_ipv4_mapped(&sas, &sas);
 
@@ -680,7 +565,7 @@ static void sccp_protocol_sendOpenReceiveChannelV17(constDevicePtr device, const
 
 		memcpy(&msg->data.OpenReceiveChannel.v17.bel_remoteIpAddr, &in6->sin6_addr, 16);
 		msg->data.OpenReceiveChannel.v17.lel_ipv46 = htolel(1);
-		msg->data.OpenReceiveChannel.v17.lel_requestedIpAddrType = htolel(SKINNY_IPADDR_IPV6);				//for ipv6 this value have to me > 0, lel_ipv46 doesn't matter
+		msg->data.OpenReceiveChannel.v17.lel_requestedIpAddrType = htolel(SKINNY_IPADDR_IPV6);
 	} else {
 		struct sockaddr_in *in = (struct sockaddr_in *) &sas;
 
@@ -690,12 +575,9 @@ static void sccp_protocol_sendOpenReceiveChannelV17(constDevicePtr device, const
 	sccp_dev_send(device, msg);
 }
 
-/*!
- * \brief Send Open Receive Channel (v22)
- */
 static void sccp_protocol_sendOpenReceiveChannelv22(constDevicePtr device, constChannelPtr channel)
 {
-	int packetSize = 20;											/*! \todo calculate packetSize */
+	int packetSize = 20;
 	sccp_msg_t *msg = sccp_build_packet(OpenReceiveChannel, sizeof(msg->data.OpenReceiveChannel.v22));
 	if (!msg) {
 		return;
@@ -714,10 +596,8 @@ static void sccp_protocol_sendOpenReceiveChannelv22(constDevicePtr device, const
 	}
 	msg->data.OpenReceiveChannel.v22.lel_dtmfType = htolel(10);;
 
-	/* Source Ip Address */
 	struct sockaddr_storage sas;
 
-	//memcpy(&sas, &device->session->sin, sizeof(struct sockaddr_storage));
 	memcpy(&sas, &channel->rtp.audio.phone_remote, sizeof(struct sockaddr_storage));
 	sccp_netsock_ipv4_mapped(&sas, &sas);
 
@@ -725,7 +605,7 @@ static void sccp_protocol_sendOpenReceiveChannelv22(constDevicePtr device, const
 		struct sockaddr_in6 *in6 = (struct sockaddr_in6 *) &sas;
 
 		memcpy(&msg->data.OpenReceiveChannel.v22.bel_remoteIpAddr, &in6->sin6_addr, 16);
-		msg->data.OpenReceiveChannel.v22.lel_ipv46 = htolel(1);						//for ipv6 this value have to me > 0, lel_ipv46 doesn't matter
+		msg->data.OpenReceiveChannel.v22.lel_ipv46 = htolel(1);
 		msg->data.OpenReceiveChannel.v22.lel_requestedIpAddrType = htolel(SKINNY_IPADDR_IPV6);
 	} else {
 		struct sockaddr_in *in = (struct sockaddr_in *) &sas;
@@ -736,9 +616,6 @@ static void sccp_protocol_sendOpenReceiveChannelv22(constDevicePtr device, const
 	sccp_dev_send(device, msg);
 }
 
-/*!
- * \brief Send Open MultiMediaChannel Message (V3)
- */
 static void sccp_protocol_sendOpenMultiMediaChannelV3(constDevicePtr device, constChannelPtr channel, skinny_codec_t skinnyFormat, int payloadType, uint8_t lineInstance, int bitRate)
 {
 	sccp_msg_t *msg = sccp_build_packet(OpenMultiMediaChannelMessage, sizeof(msg->data.OpenMultiMediaChannelMessage.v3));
@@ -749,68 +626,56 @@ static void sccp_protocol_sendOpenMultiMediaChannelV3(constDevicePtr device, con
 	msg->data.OpenMultiMediaChannelMessage.v3.lel_conferenceID = htolel(channel->callid);
 	msg->data.OpenMultiMediaChannelMessage.v3.lel_passThruPartyID = htolel(channel->passthrupartyid);
 	msg->data.OpenMultiMediaChannelMessage.v3.lel_codecType = htolel(skinnyFormat);
-	//msg->data.OpenMultiMediaChannelMessage.v3.lel_codecType = htolel(channel->rtp.video.reception.format);
 	msg->data.OpenMultiMediaChannelMessage.v3.lel_lineInstance = htolel(lineInstance);
 	msg->data.OpenMultiMediaChannelMessage.v3.lel_callReference = htolel(channel->callid);
-	
+
 	msg->data.OpenMultiMediaChannelMessage.v3.payloadType.lel_payload_rfc_number = htolel(0);
 	msg->data.OpenMultiMediaChannelMessage.v3.payloadType.lel_payloadType = htolel(payloadType);
-	
+
 	msg->data.OpenMultiMediaChannelMessage.v3.lel_isConferenceCreator = htolel(0);
-	
+
 	skinny_OpenMultiMediaReceiveChannelUnion_t *capability = &(msg->data.OpenMultiMediaChannelMessage.v3.capability);
 	{
 		capability->vidParameters.lel_bitRate = htolel(bitRate);
 		capability->vidParameters.lel_pictureFormatCount = htolel(1);
-		
-		capability->vidParameters.pictureFormat[0].format = htolel(4);					// should be taken from UpdateCapabilitiesMessage
-		capability->vidParameters.pictureFormat[0].mpi = htolel(1);					// should be taken from UpdateCapabilitiesMessage
+
+		capability->vidParameters.pictureFormat[0].format = htolel(4);
+		capability->vidParameters.pictureFormat[0].mpi = htolel(1);
 		capability->vidParameters.pictureFormat[1].format = htolel(2);
 		capability->vidParameters.pictureFormat[1].mpi = htolel(1);
 		capability->vidParameters.pictureFormat[2].format = htolel(1);
 		capability->vidParameters.pictureFormat[2].mpi = htolel(1);
 		capability->vidParameters.pictureFormat[3].format = htolel(0);
 		capability->vidParameters.pictureFormat[3].mpi = htolel(1);
-		//capability->vidParameters.pictureFormat[4].format = htolel(0);
-		//capability->vidParameters.pictureFormat[4].mpi = htolel(0);
-		
+
 		capability->vidParameters.lel_confServiceNum = htolel(0);
 
 		skinny_ChannelVideoParametersUnion_t *channelVideoParams = &(capability->vidParameters.capability);
 		{
 			if (skinnyFormat == SKINNY_CODEC_H261) {
-				channelVideoParams->h261.lel_temporalSpatialTradeOffCapability = htolel(1);	// ??
-				channelVideoParams->h261.lel_stillImageTransmission = htolel(0);		// ??
-			} else if (skinnyFormat == SKINNY_CODEC_H263) {						//
-				channelVideoParams->h263.lel_capabilityBitfield = htolel(0);			// ??
-				channelVideoParams->h263.lel_annexNandWFutureUse = htolel(0);			// ?? 
-			} else if (skinnyFormat == SKINNY_CODEC_H263P) {					// H263P / aka:Vieo / H263-1998
-				//CIF=1,QCIF=1
-				channelVideoParams->h263P.lel_modelNumber = htolel(0);				// ??
-				channelVideoParams->h263P.lel_bandwidth = htolel(0);				// ?? 90000
-			} else if (skinnyFormat == SKINNY_CODEC_H264) {						// aka: MPEG4-AVC
-				channelVideoParams->h264.lel_profile = htolel(64);				// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_level = htolel(43);				// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_customMaxMBPS = htolel(40500);			// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_customMaxFS = htolel(1620);			// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_customMaxDPB = htolel(8100);			// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_customMaxBRandCPB = htolel(10000);			// should be taken from UpdateCapabilitiesMessage
+				channelVideoParams->h261.lel_temporalSpatialTradeOffCapability = htolel(1);
+				channelVideoParams->h261.lel_stillImageTransmission = htolel(0);
+			} else if (skinnyFormat == SKINNY_CODEC_H263) {
+				channelVideoParams->h263.lel_capabilityBitfield = htolel(0);
+				channelVideoParams->h263.lel_annexNandWFutureUse = htolel(0);
+			} else if (skinnyFormat == SKINNY_CODEC_H263P) {
+				channelVideoParams->h263P.lel_modelNumber = htolel(0);
+				channelVideoParams->h263P.lel_bandwidth = htolel(0);
+			} else if (skinnyFormat == SKINNY_CODEC_H264) {
+				channelVideoParams->h264.lel_profile = htolel(64);
+				channelVideoParams->h264.lel_level = htolel(43);
+				channelVideoParams->h264.lel_customMaxMBPS = htolel(40500);
+				channelVideoParams->h264.lel_customMaxFS = htolel(1620);
+				channelVideoParams->h264.lel_customMaxDPB = htolel(8100);
+				channelVideoParams->h264.lel_customMaxBRandCPB = htolel(10000);
 			} else {
-				// error
 			}
 		}
 	}
-	// Leave empty for now, until we find out more about encryption
-	//msg->data.OpenMultiMediaChannelMessage.v3.RxEncryptionInfo = {0};
 	msg->data.OpenMultiMediaChannelMessage.v3.lel_streamPassThroughID = htolel(channel->passthrupartyid);
-	msg->data.OpenMultiMediaChannelMessage.v3.lel_associatedStreamID = htolel(channel->callid);		// We should use a random number and link it up 
-														// with the MultiMediaTransmission
-	//sccp_dump_msg(msg);
+	msg->data.OpenMultiMediaChannelMessage.v3.lel_associatedStreamID = htolel(channel->callid);
 	sccp_dev_send(device, msg);
 }
-/*!
- * \brief Send Open MultiMediaChannel Message (V12)
- */
 static void sccp_protocol_sendOpenMultiMediaChannelV12(constDevicePtr device, constChannelPtr channel, skinny_codec_t skinnyFormat, int payloadType, uint8_t lineInstance, int bitRate)
 {
 	sccp_msg_t *msg = sccp_build_packet(OpenMultiMediaChannelMessage, sizeof(msg->data.OpenMultiMediaChannelMessage.v12));
@@ -821,64 +686,55 @@ static void sccp_protocol_sendOpenMultiMediaChannelV12(constDevicePtr device, co
 	msg->data.OpenMultiMediaChannelMessage.v12.lel_conferenceID = htolel(channel->callid);
 	msg->data.OpenMultiMediaChannelMessage.v12.lel_passThruPartyID = htolel(channel->passthrupartyid);
 	msg->data.OpenMultiMediaChannelMessage.v12.lel_codecType = htolel(skinnyFormat);
-	//msg->data.OpenMultiMediaChannelMessage.v12.lel_codecType = htolel(channel->rtp.video.reception.format);
 	msg->data.OpenMultiMediaChannelMessage.v12.lel_lineInstance = htolel(lineInstance);
 	msg->data.OpenMultiMediaChannelMessage.v12.lel_callReference = htolel(channel->callid);
-	
+
 	msg->data.OpenMultiMediaChannelMessage.v12.payloadType.lel_payload_rfc_number = htolel(0);
 	msg->data.OpenMultiMediaChannelMessage.v12.payloadType.lel_payloadType = htolel(payloadType);
-	
+
 	msg->data.OpenMultiMediaChannelMessage.v12.lel_isConferenceCreator = htolel(0);
-	
+
 	skinny_OpenMultiMediaReceiveChannelUnion_t *capability = &(msg->data.OpenMultiMediaChannelMessage.v12.capability);
 	{
 		capability->vidParameters.lel_bitRate = htolel(bitRate);
 		capability->vidParameters.lel_pictureFormatCount = htolel(1);
-		
-		capability->vidParameters.pictureFormat[0].format = htolel(4);					// should be taken from UpdateCapabilitiesMessage
-		capability->vidParameters.pictureFormat[0].mpi = htolel(1);					// should be taken from UpdateCapabilitiesMessage
+
+		capability->vidParameters.pictureFormat[0].format = htolel(4);
+		capability->vidParameters.pictureFormat[0].mpi = htolel(1);
 		capability->vidParameters.pictureFormat[1].format = htolel(2);
 		capability->vidParameters.pictureFormat[1].mpi = htolel(1);
 		capability->vidParameters.pictureFormat[2].format = htolel(1);
 		capability->vidParameters.pictureFormat[2].mpi = htolel(1);
 		capability->vidParameters.pictureFormat[3].format = htolel(0);
 		capability->vidParameters.pictureFormat[3].mpi = htolel(1);
-		//capability->vidParameters.pictureFormat[4].format = htolel(0);
-		//capability->vidParameters.pictureFormat[4].mpi = htolel(0);
-		
+
 		capability->vidParameters.lel_confServiceNum = htolel(0);
 
 		skinny_ChannelVideoParametersUnion_t *channelVideoParams = &(capability->vidParameters.capability);
 		{
 			if (skinnyFormat == SKINNY_CODEC_H261) {
-				channelVideoParams->h261.lel_temporalSpatialTradeOffCapability = htolel(1);	// ??
-				channelVideoParams->h261.lel_stillImageTransmission = htolel(0);		// ??
-			} else if (skinnyFormat == SKINNY_CODEC_H263) {						//
-				channelVideoParams->h263.lel_capabilityBitfield = htolel(0);			// ??
-				channelVideoParams->h263.lel_annexNandWFutureUse = htolel(0);			// ?? 
-			} else if (skinnyFormat == SKINNY_CODEC_H263P) {					// H263P / aka:Vieo / H263-1998
-				//CIF=1,QCIF=1
-				channelVideoParams->h263P.lel_modelNumber = htolel(0);				// ??
-				channelVideoParams->h263P.lel_bandwidth = htolel(0);				// ?? 90000
-			} else if (skinnyFormat == SKINNY_CODEC_H264) {						// aka: MPEG4-AVC
-				channelVideoParams->h264.lel_profile = htolel(64);				// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_level = htolel(43);				// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_customMaxMBPS = htolel(40500);			// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_customMaxFS = htolel(1620);			// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_customMaxDPB = htolel(8100);			// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_customMaxBRandCPB = htolel(10000);			// should be taken from UpdateCapabilitiesMessage
+				channelVideoParams->h261.lel_temporalSpatialTradeOffCapability = htolel(1);
+				channelVideoParams->h261.lel_stillImageTransmission = htolel(0);
+			} else if (skinnyFormat == SKINNY_CODEC_H263) {
+				channelVideoParams->h263.lel_capabilityBitfield = htolel(0);
+				channelVideoParams->h263.lel_annexNandWFutureUse = htolel(0);
+			} else if (skinnyFormat == SKINNY_CODEC_H263P) {
+				channelVideoParams->h263P.lel_modelNumber = htolel(0);
+				channelVideoParams->h263P.lel_bandwidth = htolel(0);
+			} else if (skinnyFormat == SKINNY_CODEC_H264) {
+				channelVideoParams->h264.lel_profile = htolel(64);
+				channelVideoParams->h264.lel_level = htolel(43);
+				channelVideoParams->h264.lel_customMaxMBPS = htolel(40500);
+				channelVideoParams->h264.lel_customMaxFS = htolel(1620);
+				channelVideoParams->h264.lel_customMaxDPB = htolel(8100);
+				channelVideoParams->h264.lel_customMaxBRandCPB = htolel(10000);
 			} else {
-				// error
 			}
 		}
 	}
-	// Leave empty for now, until we find out more about encryption
-	//msg->data.OpenMultiMediaChannelMessage.v12.RxEncryptionInfo = {0};
 	msg->data.OpenMultiMediaChannelMessage.v12.lel_streamPassThroughID = htolel(channel->passthrupartyid);
-	msg->data.OpenMultiMediaChannelMessage.v12.lel_associatedStreamID = htolel(channel->callid);		// We should use a random number and link it up 
-														// with the MultiMediaTransmission
+	msg->data.OpenMultiMediaChannelMessage.v12.lel_associatedStreamID = htolel(channel->callid);
 
-	/* Source Ip Address */
 	struct sockaddr_storage sas;
 	if (device->directrtp) {
 		sccp_rtp_getPeer(&channel->rtp.video, &sas);
@@ -891,16 +747,11 @@ static void sccp_protocol_sendOpenMultiMediaChannelV12(constDevicePtr device, co
 		struct sockaddr_in *in = (struct sockaddr_in *) &sas;
 		memcpy(&msg->data.OpenMultiMediaChannelMessage.v12.bel_sourceIpAddr, &in->sin_addr, 4);
 	} else {
-		// error
 	}
 	msg->data.OpenMultiMediaChannelMessage.v12.lel_sourcePortNumber=htolel(sccp_netsock_getPort(&sas));
-	
-	//sccp_dump_msg(msg);
+
 	sccp_dev_send(device, msg);
 }
-/*!
- * \brief Send Open MultiMediaChannel Message (V17)
- */
 static void sccp_protocol_sendOpenMultiMediaChannelV17(constDevicePtr device, constChannelPtr channel, skinny_codec_t skinnyFormat, int payloadType, uint8_t lineInstance, int bitRate)
 {
 	sccp_msg_t *msg = sccp_build_packet(OpenMultiMediaChannelMessage, sizeof(msg->data.OpenMultiMediaChannelMessage.v17));
@@ -911,83 +762,56 @@ static void sccp_protocol_sendOpenMultiMediaChannelV17(constDevicePtr device, co
 	msg->data.OpenMultiMediaChannelMessage.v17.lel_conferenceID = htolel(channel->callid);
 	msg->data.OpenMultiMediaChannelMessage.v17.lel_passThruPartyID = htolel(channel->passthrupartyid);
 	msg->data.OpenMultiMediaChannelMessage.v17.lel_codecType = htolel(skinnyFormat);
-	//msg->data.OpenMultiMediaChannelMessage.v17.lel_codecType = htolel(channel->rtp.video.reception.format);
 	msg->data.OpenMultiMediaChannelMessage.v17.lel_lineInstance = htolel(lineInstance);
 	msg->data.OpenMultiMediaChannelMessage.v17.lel_callReference = htolel(channel->callid);
-	
+
 	msg->data.OpenMultiMediaChannelMessage.v17.payloadType.lel_payload_rfc_number = htolel(0);
 	msg->data.OpenMultiMediaChannelMessage.v17.payloadType.lel_payloadType = htolel(payloadType);
-	
+
 	msg->data.OpenMultiMediaChannelMessage.v17.lel_isConferenceCreator = htolel(0);
-	
 
 	skinny_OpenMultiMediaReceiveChannelUnion_t *capability = &(msg->data.OpenMultiMediaChannelMessage.v17.capability);
 	{
 		capability->vidParameters.lel_bitRate = htolel(bitRate);
 		capability->vidParameters.lel_pictureFormatCount = htolel(1);
-		
-		capability->vidParameters.pictureFormat[0].format = htolel(4);					// should be taken from UpdateCapabilitiesMessage
-/*
-	MPI = Minimum Picture interval. 1=means 29.7 frames, 2=halfs that to 14.9.
-	If the receiver does not specify the picture size/MPI optional parameter, then it SHOULD be ready to receive QCIF resolution with MPI=1.
-*/
-		capability->vidParameters.pictureFormat[0].format = htolel(4);					// should be taken from UpdateCapabilitiesMessage
-		capability->vidParameters.pictureFormat[0].mpi = htolel(1);					// should be taken from UpdateCapabilitiesMessage
+
+		capability->vidParameters.pictureFormat[0].format = htolel(4);
+		capability->vidParameters.pictureFormat[0].format = htolel(4);
+		capability->vidParameters.pictureFormat[0].mpi = htolel(1);
 		capability->vidParameters.pictureFormat[1].format = htolel(2);
 		capability->vidParameters.pictureFormat[1].mpi = htolel(1);
 		capability->vidParameters.pictureFormat[2].format = htolel(1);
 		capability->vidParameters.pictureFormat[2].mpi = htolel(1);
 		capability->vidParameters.pictureFormat[3].format = htolel(0);
 		capability->vidParameters.pictureFormat[3].mpi = htolel(1);
-		//capability->vidParameters.pictureFormat[4].format = htolel(0);
-		//capability->vidParameters.pictureFormat[4].mpi = htolel(0);
-		
+
 		capability->vidParameters.lel_confServiceNum = htolel(0);
 
 		skinny_ChannelVideoParametersUnion_t *channelVideoParams = &(capability->vidParameters.capability);
 		{
 			if (skinnyFormat == SKINNY_CODEC_H261) {
-				channelVideoParams->h261.lel_temporalSpatialTradeOffCapability = htolel(1);	// ??
-				channelVideoParams->h261.lel_stillImageTransmission = htolel(0);		// ??
-			} else if (skinnyFormat == SKINNY_CODEC_H263) {						// https://tools.ietf.org/html/rfc4629
-				channelVideoParams->h263.lel_capabilityBitfield = htolel(0);			// ??
-				channelVideoParams->h263.lel_annexNandWFutureUse = htolel(0);			// ?? 
-			} else if (skinnyFormat == SKINNY_CODEC_H263P) {					// H263P / aka:Vieo / H263-1998
-				//CIF=1,QCIF=1
-				channelVideoParams->h263P.lel_modelNumber = htolel(0);				// ??
-				channelVideoParams->h263P.lel_bandwidth = htolel(0);				// ?? 90000
-			} else if (skinnyFormat == SKINNY_CODEC_H264) {						// aka: MPEG4-AVC
-				/*
-				      PROFILE:  profile number, in the range 0 through 10,
-				      specifying the supported H.263 annexes/subparts based on H.263
-				      annex X [H263].  The annexes supported in each profile are listed
-				      in table X.1 of H.263 annex X.  If no profile or H.263 annex is
-				      specified, then the stream is Baseline H.263 (profile 0 of H.263
-				      annex X).
-				*/
-				channelVideoParams->h264.lel_profile = htolel(64);				// should be taken from UpdateCapabilitiesMessage
-				/*
-				      LEVEL:  Level of bitstream operation, in the range 0 through 100,
-				      specifying the level of computational complexity of the decoding
-				      process.  The level are described in table X.2 of H.263 annex X.
-				*/
-				channelVideoParams->h264.lel_level = htolel(43);				// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_customMaxMBPS = htolel(40500);			// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_customMaxFS = htolel(1620);			// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_customMaxDPB = htolel(8100);			// should be taken from UpdateCapabilitiesMessage
-				channelVideoParams->h264.lel_customMaxBRandCPB = htolel(10000);			// should be taken from UpdateCapabilitiesMessage
+				channelVideoParams->h261.lel_temporalSpatialTradeOffCapability = htolel(1);
+				channelVideoParams->h261.lel_stillImageTransmission = htolel(0);
+			} else if (skinnyFormat == SKINNY_CODEC_H263) {
+				channelVideoParams->h263.lel_capabilityBitfield = htolel(0);
+				channelVideoParams->h263.lel_annexNandWFutureUse = htolel(0);
+			} else if (skinnyFormat == SKINNY_CODEC_H263P) {
+				channelVideoParams->h263P.lel_modelNumber = htolel(0);
+				channelVideoParams->h263P.lel_bandwidth = htolel(0);
+			} else if (skinnyFormat == SKINNY_CODEC_H264) {
+				channelVideoParams->h264.lel_profile = htolel(64);
+				channelVideoParams->h264.lel_level = htolel(43);
+				channelVideoParams->h264.lel_customMaxMBPS = htolel(40500);
+				channelVideoParams->h264.lel_customMaxFS = htolel(1620);
+				channelVideoParams->h264.lel_customMaxDPB = htolel(8100);
+				channelVideoParams->h264.lel_customMaxBRandCPB = htolel(10000);
 			} else {
-				// error
 			}
 		}
 	}
-	// Leave empty for now, until we find out more about encryption
-	//msg->data.OpenMultiMediaChannelMessage.v17.RxEncryptionInfo = {0};
 	msg->data.OpenMultiMediaChannelMessage.v17.lel_streamPassThroughID = htolel(channel->passthrupartyid);
-	msg->data.OpenMultiMediaChannelMessage.v17.lel_associatedStreamID = htolel(channel->callid);		// We should use a random number and link it up 
-														// with the MultiMediaTransmission
+	msg->data.OpenMultiMediaChannelMessage.v17.lel_associatedStreamID = htolel(channel->callid);
 
-	/* Source Ip Address */
 	struct sockaddr_storage sas;
 	if (device->directrtp) {
 		sccp_rtp_getPeer(&channel->rtp.video, &sas);
@@ -999,7 +823,7 @@ static void sccp_protocol_sendOpenMultiMediaChannelV17(constDevicePtr device, co
 	if (sas.ss_family == AF_INET6) {
 		struct sockaddr_in6 *in6 = (struct sockaddr_in6 *) &sas;
 		msg->data.OpenMultiMediaChannelMessage.v17.sourceIpAddr.lel_ipAddrType = htolel(SKINNY_IPADDR_IPV6);
-		
+
 		// Also take into account that we could be using IPv46 (ie: both of them)
 		if (sccp_netsock_is_mapped_IPv4(&sas)) {
 			msg->data.OpenMultiMediaChannelMessage.v17.lel_requestedIpAddrType = htolel(SKINNY_IPADDR_IPV46);
@@ -1014,14 +838,10 @@ static void sccp_protocol_sendOpenMultiMediaChannelV17(constDevicePtr device, co
 		memcpy(&msg->data.OpenMultiMediaChannelMessage.v17.sourceIpAddr.stationIpAddr, &in->sin_addr, 4);
 	}
 	msg->data.OpenMultiMediaChannelMessage.v17.lel_sourcePortNumber=htolel(sccp_netsock_getPort(&sas));
-	
-	//sccp_dump_msg(msg);
+
 	sccp_dev_send(device, msg);
 }
 
-/*!
- * \brief Send Start Media Transmission (V3)
- */
 static void sccp_protocol_sendStartMediaTransmissionV3(constDevicePtr device, constChannelPtr channel)
 {
 	sccp_msg_t *msg = sccp_build_packet(StartMediaTransmission, sizeof(msg->data.StartMediaTransmission.v3));
@@ -1036,10 +856,9 @@ static void sccp_protocol_sendStartMediaTransmissionV3(constDevicePtr device, co
 	msg->data.StartMediaTransmission.v3.lel_passThruPartyId = htolel(channel->passthrupartyid);
 	msg->data.StartMediaTransmission.v3.lel_callReference = htolel(channel->callid);
 	msg->data.StartMediaTransmission.v3.lel_millisecondPacketSize = htolel(framing);
-	//msg->data.StartMediaTransmission.v3.lel_payloadType = htolel(channel->rtp.audio.transmission.format);
 	msg->data.StartMediaTransmission.v3.lel_codecType = htolel(channel->rtp.audio.transmission.format);
 	msg->data.StartMediaTransmission.v3.lel_precedenceValue = htolel((uint32_t)device->audio_tos);
-	msg->data.StartMediaTransmission.v3.lel_ssValue = htolel(channel->line->silencesuppression);		// Silence suppression
+	msg->data.StartMediaTransmission.v3.lel_ssValue = htolel(channel->line->silencesuppression);
 	msg->data.StartMediaTransmission.v3.lel_maxFramesPerPacket = htolel(0);
 	msg->data.StartMediaTransmission.v3.lel_RFC2833Type = htolel(dtmf_payload_code);
 	msg->data.StartMediaTransmission.v3.lel_dtmfType = htolel(10);;
@@ -1049,16 +868,12 @@ static void sccp_protocol_sendStartMediaTransmissionV3(constDevicePtr device, co
 
 		memcpy(&msg->data.StartMediaTransmission.v3.bel_remoteIpAddr, &in->sin_addr, 4);
 	} else {
-		/* \todo add warning */
 	}
 	msg->data.StartMediaTransmission.v3.lel_remotePortNumber = htolel(sccp_netsock_getPort(&channel->rtp.audio.phone_remote));
 
 	sccp_dev_send(device, msg);
 }
 
-/*!
- * \brief Send Start Media Transmission (V17)
- */
 static void sccp_protocol_sendStartMediaTransmissionV17(constDevicePtr device, constChannelPtr channel)
 {
 	sccp_msg_t *msg = sccp_build_packet(StartMediaTransmission, sizeof(msg->data.StartMediaTransmission.v17));
@@ -1068,15 +883,14 @@ static void sccp_protocol_sendStartMediaTransmissionV17(constDevicePtr device, c
 
 	uint framing = iPbx.get_codec_framing ? iPbx.get_codec_framing(channel) : 20;
         uint dtmf_payload_code = iPbx.get_dtmf_payload_code ? iPbx.get_dtmf_payload_code(channel) : 101;
-        
+
 	msg->data.StartMediaTransmission.v17.lel_conferenceId = htolel(channel->callid);
 	msg->data.StartMediaTransmission.v17.lel_passThruPartyId = htolel(channel->passthrupartyid);
 	msg->data.StartMediaTransmission.v17.lel_callReference = htolel(channel->callid);
 	msg->data.StartMediaTransmission.v17.lel_millisecondPacketSize = htolel(framing);
-	//msg->data.StartMediaTransmission.v17.lel_payloadType = htolel(channel->rtp.audio.transmission.format);
 	msg->data.StartMediaTransmission.v17.lel_codecType = htolel(channel->rtp.audio.transmission.format);
 	msg->data.StartMediaTransmission.v17.lel_precedenceValue = htolel((uint32_t)device->audio_tos);
-	msg->data.StartMediaTransmission.v17.lel_ssValue = htolel(channel->line->silencesuppression);		// Silence suppression
+	msg->data.StartMediaTransmission.v17.lel_ssValue = htolel(channel->line->silencesuppression);
 	msg->data.StartMediaTransmission.v17.lel_maxFramesPerPacket = htolel(0);
 	msg->data.StartMediaTransmission.v17.lel_RFC2833Type = htolel(dtmf_payload_code);
 	msg->data.StartMediaTransmission.v17.lel_dtmfType = htolel(10);;
@@ -1095,9 +909,6 @@ static void sccp_protocol_sendStartMediaTransmissionV17(constDevicePtr device, c
 	sccp_dev_send(device, msg);
 }
 
-/*!
- * \brief Send Start Media Transmission (v22)
- */
 static void sccp_protocol_sendStartMediaTransmissionv22(constDevicePtr device, constChannelPtr channel)
 {
 	sccp_msg_t *msg = sccp_build_packet(StartMediaTransmission, sizeof(msg->data.StartMediaTransmission.v22));
@@ -1112,10 +923,9 @@ static void sccp_protocol_sendStartMediaTransmissionv22(constDevicePtr device, c
 	msg->data.StartMediaTransmission.v22.lel_passThruPartyId = htolel(channel->passthrupartyid);
 	msg->data.StartMediaTransmission.v22.lel_callReference = htolel(channel->callid);
 	msg->data.StartMediaTransmission.v22.lel_millisecondPacketSize = htolel(framing);
-	//msg->data.StartMediaTransmission.v22.lel_payloadType = htolel(channel->rtp.audio.transmission.format);
 	msg->data.StartMediaTransmission.v22.lel_codecType = htolel(channel->rtp.audio.transmission.format);
 	msg->data.StartMediaTransmission.v22.lel_precedenceValue = htolel((uint32_t)device->audio_tos);
-	msg->data.StartMediaTransmission.v22.lel_ssValue = htolel(channel->line->silencesuppression);		// Silence suppression
+	msg->data.StartMediaTransmission.v22.lel_ssValue = htolel(channel->line->silencesuppression);
 	msg->data.StartMediaTransmission.v22.lel_maxFramesPerPacket = htolel(0);
 	msg->data.StartMediaTransmission.v22.lel_RFC2833Type = htolel(dtmf_payload_code);
 	msg->data.StartMediaTransmission.v22.lel_dtmfType = htolel(10);;
@@ -1134,29 +944,21 @@ static void sccp_protocol_sendStartMediaTransmissionv22(constDevicePtr device, c
 	sccp_dev_send(device, msg);
 }
 
-/*!
- * \brief Send Start MultiMedia Transmission (V3)
- */
 static void sccp_protocol_sendStartMultiMediaTransmissionV3(constDevicePtr device, constChannelPtr channel, int payloadType, int bitRate)
 {
 	sccp_msg_t *msg = sccp_build_packet(StartMultiMediaTransmission, sizeof(msg->data.StartMultiMediaTransmission.v3));
 	if (!msg) {
 		return;
 	}
-	//uint payloadType = sccp_rtp_get_payloadType(&channel->rtp.video, video->transmission.format);
 
 	msg->data.StartMultiMediaTransmission.v3.lel_conferenceID = htolel(channel->callid);
 	msg->data.StartMultiMediaTransmission.v3.lel_passThruPartyId = htolel(channel->passthrupartyid);
-	//msg->data.StartMultiMediaTransmission.v3.lel_payloadCapability = htolel(channel->rtp.video.transmission.format);
 	msg->data.StartMultiMediaTransmission.v3.lel_codecType = htolel(channel->rtp.video.transmission.format);
 	msg->data.StartMultiMediaTransmission.v3.lel_callReference = htolel(channel->callid);
 	msg->data.StartMultiMediaTransmission.v3.lel_payload_rfc_number = htolel(0);
 	msg->data.StartMultiMediaTransmission.v3.lel_payloadType = htolel(payloadType);
 	msg->data.StartMultiMediaTransmission.v3.lel_DSCPValue = htolel(136);
 	msg->data.StartMultiMediaTransmission.v3.videoParameter.bitRate = htolel(bitRate);
-	//msg->data.StartMultiMediaTransmission.v3.videoParameter.pictureFormatCount            = htolel(0);
-	//msg->data.StartMultiMediaTransmission.v3.videoParameter.pictureFormat[0].format       = htolel(4);
-	//msg->data.StartMultiMediaTransmission.v3.videoParameter.pictureFormat[0].mpi          = htolel(30);
 	msg->data.StartMultiMediaTransmission.v3.videoParameter.profile = htolel(0x40);
 	msg->data.StartMultiMediaTransmission.v3.videoParameter.level = htolel(0x32);				/* has to be >= 15 to work with 7985 */
 	msg->data.StartMultiMediaTransmission.v3.videoParameter.macroblockspersec = htolel(40500);
@@ -1170,16 +972,11 @@ static void sccp_protocol_sendStartMultiMediaTransmissionV3(constDevicePtr devic
 
 		memcpy(&msg->data.StartMultiMediaTransmission.v3.bel_remoteIpAddr, &in->sin_addr, 4);
 	} else {
-		/* \todo add warning */
 	}
 
-	//sccp_dump_msg(msg);
 	sccp_dev_send(device, msg);
 }
 
-/*!
- * \brief Send Start MultiMedia Transmission (V17)
- */
 static void sccp_protocol_sendStartMultiMediaTransmissionV17(constDevicePtr device, constChannelPtr channel, int payloadType, int bitRate)
 {
 	sccp_msg_t *msg = sccp_build_packet(StartMultiMediaTransmission, sizeof(msg->data.StartMultiMediaTransmission.v17));
@@ -1189,7 +986,6 @@ static void sccp_protocol_sendStartMultiMediaTransmissionV17(constDevicePtr devi
 
 	msg->data.StartMultiMediaTransmission.v17.lel_conferenceID = htolel(channel->callid);
 	msg->data.StartMultiMediaTransmission.v17.lel_passThruPartyId = htolel(channel->passthrupartyid);
-	//msg->data.StartMultiMediaTransmission.v17.lel_payloadCapability = htolel(channel->rtp.video.transmission.format);
 	msg->data.StartMultiMediaTransmission.v17.lel_codecType = htolel(channel->rtp.video.transmission.format);
 	msg->data.StartMultiMediaTransmission.v17.lel_callReference = htolel(channel->callid);
 	msg->data.StartMultiMediaTransmission.v17.lel_payload_rfc_number = htolel(0);
@@ -1197,23 +993,12 @@ static void sccp_protocol_sendStartMultiMediaTransmissionV17(constDevicePtr devi
 	msg->data.StartMultiMediaTransmission.v17.lel_DSCPValue = htolel(136);
 	msg->data.StartMultiMediaTransmission.v17.videoParameter.confServiceNum = htolel(channel->callid);
 	msg->data.StartMultiMediaTransmission.v17.videoParameter.bitRate = htolel(bitRate);
-	//msg->data.StartMultiMediaTransmission.v17.videoParameter.pictureFormatCount        = htolel(1);
-	//msg->data.StartMultiMediaTransmission.v17.videoParameter.pictureFormat[0].format   = htolel(4);
-	//msg->data.StartMultiMediaTransmission.v17.videoParameter.pictureFormat[0].mpi      = htolel(1);
 	msg->data.StartMultiMediaTransmission.v17.videoParameter.profile = htolel(64);
 	msg->data.StartMultiMediaTransmission.v17.videoParameter.level = htolel(50);
 	msg->data.StartMultiMediaTransmission.v17.videoParameter.macroblockspersec = htolel(40500);
 	msg->data.StartMultiMediaTransmission.v17.videoParameter.macroblocksperframe = htolel(1620);
 	msg->data.StartMultiMediaTransmission.v17.videoParameter.decpicbuf = htolel(8100);
 	msg->data.StartMultiMediaTransmission.v17.videoParameter.brandcpb = htolel(10000);
-	//msg->data.StartMultiMediaTransmission.v17.videoParameter.dummy1 = htolel(1);
-	//msg->data.StartMultiMediaTransmission.v17.videoParameter.dummy2 = htolel(2);
-	//msg->data.StartMultiMediaTransmission.v17.videoParameter.dummy3 = htolel(3);
-	//msg->data.StartMultiMediaTransmission.v17.videoParameter.dummy4 = htolel(4);
-	//msg->data.StartMultiMediaTransmission.v17.videoParameter.dummy5 = htolel(5);
-	//msg->data.StartMultiMediaTransmission.v17.videoParameter.dummy6 = htolel(6);
-	//msg->data.StartMultiMediaTransmission.v17.videoParameter.dummy7 = htolel(7);
-	//msg->data.StartMultiMediaTransmission.v17.videoParameter.dummy8 = htolel(8);
 
 	msg->data.StartMultiMediaTransmission.v17.lel_remotePortNumber = htolel(sccp_netsock_getPort(&channel->rtp.video.phone_remote));
 	if (channel->rtp.video.phone_remote.ss_family == AF_INET6) {
@@ -1226,11 +1011,9 @@ static void sccp_protocol_sendStartMultiMediaTransmissionV17(constDevicePtr devi
 
 		memcpy(&msg->data.StartMultiMediaTransmission.v17.bel_remoteIpAddr, &in->sin_addr, 4);
 	}
-	//sccp_dump_msg(msg);
 	sccp_dev_send(device, msg);
 }
 
-/* fastPictureUpdate */
 static void sccp_protocol_sendMultiMediaCommand(constDevicePtr device, constChannelPtr channel, skinny_miscCommandType_t command)
 {
 	sccp_msg_t *msg = NULL;
@@ -1248,13 +1031,6 @@ static void sccp_protocol_sendMultiMediaCommand(constDevicePtr device, constChan
 	sccp_dev_send(device, msg);
 }
 
-/* done - fastPictureUpdate */
-
-/* sendUserToDeviceData Message */
-
-/*!
- * \brief Send User To Device Message (V1)
- */
 static void sccp_protocol_sendUserToDeviceDataVersion1Message(constDevicePtr device, uint32_t appID, uint32_t lineInstance, uint32_t callReference, uint32_t transactionID, const char *xmlData, uint8_t priority)
 {
 	int data_len = strlen(xmlData);
@@ -1299,7 +1075,7 @@ static void sccp_protocol_sendUserToDeviceDataVersion1Message(constDevicePtr dev
 				memcpy(&msg->data.UserToDeviceDataVersion1Message.data, xmlData + xmlDataStart, msg_len);
 				xmlDataStart += msg_len;
 			}
-			
+
 			sccp_dev_send(device, msg);
 			sccp_log(DEBUGCAT_HIGH) (VERBOSE_PREFIX_1 "%s: data message sent (header %d, message %d/%d, size %d)\n", DEV_ID_LOG(device), hdr_len, msg_len, (int) strlen(xmlData), hdr_len + msg_len);
 			segment++;
@@ -1332,12 +1108,6 @@ static void sccp_protocol_sendUserToDeviceDataVersion1Message(constDevicePtr dev
 	}
 }
 
-/* done - sendUserToDeviceData */
-
-/* sendConnectionStatisticsReq Message */
-/*!
- * \brief Send Start MultiMedia Transmission (V3)
- */
 static void sccp_protocol_sendConnectionStatisticsReqV3(constDevicePtr device, constChannelPtr channel, uint8_t clear)
 {
 	sccp_msg_t *msg = sccp_build_packet(ConnectionStatisticsReq, sizeof(msg->data.ConnectionStatisticsReq.v3));
@@ -1354,9 +1124,6 @@ static void sccp_protocol_sendConnectionStatisticsReqV3(constDevicePtr device, c
 	sccp_dev_send(device, msg);
 }
 
-/*!
- * \brief Send Start MultiMedia Transmission (V17)
- */
 static void sccp_protocol_sendConnectionStatisticsReqV19(constDevicePtr device, constChannelPtr channel, uint8_t clear)
 {
 	sccp_msg_t *msg = sccp_build_packet(ConnectionStatisticsReq, sizeof(msg->data.ConnectionStatisticsReq.v19));
@@ -1373,13 +1140,7 @@ static void sccp_protocol_sendConnectionStatisticsReqV19(constDevicePtr device, 
 	msg->data.ConnectionStatisticsReq.v19.lel_StatsProcessing = htolel(clear);
 	sccp_dev_send(device, msg);
 }
-/* done - sendUserToDeviceData */
 
-
-/* sendPortRequest */
-/*!
- * \brief Send PortRequest (V3)
- */
 static void sccp_protocol_sendPortRequest(constDevicePtr device, constChannelPtr channel, skinny_mediaTransportType_t mediaTransportType, skinny_mediaType_t mediaType)
 {
 	struct sockaddr_storage sas;
@@ -1398,12 +1159,7 @@ static void sccp_protocol_sendPortRequest(constDevicePtr device, constChannelPtr
 
 	sccp_dev_send(device, msg);
 }
-/* done - sendPortRequest */
 
-/* sendPortClose */
-/*!
- * \brief Send PortClose
- */
 static void sccp_protocol_sendPortClose(constDevicePtr device, constChannelPtr channel, skinny_mediaType_t mediaType)
 {
 	if (device->protocol && device->protocol->version >= 11) {
@@ -1418,16 +1174,7 @@ static void sccp_protocol_sendPortClose(constDevicePtr device, constChannelPtr c
 		sccp_dev_send(device, msg);
 	}
 }
-/* done - sendPortClose */
 
-/*! \todo need a protocol implementation for ConnectionStatisticsReq using Version 19 and higher */
-
-/*! \todo need a protocol implementation for ForwardStatMessage using Version 19 and higher */
-
-/* sendLineStatResponse Message */
-/*!
- * \brief Send Start Line State Response Message (V3)
- */
 static void sccp_protocol_sendLineStatRespV3(constDevicePtr d, uint32_t lineNumber, char *dirNumber, char *fullyQualifiedDisplayName, char *displayName)
 {
 	sccp_msg_t *msg = NULL;
@@ -1440,15 +1187,10 @@ static void sccp_protocol_sendLineStatRespV3(constDevicePtr d, uint32_t lineNumb
 	d->copyStr2Locale(d, msg->data.LineStatMessage.lineFullyQualifiedDisplayName, fullyQualifiedDisplayName, sizeof(msg->data.LineStatMessage.lineFullyQualifiedDisplayName));
 	d->copyStr2Locale(d, msg->data.LineStatMessage.lineDisplayName, displayName, sizeof(msg->data.LineStatMessage.lineDisplayName));
 
-	//Bit-field: 1-Original Dialed 2-Redirected Dialed, 4-Calling line ID, 8-Calling name ID
-	//msg->data.LineStatMessage.lel_lineDisplayOptions = 0x01 & 0x08;
-	msg->data.LineStatMessage.lel_lineDisplayOptions = htolel(15);		// value : 0 or 15
+	msg->data.LineStatMessage.lel_lineDisplayOptions = htolel(15);
 	sccp_dev_send(d, msg);
 }
 
-/*!
- * \brief Send Start Line State Response Message (V17)
- */
 static void sccp_protocol_sendLineStatRespV17(constDevicePtr d, uint32_t lineNumber, char *dirNumber, char *fullyQualifiedDisplayName, char *displayName)
 {
 	int dirNumLen = dirNumber ? sccp_strlen(dirNumber): 0;
@@ -1467,45 +1209,15 @@ static void sccp_protocol_sendLineStatRespV17(constDevicePtr d, uint32_t lineNum
 		char *dummyPtr = msg->data.LineStatDynamicMessage.dummy;
 		d->copyStr2Locale(d, dummyPtr, dirNumber, dirNumLen+1);
 		dummyPtr += dirNumLen + 1;
-		d->copyStr2Locale(d, dummyPtr, fullyQualifiedDisplayName, fqdnLen+1);	
+		d->copyStr2Locale(d, dummyPtr, fullyQualifiedDisplayName, fqdnLen+1);
 		dummyPtr += fqdnLen + 1;
 		d->copyStr2Locale(d, dummyPtr, displayName, displayNameLen+1);
 		dummyPtr += displayNameLen + 1;
 	}
 
-	//Bit-field: 1-Original Dialed 2-Redirected Dialed, 4-Calling line ID, 8-Calling name ID
-	//int lineDisplayOptions = 0x01 & 0x08;
-	//int lineDisplayOptions = htolel(15);
-	//msg->data.LineStatDynamicMessage.lel_lineDisplayOptions = htolel(lineDisplayOptions);
 	sccp_dev_send(d, msg);
 }
 
-/*
-static void sccp_protocol_sendLineStatRespV17(constDevicePtr d, uint32_t lineNumber, char *dirNumber, char *fullyQualifiedDisplayName, char *displayName)
-{
-        sccp_msg_t *msg = NULL;
-        REQ(msg, LineStatDynamicMessage);
-        if (!msg) {
-                return;
-        }
-        msg->data.LineStatDynamicMessage.lel_lineNumber = htolel(lineNumber);
-        d->copyStr2Locale(d, msg->data.LineStatDynamicMessage.lineDirNumber, dirNumber, sizeof(msg->data.LineStatDynamicMessage.lineDirNumber));
-        d->copyStr2Locale(d, msg->data.LineStatDynamicMessage.lineFullyQualifiedDisplayName, fullyQualifiedDisplayName, sizeof(msg->data.LineStatDynamicMessage.lineFullyQualifiedDisplayName));
-        d->copyStr2Locale(d, msg->data.LineStatDynamicMessage.lineTextLabel, displayName, sizeof(msg->data.LineStatDynamicMessage.lineTextLabel));
-
-        //Bit-field: 1-Original Dialed 2-Redirected Dialed, 4-Calling line ID, 8-Calling name ID
-        //msg->data.LineStatDynamicMessage.lel_lineDisplayOptions = 0x01 & 0x08;
-        msg->data.LineStatDynamicMessage.lel_lineDisplayOptions = htolel(15);
-        sccp_dev_send(d, msg);
-}
-*/
-/* done - sendLineStat */
-
-/* =================================================================================================================== Parse Received Messages */
-
-/*!
- * \brief OpenReceiveChannelAck
- */
 static void sccp_protocol_parseOpenReceiveChannelAckV3(constMessagePtr msg, skinny_mediastatus_t * mediastatus, struct sockaddr_storage *ss, uint32_t * passthrupartyid, uint32_t * callReference)
 {
 	*mediastatus = letohl(msg->data.OpenReceiveChannelAck.v3.lel_mediastatus);
@@ -1525,14 +1237,13 @@ static void sccp_protocol_parseOpenReceiveChannelAckV17(constMessagePtr msg, ski
 	*callReference = letohl(msg->data.OpenReceiveChannelAck.v17.lel_callReference);
 	*passthrupartyid = letohl(msg->data.OpenReceiveChannelAck.v17.lel_passThruPartyId);
 
-	if (letohl(msg->data.OpenReceiveChannelAck.v17.lel_ipv46) == 0) {					// read ipv4 address
+	if (letohl(msg->data.OpenReceiveChannelAck.v17.lel_ipv46) == 0) {
 		ss->ss_family = AF_INET;
 		struct sockaddr_in *sin = (struct sockaddr_in *) ss;
 
 		memcpy(&sin->sin_addr, &msg->data.OpenReceiveChannelAck.v17.bel_ipAddr, sizeof(sin->sin_addr));
 		sin->sin_port = htons(htolel(msg->data.OpenReceiveChannelAck.v17.lel_portNumber));
-	} else {												// read ipv6 address
-		/* what to do with IPv4-mapped IPv6 addresses */
+	} else {
 		ss->ss_family = AF_INET6;
 		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) ss;
 
@@ -1560,14 +1271,13 @@ static void sccp_protocol_parseOpenMultiMediaReceiveChannelAckV17(constMessagePt
 	*passthrupartyid = letohl(msg->data.OpenMultiMediaReceiveChannelAckMessage.v17.lel_passThruPartyId);
 	*callReference = letohl(msg->data.OpenMultiMediaReceiveChannelAckMessage.v17.lel_callReference);
 
-	if (letohl(msg->data.OpenMultiMediaReceiveChannelAckMessage.v17.lel_ipv46) == 0) {			// read ipv4 address
+	if (letohl(msg->data.OpenMultiMediaReceiveChannelAckMessage.v17.lel_ipv46) == 0) {
 		ss->ss_family = AF_INET;
 		struct sockaddr_in *sin = (struct sockaddr_in *) ss;
 
 		memcpy(&sin->sin_addr, &msg->data.OpenMultiMediaReceiveChannelAckMessage.v17.bel_ipAddr, sizeof(sin->sin_addr));
 		sin->sin_port = htons(htolel(msg->data.OpenMultiMediaReceiveChannelAckMessage.v17.lel_portNumber));
-	} else {												// read ipv6 address
-		/* what to do with IPv4-mapped IPv6 addresses */
+	} else {
 		ss->ss_family = AF_INET6;
 		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) ss;
 
@@ -1576,9 +1286,6 @@ static void sccp_protocol_parseOpenMultiMediaReceiveChannelAckV17(constMessagePt
 	}
 }
 
-/*!
- * \brief StartMediaTransmissionAck
- */
 static void sccp_protocol_parseStartMediaTransmissionAckV3(constMessagePtr msg, uint32_t * partyID, uint32_t * callID, uint32_t * callID1, skinny_mediastatus_t * mediastatus, struct sockaddr_storage *ss)
 {
 	*partyID = letohl(msg->data.StartMediaTransmissionAck.v3.lel_passThruPartyId);
@@ -1600,14 +1307,13 @@ static void sccp_protocol_parseStartMediaTransmissionAckV17(constMessagePtr msg,
 	*callID1 = letohl(msg->data.StartMediaTransmissionAck.v17.lel_callReference1);
 	*mediastatus = letohl(msg->data.StartMediaTransmissionAck.v17.lel_mediastatus);
 
-	if (letohl(msg->data.StartMediaTransmissionAck.v17.lel_ipv46) == 0) {					// read ipv4 address
+	if (letohl(msg->data.StartMediaTransmissionAck.v17.lel_ipv46) == 0) {
 		ss->ss_family = AF_INET;
 		struct sockaddr_in *sin = (struct sockaddr_in *) ss;
 
 		memcpy(&sin->sin_addr, &msg->data.StartMediaTransmissionAck.v17.bel_ipAddr, sizeof(sin->sin_addr));
 		sin->sin_port = htons(htolel(msg->data.StartMediaTransmissionAck.v17.lel_portNumber));
-	} else {												// read ipv6 address
-		/* what to do with IPv4-mapped IPv6 addresses */
+	} else {
 		ss->ss_family = AF_INET6;
 		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) ss;
 
@@ -1616,9 +1322,6 @@ static void sccp_protocol_parseStartMediaTransmissionAckV17(constMessagePtr msg,
 	}
 }
 
-/*!
- * \brief StartMultiMediaTransmissionAck
- */
 static void sccp_protocol_parseStartMultiMediaTransmissionAckV3(constMessagePtr msg, uint32_t * partyID, uint32_t * callID, uint32_t * callID1, skinny_mediastatus_t * mediastatus, struct sockaddr_storage *ss)
 {
 	*partyID = letohl(msg->data.StartMultiMediaTransmissionAck.v3.lel_passThruPartyId);
@@ -1640,14 +1343,13 @@ static void sccp_protocol_parseStartMultiMediaTransmissionAckV17(constMessagePtr
 	*callID1 = letohl(msg->data.StartMultiMediaTransmissionAck.v17.lel_callReference1);
 	*mediastatus = letohl(msg->data.StartMultiMediaTransmissionAck.v17.lel_mediastatus);
 
-	if (letohl(msg->data.StartMultiMediaTransmissionAck.v17.lel_ipv46) == 0) {				// read ipv4 address
+	if (letohl(msg->data.StartMultiMediaTransmissionAck.v17.lel_ipv46) == 0) {
 		ss->ss_family = AF_INET;
 		struct sockaddr_in *sin = (struct sockaddr_in *) ss;
 
 		memcpy(&sin->sin_addr, &msg->data.StartMultiMediaTransmissionAck.v17.bel_ipAddr, sizeof(struct in_addr));
 		sin->sin_port = htons(htolel(msg->data.StartMultiMediaTransmissionAck.v17.lel_portNumber));
-	} else {												// read ipv6 address
-		/* what to do with IPv4-mapped IPv6 addresses */
+	} else {
 		ss->ss_family = AF_INET6;
 		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) ss;
 
@@ -1656,13 +1358,10 @@ static void sccp_protocol_parseStartMultiMediaTransmissionAckV17(constMessagePtr
 	}
 }
 
-/*!
- * \brief EnblocCallMessage
- */
 static void sccp_protocol_parseEnblocCallV3(constMessagePtr msg, char *calledParty, uint32_t * lineInstance)
 {
 	sccp_copy_string(calledParty, msg->data.EnblocCallMessage.v3.calledParty, StationMaxDirnumSize);
-	*lineInstance = 0;											// v3 - v16 don't provicde lineInstance during enbloc dialing
+	*lineInstance = 0;
 }
 
 static void sccp_protocol_parseEnblocCallV17(constMessagePtr msg, char *calledParty, uint32_t * lineInstance)
@@ -1675,17 +1374,10 @@ static void sccp_protocol_parseEnblocCallV22(constMessagePtr msg, char *calledPa
 {
 	sccp_copy_string(calledParty, msg->data.EnblocCallMessage.v18u.calledParty, 25);
 
-	/* message exists in both packed and unpacked version */
 	/* 8945 v22 unpacked */
-	// 00000000 - 24 00 00 00 16 00 00 00  04 00 00 00 39 38 30 31  - $...........9801
-	// 00000010 - 31 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - 1...............
-	// 00000020 - 00 00 00 00 00 00 00 00  01 00 00 00              - ............
-	
+
 	/* 7970 v22 packed*/
-	// 00000000 - 24 00 00 00 16 00 00 00  04 00 00 00 39 38 30 31  - $...........9801
-	// 00000010 - 31 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  - 1...............
-	// 00000020 - 00 00 00 00 00 01 00 00  00 00 00 00              - ............
-	
+
 	if (letohl(msg->data.EnblocCallMessage.v18u.lel_lineInstance) > 0) {
 		*lineInstance = letohl(msg->data.EnblocCallMessage.v18u.lel_lineInstance);
 	} else {
@@ -1697,7 +1389,6 @@ static void sccp_protocol_parseEnblocCallV22(constMessagePtr msg, char *calledPa
 	}
 }
 
-/* sendPortResponse */
 static void sccp_protocol_parsePortResponseV3(constMessagePtr msg, uint32_t *conferenceId, uint32_t *callReference, uint32_t *passThruPartyId, struct sockaddr_storage *ss, uint32_t * RTCPPortNumber, skinny_mediaType_t *mediaType)
 {
 	*conferenceId = letohl(msg->data.PortResponseMessage.v3.lel_conferenceId);
@@ -1719,13 +1410,13 @@ static void sccp_protocol_parsePortResponseV19(constMessagePtr msg, uint32_t *co
 	*callReference = letohl(msg->data.PortResponseMessage.v19.lel_callReference);
 	*passThruPartyId = letohl(msg->data.PortResponseMessage.v19.lel_passThruPartyId);
 
-	if (letohl(msg->data.PortResponseMessage.v19.lel_ipv46) == 0) {			// read ipv4 address
+	if (letohl(msg->data.PortResponseMessage.v19.lel_ipv46) == 0) {
 		ss->ss_family = AF_INET;
 		struct sockaddr_in *sin = (struct sockaddr_in *) ss;
 
 		memcpy(&sin->sin_addr, &msg->data.PortResponseMessage.v19.bel_ipAddr, sizeof(sin->sin_addr));
 		sin->sin_port = htons(htolel(msg->data.PortResponseMessage.v19.lel_portNumber));
-	} else {												// read ipv6 address
+	} else {
 		ss->ss_family = AF_INET6;
 		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) ss;
 
@@ -1735,20 +1426,17 @@ static void sccp_protocol_parsePortResponseV19(constMessagePtr msg, uint32_t *co
 	*RTCPPortNumber = letohl(msg->data.PortResponseMessage.v19.lel_RTCPPortNumber);
 	*mediaType = letohl(msg->data.PortResponseMessage.v19.lel_mediaType);
 }
-/* done - sendPortResponse */
 
 /* =================================================================================================================== Map Messages to Protocol Version */
 
-/*! 
- * \brief SCCP Protocol Version to Message Mapping
- */
+/* SCCP Protocol Version to Message Mapping */
 static const sccp_deviceProtocol_t *sccpProtocolDefinition[] = {
 	NULL,
 	NULL,
 	NULL,
 	&(sccp_deviceProtocol_t) {SCCP_PROTOCOL, 3, TimeDateReqMessage, sccp_protocol_sendCallInfoV3, sccp_protocol_sendDialedNumberV3, sccp_protocol_sendRegisterAckV3, sccp_protocol_sendStaticDisplayprompt, sccp_protocol_sendStaticDisplayNotify, sccp_protocol_sendStaticDisplayPriNotify, sccp_protocol_sendCallForwardStatus, sccp_protocol_sendUserToDeviceDataVersion1Message, sccp_protocol_sendMultiMediaCommand, sccp_protocol_sendOpenReceiveChannelV3, sccp_protocol_sendOpenMultiMediaChannelV3,
 				  sccp_protocol_sendStartMultiMediaTransmissionV3, sccp_protocol_sendStartMediaTransmissionV3, sccp_protocol_sendConnectionStatisticsReqV3, sccp_protocol_sendPortRequest,sccp_protocol_sendPortClose, sccp_protocol_sendLineStatRespV3,
-				  sccp_protocol_parseOpenReceiveChannelAckV3, sccp_protocol_parseOpenMultiMediaReceiveChannelAckV3, sccp_protocol_parseStartMediaTransmissionAckV3, sccp_protocol_parseStartMultiMediaTransmissionAckV3, sccp_protocol_parseEnblocCallV3, sccp_protocol_parsePortResponseV3},	/* default impl */
+				  sccp_protocol_parseOpenReceiveChannelAckV3, sccp_protocol_parseOpenMultiMediaReceiveChannelAckV3, sccp_protocol_parseStartMediaTransmissionAckV3, sccp_protocol_parseStartMultiMediaTransmissionAckV3, sccp_protocol_parseEnblocCallV3, sccp_protocol_parsePortResponseV3},
 	NULL,
 	&(sccp_deviceProtocol_t) {SCCP_PROTOCOL, 5, TimeDateReqMessage, sccp_protocol_sendCallInfoV3, sccp_protocol_sendDialedNumberV3, sccp_protocol_sendRegisterAckV4, sccp_protocol_sendStaticDisplayprompt, sccp_protocol_sendStaticDisplayNotify, sccp_protocol_sendStaticDisplayPriNotify, sccp_protocol_sendCallForwardStatus, sccp_protocol_sendUserToDeviceDataVersion1Message, sccp_protocol_sendMultiMediaCommand, sccp_protocol_sendOpenReceiveChannelV3, sccp_protocol_sendOpenMultiMediaChannelV3,
 				  sccp_protocol_sendStartMultiMediaTransmissionV3, sccp_protocol_sendStartMediaTransmissionV3, sccp_protocol_sendConnectionStatisticsReqV3, sccp_protocol_sendPortRequest,sccp_protocol_sendPortClose, sccp_protocol_sendLineStatRespV3,
@@ -1777,7 +1465,7 @@ static const sccp_deviceProtocol_t *sccpProtocolDefinition[] = {
 				  sccp_protocol_sendStartMultiMediaTransmissionV17, sccp_protocol_sendStartMediaTransmissionV3, sccp_protocol_sendConnectionStatisticsReqV3, sccp_protocol_sendPortRequest,sccp_protocol_sendPortClose, sccp_protocol_sendLineStatRespV3,
 				  sccp_protocol_parseOpenReceiveChannelAckV3, sccp_protocol_parseOpenMultiMediaReceiveChannelAckV3, sccp_protocol_parseStartMediaTransmissionAckV3, sccp_protocol_parseStartMultiMediaTransmissionAckV3, sccp_protocol_parseEnblocCallV3, sccp_protocol_parsePortResponseV3},
 	&(sccp_deviceProtocol_t) {SCCP_PROTOCOL, 17, TimeDateReqMessage, sccp_protocol_sendCallInfoV16, sccp_protocol_sendDialedNumberV3, sccp_protocol_sendRegisterAckV11, sccp_protocol_sendDynamicDisplayprompt, sccp_protocol_sendDynamicDisplayNotify, sccp_protocol_sendDynamicDisplayPriNotify, sccp_protocol_sendCallForwardStatus, sccp_protocol_sendUserToDeviceDataVersion1Message, sccp_protocol_sendMultiMediaCommand, sccp_protocol_sendOpenReceiveChannelV17, sccp_protocol_sendOpenMultiMediaChannelV17,
-				  sccp_protocol_sendStartMultiMediaTransmissionV17, sccp_protocol_sendStartMediaTransmissionV17, sccp_protocol_sendConnectionStatisticsReqV3, sccp_protocol_sendPortRequest,sccp_protocol_sendPortClose, sccp_protocol_sendLineStatRespV17, 
+				  sccp_protocol_sendStartMultiMediaTransmissionV17, sccp_protocol_sendStartMediaTransmissionV17, sccp_protocol_sendConnectionStatisticsReqV3, sccp_protocol_sendPortRequest,sccp_protocol_sendPortClose, sccp_protocol_sendLineStatRespV17,
 				  sccp_protocol_parseOpenReceiveChannelAckV17, sccp_protocol_parseOpenMultiMediaReceiveChannelAckV17, sccp_protocol_parseStartMediaTransmissionAckV17, sccp_protocol_parseStartMultiMediaTransmissionAckV17, sccp_protocol_parseEnblocCallV17, sccp_protocol_parsePortResponseV3},
 	&(sccp_deviceProtocol_t) {SCCP_PROTOCOL, 18, TimeDateReqMessage, sccp_protocol_sendCallInfoV16, sccp_protocol_sendDialedNumberV18, sccp_protocol_sendRegisterAckV11, sccp_protocol_sendDynamicDisplayprompt, sccp_protocol_sendDynamicDisplayNotify, sccp_protocol_sendDynamicDisplayPriNotify, sccp_protocol_sendCallForwardStatusV18, sccp_protocol_sendUserToDeviceDataVersion1Message, sccp_protocol_sendMultiMediaCommand, sccp_protocol_sendOpenReceiveChannelV17, sccp_protocol_sendOpenMultiMediaChannelV17,
 				  sccp_protocol_sendStartMultiMediaTransmissionV17, sccp_protocol_sendStartMediaTransmissionV17, sccp_protocol_sendConnectionStatisticsReqV3, sccp_protocol_sendPortRequest,sccp_protocol_sendPortClose, sccp_protocol_sendLineStatRespV17,
@@ -1800,9 +1488,7 @@ static const sccp_deviceProtocol_t *sccpProtocolDefinition[] = {
 				  sccp_protocol_parseOpenReceiveChannelAckV17,sccp_protocol_parseOpenMultiMediaReceiveChannelAckV17,sccp_protocol_parseStartMediaTransmissionAckV17,sccp_protocol_parseStartMultiMediaTransmissionAckV17,sccp_protocol_parseEnblocCallV22, sccp_protocol_parsePortResponseV19},
 };
 
-/*! 
- * \brief SPCP Protocol Version to Message Mapping
- */
+/* SPCP Protocol Version to Message Mapping */
 static const sccp_deviceProtocol_t *spcpProtocolDefinition[] = {
 	&(sccp_deviceProtocol_t) {SPCP_PROTOCOL, 0, RegisterAvailableLinesMessage, sccp_protocol_sendCallInfoV3, sccp_protocol_sendDialedNumberV3, sccp_protocol_sendRegisterAckV4, sccp_protocol_sendDynamicDisplayprompt, sccp_protocol_sendDynamicDisplayNotify, sccp_protocol_sendDynamicDisplayPriNotify, sccp_protocol_sendCallForwardStatus, sccp_protocol_sendUserToDeviceDataVersion1Message, sccp_protocol_sendMultiMediaCommand, sccp_protocol_sendOpenReceiveChannelV3,
 				  sccp_protocol_sendOpenMultiMediaChannelV3,
@@ -1821,9 +1507,7 @@ static const sccp_deviceProtocol_t *spcpProtocolDefinition[] = {
 				  sccp_protocol_parseOpenReceiveChannelAckV3, sccp_protocol_parseOpenMultiMediaReceiveChannelAckV3, sccp_protocol_parseStartMediaTransmissionAckV3, sccp_protocol_parseStartMultiMediaTransmissionAckV3, sccp_protocol_parseEnblocCallV17, sccp_protocol_parsePortResponseV19},
 };
 
-/*! 
- * \brief Get Maximum Supported Version Number by Protocol Type
- */
+/* Get Maximum Supported Version Number by Protocol Type */
 uint8_t __CONST__ sccp_protocol_getMaxSupportedVersionNumber(int type)
 {
 	switch (type) {
@@ -1857,9 +1541,7 @@ gcc_inline boolean_t sccp_protocol_isProtocolSupported(uint8_t type, uint8_t ver
 	return (version < protocolArraySize && protocolDef[version] != NULL) ? TRUE : FALSE;
 }
 
-/*!
- * \brief Get Maximum Possible Protocol Supported by Device
- */
+/* Get Maximum Possible Protocol Supported by Device */
 const sccp_deviceProtocol_t *sccp_protocol_getDeviceProtocol(constDevicePtr device, int type)
 {
 	uint8_t version = device->protocolversion;
@@ -1872,7 +1554,7 @@ const sccp_deviceProtocol_t *sccp_protocol_getDeviceProtocol(constDevicePtr devi
 	if (type == SCCP_PROTOCOL) {
 		protocolArraySize = ARRAY_LEN(sccpProtocolDefinition);
 		protocolDef = sccpProtocolDefinition;
-		returnProtocol = 3;										// setting minimally returned protocol
+		returnProtocol = 3;
 		sccp_log(DEBUGCAT_DEVICE) (VERBOSE_PREFIX_3 "SCCP: looking up SCCP protocol support\n");
 	} else {
 		protocolArraySize = ARRAY_LEN(spcpProtocolDefinition);
@@ -1928,12 +1610,11 @@ const char * const __CONST__ skinny_keymode2longstr(skinny_keymode_t keymode)
 
 const struct messageinfo sccp_messageinfo[] = {
 	/* clang-format off */
-	/* DEV -> PBX */
 	[KeepAliveMessage] = { KeepAliveMessage, "Keep Alive Message", offsize(sccp_data_t, StationKeepAliveMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
 	[RegisterMessage] = { RegisterMessage, "Register Message", offsize(sccp_data_t, RegisterMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
 	[IpPortMessage] = { IpPortMessage, "Ip-Port Message", offsize(sccp_data_t, IpPortMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
 	[KeypadButtonMessage] = { KeypadButtonMessage, "Keypad Button Message", offsize(sccp_data_t, KeypadButtonMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
-	/**/[EnblocCallMessage] = { EnblocCallMessage, "Enbloc Call Message", offsize(sccp_data_t, EnblocCallMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [EnblocCallMessage] = { EnblocCallMessage, "Enbloc Call Message", offsize(sccp_data_t, EnblocCallMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[StimulusMessage] = { StimulusMessage, "Stimulus Message", offsize(sccp_data_t, StimulusMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
 	[OffHookMessage] = { OffHookMessage, "Off-Hook Message", offsize(sccp_data_t, OffHookMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
 	[OnHookMessage] = { OnHookMessage, "On-Hook Message", offsize(sccp_data_t, OnHookMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
@@ -1942,7 +1623,7 @@ const struct messageinfo sccp_messageinfo[] = {
 	[SpeedDialStatReqMessage] = { SpeedDialStatReqMessage, "Speed-Dial State Request", offsize(sccp_data_t, SpeedDialStatReqMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
 	[LineStatReqMessage] = { LineStatReqMessage, "Line State Request", offsize(sccp_data_t, LineStatReqMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
 	[ConfigStatReqMessage] = { ConfigStatReqMessage, "Config State Request", offsize(sccp_data_t, ConfigStatReqMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
-	/**/[TimeDateReqMessage] = { TimeDateReqMessage, "Time Date Request", offsize(sccp_data_t, TimeDateReqMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
+ [TimeDateReqMessage] = { TimeDateReqMessage, "Time Date Request", offsize(sccp_data_t, TimeDateReqMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
 	[ButtonTemplateReqMessage] = { ButtonTemplateReqMessage, "Button Template Request", offsize(sccp_data_t, ButtonTemplateReqMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
 	[VersionReqMessage] = { VersionReqMessage, "Version Request", offsize(sccp_data_t, VersionReqMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
 	[CapabilitiesResMessage] = { CapabilitiesResMessage, "Capabilities Response Message", offsize(sccp_data_t, CapabilitiesResMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_DEV2PBX },
@@ -1951,7 +1632,6 @@ const struct messageinfo sccp_messageinfo[] = {
 	[AlarmMessage] = { AlarmMessage, "Alarm Message", offsize(sccp_data_t, AlarmMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
 	[MulticastMediaReceptionAck] = { MulticastMediaReceptionAck, "Multicast Media Reception Acknowledge", offsize(sccp_data_t, MulticastMediaReceptionAck), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_DEV2PBX },
 	[OpenReceiveChannelAck] = { OpenReceiveChannelAck, "Open Receive Channel Acknowledge", offsize(sccp_data_t, OpenReceiveChannelAck), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_DEV2PBX },
-	/*[ConnectionStatisticsRes] = { ConnectionStatisticsRes, "Connection Statistics Response", offsize(sccp_data_t, ConnectionStatisticsRes), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_DEV2PBX },*/
 	[ConnectionStatisticsRes] = { ConnectionStatisticsRes, "Connection Statistics Response", offsize(sccp_data_t, ConnectionStatisticsRes), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
 	[OffHookMessageWithCallingPartyMessage] = { OffHookMessageWithCallingPartyMessage, "Off-Hook With Cgpn Message", offsize(sccp_data_t, OffHookMessageWithCallingPartyMessage), SKINNY_MSGTYPE_EVENT,
 						    SKINNY_MSGDIRECTION_DEV2PBX },
@@ -1960,7 +1640,7 @@ const struct messageinfo sccp_messageinfo[] = {
 	[UnregisterMessage] = { UnregisterMessage, "Unregister Message", offsize(sccp_data_t, UnregisterMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
 	[SoftKeyTemplateReqMessage] = { SoftKeyTemplateReqMessage, "SoftKey Template Request", offsize(sccp_data_t, SoftKeyTemplateReqMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
 	[RegisterTokenRequest] = { RegisterTokenRequest, "Register Token Request", offsize(sccp_data_t, RegisterTokenRequest), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
-	/**/[MediaTransmissionFailure] = { MediaTransmissionFailure, "Media Transmission Failure", offsize(sccp_data_t, MediaTransmissionFailure), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
+ [MediaTransmissionFailure] = { MediaTransmissionFailure, "Media Transmission Failure", offsize(sccp_data_t, MediaTransmissionFailure), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
 	[HeadsetStatusMessage] = { HeadsetStatusMessage, "Headset Status Message", offsize(sccp_data_t, HeadsetStatusMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
 	[MediaResourceNotification] = { MediaResourceNotification, "Media Resource Notification", offsize(sccp_data_t, MediaResourceNotification), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
 	[RegisterAvailableLinesMessage] = { RegisterAvailableLinesMessage, "Register Available Lines Message", offsize(sccp_data_t, RegisterAvailableLinesMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
@@ -1985,7 +1665,6 @@ const struct messageinfo sccp_messageinfo[] = {
 	[SubscriptionStatReqMessage] = { SubscriptionStatReqMessage, "Subscription Status Request (DialedPhoneBook)", offsize(sccp_data_t, SubscriptionStatReqMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
 	[AccessoryStatusMessage] = { AccessoryStatusMessage, "Accessory Status Message", offsize(sccp_data_t, AccessoryStatusMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
 
-	/* PBX -> DEV */
 	[RegisterAckMessage] = { RegisterAckMessage, "Register Acknowledge", offsize(sccp_data_t, RegisterAckMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
 	[StartToneMessage] = { StartToneMessage, "Start Tone Message", offsize(sccp_data_t, StartToneMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[StopToneMessage] = { StopToneMessage, "Stop Tone Message", offsize(sccp_data_t, StopToneMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
@@ -1994,10 +1673,10 @@ const struct messageinfo sccp_messageinfo[] = {
 	[SetHookFlashDetectMessage] = { SetHookFlashDetectMessage, "Set HookFlash Detect Message", offsize(sccp_data_t, SetHookFlashDetectMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[SetSpeakerModeMessage] = { SetSpeakerModeMessage, "Set Speaker Mode Message", offsize(sccp_data_t, SetSpeakerModeMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[SetMicroModeMessage] = { SetMicroModeMessage, "Set Micro Mode Message", offsize(sccp_data_t, SetMicroModeMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
-	/*spa*/[StartMediaTransmission] = { StartMediaTransmission, "Start Media Transmission", offsize(sccp_data_t, StartMediaTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
-	/**/[StopMediaTransmission] = { StopMediaTransmission, "Stop Media Transmission", offsize(sccp_data_t, StopMediaTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
-	/**/[StartMediaReception] = { StartMediaReception, "Start Media Reception", offsize(sccp_data_t, StartMediaReception), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
-	/**/[StopMediaReception] = { StopMediaReception, "Stop Media Reception", offsize(sccp_data_t, StopMediaReception), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [StartMediaTransmission] = { StartMediaTransmission, "Start Media Transmission", offsize(sccp_data_t, StartMediaTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [StopMediaTransmission] = { StopMediaTransmission, "Stop Media Transmission", offsize(sccp_data_t, StopMediaTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [StartMediaReception] = { StartMediaReception, "Start Media Reception", offsize(sccp_data_t, StartMediaReception), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [StopMediaReception] = { StopMediaReception, "Stop Media Reception", offsize(sccp_data_t, StopMediaReception), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[CallInfoMessage] = { CallInfoMessage, "Call Information Message", offsize(sccp_data_t, CallInfoMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[ForwardStatMessage] = { ForwardStatMessage, "Forward State Message", offsize(sccp_data_t, ForwardStatMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
 	[SpeedDialStatMessage] = { SpeedDialStatMessage, "SpeedDial State Message", offsize(sccp_data_t, SpeedDialStatMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
@@ -2005,10 +1684,9 @@ const struct messageinfo sccp_messageinfo[] = {
 	[ConfigStatMessage] = { ConfigStatMessage, "Config State Message", offsize(sccp_data_t, ConfigStatMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
 	[ConfigStatDynamicMessage] = { ConfigStatDynamicMessage, "Config State Dynamic Message", offsize(sccp_data_t, ConfigStatDynamicMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
 	[DefineTimeDate] = { DefineTimeDate, "Define Time Date", offsize(sccp_data_t, DefineTimeDate), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
-	/**/[StartSessionTransmission] = { StartSessionTransmission, "Start Session Transmission", offsize(sccp_data_t, StartSessionTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
-	/**/[StopSessionTransmission] = { StopSessionTransmission, "Stop Session Transmission", offsize(sccp_data_t, StopSessionTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [StartSessionTransmission] = { StartSessionTransmission, "Start Session Transmission", offsize(sccp_data_t, StartSessionTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [StopSessionTransmission] = { StopSessionTransmission, "Stop Session Transmission", offsize(sccp_data_t, StopSessionTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[ButtonTemplateMessage] = { ButtonTemplateMessage, "Button Template Message", offsize(sccp_data_t, ButtonTemplateMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
-	//[ButtonTemplateMessageSingle] = {ButtonTemplateMessageSingle,			"Button Template Message Single",		offsize(sccp_data_t, ButtonTemplateMessageSingle)},
 	[VersionMessage] = { VersionMessage, "Version Message", offsize(sccp_data_t, VersionMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
 	[DisplayTextMessage] = { DisplayTextMessage, "Display Text Message", offsize(sccp_data_t, DisplayTextMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[ClearDisplay] = { ClearDisplay, "Clear Display", offsize(sccp_data_t, ClearDisplay), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
@@ -2020,14 +1698,13 @@ const struct messageinfo sccp_messageinfo[] = {
 	[ServerResMessage] = { ServerResMessage, "Server Response", offsize(sccp_data_t, ServerResMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
 	[Reset] = { Reset, "Reset", offsize(sccp_data_t, Reset), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[KeepAliveAckMessage] = { KeepAliveAckMessage, "Keep Alive Acknowledge", offsize(sccp_data_t, KeepAliveAckMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
-	/**/[StartMulticastMediaReception] = { StartMulticastMediaReception, "Start MulticastMedia Reception", offsize(sccp_data_t, StartMulticastMediaReception), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
-	/**/[StartMulticastMediaTransmission] = { StartMulticastMediaTransmission, "Start MulticastMedia Transmission", offsize(sccp_data_t, StartMulticastMediaTransmission), SKINNY_MSGTYPE_EVENT,
+ [StartMulticastMediaReception] = { StartMulticastMediaReception, "Start MulticastMedia Reception", offsize(sccp_data_t, StartMulticastMediaReception), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [StartMulticastMediaTransmission] = { StartMulticastMediaTransmission, "Start MulticastMedia Transmission", offsize(sccp_data_t, StartMulticastMediaTransmission), SKINNY_MSGTYPE_EVENT,
 						  SKINNY_MSGDIRECTION_PBX2DEV },
-	/**/[StopMulticastMediaReception] = { StopMulticastMediaReception, "Stop MulticastMedia Reception", offsize(sccp_data_t, StopMulticastMediaReception), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
-	/**/[StopMulticastMediaTransmission] = { StopMulticastMediaTransmission, "Stop MulticastMedia Transmission", offsize(sccp_data_t, StopMulticastMediaTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [StopMulticastMediaReception] = { StopMulticastMediaReception, "Stop MulticastMedia Reception", offsize(sccp_data_t, StopMulticastMediaReception), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [StopMulticastMediaTransmission] = { StopMulticastMediaTransmission, "Stop MulticastMedia Transmission", offsize(sccp_data_t, StopMulticastMediaTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[OpenReceiveChannel] = { OpenReceiveChannel, "Open Receive Channel", offsize(sccp_data_t, OpenReceiveChannel), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_PBX2DEV },
 	[CloseReceiveChannel] = { CloseReceiveChannel, "Close Receive Channel", offsize(sccp_data_t, CloseReceiveChannel), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
-	/*[ConnectionStatisticsReq] = { ConnectionStatisticsReq, "Connection Statistics Request", offsize(sccp_data_t, ConnectionStatisticsReq), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_PBX2DEV },**/
 	[ConnectionStatisticsReq] = { ConnectionStatisticsReq, "Connection Statistics Request", offsize(sccp_data_t, ConnectionStatisticsReq), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[SoftKeyTemplateResMessage] = { SoftKeyTemplateResMessage, "SoftKey Template Response", offsize(sccp_data_t, SoftKeyTemplateResMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
 	[SoftKeySetResMessage] = { SoftKeySetResMessage, "SoftKey Set Response", offsize(sccp_data_t, SoftKeySetResMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
@@ -2066,8 +1743,8 @@ const struct messageinfo sccp_messageinfo[] = {
 	[ServiceURLStatMessage] = { ServiceURLStatMessage, "ServiceURL State Message", offsize(sccp_data_t, ServiceURLStatMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
 	[CallSelectStatMessage] = { CallSelectStatMessage, "Call Select State Message", offsize(sccp_data_t, CallSelectStatMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
 	[OpenMultiMediaChannelMessage] = { OpenMultiMediaChannelMessage, "Open MultiMedia Channel Message", offsize(sccp_data_t, OpenMultiMediaChannelMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_PBX2DEV },
-	/*spa*/[StartMultiMediaTransmission] = { StartMultiMediaTransmission, "Start MultiMedia Transmission", offsize(sccp_data_t, StartMultiMediaTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
-	/**/[StopMultiMediaTransmission] = { StopMultiMediaTransmission, "Stop MultiMedia Transmission", offsize(sccp_data_t, StopMultiMediaTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [StartMultiMediaTransmission] = { StartMultiMediaTransmission, "Start MultiMedia Transmission", offsize(sccp_data_t, StartMultiMediaTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [StopMultiMediaTransmission] = { StopMultiMediaTransmission, "Stop MultiMedia Transmission", offsize(sccp_data_t, StopMultiMediaTransmission), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[MiscellaneousCommandMessage] = { MiscellaneousCommandMessage, "Miscellaneous Command Message", offsize(sccp_data_t, MiscellaneousCommandMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[FlowControlCommandMessage] = { FlowControlCommandMessage, "Flow Control Command Message", offsize(sccp_data_t, FlowControlCommandMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[CloseMultiMediaReceiveChannel] = { CloseMultiMediaReceiveChannel, "Close MultiMedia Receive Channel", offsize(sccp_data_t, CloseMultiMediaReceiveChannel), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
@@ -2092,8 +1769,8 @@ const struct messageinfo sccp_messageinfo[] = {
 	[CallInfoDynamicMessage] = { CallInfoDynamicMessage, "Call Information Dynamic Message", offsize(sccp_data_t, CallInfoDynamicMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[SubscriptionStatMessage] = { SubscriptionStatMessage, "Subscription Status Response (Dialed Number)", offsize(sccp_data_t, SubscriptionStatMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
 	[NotificationMessage] = { NotificationMessage, "Notify Call List (CallListStatusUpdate)", offsize(sccp_data_t, NotificationMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
-	/*spa*/[StartMediaTransmissionAck] = { StartMediaTransmissionAck, "Start Media Transmission Acknowledge", offsize(sccp_data_t, StartMediaTransmissionAck), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
-	/**/[StartMultiMediaTransmissionAck] = { StartMultiMediaTransmissionAck, "Start Media Transmission Acknowledge", offsize(sccp_data_t, StartMultiMediaTransmissionAck), SKINNY_MSGTYPE_EVENT,
+ [StartMediaTransmissionAck] = { StartMediaTransmissionAck, "Start Media Transmission Acknowledge", offsize(sccp_data_t, StartMediaTransmissionAck), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
+ [StartMultiMediaTransmissionAck] = { StartMultiMediaTransmissionAck, "Start Media Transmission Acknowledge", offsize(sccp_data_t, StartMultiMediaTransmissionAck), SKINNY_MSGTYPE_EVENT,
 						 SKINNY_MSGDIRECTION_PBX2DEV },
 	[CallHistoryDispositionMessage] = { CallHistoryDispositionMessage, "Call History Disposition", offsize(sccp_data_t, CallHistoryDispositionMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[LocationInfoMessage] = { LocationInfoMessage, "Location/Wifi Information", offsize(sccp_data_t, LocationInfoMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
@@ -2102,7 +1779,6 @@ const struct messageinfo sccp_messageinfo[] = {
 	[MediaPathCapabilityMessage] = { MediaPathCapabilityMessage, "MediaPath Capability Message", offsize(sccp_data_t, MediaPathCapabilityMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[FlowControlNotifyMessage] = { FlowControlNotifyMessage, "FlowControl Notify Message", offsize(sccp_data_t, FlowControlNotifyMessage), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_PBX2DEV },
 	[CallCountReqMessage] = { CallCountReqMessage, "CallCount Request Message", offsize(sccp_data_t, CallCountReqMessage), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_PBX2DEV },
-	/*new*/
 	[UpdateCapabilitiesV2Message] = { UpdateCapabilitiesV2Message, "Update Capabilities V2", offsize(sccp_data_t, UpdateCapabilitiesV2Message), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
 	[UpdateCapabilitiesV3Message] = { UpdateCapabilitiesV3Message, "Update Capabilities V3", offsize(sccp_data_t, UpdateCapabilitiesV3Message), SKINNY_MSGTYPE_EVENT, SKINNY_MSGDIRECTION_DEV2PBX },
 	[PortResponseMessage] = { PortResponseMessage, "Port Response Message", offsize(sccp_data_t, PortResponseMessage), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
@@ -2126,7 +1802,6 @@ const struct messageinfo spcp_messageinfo[] = {
 	[SPCPRegisterTokenRequest - SPCP_MESSAGE_OFFSET] = { SPCPRegisterTokenRequest, "SPCP Register Token Request", offsize(sccp_data_t, SPCPRegisterTokenRequest), SKINNY_MSGTYPE_REQUEST, SKINNY_MSGDIRECTION_DEV2PBX },
 	[SPCPRegisterTokenAck - SPCP_MESSAGE_OFFSET] = { SPCPRegisterTokenAck, "SPCP RegisterMessageACK", offsize(sccp_data_t, SPCPRegisterTokenAck), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
 	[SPCPRegisterTokenReject - SPCP_MESSAGE_OFFSET] = { SPCPRegisterTokenReject, "SPCP RegisterMessageReject", offsize(sccp_data_t, SPCPRegisterTokenReject), SKINNY_MSGTYPE_RESPONSE, SKINNY_MSGDIRECTION_PBX2DEV },
-	//[UnknownVGMessage - SPCP_MESSAGE_OFFSET		] = {UnknownVGMessage,		"Unknown Message (VG224)",			offsize(sccp_data_t, UnknownVGMessage)},
 	/* clang-format on */
 };
 
@@ -2143,7 +1818,7 @@ gcc_inline struct messageinfo * lookupMsgInfoStruct(uint32_t messageId)
 }
 
 gcc_inline const char * msginfo2str(sccp_mid_t msgId)
-{														/* sccp_protocol.h */
+{
 	struct messageinfo * info = lookupMsgInfoStruct(msgId);
 	if (!info) {
 		return NULL;
@@ -2151,4 +1826,3 @@ gcc_inline const char * msginfo2str(sccp_mid_t msgId)
 	return info->text;
 }
 
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

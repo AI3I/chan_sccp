@@ -20,21 +20,19 @@ SCCP_FILE_VERSION(__FILE__, "");
 #include <time.h>
 
 #ifdef HAVE_LIBSSL
-#	include <openssl/err.h> /* for ERR_print_errors_fp */
-#	include <openssl/ssl.h> /* for SSL_CTX_free, SSL_get_error, ... */
+#	include <openssl/err.h>
+#	include <openssl/ssl.h>
 #	ifdef HAVE_CRYPTO
-#		include <openssl/crypto.h> /* for OPENSSL_free */
+#		include <openssl/crypto.h>
 #	endif
-#	define PBX_CERTFILE           "asterisk.pem"                                        // move to config.h (copy from tcptls.h)
+#	define PBX_CERTFILE           "asterisk.pem"
 #	define REQUEST_RETRY_INTERVAL 5
 #	define REQUEST_RETRY_COUNT    2
 #	define DUPLICATE_INTERVAL     REQUEST_RETRY_INTERVAL * REQUEST_RETRY_COUNT
 #	define TLS_IO_TIMEOUT_MS      5000
 
-/* local variables */
 static SSL_CTX * sslctx = NULL;
 
-/* forward declares */
 const sccp_transport_t tlstransport;
 
 static void write_openssl_error_to_log(void)
@@ -112,7 +110,6 @@ static int tls_error_result(int ssl_error, int saved_errno)
 static SSL_CTX * create_context(void)
 {
 	sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS: creating context\n");
-	// const SSL_METHOD * method = TLS_server_method();
 	const SSL_METHOD * method = SSLv23_method();
 	SSL_CTX *          ctx    = SSL_CTX_new(method);
 	if (!ctx) {
@@ -177,13 +174,11 @@ const sccp_transport_t * const tls_init(void)
 
 static int tls_bind(sccp_socket_connection_t * sc, struct sockaddr * addr, socklen_t addrlen)
 {
-	// sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport bind...\n");
 	return bind(sc->fd, addr, addrlen);
 }
 
 static int tls_listen(sccp_socket_connection_t * sc, int backlog)
 {
-	// sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport listen...\n");
 	return listen(sc->fd, backlog);
 }
 
@@ -202,9 +197,7 @@ static sccp_socket_connection_t * tls_accept(sccp_socket_connection_t * in_sc, s
 	if (newfd < 0) {
 		return NULL;
 	}
-	/* The caller re-enables cancellation before its next accept. Keep the
-	 * handshake and ownership handoff together so cancellation cannot leak
-	 * an accepted socket or interrupt an OpenSSL call. */
+	/* The caller re-enables cancellation before its next accept. */
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 	flags = fcntl(newfd, F_GETFL);
 	if (flags < 0 || fcntl(newfd, F_SETFL, flags | O_NONBLOCK) < 0) {
@@ -324,7 +317,6 @@ static int tls_send(sccp_socket_connection_t * sc, void * buf, size_t buflen, in
 
 static int tls_shutdown(sccp_socket_connection_t * sc, int how)
 {
-	// sccp_log(DEBUGCAT_SOCKET)(VERBOSE_PREFIX_1 "TLS Transport shutdown...\n");
 	sccp_mutex_lock(sc->ssl_lock);
 	SSL_shutdown(sc->ssl);
 	sccp_mutex_unlock(sc->ssl_lock);
@@ -386,4 +378,3 @@ const sccp_transport_t tlstransport = {
 	.destroy  = tls_destroy,
 };
 #endif /* HAVE_LIBSSL */
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

@@ -25,31 +25,23 @@
 #include "sccp_linedevice.h"
 #include "sccp_netsock.h"
 #include "sccp_mwi.h"
-#include "sccp_session.h"	// use __constructor__ to remove this entry
+#include "sccp_session.h"
 #include "sccp_utils.h"
-#include "sccp_hint.h"		// use __constructor__ to remove this entry
-#include "sccp_conference.h"	// use __constructor__ to remove this entry
+#include "sccp_hint.h"
+#include "sccp_conference.h"
 #include "revision.h"
 #ifdef CS_DEVSTATE_FEATURE
 #include "sccp_devstate.h"
 #endif
-#include "sccp_management.h"	// use __constructor__ to remove this entry
+#include "sccp_management.h"
 #include "sccp_threadpool.h"
 #include "sccp_session.h"
-//#include "sccp_transport.h"
 #include <signal.h>
 
 SCCP_FILE_VERSION(__FILE__, "");
 
-/*!
- * \brief       Global null frame
- */
-static PBX_FRAME_TYPE sccp_null_frame;										/*!< Asterisk Structure */
+static PBX_FRAME_TYPE sccp_null_frame;
 
-/**
- * \brief load the configuration from sccp.conf
- * \todo should be pbx independent
- */
 int load_config(void)
 {
 	GLOB(mwiMonitorThread) = AST_PTHREADT_NULL;
@@ -80,29 +72,22 @@ int load_config(void)
 	return TRUE;
 }
 
-/*!
- * \brief       Load the actual chan_sccp module
- * \return      Success as int
- */
 boolean_t sccp_prePBXLoad(void)
 {
 	/* no sccp_log() before this point: it reads sccp_globals->debug */
-	/* make globals */
 	sccp_globals = (struct sccp_global_vars *) sccp_calloc(sizeof *sccp_globals, 1);
 	if (!sccp_globals) {
 		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, __func__);
 		return FALSE;
 	}
 
-	/* Initialize memory */
 	memset(&sccp_null_frame, 0, sizeof(sccp_null_frame));
 	GLOB(debug) = DEBUGCAT_CORE;
 
 	pbx_rwlock_init(&GLOB(lock));
-#ifndef SCCP_ATOMIC	
+#ifndef SCCP_ATOMIC
 	pbx_mutex_init(&GLOB(usecnt_lock));
 #endif
-	/* init refcount */
 	sccp_refcount_init();
 
 	SCCP_RWLIST_HEAD_INIT(&GLOB(sessions));
@@ -149,15 +134,13 @@ boolean_t sccp_prePBXLoad(void)
 	GLOB(externrefresh) = 60;
 	GLOB(keepalive) = SCCP_MIN_KEEPALIVE;
 
-	/* Wait up to 16 seconds for first digit */
 	GLOB(firstdigittimeout) = 16;
-	/* How long to wait for following digits */
 	GLOB(digittimeout) = 8;
 
 	GLOB(debug) = 1;
-	GLOB(sccp_tos) = (0x68 & 0xff);										// AF31
-	GLOB(audio_tos) = (0xB8 & 0xff);									// EF
-	GLOB(video_tos) = (0x88 & 0xff);									// AF41
+	GLOB(sccp_tos) = (0x68 & 0xff);
+	GLOB(audio_tos) = (0xB8 & 0xff);
+	GLOB(video_tos) = (0x88 & 0xff);
 	GLOB(sccp_cos) = 4;
 	GLOB(audio_cos) = 6;
 	GLOB(video_cos) = 5;
@@ -167,7 +150,7 @@ boolean_t sccp_prePBXLoad(void)
 	GLOB(autoanswer_tone) = SKINNY_TONE_ZIP;
 	GLOB(remotehangup_tone) = SKINNY_TONE_ZIP;
 	GLOB(callwaiting_tone) = SKINNY_TONE_CALLWAITINGTONE;
-	GLOB(privacy) = TRUE;											/* permit private function */
+	GLOB(privacy) = TRUE;
 	GLOB(mwilamp) = SKINNY_LAMP_ON;
 	GLOB(ringtype) = SKINNY_RINGTYPE_OUTSIDE;
 	GLOB(amaflags) = pbx_channel_string2amaflag("documentation");
@@ -218,13 +201,10 @@ boolean_t sccp_postPBX_load(void)
 		}
 	}
 #endif
-	return TRUE /* ? */;
+	return TRUE ;
 }
 
-/*!
- * \brief PBX Independent Function to be called before unloading the module
- * \return Success as int
- */
+/* PBX Independent Function to be called before unloading the module */
 int sccp_preUnload(void)
 {
 	sccp_device_t *d = NULL;
@@ -238,7 +218,6 @@ int sccp_preUnload(void)
 	pbx_rwlock_unlock(&GLOB(lock));
 	sccp_threadpool_stop(GLOB(general_threadpool));
 
-	/* unsubscribe from services */
 	sccp_event_unsubscribe(SCCP_EVENT_FEATURE_CHANGED, sccp_device_featureChangedDisplay);
 	sccp_event_unsubscribe(SCCP_EVENT_FEATURE_CHANGED, sccp_util_featureStorageBackend);
 
@@ -250,18 +229,16 @@ int sccp_preUnload(void)
 #endif
 	sccp_hint_module_stop();
 
-	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "SCCP: hanging up open calls\n");				//! \todo make this pbx independend
+	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_2 "SCCP: hanging up open calls\n");
 
-	/* removing devices */
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: removing devices\n");
 	SCCP_RWLIST_TRAVERSE_SAFE_BEGIN(&GLOB(devices), d, list) {
 		sccp_log((DEBUGCAT_CORE + DEBUGCAT_DEVICE)) (VERBOSE_PREFIX_3 "SCCP: removing device %s\n", d->id);
-		d->realtime = TRUE;										// use realtime, to fully clear the device configuration
-		sccp_dev_clean_restart(d, TRUE);								// performs a device reset if it has a session
+		d->realtime = TRUE;
+		sccp_dev_clean_restart(d, TRUE);
 	}
 	SCCP_RWLIST_TRAVERSE_SAFE_END;
 
-	/* hotline will be removed by line removing function */
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: removing lines\n");
 	sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_4 "SCCP: removing hotline\n");
 	if (GLOB(hotline)) {
@@ -274,18 +251,16 @@ int sccp_preUnload(void)
 		sccp_free(GLOB(hotline));
 	}
 
-	/* removing lines */
 	SCCP_RWLIST_TRAVERSE_SAFE_BEGIN(&GLOB(lines), l, list) {
 		sccp_log((DEBUGCAT_CORE + DEBUGCAT_LINE)) (VERBOSE_PREFIX_4 "SCCP: removing line %s\n", l->name);
 		sccp_line_clean(l, TRUE);
 	}
 	SCCP_RWLIST_TRAVERSE_SAFE_END;
 	iVoicemail.stopModule();
-	usleep(100);												// wait for events to finalize
+	usleep(100);
 
 	sccp_event_module_stop();
 
-	/* stop services */
 	sccp_session_terminateAll();
 	/* Producers are stopped; callbacks must finish before their services go away. */
 	if (!sccp_threadpool_destroy(GLOB(general_threadpool))) {
@@ -300,7 +275,7 @@ int sccp_preUnload(void)
 		SCCP_RWLIST_HEAD_DESTROY(&GLOB(lines));
 	}
 	sccp_manager_module_stop();
-#ifdef CS_DEVSTATE_FEATURE	
+#ifdef CS_DEVSTATE_FEATURE
 	sccp_devstate_module_stop();
 #endif
 #ifdef CS_SCCP_CONFERENCE
@@ -309,7 +284,6 @@ int sccp_preUnload(void)
 	sccp_softkey_clear();
 	sccp_refcount_destroy();
 
-	/* free resources */
 	if (GLOB(config_file_name)) {
 		sccp_free(GLOB(config_file_name));
 	}
@@ -327,24 +301,18 @@ int sccp_preUnload(void)
 		GLOB(cfg) = NULL;
 	}
 	sccp_config_cleanup_dynamically_allocated_memory(sccp_globals, SCCP_CONFIG_GLOBAL_SEGMENT);
-	/* */
 	sccp_servercontext_destroy(GLOB(srvcontexts[SCCP_SERVERCONTEXT_TCP]));
 #if HAVE_LIBSSL
 	sccp_servercontext_destroy(GLOB(srvcontexts[SCCP_SERVERCONTEXT_TLS]));
 #endif
 
-	/* destroy locks */
 #ifndef SCCP_ATOMIC
 	pbx_mutex_destroy(&GLOB(usecnt_lock));
-#endif	
+#endif
 	pbx_rwlock_destroy(&GLOB(lock));
 	return 0;
 }
 
-/*!
- * \brief PBX Independent Function to be called when starting module reload
- * \return Success as int
- */
 int sccp_reload(void)
 {
 	sccp_readingtype_t readingtype = 0;
@@ -361,7 +329,6 @@ int sccp_reload(void)
 
 	switch (cfg) {
 		case CONFIG_STATUS_FILE_NOT_CHANGED:
-			//sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_3 "config file '%s' has not changed, skipping reload.\n", GLOB(config_file_name));
 			returnval = 0;
 			break;
 		case CONFIG_STATUS_FILE_OK:
@@ -410,4 +377,3 @@ EXIT:
 	return returnval;
 }
 
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

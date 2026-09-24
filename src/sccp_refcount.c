@@ -5,35 +5,17 @@
  *              See the LICENSE file at the top of the source tree.
  */
 
-/*!
- * \section sccp_refcount   Reference Counted Objects
- * 
- * We started using refcounting in V4.0 to prevent possible deadlock situations where the would not even have to occur. Up till now we had been using lock to prevent objects 
- * from vanishing instead of preventing modification. As a rule there will be at most be one thread modifying a device, line, channel object in such a significant manner 
- * the session thread the device and associated line/channel belongs too). 
- *
+/*
+ * We started using refcounting in V4.0 to prevent possible deadlock situations where the would not even have to occur.
+ * Up till now we had been using lock to prevent objects from vanishing instead of preventing modification.
  * In this regard locking was not necessary and could be replaced by a method to prevent vanishing objects and preventing dereferencing null pointers, leading to segmentation faults.
- * To solve that we opted to implement reference counting. Reference counting has a number of rules that need to be followed at any and all times for it to work:
- *
- * - Rule 1: During the initial creation / allocation of a refcounted object the refcount is set to 1. Example:
- *   \code
- *   channel = (sccp_channel_t *) sccp_refcount_object_alloc(sizeof(sccp_channel_t), "channel", c->id, __sccp_channel_destroy);
- *   \endcode
- *
- * - Rule 2: Functions that <b><em>return an object</em></b> (e.g. sccp_device, sccp_line, sccp_channel, sccp_event, sccp_linedevice), need to do so <b><em>with</em></b> a retained objects. 
- *   This happens when a object is created and returned to a calling function for example.
- *
- * - Rule 3: Functions that <b><em>receive an object pointer reference</em></b> via a function call expect the object <b><em>is being retained</em></b> in the calling function, during the time the called function lasts. 
- *   The object can <b><em>only</em></b> be released by the calling function not the called function,
- *
- * - Rule 4: When releasing an object the pointer we pass a referenece to the object pointer, should is nullified immediatly before return:
- *   \code
- *   sccp_device_release(&d);
- *   \endcode
- *   
- * - Rule 5:    You <b><em>cannnot</em></b> use free on a refcounted object. Destruction of the refcounted object and subsequent freeing of the occupied memory is performed by the sccp_release 
- *              when the number of reference reaches 0. To finalize the use of a refcounted object just release the object one final time, to negate the initial refcount of 1 during creation.
- * .
+ * To solve that we opted to implement reference counting.
+ * Reference counting has a number of rules that need to be followed at any and all times for it to work: - Rule 1: During the initial creation / allocation of a refcounted object the refcount is set to 1.
+ * - Rule 2: Functions that <b><em>return an object</em></b> (e.g. sccp_device, sccp_line, sccp_channel, sccp_event, sccp_linedevice), need to do so <b><em>with</em></b> a retained objects.
+ * This happens when a object is created and returned to a calling function for example. - Rule 3: Functions that <b><em>receive an object pointer reference</em></b> via a function call expect the object <b><em>is being retained</em></b> in the calling function, during the time the called function lasts.
+ * The object can <b><em>only</em></b> be released by the calling function not the called function, - Rule 4: When releasing an object the pointer we pass a referenece to the object pointer, should is nullified immediatly before return: sccp_device_release(&d);
+ * Destruction of the refcounted object and subsequent freeing of the occupied memory is performed by the sccp_release when the number of reference reaches 0.
+ * To finalize the use of a refcounted object just release the object one final time, to negate the initial refcount of 1 during creation. .
  * These rules need to followed to the letter !
  */
 
@@ -63,7 +45,7 @@ void sccp_refcount_init(void)
 void sccp_refcount_destroy(void)
 {
 	runState = SCCP_REF_STOPPED;
-	sched_yield();												//make sure all other threads can finish their work first.
+	sched_yield();
 	runState = SCCP_REF_DESTROYED;
 }
 
@@ -113,7 +95,7 @@ gcc_inline void * const sccp_refcount_release(const void * * const ptr, const ch
 
 gcc_inline void sccp_refcount_replace(const void * * const replaceptr, const void *const newptr, const char *filename, int lineno, const char *func)
 {
-	if (!replaceptr || (&newptr == replaceptr)) {								// nothing changed
+	if (!replaceptr || (&newptr == replaceptr)) {
 		return;
 	}
 	if (do_expect(newptr !=NULL)) {
@@ -122,13 +104,12 @@ gcc_inline void sccp_refcount_replace(const void * * const replaceptr, const voi
 			const void *oldPtr = *replaceptr;
 			*replaceptr = tmpNewPtr;
 			if (do_expect(oldPtr != NULL)) {							// release previous one after
-				sccp_refcount_release(&oldPtr, filename, lineno, func);				// explicit release
+				sccp_refcount_release(&oldPtr, filename, lineno, func);
 			}
 		}
 	} else if (do_expect(*replaceptr != NULL)) {								// release previous only
-		sccp_refcount_release(replaceptr, filename, lineno, func);					// explicit release
+		sccp_refcount_release(replaceptr, filename, lineno, func);
 	}
-	
 }
 
 int sccp_show_refcount(int fd, sccp_cli_totals_t *totals, struct mansession *s, const struct message *m, int argc, char *argv[])
@@ -140,7 +121,7 @@ gcc_inline void sccp_refcount_autorelease(void *refptr)
 {
 	auto_ref_t *ref = (auto_ref_t *)refptr;
 	if (ref && ref->ptr && *ref->ptr) {
-		sccp_refcount_release(ref->ptr, ref->file, ref->line, ref->func);				// explicit release
+		sccp_refcount_release(ref->ptr, ref->file, ref->line, ref->func);
 	}
 }
 
@@ -158,7 +139,6 @@ int sccp_refcount_force_release(long findobj, char *identifier)
 #endif
 
 #else // CS_ASTOBJ_REFCOUNT
-//nb: SCCP_HASH_PRIME defined in config.h, default 563
 #define SCCP_SIMPLE_HASH(_a) (((uintptr_t)(_a)) % SCCP_HASH_PRIME)
 #define SCCP_LIVE_MARKER 13
 #if CS_REFCOUNT_DEBUG
@@ -202,24 +182,22 @@ struct refcount_object {
 #ifndef SCCP_ATOMIC
 	ast_mutex_t lock;
 #endif
-	// volatile CAS32_TYPE refcount;
 	CAS32_TYPE refcount;
 	enum sccp_refcounted_types type;
 	char identifier[REFCOUNT_INDENTIFIER_SIZE];
 #if CS_REFCOUNT_DEBUG
 	void * relation[REFCOUNT_MAX_RELATIONS];
-#endif	
+#endif
 	uint16_t len;
 	uint16_t alive;
 	SCCP_RWLIST_ENTRY (RefCountedObject) list;
 	unsigned char data[0] __attribute__((aligned(8)));
 };
 
-
-static ast_rwlock_t objectslock;										// general lock to modify hash table entries
+static ast_rwlock_t objectslock;
 static struct refcount_objentry{
-	SCCP_RWLIST_HEAD (, RefCountedObject) refCountedObjects  __attribute__((aligned(8)));			//!< one rwlock per hash table entry, used to modify list
-} *objects[SCCP_HASH_PRIME] = {0};										//!< objects hash table
+	SCCP_RWLIST_HEAD (, RefCountedObject) refCountedObjects  __attribute__((aligned(8)));
+} *objects[SCCP_HASH_PRIME] = {0};
 
 void sccp_refcount_init(void)
 {
@@ -230,7 +208,6 @@ void sccp_refcount_init(void)
 	ref_debug_size = 0;
 	__rotate_debug_file();
 #endif
-//	memset(objects, 0, sizeof(RefCountedObject) * SCCP_HASH_PRIME);
 	runState = SCCP_REF_RUNNING;
 }
 
@@ -245,7 +222,7 @@ void sccp_refcount_destroy(void)
 	int numObjects = 0;
 	runState = SCCP_REF_STOPPED;
 
-	sched_yield();												//make sure all other threads can finish their work first.
+	sched_yield();
 
 	// cleanup if necessary, if everything is well, this should not be necessary
 	ast_rwlock_wrlock(&objectslock);
@@ -273,7 +250,7 @@ void sccp_refcount_destroy(void)
 			SCCP_RWLIST_UNLOCK(&(objects[hash]->refCountedObjects));
 			SCCP_RWLIST_HEAD_DESTROY(&(objects[hash]->refCountedObjects));
 
-			sccp_free(objects[hash]);								// free hashtable entry
+			sccp_free(objects[hash]);
 			objects[hash] = NULL;
 		}
 	}
@@ -314,7 +291,6 @@ void *const sccp_refcount_object_alloc(size_t size, enum sccp_refcounted_types t
 	if (!(&obj_info[type])->destructor) {
 		(&obj_info[type])->destructor = destructor;
 	}
-	// initialize object
 	obj->len = (uint16_t)size;
 	obj->type = type;
 	obj->refcount = 1;
@@ -323,12 +299,11 @@ void *const sccp_refcount_object_alloc(size_t size, enum sccp_refcounted_types t
 #endif
 	sccp_copy_string(obj->identifier, identifier, sizeof(obj->identifier));
 
-	// generate hash
 	void *ptr = obj->data;
 	uint32_t hash = SCCP_SIMPLE_HASH(ptr);
 
 	if (!objects[hash]) {
-		// create new hashtable head when necessary (should this possibly be moved to refcount_init, to avoid raceconditions ?)
+		// create new hashtable head when necessary (should this possibly be moved to refcount_init, to avoid race conditions ?)
 		ast_rwlock_wrlock(&objectslock);
 		if (!objects[hash]) {										// check again after getting the lock, to see if another thread did not create the head already
 			if (!(objects[hash] = (struct refcount_objentry *) sccp_calloc(sizeof *objects[hash], 1))) {
@@ -343,7 +318,6 @@ void *const sccp_refcount_object_alloc(size_t size, enum sccp_refcounted_types t
 		}
 		ast_rwlock_unlock(&objectslock);
 	} else {
-		// add object to hash table
 		ast_rwlock_rdlock(&objectslock);
 		SCCP_RWLIST_WRLOCK(&(objects[hash]->refCountedObjects));
 		SCCP_RWLIST_INSERT_HEAD(&(objects[hash]->refCountedObjects), obj, list);
@@ -360,7 +334,6 @@ void *const sccp_refcount_object_alloc(size_t size, enum sccp_refcounted_types t
 		fflush(sccp_ref_debug_log);
 	}
 #endif
-	//memset(ptr, 0, size);
 	return ptr;
 }
 
@@ -377,7 +350,7 @@ static int __rotate_debug_file(void)
 			return -1;
 		}
 		sccp_ref_debug_log = NULL;
-		
+
 		num_debug_files++;
 		char newfilename[SCCP_PATH_MAX];
 		snprintf(newfilename, SCCP_PATH_MAX, "%s/sccp_refs.%d", ast_config_AST_LOG_DIR, num_debug_files);
@@ -397,20 +370,15 @@ static int __rotate_debug_file(void)
 	return 0;
 }
 
-
-//#2  0x00007f7d03eac1bf in __sccp_refcount_debug (ptr=0x7f7d44008eb8, obj=0x0, delta=1, file=0x7f7d03eff592 "sccp_feature.c", line=1352,
-//    func=0x7f7d03f00740 <__PRETTY_FUNCTION__.21726> "sccp_feat_changed") at sccp_refcount.c:314
-
 static gcc_inline int __sccp_refcount_debug(const void *ptr, RefCountedObject * obj, int delta, const char *file, int line, const char *func)
 {
 	if (!sccp_ref_debug_log) {
 		return -1;
 	}
 	int res = -1;
-	//static char fmt[] = "ptr:%p|str:%sdelta:%d|tid%d|file:%s|line:%d|fund:%s|%s:%s:%s\n";
 	static char fmt[] = "%p|%s%d|%d|%s|%d|%s|%d|%s:%s\n";
 
-	if (!sccp_ref_debug_log || ref_debug_size > REF_DEBUG_FILE_MAX_SIZE) {			/* check debug file rotation requirement */
+	if (!sccp_ref_debug_log || ref_debug_size > REF_DEBUG_FILE_MAX_SIZE) {
 		ast_rwlock_wrlock(&objectslock);
 		if (__rotate_debug_file() != 0) {
 			ast_rwlock_unlock(&objectslock);
@@ -418,11 +386,11 @@ static gcc_inline int __sccp_refcount_debug(const void *ptr, RefCountedObject * 
 		}
 		ast_rwlock_unlock(&objectslock);
 	}
-	if (sccp_ref_debug_log) {	
+	if (sccp_ref_debug_log) {
 		do {
 			if (ptr == NULL) {
 				ref_debug_size += fprintf(sccp_ref_debug_log, fmt, NULL, "E", 0, ast_get_tid(), file, line, func, -3, "**PTR IS NULL**", "");
-				break;	
+				break;
 			}
 			if (obj == NULL) {
 				ref_debug_size += fprintf(sccp_ref_debug_log, fmt, ptr, "E", 0, ast_get_tid(), file, line, func, -2, "**OBJ ALREADY DESTROYED**", "");
@@ -430,7 +398,7 @@ static gcc_inline int __sccp_refcount_debug(const void *ptr, RefCountedObject * 
 			}
 
 			if (obj->alive != SCCP_LIVE_MARKER) {
-				ref_debug_size += fprintf(sccp_ref_debug_log, fmt, ptr, "E", delta, ast_get_tid(), file, line, func, -1 /*"**OBJ Already destroyed and Declared DEAD**"*/, (&obj_info[obj->type])->datatype, obj->identifier);
+				ref_debug_size += fprintf(sccp_ref_debug_log, fmt, ptr, "E", delta, ast_get_tid(), file, line, func, -1 , (&obj_info[obj->type])->datatype, obj->identifier);
 				break;
 			}
 
@@ -462,7 +430,6 @@ static gcc_inline RefCountedObject * sccp_refcount_find_obj(const void * const p
 	if (do_expect(obj && obj->data == ptr && SCCP_LIVE_MARKER == obj->alive)) {
 		return obj;
 	} else {
-		/* Replace separate log lines with one line of debug */
 		if (!obj) {
 			sccp_log((DEBUGCAT_REFCOUNT)) (VERBOSE_PREFIX_1 "SCCP: no reference-counted object for %p\n", ptr);
 		}
@@ -504,7 +471,7 @@ static gcc_inline void sccp_refcount_remove_obj(const void *ptr)
 		SCCP_RWLIST_UNLOCK(&(objects[hash]->refCountedObjects));
 	}
 	if (obj) {
-		sched_yield();											// make sure all other threads can finish their work first.
+		sched_yield();
 		// should resolve lockless refcount SMP issues
 		// BTW we are not allowed to sleep whilst having a reference
 		// fire destructor
@@ -521,7 +488,7 @@ static gcc_inline void sccp_refcount_remove_obj(const void *ptr)
 	if (cleanup_objects && runState == SCCP_REF_RUNNING && objects[hash]) {
 		ast_rwlock_wrlock(&objectslock);
 		SCCP_RWLIST_WRLOCK(&(objects[hash]->refCountedObjects));
-		if (SCCP_RWLIST_GETSIZE(&(objects[hash]->refCountedObjects)) == 0) {			/* recheck size */
+		if (SCCP_RWLIST_GETSIZE(&(objects[hash]->refCountedObjects)) == 0) {
 			SCCP_RWLIST_HEAD_DESTROY(&(objects[hash]->refCountedObjects));
 			sccp_free(objects[hash]);
 			objects[hash] = NULL;
@@ -688,7 +655,6 @@ int sccp_show_refcount(int fd, sccp_cli_totals_t *totals, struct mansession *s, 
 	local_line_total++;
 	ast_rwlock_unlock(&objectslock);
 
-	// FillFactor
 	fillfactor = (float) numentries / SCCP_HASH_PRIME;
 	int once = 0;
 #define CLI_AMI_TABLE_NAME FillFactor
@@ -797,28 +763,25 @@ gcc_inline void * const sccp_refcount_retain(const void * const ptr, const char 
 #	if CS_REFCOUNT_DEBUG
 	pbx_assert(ptr != NULL && !isPointerDead(ptr));
 #	else
-	if(ptr == NULL || isPointerDead(ptr)) {                                        // soft failure
+	if(ptr == NULL || isPointerDead(ptr)) {
 		pbx_log(LOG_WARNING, "SCCP: retain of a NULL or already freed pointer ignored (caller bug)\n");
 		usleep(10);
 		return NULL;
 	}
-#	endif	
+#	endif
 	RefCountedObject *obj = NULL;
 
 	if(do_expect((obj = sccp_refcount_find_obj(ptr, lineno, func)) != NULL)) {
 #	if CS_REFCOUNT_DEBUG
 		__sccp_refcount_debug(ptr, obj, 1, filename, lineno, func);
 #	endif
-		// ANNOTATE_HAPPENS_BEFORE(&obj->refcount);
-		// volatile int refcountval = ATOMIC_INCR((&obj->refcount), 1, &obj->lock);
 		int refcountval = ATOMIC_INCR((&obj->refcount), 1, &obj->lock);
-		// ANNOTATE_HAPPENS_AFTER(&obj->refcount);
 		int newrefcountval = refcountval + 1;
-		
+
 		if (dont_expect( (sccp_globals->debug & (((&obj_info[obj->type])->debugcat + DEBUGCAT_REFCOUNT))) == ((&obj_info[obj->type])->debugcat + DEBUGCAT_REFCOUNT))) {
 			pbx_log(__LOG_VERBOSE, __FILE__, 0, "", " %-15.15s:%-4.4d (%-35.35s) %*.*s> %*s refcount increased %.2d  +> %.2d for %10s: %s (%p)\n", filename, lineno, func, refcountval, refcountval, "--------------------", 20 - refcountval, " ", refcountval, newrefcountval, (&obj_info[obj->type])->datatype, obj->identifier, obj);
 		}
-		return (void * const) obj->data;	/* regular exit */
+		return (void * const) obj->data;
 	}
 #	if CS_REFCOUNT_DEBUG
 	__sccp_refcount_debug((void *) ptr, NULL, 1, filename, lineno, func);
@@ -830,16 +793,16 @@ gcc_inline void * const sccp_refcount_retain(const void * const ptr, const char 
 	return NULL;
 }
 
-/*!
- * \brief reduces the refcount of the object passed in, if refcount reaches 0 the object will be put on the list of object to be destroyed.
- * release takes a pointer to a pointer to the object being released, the pointer to the object will be set to NULL after the release has been processed 
+/*
+ * reduces the refcount of the object passed in, if refcount reaches 0 the object will be put on the list of object to be destroyed.
+ * release takes a pointer to a pointer to the object being released, the pointer to the object will be set to NULL after the release has been processed
  */
 gcc_inline void * const sccp_refcount_release(const void * * const ptr, const char *filename, int lineno, const char *func)
 {
 #if CS_REFCOUNT_DEBUG
 	pbx_assert(ptr != NULL && *ptr != NULL && !isPointerDead(*ptr));
 #else
-	if(ptr == NULL || *ptr == NULL || isPointerDead(*ptr)) {                                        // soft failure
+	if(ptr == NULL || *ptr == NULL || isPointerDead(*ptr)) {
 		pbx_log(LOG_WARNING, "SCCP: release of a NULL or already freed pointer ignored (caller bug)\n");
 		usleep(10);
 		return NULL;
@@ -856,13 +819,11 @@ gcc_inline void * const sccp_refcount_release(const void * * const ptr, const ch
 
 		int refcountval = 0;
 		debugcat = (&obj_info[obj->type])->debugcat;
-		// ANNOTATE_HAPPENS_BEFORE(&obj->refcount);
 		do {
 			refcountval = ATOMIC_FETCH((&obj->refcount),&obj->lock);
 			newrefcountval = refcountval - 1;
 		} while ((CAS32(&obj->refcount, refcountval, newrefcountval, &obj->lock)) != refcountval);
-		// ANNOTATE_HAPPENS_AFTER(&obj->refcount);
-		
+
 		if (dont_expect(newrefcountval == 0)) {
 			int alive = ATOMIC_DECR(&obj->alive, SCCP_LIVE_MARKER, &obj->lock);
 			sccp_log((DEBUGCAT_REFCOUNT)) (VERBOSE_PREFIX_1 "SCCP: %-15.15s:%-4.4d (%-35.35s) release: finalizing %p (%p), alive %d\n", filename, lineno, func, obj, *ptr, alive);
@@ -873,7 +834,7 @@ gcc_inline void * const sccp_refcount_release(const void * * const ptr, const ch
 			}
 		}
 		*ptr = NULL;
-		return NULL;	/* regular exit */
+		return NULL;
 	}
 #if CS_REFCOUNT_DEBUG
 	__sccp_refcount_debug((void *) *ptr, NULL, -1, filename, lineno, func);
@@ -888,7 +849,7 @@ gcc_inline void * const sccp_refcount_release(const void * * const ptr, const ch
 
 gcc_inline void sccp_refcount_replace(const void * * const replaceptr, const void *const newptr, const char *filename, int lineno, const char *func)
 {
-	if (!replaceptr || (&newptr == replaceptr)) {								// nothing changed
+	if (!replaceptr || (&newptr == replaceptr)) {
 		return;
 	}
 	if (do_expect(newptr !=NULL)) {
@@ -897,24 +858,24 @@ gcc_inline void sccp_refcount_replace(const void * * const replaceptr, const voi
 			const void *oldPtr = *replaceptr;
 			*replaceptr = tmpNewPtr;
 			if (do_expect(oldPtr != NULL)) {							// release previous one after
-				sccp_refcount_release(&oldPtr, filename, lineno, func);				// explicit release
+				sccp_refcount_release(&oldPtr, filename, lineno, func);
 			}
 		}
 	} else if (do_expect(*replaceptr != NULL)) {								// release previous only
-		sccp_refcount_release(replaceptr, filename, lineno, func);					// explicit release
+		sccp_refcount_release(replaceptr, filename, lineno, func);
 	}
 }
 
 /*
- * \brief refence autorelease helper
- * Used together with the cleanup attribute, to handle the automatic reference release of an object when we leave the scope in which the 
- * reference was defined. 
+ * reference autorelease helper
+ * Used together with the cleanup attribute, to handle the automatic reference release of an object when we leave the scope in which the
+ * reference was defined.
  */
 gcc_inline void sccp_refcount_autorelease(void *refptr)
 {
 	auto_ref_t *ref = (auto_ref_t *)refptr;
 	if (ref && ref->ptr && *ref->ptr) {
-		sccp_refcount_release(ref->ptr, ref->file, ref->line, ref->func);				// explicit release
+		sccp_refcount_release(ref->ptr, ref->file, ref->line, ref->func);
 	}
 }
 
@@ -992,7 +953,6 @@ static void *refcount_test_thread(void *data)
 	return NULL;
 }
 
-
 AST_TEST_DEFINE(sccp_refcount_tests)
 {
 	int thread = 0;
@@ -1024,7 +984,6 @@ AST_TEST_DEFINE(sccp_refcount_tests)
 		object[loop]->id = loop;
 		object[loop]->threadid = (unsigned int) pthread_self();
 		object[loop]->str = pbx_strdup(id);
-		//pbx_test_status_update(test, "created %d'\n", object[loop]->id);
 	}
 	sleep(1);
 
@@ -1042,7 +1001,6 @@ AST_TEST_DEFINE(sccp_refcount_tests)
 	pbx_test_status_update(test, "Finalize test / cleanup...\n");
 	for (loop = 0; loop < NUM_OBJECTS; loop++) {
 		if (object[loop]) {
-			//pbx_test_status_update(test, "Final Release %d, thread: %d\n", object[loop]->id, (unsigned int) pthread_self());
 			object[loop] = (struct refcount_test *)sccp_refcount_release((const void ** const)&object[loop], __FILE__, __LINE__, __PRETTY_FUNCTION__);
 			pbx_test_validate(test, object[loop] == NULL);
 		}
@@ -1077,4 +1035,3 @@ static void __attribute__((destructor)) sccp_unregister_tests(void)
 }
 #endif // CS_TEST_FRAMEWORK
 #endif // CS_ASTOBJ_REFCOUNT
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

@@ -9,12 +9,6 @@
  *              See the LICENSE file at the top of the source tree.
  *
  */
-/*
- * File:   sccp_linedevice.c
- * Author: dkgroot
- *
- * Created on September 22, 2019, 4:38 PM
- */
 
 #include "config.h"
 #include "common.h"
@@ -25,15 +19,6 @@
 
 SCCP_FILE_VERSION(__FILE__, "");
 
-/*!
- * \brief Free a Line as scheduled command
- * \param ptr SCCP Line Pointer
- * \return success as int
- *
- * \callgraph
- * \callergraph
- *
- */
 static int __sccp_lineDevice_destroy(const void * ptr)
 {
 	sccp_linedevice_t * ld = (sccp_linedevice_t *)ptr;
@@ -48,13 +33,6 @@ static int __sccp_lineDevice_destroy(const void * ptr)
 	return 0;
 }
 
-/*!
- * \brief Register Extension to Asterisk regextension
- * \param l SCCP Line
- * \param subscriptionId subscriptionId
- * \param onoff On/Off as int
- * \note used for DUNDi Discovery
- */
 static void regcontext_exten(constLineDevicePtr ld, int onoff)
 {
 	char multi[256] = "";
@@ -72,7 +50,6 @@ static void regcontext_exten(constLineDevicePtr ld, int onoff)
 		return;
 	}
 	sccp_line_t * l = ld->line;
-	// struct subscriptionId *subscriptionId = &(ld->subscriptionId);
 
 	sccp_copy_string(multi, S_OR(l->regexten, l->name), sizeof(multi));
 	stringp = multi;
@@ -81,7 +58,7 @@ static void regcontext_exten(constLineDevicePtr ld, int onoff)
 	while((ext = strsep(&stringp, "&"))) {
 		char * context;
 		if((context = strchr(ext, '@'))) {
-			*context++ = '\0'; /* split ext@context */
+			*context++ = '\0';
 			if(!pbx_context_find(context)) {
 				pbx_log(LOG_WARNING, "SCCP: regcontext entry %s@%s skipped: context %s does not exist\n", ext, context, context);
 				continue;
@@ -90,42 +67,19 @@ static void regcontext_exten(constLineDevicePtr ld, int onoff)
 			sccp_copy_string(cntxt, GLOB(regcontext), sizeof(cntxt));
 			context = cntxt;
 		}
-		con = pbx_context_find_or_create(NULL, NULL, context, "SCCP"); /* make sure the context exists */
+		con = pbx_context_find_or_create(NULL, NULL, context, "SCCP");
 		if(con) {
 			if(onoff) {
-				/* register */
-
 				if(!pbx_exists_extension(NULL, context, ext, 1, NULL) && pbx_add_extension(context, 0, ext, 1, NULL, NULL, "Noop", pbx_strdup(l->name), sccp_free_ptr, "SCCP")) {
 					sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG))(VERBOSE_PREFIX_1 "registered in context %s: extension %s for line %s\n", context, ext, l->name);
 				}
-
-				/* register extension + subscriptionId */
-				/* if (subscriptionId && subscriptionId->number && !sccp_strlen_zero(subscriptionId->number) && !sccp_strlen_zero(subscriptionId->name)) {
-				   snprintf(extension, sizeof(extension), "%s@%s", ext, subscriptionId->number);
-				   snprintf(name, sizeof(name), "%s%s", l->name, subscriptionId->name);
-				   if (!pbx_exists_extension(NULL, context, extension, 2, NULL) && pbx_add_extension(context, 0, extension, 2, NULL, NULL, "Noop", pbx_strdup(name), sccp_free_ptr, "SCCP")) {
-				   sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG)) (VERBOSE_PREFIX_1 "registered in context %s: extension %s for line %s\n", context, extension, name);
-				   }
-				   } */
 			} else {
-				/* un-register */
-
 				if(SCCP_LIST_GETSIZE(&l->devices) == 1) {                                        // only remove entry if it is the last one (shared line)
 					if(pbx_find_extension(NULL, NULL, &q, context, ext, 1, NULL, "", E_MATCH)) {
 						ast_context_remove_extension(context, ext, 1, NULL);
 						sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG))(VERBOSE_PREFIX_1 "unregistered from context %s: extension %s\n", context, ext);
 					}
 				}
-
-				/* unregister extension + subscriptionId */
-				/* if (subscriptionId && subscriptionId->number && !sccp_strlen_zero(subscriptionId->number) && !sccp_strlen_zero(subscriptionId->name)) {
-				   snprintf(extension, sizeof(extension), "%s@%s", ext, subscriptionId->number);
-				   // if (pbx_exists_extension(NULL, context, extension, 2, NULL)) {
-				   if (pbx_find_extension(NULL, NULL, &q, context, extension, 2, NULL, "", E_MATCH)) {
-				   ast_context_remove_extension(context, extension, 2, NULL);
-				   sccp_log((DEBUGCAT_LINE + DEBUGCAT_CONFIG)) (VERBOSE_PREFIX_1 "unregistered from context %s: extension %s\n", context, extension);
-				   }
-				   } */
 			}
 		} else {
 			pbx_log(LOG_ERROR, "SCCP: context '%s' does not exist and could not be created\n", context);
@@ -133,19 +87,6 @@ static void regcontext_exten(constLineDevicePtr ld, int onoff)
 	}
 }
 
-/*!
- * \brief Set a Call Forward on a specific Line
- * \param line SCCP Line
- * \param device device that requested the forward
- * \param type Call Forward Type as uint8_t
- * \param number Number to which should be forwarded
- * \todo we should check, that extension is reachable on line
- *
- * \callgraph
- * \callergraph
- *
- * \todo implement cfwd_noanswer
- */
 void sccp_linedevice_cfwd(lineDevicePtr ld, sccp_cfwd_t type, char * number)
 {
 	if (!ld || !ld->line || type < SCCP_CFWD_NONE || type >= SCCP_CFWD_SENTINEL) {
@@ -184,14 +125,6 @@ const char * const sccp_linedevice_get_cfwd_string(constLineDevicePtr ld, char *
 	return buffer;
 }
 
-/*!
- * \brief Attach a Device to a line
- * \param line SCCP Line
- * \param d SCCP Device
- * \param lineInstance lineInstance as uint8_t
- * \param subscriptionId Subscription ID for addressing individual devices on the line
- *
- */
 void sccp_linedevice_create(constDevicePtr d, constLinePtr l, uint8_t lineInstance, sccp_subscription_id_t * subscriptionId)
 {
 	AUTO_RELEASE(sccp_line_t, line, sccp_line_retain(l));
@@ -226,8 +159,8 @@ void sccp_linedevice_create(constDevicePtr d, constLinePtr l, uint8_t lineInstan
 	sccp_refcount_addRelationship(l, ld);
 	sccp_refcount_addRelationship(device, ld);
 #endif
-	*(sccp_device_t **)&(ld->device) = sccp_device_retain(device);                                        // const cast to emplace device
-	*(sccp_line_t **)&(ld->line) = sccp_line_retain(line);                                                // const cast to emplace line
+	*(sccp_device_t **)&(ld->device) = sccp_device_retain(device);
+	*(sccp_line_t **)&(ld->line) = sccp_line_retain(line);
 	ld->lineInstance = lineInstance;
 	if(NULL != subscriptionId) {
 		memcpy(&ld->subscriptionId, subscriptionId, sizeof(ld->subscriptionId));
@@ -242,7 +175,6 @@ void sccp_linedevice_create(constDevicePtr d, constLinePtr l, uint8_t lineInstan
 
 	sccp_line_updatePreferencesFromDevicesToLine(line);
 
-	// fire event for new device
 	sccp_event_t * event = sccp_event_allocate(SCCP_EVENT_DEVICE_ATTACHED);
 	if(event) {
 		event->deviceAttached.ld = sccp_linedevice_retain(ld);
@@ -252,17 +184,6 @@ void sccp_linedevice_create(constDevicePtr d, constLinePtr l, uint8_t lineInstan
 	sccp_log((DEBUGCAT_LINE))(VERBOSE_PREFIX_3 "%s: line device %p added for %s\n", line->name, ld, DEV_ID_LOG(device));
 }
 
-/*!
- * \brief Remove a Device from a Line
- *
- * Fire SCCP_EVENT_DEVICE_DETACHED event after removing device.
- *
- * \param l SCCP Line
- * \param device SCCP Device
- *
- * \note device can be NULL, mening remove all device from this line
- *
- */
 void sccp_linedevice_remove(constDevicePtr d, linePtr l)
 {
 	sccp_linedevice_t * ld = NULL;
@@ -293,7 +214,7 @@ void sccp_linedevice_remove(constDevicePtr d, linePtr l)
 			}
 #endif
 			if(d)
-				break /*early*/;
+				break ;
 		}
 	}
 	SCCP_LIST_TRAVERSE_SAFE_END;
@@ -315,30 +236,15 @@ void sccp_linedevice_indicateMWI(constLineDevicePtr ld)
 	}
 }
 
-/*!
- * \brief Get Device Configuration
- * \param device SCCP Device
- * \param line SCCP Line
- * \param filename Debug FileName
- * \param lineno Debug LineNumber
- * \param func Debug Function Name
- * \return SCCP Line Devices
- *
- * \callgraph
- * \callergraph
- *
- * \warning
- *  - line->devices is not always locked
- */
 lineDevicePtr __sccp_linedevice_find(constDevicePtr device, constLinePtr line, const char * filename, int lineno, const char * func)
 {
 	sccp_linedevice_t * ld = NULL;
-	sccp_line_t * l = NULL;                                        // loose const qualifier, to be able to lock the list;
+	sccp_line_t * l = NULL;
 	if(!line) {
 		pbx_log(LOG_WARNING, "SCCP: line-device lookup without a line (caller bug at %s:%d)\n", filename, lineno);
 		return NULL;
 	}
-	l = (sccp_line_t *)line;                                        // loose const qualifier, to be able to lock the list;
+	l = (sccp_line_t *)line;
 
 	if(!device) {
 		pbx_log(LOG_WARNING, "SCCP: line-device lookup on line %s without a device (caller bug at %s:%d)\n", line->name, filename, lineno);
@@ -368,7 +274,7 @@ lineDevicePtr __sccp_linedevice_findByLineinstance(constDevicePtr device, uint16
 		return NULL;
 	}
 
-	if (instance < device->lineButtons.size && device->lineButtons.instance[instance]) { /* 0 < instance < lineButton.size */
+	if (instance < device->lineButtons.size && device->lineButtons.instance[instance]) {
 		ld = sccp_linedevice_retain(device->lineButtons.instance[instance]);
 	}
 
@@ -378,7 +284,6 @@ lineDevicePtr __sccp_linedevice_findByLineinstance(constDevicePtr device, uint16
 	return ld;
 }
 
-/* create linebutton array */
 void sccp_linedevice_createButtonsArray(devicePtr device)
 {
 	sccp_linedevice_t * ld = NULL;
@@ -403,7 +308,7 @@ void sccp_linedevice_createButtonsArray(devicePtr device)
 		pbx_log(LOG_ERROR, SS_Memory_Allocation_Error, device->id);
 		return;
 	}
-	device->lineButtons.size = lineInstances + SCCP_FIRST_LINEINSTANCE; /* add the offset of SCCP_FIRST_LINEINSTANCE for explicit access */
+	device->lineButtons.size = lineInstances + SCCP_FIRST_LINEINSTANCE;
 
 	for(i = 0; i < StationMaxButtonTemplateSize; i++) {
 		if(btn[i].type == SKINNY_BUTTONTYPE_LINE && btn[i].ptr) {
@@ -422,7 +327,7 @@ void sccp_linedevice_deleteButtonsArray(devicePtr device)
 	if(device->lineButtons.instance) {
 		for(i = SCCP_FIRST_LINEINSTANCE; i < device->lineButtons.size; i++) {
 			if(device->lineButtons.instance[i]) {
-				sccp_linedevice_t * tmpld = device->lineButtons.instance[i]; /* castless conversion */
+				sccp_linedevice_t * tmpld = device->lineButtons.instance[i];
 				sccp_linedevice_release(&tmpld);                             /* explicit release of retained ld */
 				device->lineButtons.instance[i] = NULL;
 			}
@@ -432,4 +337,3 @@ void sccp_linedevice_deleteButtonsArray(devicePtr device)
 	}
 }
 
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

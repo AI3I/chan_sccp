@@ -10,4 +10,3 @@
 struct ast_channel_tech *sccpconf_announce_get_tech(void);
 void sccpconf_announce_channel_depart(struct ast_channel *chan);
 int sccpconf_announce_channel_push(struct ast_channel *ast, struct ast_bridge *bridge);
-// kate: indent-width 8; replace-tabs off; indent-mode cstyle; auto-insert-doxygen on; line-numbers on; tab-indents on; keep-extra-spaces off; auto-brackets off;

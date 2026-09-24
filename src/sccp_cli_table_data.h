@@ -14,9 +14,6 @@ typedef struct sccp_cli_table_data {
 	int failed;
 } sccp_cli_table_data_t;
 
-/* Cells are copied while the caller holds its list lock; rendering needs no
- * live object pointers or second traversal. The caller owns the header array.
- */
 void sccp_cli_table_add(sccp_cli_table_data_t *table, const char *format, ...)
 	__attribute__((format(printf, 2, 3)));
 void sccp_cli_table_render(sccp_cli_table_data_t *table, const char *title,

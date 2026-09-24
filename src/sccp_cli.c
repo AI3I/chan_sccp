@@ -65,6 +65,7 @@ SCCP_FILE_VERSION(__FILE__, "");
 #include "sccp_threadpool.h"
 #include "sccp_indicate.h"
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <asterisk/cli.h>
 #include <asterisk/paths.h>
 #include <asterisk/localtime.h>
@@ -122,6 +123,18 @@ void sccp_cli_table_print(sccp_cli_table_data_t *table, int fd, const char *titl
 		</syntax>
 		<description>
 			<para>Returns one SCCPDeviceCallEntry event per call, newest first (the last 20 calls since the module loaded), with the packet counts, loss, jitter, latency, MOS and concealment the phone reported at the end of the call, followed by SCCPShowDeviceCallsComplete.</para>
+		</description>
+	</manager>
+	<manager name="SCCPGenerateCnf" language="en_US">
+		<synopsis>Write a phone's TFTP configuration file.</synopsis>
+		<syntax>
+			<xi:include href="../core-en_US.xml" parse="xml" xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
+			<parameter name="Device" required="true"><para>Device name.</para></parameter>
+			<parameter name="File"><para>File or directory to write to; default &lt;device&gt;.cnf.xml in the Asterisk configuration directory.</para></parameter>
+			<parameter name="Server"><para>Server address for the phone; default the address it is registered to, then bindaddr, then externip.</para></parameter>
+		</syntax>
+		<description>
+			<para>Writes &lt;device&gt;.cnf.xml from sccp.conf (server address and port, date format, firmware, TOS, locale). An existing file is not overwritten.</para>
 		</description>
 	</manager>
 	<manager name="SCCPPushURL" language="en_US">
@@ -3385,6 +3398,145 @@ CLI_ENTRY(cli_config_generate, sccp_cli_config_generate, "Generate a SCCP config
 #undef CLI_COMMAND
 #undef CLI_COMPLETE
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */
+
+/* ------------------------------------------------------------------------------------------------ GENERATE CNF - */
+/* sccp generate cnf <device> [file [server-address]]: write the phone's TFTP configuration (SEPxxxx.cnf.xml)
+ * from sccp.conf. Lines and buttons are not in the file: the phone gets them from chan_sccp when it registers. */
+static int sccp_generate_cnf(int fd, sccp_cli_totals_t * totals, struct mansession * s, const struct message * m, int argc, char * argv[])
+{
+	if (argc < 4 || argc > 6 || !ARG_PRESENT(3)) {
+		return RESULT_SHOWUSAGE;
+	}
+	AUTO_RELEASE(sccp_device_t, d, sccp_device_find_byid(argv[3], FALSE));
+	if (!d) {
+		CLI_AMI_RETURN_ERROR(fd, s, m, "Device %s does not exist", argv[3]);
+	}
+
+	/* the server address the phone should register to */
+	char server[INET6_ADDRSTRLEN + 2] = "";
+	const char * source = "";
+	if (ARG_PRESENT(5)) {
+		sccp_copy_string(server, argv[5], sizeof(server));
+		source = "the command";
+	} else {
+		struct sockaddr_storage ourip = { 0 };
+		if (d->session && sccp_session_getOurIP(d->session, &ourip, 0) && !sccp_netsock_is_any_addr(&ourip)) {
+			sccp_copy_string(server, sccp_netsock_stringify_addr(&ourip), sizeof(server));
+			source = "the address the phone is registered to";
+		} else if (!sccp_netsock_is_any_addr(&GLOB(bindaddr))) {
+			sccp_copy_string(server, sccp_netsock_stringify_addr(&GLOB(bindaddr)), sizeof(server));
+			source = "bindaddr";
+		} else if (!sccp_netsock_is_any_addr(&GLOB(externip))) {
+			sccp_copy_string(server, sccp_netsock_stringify_addr(&GLOB(externip)), sizeof(server));
+			source = "externip";
+		}
+	}
+	if (sccp_strlen_zero(server)) {
+		CLI_AMI_RETURN_ERROR(fd, s, m, "No server address for %s: it is not registered, bindaddr is a wildcard address and externip is not set; give the address as the last argument", d->id);
+	}
+	/* IPv6 literals from stringify_addr come bracketed; processNodeName wants the bare address */
+	if (server[0] == '[') {
+		size_t len = strlen(server);
+		memmove(server, server + 1, len);
+		char * end = strchr(server, ']');
+		if (end) {
+			*end = '\0';
+		}
+	}
+	uint16_t port = sccp_netsock_getPort(&GLOB(bindaddr));
+
+	char fn[PATH_MAX];
+	char name[StationMaxDeviceNameSize + 16];
+	snprintf(name, sizeof(name), "%s.cnf.xml", d->id);
+	if (ARG_PRESENT(4)) {
+		struct stat sb;
+		if (stat(argv[4], &sb) == 0 && S_ISDIR(sb.st_mode)) {
+			snprintf(fn, sizeof(fn), "%s/%s", argv[4], name);
+		} else {
+			sccp_config_generate_path(fn, sizeof(fn), argv[4]);
+		}
+	} else {
+		sccp_config_generate_path(fn, sizeof(fn), name);
+	}
+
+	int fdout = open(fn, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	if (fdout == -1) {
+		CLI_AMI_RETURN_ERROR(fd, s, m, "%s not written: %s", fn, errno == EEXIST ? "the file already exists" : strerror(errno));
+	}
+	FILE * f = fdopen(fdout, "w");
+	if (!f) {
+		int err = errno;
+		close(fdout);
+		CLI_AMI_RETURN_ERROR(fd, s, m, "%s not written: %s", fn, strerror(err));
+	}
+
+	char date_buf[64];
+	if (sccp_strlen_zero(GLOB(dateformat)) || ast_xml_escape(GLOB(dateformat), date_buf, sizeof(date_buf))) {
+		sccp_copy_string(date_buf, "M/D/YY", sizeof(date_buf));
+	}
+	char load_buf[StationMaxImageVersionSize * 6 + 1] = "";
+	if (!sccp_strlen_zero(d->imageversion) && ast_xml_escape(d->imageversion, load_buf, sizeof(load_buf))) {
+		load_buf[0] = '\0';
+	}
+	boolean_t english = sccp_strlen_zero(GLOB(language)) || !strncasecmp(GLOB(language), "en", 2);
+
+	fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+	fprintf(f, "<!-- %s: written by chan_sccp 'sccp generate cnf' from sccp.conf; server address from %s.\n", name, source);
+	fprintf(f, "     sccp.conf has no NTP, time zone or phone service URL settings, so none are included. -->\n");
+	fprintf(f, "<device>\n");
+	fprintf(f, "  <deviceProtocol>SCCP</deviceProtocol>\n");
+	fprintf(f, "  <devicePool>\n");
+	fprintf(f, "    <dateTimeSetting>\n");
+	fprintf(f, "      <dateTemplate>%s</dateTemplate>\n", date_buf);
+	fprintf(f, "    </dateTimeSetting>\n");
+	fprintf(f, "    <callManagerGroup>\n");
+	fprintf(f, "      <members>\n");
+	fprintf(f, "        <member priority=\"0\">\n");
+	fprintf(f, "          <callManager>\n");
+	fprintf(f, "            <ports>\n");
+	fprintf(f, "              <ethernetPhonePort>%u</ethernetPhonePort>\n", port ? port : 2000);
+	fprintf(f, "            </ports>\n");
+	fprintf(f, "            <processNodeName>%s</processNodeName>\n", server);
+	fprintf(f, "          </callManager>\n");
+	fprintf(f, "        </member>\n");
+	fprintf(f, "      </members>\n");
+	fprintf(f, "    </callManagerGroup>\n");
+	fprintf(f, "  </devicePool>\n");
+	if (load_buf[0]) {
+		fprintf(f, "  <loadInformation>%s</loadInformation>\n", load_buf);
+	}
+	if (english) {
+		fprintf(f, "  <userLocale>\n");
+		fprintf(f, "    <name>English_United_States</name>\n");
+		fprintf(f, "    <langCode>en_US</langCode>\n");
+		fprintf(f, "  </userLocale>\n");
+		fprintf(f, "  <networkLocale>United_States</networkLocale>\n");
+	}
+	fprintf(f, "  <dscpForSCCPPhoneConfig>%d</dscpForSCCPPhoneConfig>\n", GLOB(sccp_tos));
+	fprintf(f, "  <dscpForCm2Dvce>%d</dscpForCm2Dvce>\n", d->audio_tos);
+	fprintf(f, "</device>\n");
+	if (fclose(f) != 0) {
+		CLI_AMI_RETURN_ERROR(fd, s, m, "%s not written completely: %s", fn, strerror(errno));
+	}
+	CLI_AMI_RETURN_DONE(fd, s, m, "%s written (server %s port %u, from %s)", fn, server, port ? port : 2000, source);
+}
+
+static char cli_generate_cnf_usage[] = "Usage: sccp generate cnf <device> [file [server-address]]\n"
+				       "       Write the phone's TFTP configuration file (<device>.cnf.xml) from sccp.conf:\n"
+				       "       server address and port, date format, firmware (imageversion), TOS and\n"
+				       "       locale. file may be a directory; a relative name is placed in the Asterisk\n"
+				       "       configuration directory; an existing file is not overwritten. The server\n"
+				       "       address defaults to the one the phone is registered to, then bindaddr,\n"
+				       "       then externip.\n";
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+#define CLI_COMMAND "sccp", "generate", "cnf"
+#define CLI_COMPLETE SCCP_CLI_DEVICE_COMPLETER
+CLI_AMI_ENTRY(generate_cnf, sccp_generate_cnf, "Write a phone's TFTP configuration", cli_generate_cnf_usage, FALSE, FALSE)
+SCCP_AMI_ACTION(generate_cnf, sccp_generate_cnf, "SCCPGenerateCnf", FALSE, "sccp", "generate", "cnf", "$Device", "$File", "$Server")
+#undef CLI_COMPLETE
+#undef CLI_COMMAND
+#endif														/* DOXYGEN_SHOULD_SKIP_THIS */
     /* -------------------------------------------------------------------------------------------------------SHOW VERSION- */
     /*!
      * \brief Show Version
@@ -4211,6 +4363,7 @@ static struct pbx_cli_entry cli_entries[] = {
 	AST_CLI_DEFINE(cli_reload_device, "Reload one device from sccp.conf"),
 	AST_CLI_DEFINE(cli_reload_line, "Reload one line from sccp.conf"),
 	AST_CLI_DEFINE(cli_config_generate, "Write an example sccp.conf"),
+	AST_CLI_DEFINE(cli_generate_cnf, "Write a phone's TFTP configuration"),
 #ifdef CS_SCCP_CONFERENCE
 	AST_CLI_DEFINE(cli_show_conferences, "List SCCP conferences"),
 	AST_CLI_DEFINE(cli_show_conference, "Show one SCCP conference"),
@@ -4263,6 +4416,7 @@ static const struct {
 	{ "SCCPRefreshDevice", _MAN_SYSTEM, manager_refresh_device },
 	{ "SCCPTokenAck", _MAN_SYSTEM, manager_token_ack },
 	{ "SCCPPushURL", _MAN_SYSTEM, manager_push_url },
+	{ "SCCPGenerateCnf", _MAN_CONFIG, manager_generate_cnf },
 	{ "SCCPPress", _MAN_CALL, manager_press },
 #ifdef CS_SCCP_CONFERENCE
 	{ "SCCPShowConferences", _MAN_SHOW, manager_show_conferences },

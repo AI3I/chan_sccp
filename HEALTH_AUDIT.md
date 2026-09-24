@@ -43,6 +43,16 @@
   the device's lines (so Resume works; a held call is detached from its
   device).
 
+- `sccp generate cnf <device> [file [server-address]]`, AMI
+  `SCCPGenerateCnf`: write `<device>.cnf.xml` for the TFTP server with the
+  server address and port (the address the phone registered to, else
+  bindaddr, else externip, or given), `dateformat`, `imageversion` as
+  loadInformation, TOS values and an English locale when `language` is en.
+  sccp.conf has no NTP, time zone or service URL settings, so the file says
+  it leaves them out. Lines and buttons come from chan_sccp at registration,
+  not from the file. Never overwrites an existing file. Checked for valid XML
+  only; not yet loaded by a real phone.
+
 Validation: wadsworth lab with the simulated phone, which now answers
 ConnectionStatisticsReq; offhook, digits 700, Hold, Resume and EndCall via
 `sccp press` drive a real call through; push URL escapes `&`; every filter, invalid filters (usage / AMI error),

@@ -1,4 +1,4 @@
-/* Licensed under the GNU General Public License; see LICENSE. */
+/* Licensed under the GNU General Public License, version 2 or later; see LICENSE. */
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif

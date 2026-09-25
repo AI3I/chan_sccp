@@ -1,7 +1,7 @@
 /*!
  * \file        sccp_config_entries.hh
  * \brief       SCCP Config Entries Header
- * \note        This program is free software and may be modified and distributed under the terms of the GNU Public License.
+ * \note        This program is free software and may be modified and distributed under the terms of the GNU General Public License, version 2 or (at your option) any later version.
  *              See the LICENSE file at the top of the source tree.
  * \remarks     Only parameters directly related to chan-sccp configuration should be stored in this source file.
  */

@@ -1,4 +1,4 @@
-/* Licensed under the GNU General Public License; see LICENSE. */
+/* Licensed under the GNU General Public License, version 2 or later; see LICENSE. */
 #pragma once
 #include <stddef.h>
 

@@ -5,7 +5,7 @@
 [![Build and test](https://github.com/AI3I/chan_sccp/actions/workflows/ccpp.yml/badge.svg)](https://github.com/AI3I/chan_sccp/actions/workflows/ccpp.yml)
 [![CodeQL](https://github.com/AI3I/chan_sccp/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/AI3I/chan_sccp/actions/workflows/codeql-analysis.yml)
 ![Asterisk 20-24](https://img.shields.io/badge/Asterisk-20%E2%80%9324-orange)
-[![License: GPL v1](https://img.shields.io/badge/license-GPL%20v1-blue)](LICENSE)
+[![License: GPL v2+](https://img.shields.io/badge/license-GPL%20v2%2B-blue)](COPYING)
 
 chan_sccp is an Asterisk channel driver that lets Cisco 79xx, 89xx and 99xx
 phones running SCCP firmware register directly with Asterisk. This is an
@@ -172,5 +172,6 @@ chan_skinny. It grew into Chan-SCCP-b under Marcello Ceschia, Diederik de Groot
 and many contributors; see [AUTHORS](AUTHORS) and the
 [legacy project](https://github.com/chan-sccp/chan-sccp).
 
-Released under the GNU General Public License, version 1; see
+Released under the GNU General Public License, version 2 or (at your option)
+any later version; see [COPYING](COPYING) and the full text in
 [LICENSE](LICENSE).

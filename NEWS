@@ -4,6 +4,12 @@ Version: 5.0.0 (unreleased)
  - Supported Asterisk targets: 20 through 24 (earlier versions are refused
    by configure).
 
+ - License: GNU General Public License, version 2 or (at your option) any
+   later version, matching Asterisk. LICENSE holds the GPLv2 text (it held
+   GPLv1); COPYING holds the license notice. Source headers that named no
+   version, and build files that named version 3, now all say version 2 or
+   later.
+
  - BREAKING: CLI commands and AMI actions were renamed. There are no
    aliases; update scripts, dialplan System() calls and AMI clients.
    doc/UPGRADING.md has the full guide; doc/CLI.md and doc/AMI.md are the

@@ -2,7 +2,7 @@
  * \file        sccp_threadpool.h
  * \brief       SCCP Threadpool Header
  * \author      Diederik de Groot < ddegroot@users.sourceforge.net >
- * \note        This program is free software and may be modified and distributed under the terms of the GNU Public License.
+ * \note        This program is free software and may be modified and distributed under the terms of the GNU General Public License, version 2 or (at your option) any later version.
  *              See the LICENSE file at the top of the source tree.
  * \note        Based on the work of Johan Hanssen Seferidis
  *              Library providing a threading pool where you can add work.

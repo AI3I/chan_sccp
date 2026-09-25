@@ -2,7 +2,7 @@
  * \file        sccp_conference.h
  * \brief       SCCP Conference Header
  * \author
- * \note        This program is free software and may be modified and distributed under the terms of the GNU Public License.
+ * \note        This program is free software and may be modified and distributed under the terms of the GNU General Public License, version 2 or (at your option) any later version.
  *              See the LICENSE file at the top of the source tree.
  */
 #pragma once

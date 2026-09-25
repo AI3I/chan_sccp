@@ -1,7 +1,7 @@
 dnl FILE: extra.m4
 dnl COPYRIGHT: http://chan-sccp.github.io/chan-sccp/ group 2009
 dnl CREATED BY: Created by Diederik de Groot
-dnl LICENSE: This program is free software and may be modified and distributed under the terms of the GNU Public License version 3.
+dnl LICENSE: This program is free software and may be modified and distributed under the terms of the GNU General Public License, version 2 or (at your option) any later version.
 dnl          See the LICENSE file at the top of the source tree.
 AC_DEFUN([CS_SETUP_DEFAULTS], [
 	ac_default_prefix=/usr

@@ -33,7 +33,7 @@ struct sccp_rtp {
 	struct sockaddr_storage phone;
 	struct sockaddr_storage phone_remote;
 	uint16_t RTCPPortNumber;										/*!< RTCP Port used by the phone */
- 	boolean_t directMedia;
+	boolean_t directMedia;
 };
 
 SCCP_API boolean_t SCCP_CALL sccp_rtp_createServer(constDevicePtr d, channelPtr c, sccp_rtp_type_t type);

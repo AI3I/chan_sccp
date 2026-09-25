@@ -434,4 +434,3 @@ typedef struct pbx_event_sub pbx_event_subscription_t;
 #endif
 #define pbx_create_callid             (pbx_callid_t) ast_create_callid
 #define pbx_callid_threadassoc_remove ast_callid_threadassoc_remove
-

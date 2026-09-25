@@ -477,4 +477,3 @@ static void __attribute__((destructor)) sccp_unregister_tests(void)
 	AST_TEST_UNREGISTER(sccp_event_test_subscribe_multi_sync);
 }
 #endif
-

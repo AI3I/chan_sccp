@@ -1134,4 +1134,3 @@ int sccp_unregister_dialplan_functions(void)
 
 	return result;
 }
-

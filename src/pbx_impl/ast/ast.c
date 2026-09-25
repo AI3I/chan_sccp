@@ -1014,4 +1014,3 @@ EXIT:
 	ast_channel_unlock(pbx_channel);
 	return res;
 }
-

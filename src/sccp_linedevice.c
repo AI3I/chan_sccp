@@ -337,4 +337,3 @@ void sccp_linedevice_deleteButtonsArray(devicePtr device)
 		sccp_free(device->lineButtons.instance);
 	}
 }
-

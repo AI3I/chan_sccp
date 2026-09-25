@@ -60,4 +60,3 @@
 #include "sccp_feature.h"
 #include "pbx_impl/pbx_impl.h"
 #include "sccp_callinfo.h"
-

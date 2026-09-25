@@ -69,7 +69,7 @@ AC_DEFUN([CS_CHECK_PBX], [
 	if test x_$HAVE_ASTERISK != x_yes; then
 		AC_MSG_CHECKING([Search Path: $PBX_PATH])
 		for dir in $PBX_PATH; do
-			if test "`echo $dir | cut -c1`" = "."; then 
+			if test "`echo $dir | cut -c1`" = "."; then
 				checkdir="`pwd`/${dir%/}"
 			else
 				checkdir="${dir%/}"
@@ -640,4 +640,3 @@ for flag in $1; do
   AX_CHECK_LINK_FLAG([$flag], [AX_APPEND_FLAG([$flag], [m4_default([$2], [LDFLAGS])])], [], [$3], [$4])
 done
 ])dnl AX_APPEND_LINK_FLAGS
-

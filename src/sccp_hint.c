@@ -1155,7 +1155,7 @@ sccp_channelstate_t sccp_hint_getLinestate(const char *linename, const char *dev
 	SCCP_LIST_LOCK(&lineStates);
 	SCCP_LIST_TRAVERSE(&lineStates, lineState, list) {
 		if (lineState->line && sccp_strcaseequals(lineState->line->name, linename)) {
-                	sccp_log(DEBUGCAT_HINT)(VERBOSE_PREFIX_3 "%s: line state %s, party %s/%s, call type %s\n", lineState->line->name, sccp_channelstate2str(lineState->state),
+			sccp_log(DEBUGCAT_HINT)(VERBOSE_PREFIX_3 "%s: line state %s, party %s/%s, call type %s\n", lineState->line->name, sccp_channelstate2str(lineState->state),
                 	        lineState->callInfo.partyNumber,lineState->callInfo.partyName,
                 	        (!SCCP_CHANNELSTATE_Idling(lineState->state) && lineState->callInfo.calltype) ? skinny_calltype2str(lineState->callInfo.calltype) : "INACTIVE");
                         state = lineState->state;
@@ -1244,4 +1244,3 @@ int sccp_show_hint_subscriptions(int fd, sccp_cli_totals_t *totals, struct manse
 	}
 	return RESULT_SUCCESS;
 }
-

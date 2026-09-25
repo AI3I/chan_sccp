@@ -1577,4 +1577,3 @@ int sccp_cli_conference_command(int fd, sccp_cli_totals_t *totals, struct manses
 }
 
 #endif
-

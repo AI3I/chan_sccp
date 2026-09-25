@@ -3397,4 +3397,3 @@ static void __attribute__((destructor)) sccp_unregister_tests(void)
 	AST_TEST_UNREGISTER(sccp_config_tokenized_default);
 }
 #endif
-

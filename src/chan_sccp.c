@@ -376,4 +376,3 @@ EXIT:
 	pbx_rwlock_unlock(&GLOB(lock));
 	return returnval;
 }
-

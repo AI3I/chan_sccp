@@ -2174,7 +2174,7 @@ typedef union {
  			} v18;
 #pragma pack(pop)
  		};
- 	} DialedNumberMessage;
+	} DialedNumberMessage;
 
  	struct {
 		union {
@@ -2202,7 +2202,7 @@ typedef union {
 			} v18;
 #pragma pack(pop)
 		};
- 	} ForwardStatMessage;
+	} ForwardStatMessage;
 
 	struct {
 		uint32_t lel_speedDialNumber;

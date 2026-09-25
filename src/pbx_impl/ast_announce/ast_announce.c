@@ -173,4 +173,3 @@ int sccpconf_announce_channel_push(struct ast_channel *ast, struct ast_bridge *b
 	ao2_cleanup(p);
 	return 0;
 }
-

@@ -461,4 +461,3 @@ int sccp_rtp_get_sampleRate(skinny_codec_t codec)
 	}
 	return 3840;
 }
-

@@ -1423,4 +1423,3 @@ int sccp_cli_show_sessions(int fd, sccp_cli_totals_t *totals, struct mansession 
 	}
 	return RESULT_SUCCESS;
 }
-

@@ -515,4 +515,3 @@ void sccp_netsock_setoptions(int new_socket, int reuse, int linger, int keepaliv
 }
 
 #undef SCCP_NETSOCK_SETOPTION
-

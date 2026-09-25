@@ -532,4 +532,3 @@ static void __sccp_indicate_remote_device(constDevicePtr device, channelPtr c, l
 	}
 	iCallInfo.Destructor(&ci);
 }
-

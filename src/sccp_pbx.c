@@ -1030,7 +1030,7 @@ void * sccp_pbx_softswitch(constChannelPtr channel)
 				sccp_dev_clearprompt(d, instance, c->callid);
 
 				if (!sccp_strlen_zero(shortenedNumber)) {
- 					sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: picking up extension %s\n", shortenedNumber);
+					sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: picking up extension %s\n", shortenedNumber);
 					sccp_dev_displayprompt(d, instance, c->callid, SKINNY_DISP_PICKUP, GLOB(digittimeout));
 					if (sccp_feat_directed_pickup(d, c, instance, shortenedNumber) == 0) {
 						goto EXIT_FUNC;
@@ -1085,7 +1085,7 @@ void * sccp_pbx_softswitch(constChannelPtr channel)
 				sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_3 "%s: collecting the barge extension\n", d->id);
 				sccp_dev_clearprompt(d, instance, c->callid);
 				if (!sccp_strlen_zero(shortenedNumber)) {
- 					sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: barging into extension %s\n", shortenedNumber);
+					sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "SCCP: barging into extension %s\n", shortenedNumber);
 					sccp_dev_displayprompt(d, instance, c->callid, SKINNY_DISP_BARGE, GLOB(digittimeout));
 					if (sccp_feat_singleline_barge(c, shortenedNumber)) {
 						goto EXIT_FUNC;
@@ -1219,4 +1219,3 @@ EXIT_FUNC:
 	}
 	return NULL;
 }
-

@@ -346,4 +346,3 @@ SCCP_VECTOR(sccp_vector_string, char *);
 #define SCCP_VECTOR_RW_WRLOCK_TRY(vec)             pbx_rwlock_trywrlock(&(vec)->lock)
 #define SCCP_VECTOR_RW_RDLOCK_TIMED(vec, timespec) pbx_rwlock_timedrdlock(&(vec)->lock, timespec)
 #define SCCP_VECTOR_RW_WRLOCK_TIMED(vec, timespec) pbx_rwlock_timedwrlock(&(vec)->lock, timespec)
-

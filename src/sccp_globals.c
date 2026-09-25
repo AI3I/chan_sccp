@@ -16,4 +16,3 @@ char SCCP_VERSIONSTR[300];
 char SCCP_REVISIONSTR[30];
 
 struct sccp_global_vars *sccp_globals = 0;
-

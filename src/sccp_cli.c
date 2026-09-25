@@ -4125,4 +4125,3 @@ int sccp_unregister_cli(void)
 	}
 	return res;
 }
-

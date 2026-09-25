@@ -3617,4 +3617,3 @@ PBX_CHANNEL_TYPE *sccp_astwrap_findPickupChannelByGroupLocked(PBX_CHANNEL_TYPE *
 	target = ast_pickup_find_by_group(chan);
 	return target;
 }
-

@@ -222,4 +222,3 @@ static void __attribute__((destructor)) sccp_unregister_tests(void)
 #else
 const XMLInterface iXML = { 0 };
 #endif                                        // defined(CS_EXPERIMENTAL_XML)
-

@@ -1825,4 +1825,3 @@ gcc_inline const char * msginfo2str(sccp_mid_t msgId)
 	}
 	return info->text;
 }
-

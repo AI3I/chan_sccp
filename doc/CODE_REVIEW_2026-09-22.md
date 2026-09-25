@@ -1,5 +1,10 @@
 # Code review and cleanup plan
 
+**Status (2026-09-25): all findings R1-R12 are implemented, kept as a record.**
+R8 (TLS) landed in `63277885` and `0799a6d8`. R2, R3, R5-R8, R11 and R12 are
+validated by build only; runtime checks are listed in `HEALTH_AUDIT.md`
+("Current status").
+
 Reviewed revision: `20ea3fc1` on `main`.
 
 This is a review, not an implementation change. The deployed RTP fix remains

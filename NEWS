@@ -1,13 +1,87 @@
 Version: 5.0.0 (unreleased)
 ==========================
 
- - Supported Asterisk targets: 20 through 24.
- - Measured CLI table widths, readable headings, and a tone reference command.
- - Canonical hint linestates and softkeysets commands; remove softkeyssets alias.
- - Corrected tone descriptions and static audio RTP payload mappings.
- - Reproducible release-version handling, repaired build/archive inputs, and
-   standalone regression tests.
- - Joinable thread-pool workers, cooperative draining, and explicit job ownership.
+ - Supported Asterisk targets: 20 through 24 (earlier versions are refused
+   by configure).
+
+ - BREAKING: CLI commands and AMI actions were renamed. There are no
+   aliases; update scripts, dialplan System() calls and AMI clients.
+
+   CLI (old -> new):
+     sccp applyconfig <dev>              -> sccp apply config <dev>
+     sccp tokenack <dev>                 -> sccp token ack <dev>
+     sccp onhook <call>                  -> sccp hangup <call>
+     sccp message devices <text>         -> sccp message all <text>
+     sccp microphone <dev> on|off        -> sccp set device <dev> microphone on|off
+     sccp dnd device <dev> <mode>        -> sccp set device <dev> dnd <off|reject|silent>
+     sccp callforward <line> [dev] <type> [number]
+                                         -> sccp set line <line> [dev] forward <type> [number]
+     sccp set channel <call> hold on|off -> unchanged; "hold off" now also works
+                                            without naming a device
+     sccp set debug ...                  -> sccp debug ...
+     sccp set variable                   -> removed (was never implemented)
+     sccp show hint linestates           -> sccp show hint line states
+     sccp show softkeysets               -> sccp show softkey sets
+     sccp show refcount                  -> sccp show references
+
+   AMI (old -> new):
+     SCCPListDevices                     -> SCCPShowDevices
+     SCCPListLines                       -> SCCPShowLines
+     SCCPMessageDevices                  -> SCCPMessageAll
+     SCCPDeviceSetDND, SCCPDndDevice     -> SCCPSetDeviceDND (Device, State)
+     SCCPMicrophone                      -> SCCPSetDeviceMicrophone (Device, State)
+     SCCPLineForwardUpdate, SCCPCallforward
+                                         -> SCCPSetLineForward (Line, Device, Type, Number)
+     SCCPDeviceUpdate, SCCPDeviceAddLine -> SCCPAddLine / SCCPRemoveLine (Device, Line)
+     SCCPDeviceRestart                   -> SCCPRestart / SCCPReset (Device)
+     SCCPStartCall                       -> SCCPCall (Device, Number, Line)
+     SCCPAnswerCall, SCCPAnswerCall1     -> SCCPAnswer (Call, Device)
+     SCCPHangupCall                      -> SCCPHangup (Call)
+     SCCPHoldCall                        -> SCCPHold (Call, State, Device)
+     SCCPShowRefcount                    -> SCCPShowReferences
+     SCCPConfigMetaData                  -> SCCPConfigMetadata
+   New: SCCPApplyConfig, SCCPUnregister, SCCPRefreshDevice, SCCPTokenAck,
+   SCCPSetDeviceOption, SCCPSetFallback, SCCPShowFirmware,
+   SCCPShowDeviceCalls, SCCPPushURL, SCCPPress, SCCPGenerateCnf.
+   Every action is documented ("manager show command <action>"), answers
+   with a proper Response/Message, and reports missing arguments as an error.
+
+ - BREAKING: AMI fields of the show actions follow the new console labels
+   (for example ConfigFile, IPAddress, DNDFeatureEnabled, Keepalive), and
+   SCCPShowDevices reports Firmware instead of TypeID. Refcount list events
+   are SCCPReferenceEntry. SCCPConfigMetadata returns valid JSON (null for
+   options without a default, PossibleValues for enums).
+
+ - New commands: sccp show devices [registered | unregistered | model <x> |
+   line <l> | firmware <x>], sccp show firmware, sccp show device <dev> calls
+   (quality of the last 20 calls), sccp set device <dev> debug on|off
+   (debug output limited to marked phones), sccp push url, sccp press
+   (softkeys, digits, off/on hook), sccp generate cnf (a phone's cnf.xml),
+   sccp refresh device, sccp unregister.
+
+ - Console output uses the Asterisk layout: section titles, aligned
+   "Label: value" lines, "(not set)" / "(none)" for empty values, no
+   banners. sccp show version prints "Skinny Client Control Protocol (SCCP)
+   5.0.0". Log, CLI and phone texts were rewritten throughout.
+
+ - Behavior changes:
+   - Graceful shutdown: during "core stop/restart gracefully" new calls from
+     phones are refused with a notice on the phone; existing calls, including
+     held ones, keep Asterisk waiting.
+   - label= on a line is optional; it falls back to cid_name, then the line
+     name (lines with cid_name but no label used to be skipped).
+   - sccp reload keeps the current configuration when the new file cannot be
+     loaded.
+
+ - Fixes (see HEALTH_AUDIT.md for details), among them: calls that could not
+   be hung up, crashes on reload and on DevState buttons, a phone refused
+   forever after one token refusal, lines lost after a repeated button
+   template request, call-forwards on long line names not restored, call
+   names colliding on long line names, unescaped text in phone XML screens,
+   the "internal" permit range, and truncated text in many buffers.
+
+ - Build: Asterisk 20-24 matrix, C only, thread-pool rework, libbfd
+   backtraces removed, standalone regression tests (make check).
 
 Version: v4.3.4_DEV
 ==========================

@@ -1,5 +1,10 @@
 # SCCP CLI output cleanup — progress and resume notes
 
+**Status (2026-09-25): complete and superseded, kept as a record.** The CLI
+was later renamed and reformatted (Asterisk layout); see the 2026-09-24
+entries in `HEALTH_AUDIT.md` and the 5.0.0 entry in `NEWS`. Command names
+below are the old ones.
+
 Updated: 2026-09-22 (PBX clock crossed into September 23). Base commit: `20ea3fc1`.
 
 ## Agreed scope

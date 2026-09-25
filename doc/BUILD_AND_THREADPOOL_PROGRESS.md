@@ -1,5 +1,8 @@
 # Build reproducibility and thread-pool repair
 
+**Status (2026-09-25): complete, kept as a record.** Current status is in
+`HEALTH_AUDIT.md`.
+
 Started 2026-09-22/23. User authorized priorities #1 and #2 from the review.
 Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 [detailed findings](CODE_REVIEW_2026-09-22.md).
@@ -267,26 +270,17 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
   `/root/asterisk.txt` there. No physical-phone or bidirectional transcoding
   test was run. Production was untouched.
 
-## Remaining work inventory (2026-09-23)
+## Remaining work inventory (updated 2026-09-25)
 
-- **TLS follow-up (R8):** the accept/handshake, bounded I/O retry, and ownership
-  fixes below are compile-only. Bad handshakes, clean closure, stalled clients,
-  and reconnects still need focused runtime validation before closing R8.
-- **Media follow-up:** validate dynamic audio/video mappings, bidirectional
-  transcoding, early media, paging, hold/resume, and transfer on a handset.
-  The signed RX/TX lookup and conservative mappings below are compile-only.
-- **High-value cleanup:** HTTP/CLI test handlers and `libpbximpl.la` were
-  removed in the batch below.
-- **Structural cleanup:** the shared adapter was moved into `ast120`, unused
-  C++ build scaffolding and disabled `#if 0` blocks were retired, and the four
-  identical 21–24 wrappers were consolidated below.
-- **Deferred validation:** physical Cisco call behavior and the compile-only
-  R2/R3/R5/R6/R7/R11/R12 paths. The user requested code progress now and no
-  test cycle after every change. Keep all lab actions recorded in wadsworth's
-  `/root/asterisk.txt`; production remains on the previously validated module.
-- **Standing quality pass:** CLI/phone/log messages and misleading comments,
-  as described in `HEALTH_AUDIT.md`. The older health audit includes historic
-  plans and should not override this current status section.
+The build, thread-pool, adapter and cleanup work in this document is done.
+Current status and later work are in `HEALTH_AUDIT.md` ("Current status").
+Still open, all needing real phones or a deployment: TLS connections under
+bad handshakes, stalled clients and reconnects (R8, implemented in
+`63277885`/`0799a6d8`, compile-only); video, dynamic RTP payloads,
+transcoding, paging and early media; transfer and hold on a handset; the
+generated cnf.xml, `sccp push url`, the token backoff fix and the phone
+display texts of 2026-09-25. Fallback scripts, XML requests and fragmented
+TCP frames (R2, R3, R5, R6) have compile-only validation.
 
 ### Additional source-audit findings (2026-09-23)
 

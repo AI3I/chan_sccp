@@ -1,5 +1,24 @@
 # chan_sccp-modern Health Audit
 
+## Current status (2026-09-25)
+
+The planned cleanup is complete: bug fixes, Asterisk 20-24 support, the
+message pass (log, CLI, AMI and phone text), the CLI/AMI rework, the
+provisioning commands, graceful shutdown and the comment cleanup. Both
+build configurations compile without warnings, `make check` passes, and the
+simulated-phone battery (`~/asterisk-lab/clitest/alltests.sh all` on
+wadsworth) passes. User-visible changes are summarized in `NEWS`.
+
+Still open, all needing real phones or a deployment: TLS connections under
+bad handshakes, stalled clients and reconnects (R8, implemented in
+`63277885`/`0799a6d8`, compile-only); video, dynamic RTP payloads,
+transcoding, paging and early media; transfer and hold on a handset; the
+generated cnf.xml, `sccp push url`, the token backoff fix and the phone
+display texts of 2026-09-25. Fallback scripts, XML requests and fragmented
+TCP frames (R2, R3, R5, R6) have compile-only validation.
+
+Newest entries are at the top; older sections are kept as a record.
+
 ## Changed — text shown on the phones (2026-09-25)
 
 Reviewed every string sent to a phone screen (status line, priority notify,
@@ -394,7 +413,7 @@ Validation: wadsworth build clean with `-Wall -Wformat=2`, `make check`
 passes, module loads in the lab Asterisk and `sccp show globals` shows
 correct netmasks.
 
-## In progress — message-quality pass (started 2026-09-23)
+## Done — message-quality pass (2026-09-23 to 2026-09-25)
 
 Every always-visible message (`pbx_log` ERROR/WARNING/NOTICE) is being
 rewritten file by file, after reading the code around it, to the approved
@@ -744,7 +763,7 @@ configured Asterisk 22 tree unless noted:
   change is a one-argument mechanical fix matching a pattern proven in 8 other
   files.
 
-## Open — correctness bugs (from the `/code-review high` pass, not yet fixed)
+## Closed — correctness bugs from the `/code-review high` pass
 
 None remaining from that pass — both were fixed above.
 
@@ -1110,7 +1129,7 @@ a text cleanup):
 - `pbx_impl/ast113,114,115,116/*.c` — "convert format_type to ast_format",
   the same note duplicated across 4 files, a real data-type migration.
 
-## Open — message quality (broader pass needed, this is a standing concern now)
+## Standing rules — message quality
 
 - (The "55 call sites with the generic OOM string" item that used to be here
   is done — verified zero remaining `SS_Memory_Allocation_Error, "SCCP")`

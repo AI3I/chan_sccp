@@ -9,6 +9,9 @@ pass tracked in [HEALTH_AUDIT.md](HEALTH_AUDIT.md) - real bug fixes, message
 and documentation quality, and Asterisk 20-24 support that upstream never
 picked up.
 
+Upgrading from 4.x: CLI commands and AMI actions were renamed in 5.0.0 without
+aliases; [NEWS](NEWS) has the old-to-new list.
+
 Chan_SCCP is free software; see [COPYING](COPYING) for the license.
 
 ### Prerequisites

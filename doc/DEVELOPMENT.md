@@ -20,7 +20,8 @@ configure searches the usual system locations. Useful options:
 `configure` and every `Makefile.in` are checked in. After changing
 `configure.ac`, `autoconf/*.m4` or a `Makefile.am`, run `sh tools/bootstrap.sh`
 (Autoconf 2.72, Automake 1.17, libtool 2.5.4) and commit only the changes
-that are not whitespace.
+that are not whitespace. Don't copy a configured build tree to another place;
+run configure again there.
 
 ## Tests
 

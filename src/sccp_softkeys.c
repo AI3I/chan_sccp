@@ -365,7 +365,7 @@ static void sccp_sk_answer(const sccp_softkeyMap_cb_t * const softkeyMap_cb, con
 	if (!c) {
 		char buf[100];
 		pbx_log(LOG_NOTICE, "%s: answer pressed with no call%s%s; reject tone played\n", d->id, l ? " on line " : "", l ? l->name : "");
-		snprintf(buf, 100, SKINNY_DISP_NO_CHANNEL_TO_PERFORM_ACTION_ON " " SKINNY_GIVING_UP, "ANSWER");
+		snprintf(buf, sizeof(buf), SKINNY_DISP_NO_CHANNEL_TO_PERFORM_ACTION_ON, label2str(SKINNY_LBL_ANSWER));
 		sccp_dev_displayprinotify(d, buf, SCCP_MESSAGE_PRIORITY_TIMEOUT, 5);
 		sccp_dev_starttone(d, SKINNY_TONE_BEEPBONK, lineInstance, 0, SKINNY_TONEDIRECTION_USER);
 		return;

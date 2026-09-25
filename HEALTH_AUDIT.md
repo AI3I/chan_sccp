@@ -1,5 +1,38 @@
 # chan_sccp-modern Health Audit
 
+## Changed — text shown on the phones (2026-09-25)
+
+Reviewed every string sent to a phone screen (status line, priority notify,
+XML menus); approved before/after by the user. Status-line fields hold 31
+characters on older phones; all new strings fit and are plain ASCII. Strings
+built from `\200` label codes are translated by the phone and were left alone.
+
+- Status line: `Call in progress`, `No lines registered`, `Transfer not
+  possible`, `No line available`, `Number too long`, `No active call to hold`,
+  `No call to send to voicemail`, `No line to send to voicemail`, `More than 2
+  calls, use Select` (was "More that two calls"), `Privacy is not enabled`,
+  `No call to make private`, and `No call for <softkey>` (was "No Channel to
+  perform ANSWER on ! Giving Up", 43 characters, cut on the phone). The call
+  forward "no answer" type now uses the phone's own translated label, like
+  "all" and "busy" already did.
+- Conference: `Moderators cannot be removed`, `Make another moderator first`,
+  `You are now a moderator` / `You are no longer a moderator`, `Only SCCP
+  phones can moderate` (the old text was 33 characters and got cut).
+- XML menus: `Choose a parked call`, `Choose a parking lot` (was "Please Choose
+  on of the parking lots"), `Select a participant`, `Invite to conference N`,
+  `Number to invite`.
+- Hotline caller ID name `Hotline` (was lowercase).
+
+Bugs fixed with it: caller names and numbers were put into the conference
+list, parking-lot and parked-calls XML without escaping, so a name like
+"Smith & Sons" or "<unknown>" made the phone reject the screen (new
+`sccp_xml_escape()`); the parked-calls directory put every call inside one
+`<DirectoryEntry>` instead of one entry per call.
+
+Validation: both build configurations without warnings, `make check`, full
+`alltests.sh all`; the simulated phone received the new status texts. Rendering
+on real phones is part of the post-deploy checks. Not deployed.
+
 ## Fixed — line codecs, held-call device, text cut off in buffers (2026-09-25)
 
 - A line's device codec list stayed empty ("(none)" in `sccp show line`):

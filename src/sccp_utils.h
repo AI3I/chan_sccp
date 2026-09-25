@@ -85,6 +85,7 @@ SCCP_API boolean_t __PURE__ SCCP_CALL sccp_util_matchSubscriptionId(constChannel
 SCCP_INLINE SCCP_CALL boolean_t sccp_netsock_equals(const struct sockaddr_storage * const s0, const struct sockaddr_storage *const s1);
 SCCP_INLINE SCCP_CALL size_t sccp_strlen(const char *data);
 SCCP_INLINE SCCP_CALL boolean_t sccp_strlen_zero(const char *data);
+SCCP_API const char * SCCP_CALL sccp_xml_escape(const char * in, char * buf, size_t size);
 SCCP_INLINE SCCP_CALL boolean_t sccp_strequals(const char *data1, const char *data2);
 SCCP_INLINE SCCP_CALL boolean_t sccp_strcaseequals(const char *data1, const char *data2);
 SCCP_API int __PURE__ SCCP_CALL sccp_strIsNumeric(const char *s);

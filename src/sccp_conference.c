@@ -998,7 +998,7 @@ void sccp_conference_show_list(constConferencePtr conference, constChannelPtr ch
 			pbx_str_append(&xmlStr, 0, "<CiscoIPPhoneIconMenu>");
 			pbx_str_append(&xmlStr, 0, "<Title>Conference %d</Title>\n", conference->id);
 		}
-		pbx_str_append(&xmlStr, 0, "<Prompt>Make Your Selection</Prompt>\n");
+		pbx_str_append(&xmlStr, 0, "<Prompt>Select a participant</Prompt>\n");
 
 		sccp_participant_t *part = NULL;
 
@@ -1022,9 +1022,10 @@ void sccp_conference_show_list(constConferencePtr conference, constChannelPtr ch
 			pbx_str_append(&xmlStr, 0, "</IconIndex>");
 
 			pbx_str_append(&xmlStr, 0, "<Name>");
-			pbx_str_append(&xmlStr, 0, "%d:%s", part->id, part->PartyName);
+			char esc[StationMaxNameSize * 6];
+			pbx_str_append(&xmlStr, 0, "%d:%s", part->id, sccp_xml_escape(part->PartyName, esc, sizeof(esc)));
 			if (!sccp_strlen_zero(part->PartyNumber)) {
-				pbx_str_append(&xmlStr, 0, " (%s)", part->PartyNumber);
+				pbx_str_append(&xmlStr, 0, " (%s)", sccp_xml_escape(part->PartyNumber, esc, sizeof(esc)));
 			}
 			pbx_str_append(&xmlStr, 0, "</Name>");
 			pbx_str_append(&xmlStr, 0, "<URL>UserCallData:%d:%d:%d:%d:%d</URL>", appID, participant->lineInstance, participant->callReference, participant->transactionID, part->id);
@@ -1179,7 +1180,7 @@ void sccp_conference_handle_device_to_user(devicePtr d, uint32_t callReference, 
 		} else if (!strcmp(d->dtu_softkey.action, "KICK")) {
 			if (participant->isModerator) {
 				sccp_log((DEBUGCAT_CONFERENCE)) (VERBOSE_PREFIX_3 "SCCPCONF/%04d: moderators cannot be kicked (%s)\n", conference->id, DEV_ID_LOG(d));
-				sccp_dev_set_message(d, "cannot kick a moderator", 5, FALSE, FALSE);
+				sccp_dev_set_message(d, "Moderators cannot be removed", 5, FALSE, FALSE);
 			} else {
 				sccp_participant_t *owned = sccp_participant_retain(participant);
 				if (owned && !sccp_threadpool_add_work(GLOB(general_threadpool), sccp_participant_kicker, owned)) {
@@ -1324,11 +1325,11 @@ void sccp_conference_promote_demote_participant(conferencePtr conference, partic
 			} else {
 				sccp_log((DEBUGCAT_CONFERENCE)) (VERBOSE_PREFIX_3 "SCCPCONF/%04d: not demoted: the conference needs at least one other moderator first\n", conference->id);
 				if (moderator) {
-					sccp_dev_set_message(moderator->device, "Promote someone first", 5, FALSE, FALSE);
+					sccp_dev_set_message(moderator->device, "Make another moderator first", 5, FALSE, FALSE);
 				}
 			}
 		}
-		sccp_dev_set_message(participant->device, participant->isModerator ? "You have been Promoted" : "You have been Demoted", 5, FALSE, FALSE);
+		sccp_dev_set_message(participant->device, participant->isModerator ? "You are now a moderator" : "You are no longer a moderator", 5, FALSE, FALSE);
 #ifdef CS_MANAGER_EVENTS
 		if (GLOB(callevents)) {
 			manager_event(EVENT_FLAG_CALL, "SCCPConfParticipantPromotion", "ConfId: %d\r\n" "PartId: %d\r\n" "Moderator: %s\r\n", conference->id, participant->id, participant->isModerator ? "Yes" : "No");
@@ -1337,7 +1338,7 @@ void sccp_conference_promote_demote_participant(conferencePtr conference, partic
 	} else {
 		sccp_log((DEBUGCAT_CONFERENCE)) (VERBOSE_PREFIX_3 "SCCPCONF/%04d: only SCCP calls can be moderators\n", conference->id);
 		if (moderator) {
-			sccp_dev_set_message(moderator->device, "Only sccp phones can be moderator", 5, FALSE, FALSE);
+			sccp_dev_set_message(moderator->device, "Only SCCP phones can moderate", 5, FALSE, FALSE);
 		}
 	}
 	sccp_conference_update_conflist(conference);
@@ -1369,8 +1370,8 @@ void sccp_conference_invite_participant(constConferencePtr conference, constPart
 		} else {
 			pbx_str_append(&xmlStr, 0, "<CiscoIPPhoneInput>\n");
 		}
-		pbx_str_append(&xmlStr, 0, "<Title>Conference %d Invite</Title>\n", conference->id);
-		pbx_str_append(&xmlStr, 0, "<Prompt>Enter the phone number to invite</Prompt>\n");
+		pbx_str_append(&xmlStr, 0, "<Title>Invite to conference %d</Title>\n", conference->id);
+		pbx_str_append(&xmlStr, 0, "<Prompt>Number to invite</Prompt>\n");
 		pbx_str_append(&xmlStr, 0, "<URL>UserData:%d:%s</URL>\n", appID, "invite");
 
 		pbx_str_append(&xmlStr, 0, "<InputItem>\n");

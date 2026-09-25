@@ -167,7 +167,7 @@ void *sccp_create_hotline(void)
 #endif
 		hotline->label = pbx_strdup("Hotline");
 		hotline->context = pbx_strdup("default");
-		sccp_copy_string(hotline->cid_name, "hotline", sizeof(hotline->cid_name));
+		sccp_copy_string(hotline->cid_name, "Hotline", sizeof(hotline->cid_name));
 		sccp_copy_string(hotline->cid_num, "hotline", sizeof(hotline->cid_name));
 		*(sccp_line_t **)&(GLOB(hotline)->line) = sccp_line_retain(hotline);                                        // retain line inside hotline (const cast to emplace)
 		sccp_line_addToGlobals(hotline);								// retain line inside GlobalsList

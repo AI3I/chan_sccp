@@ -499,6 +499,17 @@ gcc_inline size_t sccp_strlen(const char *data)
 	return strlen(data);
 }
 
+/* text for an XML element or attribute on a phone screen; "" if it does not fit, never broken markup */
+const char * sccp_xml_escape(const char * in, char * buf, size_t size)
+{
+	if (!in || !size || ast_xml_escape(in, buf, size)) {
+		if (size) {
+			buf[0] = '\0';
+		}
+	}
+	return buf;
+}
+
 gcc_inline boolean_t sccp_strequals(const char *data1, const char *data2)
 {
 	if (sccp_strlen_zero(data1) && sccp_strlen_zero(data2)) {
@@ -1368,7 +1379,7 @@ gcc_inline const char * const sccp_cfwd2disp(const sccp_cfwd_t type)
 		case SCCP_CFWD_BUSY:
 			return SKINNY_DISP_CFWDBUSY;
 		case SCCP_CFWD_NOANSWER:
-			return SKINNY_DISP_NOANSWER;
+			return SKINNY_DISP_CFWDNOANSWER;
 		case SCCP_CFWD_NONE:
 		case SCCP_CFWD_SENTINEL:
 		default:

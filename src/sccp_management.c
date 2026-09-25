@@ -318,8 +318,7 @@ char * sccp_manager_retrieve_parkedcalls_cxml(char ** out)
 		pbx_str_append(&tmpPbxStr, 0, "<?xml version=\"1.0\"?>");
 		pbx_str_append(&tmpPbxStr, 0, "<CiscoIPPhoneDirectory>");
 		pbx_str_append(&tmpPbxStr, 0, "<Title>Parked Calls</Title>");
-		pbx_str_append(&tmpPbxStr, 0, "<Prompt>Please Choose on of the parking lots</Prompt>");
-		pbx_str_append(&tmpPbxStr, 0, "<DirectoryEntry>");
+		pbx_str_append(&tmpPbxStr, 0, "<Prompt>Choose a parking lot</Prompt>");
 		char *strptr = parkedcalls_messageStr;
 		char *token = NULL;
 		char *rest = strptr;
@@ -332,18 +331,18 @@ char * sccp_manager_retrieve_parkedcalls_cxml(char ** out)
 			if (sccp_strcaseequals(event, "ParkedCallsComplete")) {
 				break;
 			} else if(sccp_strcaseequals(event, "ParkedCall")) {
-				pbx_str_append(&tmpPbxStr, 0, "<Name>%s (%s) by %s</Name><Telephone>%s</Telephone>",
-					astman_get_header((const struct message *)&m, "CallerIdName"),
-					astman_get_header((const struct message *)&m, "CallerIdNum"),
-					astman_get_header((const struct message *)&m, "ConnectedLineName"),
-					astman_get_header((const struct message *)&m, "Exten")
-				);
+				/* one DirectoryEntry per parked call; header values are escaped for the phone's XML parser */
+				char esc_name[256], esc_num[256], esc_by[256], esc_exten[256];
+				pbx_str_append(&tmpPbxStr, 0, "<DirectoryEntry><Name>%s (%s) by %s</Name><Telephone>%s</Telephone></DirectoryEntry>",
+					sccp_xml_escape(astman_get_header((const struct message *)&m, "CallerIdName"), esc_name, sizeof(esc_name)),
+					sccp_xml_escape(astman_get_header((const struct message *)&m, "CallerIdNum"), esc_num, sizeof(esc_num)),
+					sccp_xml_escape(astman_get_header((const struct message *)&m, "ConnectedLineName"), esc_by, sizeof(esc_by)),
+					sccp_xml_escape(astman_get_header((const struct message *)&m, "Exten"), esc_exten, sizeof(esc_exten)));
 				sccp_log(DEBUGCAT_CORE)(VERBOSE_PREFIX_3 "SCCP: parked call %s on %s@%s\n", astman_get_header((const struct message *)&m, "Channel"), astman_get_header((const struct message *)&m, "Exten"), astman_get_header((const struct message *)&m, "ParkingLot"));
 			}
 			memset(&m, 0, sizeof(m));
 			strptr = rest;
 		}
-		pbx_str_append(&tmpPbxStr, 0, "</DirectoryEntry>");
 		pbx_str_append(&tmpPbxStr, 0, "</CiscoIPPhoneDirectory>");
 
 		*out = pbx_strdup(pbx_str_buffer(tmpPbxStr));

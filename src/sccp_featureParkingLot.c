@@ -229,15 +229,20 @@ static char * const getParkingLotCXML(sccp_parkinglot_t *pl, int protocolversion
 			pbx_str_append(&buf, 0, "<CiscoIPPhoneMenu appId='%d' onAppClosed='%d'>", appID, appID);
 		}
 		pbx_str_append(&buf, 0, "<Title>Parked Calls</Title>");
-		pbx_str_append(&buf, 0, "<Prompt>Choose a ParkingLot Slot</Prompt>");
+		pbx_str_append(&buf, 0, "<Prompt>Choose a parked call</Prompt>");
 		for (size_t idx = 0; idx < SCCP_VECTOR_SIZE(&pl->slots); idx++) {
 			plslot_t *slot = SCCP_VECTOR_GET_ADDR(&pl->slots, idx);
 			pbx_str_append(&buf, 0, "<MenuItem>");
 			const char *connected_line = !sccp_strcaseequals(slot->connectedline_name, "<unknown>") ? slot->connectedline_name : slot->from;
+			char esc_name[SCCP_MAX_EXTENSION * 6];
+			char esc_num[SCCP_MAX_EXTENSION * 6];
+			char esc_by[SCCP_MAX_EXTENSION * 6];
+			sccp_xml_escape(slot->callerid_num, esc_num, sizeof(esc_num));
+			sccp_xml_escape(connected_line, esc_by, sizeof(esc_by));
 			if (!sccp_strcaseequals(slot->callerid_name, "<unknown>")) {
-				pbx_str_append(&buf, 0, "<Name>%s (%s) by %s</Name>", slot->callerid_name, slot->callerid_num, connected_line);
+				pbx_str_append(&buf, 0, "<Name>%s (%s) by %s</Name>", sccp_xml_escape(slot->callerid_name, esc_name, sizeof(esc_name)), esc_num, esc_by);
 			} else {
-				pbx_str_append(&buf, 0, "<Name>%s by %s</Name>", slot->callerid_num, connected_line);
+				pbx_str_append(&buf, 0, "<Name>%s by %s</Name>", esc_num, esc_by);
 			}
 			pbx_str_append(&buf, 0, "<URL>UserCallData:%d:%d:%d:%d:%s/%s</URL>", appID, instance, 0, transactionId, pl->context, slot->exten);
 			pbx_str_append(&buf, 0, "</MenuItem>");

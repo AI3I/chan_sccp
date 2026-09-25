@@ -6,6 +6,8 @@ Version: 5.0.0 (unreleased)
 
  - BREAKING: CLI commands and AMI actions were renamed. There are no
    aliases; update scripts, dialplan System() calls and AMI clients.
+   doc/UPGRADING.md has the full guide; doc/CLI.md and doc/AMI.md are the
+   references.
 
    CLI (old -> new):
      sccp applyconfig <dev>              -> sccp apply config <dev>
@@ -40,6 +42,8 @@ Version: 5.0.0 (unreleased)
      SCCPHoldCall                        -> SCCPHold (Call, State, Device)
      SCCPShowRefcount                    -> SCCPShowReferences
      SCCPConfigMetaData                  -> SCCPConfigMetadata
+     SCCPConference (Command, ConferenceId, ParticipantId)
+                                         -> SCCPConference (Command, Conference, Participant)
    New: SCCPApplyConfig, SCCPUnregister, SCCPRefreshDevice, SCCPTokenAck,
    SCCPSetDeviceOption, SCCPSetFallback, SCCPShowFirmware,
    SCCPShowDeviceCalls, SCCPPushURL, SCCPPress, SCCPGenerateCnf.
@@ -50,7 +54,10 @@ Version: 5.0.0 (unreleased)
    (for example ConfigFile, IPAddress, DNDFeatureEnabled, Keepalive), and
    SCCPShowDevices reports Firmware instead of TypeID. Refcount list events
    are SCCPReferenceEntry. SCCPConfigMetadata returns valid JSON (null for
-   options without a default, PossibleValues for enums).
+   options without a default, PossibleValues for enums). ListItems in the
+   Complete event counts events (4.x counted output lines); SCCPShowLines
+   sends ActionID only when given and reports TableEntries. SCCPShowConference
+   sends a proper SCCPShowConference event and a Complete event.
 
  - New commands: sccp show devices [registered | unregistered | model <x> |
    line <l> | firmware <x>], sccp show firmware, sccp show device <dev> calls
@@ -73,7 +80,7 @@ Version: 5.0.0 (unreleased)
    - sccp reload keeps the current configuration when the new file cannot be
      loaded.
 
- - Fixes (see HEALTH_AUDIT.md for details), among them: calls that could not
+ - Fixes (doc/history/HEALTH_AUDIT.md has the details), among them: calls that could not
    be hung up, crashes on reload and on DevState buttons, a phone refused
    forever after one token refusal, lines lost after a repeated button
    template request, call-forwards on long line names not restored, call

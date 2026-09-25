@@ -78,8 +78,8 @@ static const SCCPConfigOption sccpGlobalConfigOptions[]={
 	{"musicclass", 			G_OBJ_REF(musicclass), 			TYPE_STRINGPTR,									SCCP_CONFIG_FLAG_NONE,						SCCP_CONFIG_NOUPDATENEEDED,		"default",			"Sets the default music on hold class\n"},
 	{"language", 			G_OBJ_REF(language), 			TYPE_STRINGPTR,									SCCP_CONFIG_FLAG_NONE,						SCCP_CONFIG_NEEDDEVICERESET,		"en",				"Default language setting\n"},
 #ifdef CS_MANAGER_EVENTS
-	{"callevents", 			G_OBJ_REF(callevents), 			TYPE_BOOLEAN,									SCCP_CONFIG_FLAG_NONE,						SCCP_CONFIG_NOUPDATENEEDED,		"yes",				"Generate manager events when phone\n"
-																																					"Performs events (e.g. hold)\n"},
+	{"callevents", 			G_OBJ_REF(callevents), 			TYPE_BOOLEAN,									SCCP_CONFIG_FLAG_NONE,						SCCP_CONFIG_NOUPDATENEEDED,		"yes",				"Send AMI events when a phone answers, holds or resumes a call, starts the\n"
+																																					"dialplan, or takes part in a conference\n"},
 #endif
 	{"accountcode", 		G_OBJ_REF(accountcode), 		TYPE_STRINGPTR,									SCCP_CONFIG_FLAG_NONE,						SCCP_CONFIG_NOUPDATENEEDED,		"skinny",			"Accountcode to ease billing\n"},
 	{"sccp_tos", 			G_OBJ_REF(sccp_tos), 			TYPE_PARSER(sccp_config_parse_tos),						SCCP_CONFIG_FLAG_NONE,						SCCP_CONFIG_NEEDDEVICERESET,		"0x68",				"Sets the default sccp signaling packets Type of Service (TOS)  (defaults to 0x68 = 01101000 = 104 = DSCP:011010 = AF31)\n"

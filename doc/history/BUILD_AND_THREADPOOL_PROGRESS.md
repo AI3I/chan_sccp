@@ -1,7 +1,7 @@
 # Build reproducibility and thread-pool repair
 
 **Status (2026-09-25): complete, kept as a record.** Current status is in
-`HEALTH_AUDIT.md`.
+[STATUS.md](../STATUS.md).
 
 Started 2026-09-22/23. User authorized priorities #1 and #2 from the review.
 Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
@@ -273,7 +273,7 @@ Parent notes: [CLI/tone checkpoint](CLI_OUTPUT_PROGRESS.md),
 ## Remaining work inventory (updated 2026-09-25)
 
 The build, thread-pool, adapter and cleanup work in this document is done.
-Current status and later work are in `HEALTH_AUDIT.md` ("Current status").
+Current status is in [STATUS.md](../STATUS.md).
 Still open, all needing real phones or a deployment: TLS connections under
 bad handshakes, stalled clients and reconnects (R8, implemented in
 `63277885`/`0799a6d8`, compile-only); video, dynamic RTP payloads,

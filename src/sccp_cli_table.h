@@ -23,7 +23,6 @@
 				char camelParam[width + 1];                                    \
 				CLI_AMI_CAMEL_PARAM (param, camelParam);                       \
 				astman_append (s, "%s: " fmt "\r\n", camelParam, __VA_ARGS__); \
-				local_line_total++;                                            \
 			}
 #endif
 
@@ -46,12 +45,6 @@ if (!sccp_strlen_zero(UNIQUE_VAR(id_, CLI_AMI_TABLE_NAME))) {
 } else {
 	UNIQUE_VAR(idText_, CLI_AMI_TABLE_NAME)[0] = '\0';
 }
-#	define astman_append_inc(...)                                                                                                                                                                                          \
-		({                                                                                                                                                                                                              \
-			astman_append(__VA_ARGS__);                                                                                                                                                                             \
-			local_line_total++;                                                                                                                                                                                     \
-		})
-
 char UNIQUE_VAR(eventText_, CLI_AMI_TABLE_NAME)[256];
 snprintf(UNIQUE_VAR(eventText_, CLI_AMI_TABLE_NAME), sizeof(UNIQUE_VAR(eventText_, CLI_AMI_TABLE_NAME)), "Event: SCCP%sEntry\r\n", STRINGIFY(CLI_AMI_TABLE_PER_ENTRY_NAME));
 
@@ -72,13 +65,13 @@ sccp_cli_table_data_t UNIQUE_VAR(table_, CLI_AMI_TABLE_NAME) = {
 #undef CLI_AMI_TABLE_UTF8_FIELD
 #undef CLI_AMI_TABLE_UTF8_FIELD_NAMED
 if (s) {
-	astman_append_inc(s, "Event: TableStart\r\n");
-	astman_append_inc(s, "TableName: %s\r\n", STRINGIFY(CLI_AMI_TABLE_NAME));
+	astman_append(s, "Event: TableStart\r\n");
+	astman_append(s, "TableName: %s\r\n", STRINGIFY(CLI_AMI_TABLE_NAME));
 	if (s && m && sccp_strcaseequals(astman_get_header(m, "TableFormatVersion"), "2")) {
 		snprintf(UNIQUE_VAR(eventText_, CLI_AMI_TABLE_NAME), sizeof(UNIQUE_VAR(eventText_, CLI_AMI_TABLE_NAME)), "Event: %s_Entry\r\n", STRINGIFY(CLI_AMI_TABLE_PER_ENTRY_NAME));
-		astman_append_inc(s, "TableFormatVersion: %s\r\n", "2");
+		astman_append(s, "TableFormatVersion: %s\r\n", "2");
 	}
-	astman_append_inc(s, "%s\r\n", UNIQUE_VAR(idText_, CLI_AMI_TABLE_NAME));
+	astman_append(s, "%s\r\n", UNIQUE_VAR(idText_, CLI_AMI_TABLE_NAME));
 	local_line_total++;
 }
 
@@ -121,12 +114,12 @@ if (!s) {
 #endif
 		CLI_AMI_TABLE_BEFORE_ITERATION
 		UNIQUE_VAR(table_entries_, CLI_AMI_TABLE_NAME)++;
-		astman_append_inc(s, "%s", UNIQUE_VAR(eventText_, CLI_AMI_TABLE_NAME));
+		astman_append(s, "%s", UNIQUE_VAR(eventText_, CLI_AMI_TABLE_NAME));
 
-		astman_append_inc(s, "ChannelType: SCCP\r\n");
-		astman_append_inc(s, "ChannelObjectType: %s\r\n", STRINGIFY(CLI_AMI_TABLE_PER_ENTRY_NAME));
+		astman_append(s, "ChannelType: SCCP\r\n");
+		astman_append(s, "ChannelObjectType: %s\r\n", STRINGIFY(CLI_AMI_TABLE_PER_ENTRY_NAME));
 		CLI_AMI_TABLE_FIELDS
-		astman_append_inc(s, "%s\r\n", UNIQUE_VAR(idText_, CLI_AMI_TABLE_NAME));
+		astman_append(s, "%s\r\n", UNIQUE_VAR(idText_, CLI_AMI_TABLE_NAME));
 		local_line_total++;
 		CLI_AMI_TABLE_AFTER_ITERATION
 	}
@@ -147,10 +140,10 @@ if (!s) {
     sccp_cli_table_print(&UNIQUE_VAR(table_, CLI_AMI_TABLE_NAME), fd, STRINGIFY(CLI_AMI_TABLE_NAME));
 #endif
 } else {
-	astman_append_inc(s, "Event: TableEnd\r\n");
-	astman_append_inc(s, "TableName: %s\r\n", STRINGIFY(CLI_AMI_TABLE_NAME));
-	astman_append_inc(s, "TableEntries: %d\r\n", UNIQUE_VAR(table_entries_, CLI_AMI_TABLE_NAME));
-	astman_append_inc(s, "%s\r\n", UNIQUE_VAR(idText_, CLI_AMI_TABLE_NAME));
+	astman_append(s, "Event: TableEnd\r\n");
+	astman_append(s, "TableName: %s\r\n", STRINGIFY(CLI_AMI_TABLE_NAME));
+	astman_append(s, "TableEntries: %d\r\n", UNIQUE_VAR(table_entries_, CLI_AMI_TABLE_NAME));
+	astman_append(s, "%s\r\n", UNIQUE_VAR(idText_, CLI_AMI_TABLE_NAME));
 	local_line_total++;
 }
 

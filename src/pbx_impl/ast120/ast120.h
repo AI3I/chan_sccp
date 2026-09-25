@@ -134,22 +134,12 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 #define OLDCONST
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-#define CLI_AMI_OUTPUT(fd, s, ...) ({ 										\
-	if (NULL != (s)) {											\
-		astman_append((s), __VA_ARGS__);								\
-		local_line_total++;										\
-	} else {												\
-		ast_cli((fd), __VA_ARGS__);									\
-	}													\
-})
-
 #	define CLI_AMI_OUTPUT_PARAM(param, width, fmt, ...)                                                                                                                                                                    \
 		({                                                                                                                                                                                                              \
 			if (NULL != (s)) {                                                                                                                                                                                      \
 				char camelParam[] = param;                                                                                                                                                                      \
 				sccp_camelcase(camelParam);                                                                                                                                                                     \
 				astman_append((s), "%s: " fmt "\r\n", (camelParam), __VA_ARGS__);                                                                                                                               \
-				local_line_total++;                                                                                                                                                                             \
 			} else {                                                                                                                                                                                                \
 				ast_cli((fd), "  %-*s " fmt "\n", (width) + 1, param ":", __VA_ARGS__);                                                                                                              \
 			}                                                                                                                                                                                                       \
@@ -161,7 +151,6 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 				char camelParam[] = param;                                                                                                                                                                      \
 				sccp_camelcase(camelParam);                                                                                                                                                                     \
 				astman_append((s), "%s: %s\r\n", (camelParam), ((value) ? "on" : "off"));                                                                                                                       \
-				local_line_total++;                                                                                                                                                                             \
 			} else {                                                                                                                                                                                                \
 				ast_cli((fd), "  %-*s %s\n", (width) + 1, param ":", ((value) ? "on" : "off"));                                                                                                      \
 			}                                                                                                                                                                                                       \
@@ -173,7 +162,6 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 				char camelParam[] = param;                                                                                                                                                                      \
 				sccp_camelcase(camelParam);                                                                                                                                                                     \
 				astman_append((s), "%s: %s\r\n", (camelParam), ((value) ? "yes" : "no"));                                                                                                                       \
-				local_line_total++;                                                                                                                                                                             \
 			} else {                                                                                                                                                                                                \
 				ast_cli((fd), "  %-*s %s\n", (width) + 1, param ":", ((value) ? "yes" : "no"));                                                                                                      \
 			}                                                                                                                                                                                                       \

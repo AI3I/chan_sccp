@@ -20,45 +20,6 @@
 #include "sccp_threadpool.h"
 #include <asterisk/say.h>
 
-/*** DOCUMENTATION
-	<manager name="SCCPConference" language="en_US">
-		<synopsis>Control sccp conference and it's participants.</synopsis>
-		<syntax>
-			<xi:include href="../core-en_US.xml" parse="xml"
-				xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
-			<parameter name="ConferenceId" required="true">
-				<para>Id of the conference</para>
-			</parameter>
-			<parameter name="ParticipantId">
-				<para>Id of the participant</para>
-			</parameter>
-			<parameter name="Command" required="true">
-				<para>Command to be executed on this <replaceable>ConferenceId</replaceable> and <replaceable>ParticipantId</replaceable> combination</para>
-				<enumlist>
-					<enum name="EndConf">
-						<para>End the conference specified via <replaceable>ConferenceId</replaceable>.</para>
-					</enum>
-					<enum name="Kick">
-						<para>Kick a <replaceable>ParticipantId</replaceable> out of <replaceable>ConferenceId</replaceable>.</para>
-					</enum>
-					<enum name="Mute">
-						<para>Mute <replaceable>ParticipantId</replaceable> on <replaceable>ConferenceId</replaceable>.</para>
-					</enum>
-					<enum name="Moderate">
-						<para>Promote <replaceable>ParticipantId</replaceable> on <replaceable>ConferenceId</replaceable> to moderator status.</para>
-					</enum>
-					<enum name="Invite">
-						<para>Invite a new participant to this <replaceable>ConferenceId</replaceable> (Not implemented).</para>
-					</enum>
-				</enumlist>
-			</parameter>
-		</syntax>
-		<description>
-			<para>Control sccp conference and it's participants.</para>
-		</description>
-	</manager>
-***/
-
 #ifdef CS_SCCP_CONFERENCE
 
 #include <asterisk/bridge.h>
@@ -1500,11 +1461,16 @@ int sccp_cli_show_conference(int fd, sccp_cli_totals_t *totals, struct mansessio
 		sccp_participant_t *participant = NULL;
 
 		if (!s) {
-			CLI_AMI_OUTPUT(fd, s, "Conference %d:\n", conference->id);
+			pbx_cli(fd, "Conference %d:\n", conference->id);
 		} else {
-			astman_send_listack(s, m, argv[0], "start");
-			CLI_AMI_OUTPUT_PARAM("Event", CLI_AMI_LIST_WIDTH, "%s", argv[0]);
-			CLI_AMI_OUTPUT_PARAM("ConfId", CLI_AMI_LIST_WIDTH, "%d", conference->id);
+			const char * actionid = astman_get_header(m, "ActionID");
+			CLI_AMI_LIST_START(s, m, "SCCPShowConference");
+			astman_append(s, "Event: SCCPShowConference\r\nConfId: %d\r\n", conference->id);
+			if (!pbx_strlen_zero(actionid)) {
+				astman_append(s, "ActionID: %s\r\n", actionid);
+			}
+			astman_append(s, "\r\n");
+			local_line_total++;
 		}
 #define CLI_AMI_TABLE_NAME Participants
 #define CLI_AMI_TABLE_PER_ENTRY_NAME Participant

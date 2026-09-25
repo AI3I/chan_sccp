@@ -5,7 +5,7 @@
 # 			See the LICENSE file at the top of the source tree.
 # NOTE:			Process this file with automake to produce a makefile.in script.
 AUTOMAKE_OPTIONS	= gnu foreign
-EXTRA_DIST 		= .version tools conf
+EXTRA_DIST 		= .version tools conf doc
 SUBDIRS 		= src
 ACLOCAL_AMFLAGS		= -I autoconf
 AM_CPPFLAGS		= $(LTDLINCL)

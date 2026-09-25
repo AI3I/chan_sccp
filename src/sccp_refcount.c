@@ -652,7 +652,6 @@ int sccp_show_refcount(int fd, sccp_cli_totals_t *totals, struct mansession *s, 
 	CLI_AMI_TABLE_FIELD_NAMED(InUse, "In Use",	"-5.5",		s,	5,	check_inuse ? (inuse ? "yes" : "no") : "off")	\
 	CLI_AMI_TABLE_FIELD(Size,	"-4.4",		d,	4,	obj->len)
 #include "sccp_cli_table.h"
-	local_line_total++;
 	ast_rwlock_unlock(&objectslock);
 
 	fillfactor = (float) numentries / SCCP_HASH_PRIME;
@@ -667,14 +666,8 @@ int sccp_show_refcount(int fd, sccp_cli_totals_t *totals, struct mansession *s, 
 	CLI_AMI_TABLE_FIELD(Factor,		"08.02",	f,	8,	fillfactor)				\
 	CLI_AMI_TABLE_FIELD_NAMED(MaxDepth, "Max Depth",		"-8.8",		d,	8,	maxdepth)
 #include "sccp_cli_table.h"
-	local_line_total++;
-	if (fillfactor > 1.00) {
-		if (!s) {
-			pbx_cli(fd, "Fill factor above 1.00: more objects than hash buckets, so lookups slow down (bucket count is set by configure --with-hash-size)\n");
-		} else {
-			astman_append(s, "Warning: fill factor above 1.00; more objects than hash buckets\r\n");
-			local_line_total++;
-		}
+	if (fillfactor > 1.00 && !s) {
+		pbx_cli(fd, "Fill factor above 1.00: more objects than hash buckets, so lookups slow down (bucket count is set by configure --with-hash-size)\n");
 	}
 
 	if (s) {

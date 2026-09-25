@@ -4,13 +4,15 @@ A Skinny Client Control Protocol (SCCP) channel driver for Asterisk, letting
 Cisco 79xx/89xx/99xx-series phones register directly with Asterisk without a
 CUCM. This is a fork of [chan-sccp/chan-sccp](https://github.com/chan-sccp/chan-sccp)
 (itself descended from the original chan_sccp driver by Zozo/Sergio
-Chersovani), maintained here for active use, with an ongoing health/cleanup
-pass tracked in [HEALTH_AUDIT.md](HEALTH_AUDIT.md) - real bug fixes, message
-and documentation quality, and Asterisk 20-24 support that upstream never
-picked up.
+Chersovani), maintained here for active use: bug fixes, Asterisk 20-24
+support, and rewritten log, console and phone text. Original authors are
+credited in [AUTHORS](AUTHORS).
 
 Upgrading from 4.x: CLI commands and AMI actions were renamed in 5.0.0 without
-aliases; [NEWS](NEWS) has the old-to-new list.
+aliases; see [doc/UPGRADING.md](doc/UPGRADING.md).
+
+Documentation: [CLI commands](doc/CLI.md), [AMI actions](doc/AMI.md),
+[project status](doc/STATUS.md), [development](doc/DEVELOPMENT.md).
 
 Chan_SCCP is free software; see [COPYING](COPYING) for the license.
 
@@ -80,4 +82,5 @@ Make sure these are loaded before loading `chan_sccp`:
 
 ### License
 
-GPL - see [COPYING](COPYING) / [LICENSE](LICENSE).
+GNU General Public License, version 1 - see [LICENSE](LICENSE) (`COPYING` holds
+the same text for the build tools).

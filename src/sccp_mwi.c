@@ -326,7 +326,6 @@ static int showSubscriptions(int fd, sccp_cli_totals_t *totals, struct mansessio
 		CLI_AMI_TABLE_FIELD(Old,		"3.3",		d,	3,	line->voicemailStatistic.oldmsgs)
 #endif
 #include "sccp_cli_table.h"
-		local_line_total++;
 	subscription_unlock();
 	if (s) {
 		totals->lines = local_line_total;

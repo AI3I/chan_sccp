@@ -1,23 +1,10 @@
-# chan_sccp-modern Health Audit
+# Health audit (working log, 2026-09-22 to 2026-09-25)
 
-## Current status (2026-09-25)
-
-The planned cleanup is complete: bug fixes, Asterisk 20-24 support, the
-message pass (log, CLI, AMI and phone text), the CLI/AMI rework, the
-provisioning commands, graceful shutdown and the comment cleanup. Both
-build configurations compile without warnings, `make check` passes, and the
-simulated-phone battery (`~/asterisk-lab/clitest/alltests.sh all` on
-wadsworth) passes. User-visible changes are summarized in `NEWS`.
-
-Still open, all needing real phones or a deployment: TLS connections under
-bad handshakes, stalled clients and reconnects (R8, implemented in
-`63277885`/`0799a6d8`, compile-only); video, dynamic RTP payloads,
-transcoding, paging and early media; transfer and hold on a handset; the
-generated cnf.xml, `sccp push url`, the token backoff fix and the phone
-display texts of 2026-09-25. Fallback scripts, XML requests and fragmented
-TCP frames (R2, R3, R5, R6) have compile-only validation.
-
-Newest entries are at the top; older sections are kept as a record.
+This was the running log of the 5.0 cleanup, newest entries first. It is kept
+as a record of what was found, why it was changed and how it was checked.
+Commands and file names are as they were at the time; several were renamed
+later. Current status is in [STATUS.md](../STATUS.md); user-visible changes are
+in [UPGRADING.md](../UPGRADING.md).
 
 ## Changed — text shown on the phones (2026-09-25)
 

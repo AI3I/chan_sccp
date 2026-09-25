@@ -599,13 +599,13 @@ void sccp_cli_table_print(sccp_cli_table_data_t *table, int fd, const char *titl
 		<synopsis>Control a conference participant.</synopsis>
 		<syntax>
 			<xi:include href="../core-en_US.xml" parse="xml" xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])"/>
-			<parameter name="Action" required="true">
+			<parameter name="Command" required="true">
 				<enumlist>
-					<enum name="EndConf"/>
-					<enum name="Kick"/>
-					<enum name="Mute"/>
-					<enum name="Invite"/>
-					<enum name="Moderate"/>
+					<enum name="EndConf"><para>End the conference.</para></enum>
+					<enum name="Kick"><para>Remove the participant from the conference.</para></enum>
+					<enum name="Mute"><para>Mute or unmute the participant.</para></enum>
+					<enum name="Invite"><para>Show the invite screen on the participant's phone (the participant must be a moderator).</para></enum>
+					<enum name="Moderate"><para>Make the participant a moderator, or a moderator a normal participant.</para></enum>
 				</enumlist>
 			</parameter>
 			<parameter name="Conference" required="true">
@@ -1480,7 +1480,7 @@ static int sccp_show_firmware(int fd, sccp_cli_totals_t * totals, struct mansess
 				astman_append(s, "ActionID: %s\r\n", actionid);
 			}
 			astman_append(s, "Model: %s\r\nFirmware: %s\r\nDevices: %d\r\nDeviceNames: %s\r\n\r\n", rows[r].model, rows[r].firmware, rows[r].count, names);
-			local_line_total += 6;
+			local_line_total++;
 		}
 	}
 	sccp_free(rows);
@@ -1544,7 +1544,7 @@ static int sccp_show_device_calls(int fd, sccp_cli_totals_t * totals, struct man
 				      "Jitter: %u\r\nLatency: %u\r\nMOS: %.2f\r\nMinMOS: %.2f\r\nConcealedSeconds: %u\r\nSeverelyConcealedSeconds: %u\r\n\r\n",
 				      d->id, ended, q->callid, q->packets_sent, q->packets_received, q->packets_lost, loss, q->jitter, q->latency, q->mos_average, q->mos_minimum,
 				      q->concealed_seconds, q->severely_concealed_seconds);
-			local_line_total += 16;
+			local_line_total++;
 		}
 	}
 	if (!s) {
@@ -1941,9 +1941,7 @@ static int sccp_show_lines(int fd, sccp_cli_totals_t *totals, struct mansession 
 	sccp_cli_table_data_t details = { .headers = detail_headers, .columns = ARRAY_LEN(detail_headers) };
 	if (s) {
 		astman_append(s, "Event: TableStart\r\n");
-		local_line_total++;
 		astman_append(s, "TableName: Lines\r\n");
-		local_line_total++;
 		actionid = astman_get_header(m, "ActionID");
 		if (!pbx_strlen_zero(actionid)) {
 			astman_append(s, "ActionID: %s\r\n", actionid);
@@ -2005,7 +2003,9 @@ static int sccp_show_lines(int fd, sccp_cli_totals_t *totals, struct mansession 
 					astman_append(s, "Event: SCCPLineEntry\r\n");
 					astman_append(s, "ChannelType: SCCP\r\n");
 					astman_append(s, "ChannelObjectType: Line\r\n");
-					astman_append(s, "ActionId: %s\r\n", actionid);
+					if (!pbx_strlen_zero(actionid)) {
+						astman_append(s, "ActionID: %s\r\n", actionid);
+					}
 					astman_append(s, "Exten: %s\r\n", l->name);
 					astman_append(s, "SubscriptionNumber: %s\r\n", ld->subscriptionId.number);
 					astman_append(s, "Label: %s\r\n", sccp_strlen_zero(ld->subscriptionId.label) ? l->label : ld->subscriptionId.label);
@@ -2018,6 +2018,7 @@ static int sccp_show_lines(int fd, sccp_cli_totals_t *totals, struct mansession 
 					astman_append(s, "PartyName: %s\r\n", cid_name);
 					astman_append(s, "Capabilities: %s\r\n", cap_buf);
 					astman_append(s, "\r\n");
+					local_line_total++;
 				}
 				found_linedevice = 1;
 			}
@@ -2040,13 +2041,16 @@ static int sccp_show_lines(int fd, sccp_cli_totals_t *totals, struct mansession 
 				astman_append(s, "Event: SCCPLineEntry\r\n");
 				astman_append(s, "ChannelType: SCCP\r\n");
 				astman_append(s, "ChannelObjectType: Line\r\n");
-				astman_append(s, "ActionId: %s\r\n", actionid);
+				if (!pbx_strlen_zero(actionid)) {
+					astman_append(s, "ActionID: %s\r\n", actionid);
+				}
 				astman_append(s, "Exten: %s\r\n", l->name);
 				astman_append(s, "Label: %s\r\n", l->label ? l->label : "");
 				astman_append(s, "Description: %s\r\n", l->description ? l->description : "");
 				astman_append(s, "Device: \r\n");
 				astman_append(s, "MWI: %s\r\n", (l->voicemailStatistic.newmsgs) ? "ON" : "OFF");
 				astman_append(s, "\r\n");
+				local_line_total++;
 			}
 		}
 		if (!s) {
@@ -2070,20 +2074,17 @@ static int sccp_show_lines(int fd, sccp_cli_totals_t *totals, struct mansession 
 		}
 	} else {
 		astman_append(s, "Event: TableEnd\r\n");
-		local_line_total++;
 		astman_append(s, "TableName: Lines\r\n");
-		local_line_total++;
+		astman_append(s, "TableEntries: %d\r\n", local_line_total - 1);
 		if (!pbx_strlen_zero(actionid)) {
 			astman_append(s, "ActionID: %s\r\n", actionid);
-		} else {
-			astman_append(s, "\r\n");
 		}
+		astman_append(s, "\r\n");
 		local_line_total++;
 	}
 	if (s) {
 		totals->lines = local_line_total;
 		totals->tables = 1;
-		astman_append(s, "\r\n");
 	}
 
 	return RESULT_SUCCESS;
@@ -2411,7 +2412,7 @@ static char cli_conference_usage[] =  "Usage: sccp show conference <conference>\
 #define CLI_COMMAND "sccp", "show", "conference"
 #define CLI_COMPLETE SCCP_CLI_NULL_COMPLETER
 CLI_AMI_ENTRY(show_conference, sccp_cli_show_conference, "List running SCCP Conference", cli_conference_usage, FALSE, FALSE)
-SCCP_AMI_ACTION(show_conference, sccp_cli_show_conference, "SCCPShowConference", FALSE, "sccp", "show", "conference", "$Conference")
+SCCP_AMI_ACTION(show_conference, sccp_cli_show_conference, "SCCPShowConference", SCCP_AMI_LIST_BY_HANDLER, "sccp", "show", "conference", "$Conference")
 #undef CLI_COMPLETE
 #undef CLI_COMMAND
 #endif
@@ -2421,7 +2422,7 @@ static char cli_conference_command_usage[] =  "Usage: sccp conference <EndConf|K
 #define CLI_COMMAND "sccp", "conference"
 #define CLI_COMPLETE SCCP_CLI_CONFERENCE_COMPLETER
 CLI_AMI_ENTRY(conference_command, sccp_cli_conference_command, "Conference Action", cli_conference_command_usage, TRUE, FALSE)
-SCCP_AMI_ACTION(conference_command, sccp_cli_conference_command, "SCCPConference", FALSE, "sccp", "conference", "$Action", "$Conference", "$Participant")
+SCCP_AMI_ACTION(conference_command, sccp_cli_conference_command, "SCCPConference", FALSE, "sccp", "conference", "$Command", "$Conference", "$Participant")
 #undef CLI_COMPLETE
 #undef CLI_COMMAND
 #endif														/* DOXYGEN_SHOULD_SKIP_THIS */

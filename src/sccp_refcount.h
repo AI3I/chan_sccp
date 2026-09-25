@@ -12,7 +12,7 @@ struct mansession;
 struct message;
 
 __BEGIN_C_EXTERN__
-#define REFCOUNT_INDENTIFIER_SIZE 32
+#define REFCOUNT_INDENTIFIER_SIZE (StationMaxDeviceNameSize + StationMaxNameSize + 2)	/* device/line of a line device */
 enum sccp_refcounted_types {
 	SCCP_REF_PARTICIPANT = 1,
 	SCCP_REF_CONFERENCE,

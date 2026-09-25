@@ -321,13 +321,13 @@ void sccp_line_updatePreferencesFromDevicesToLine(sccp_line_t * l)
 				if(sccp_codec_getReducedSet(l->preferences.audio, ld->device->preferences.audio, temp) == 0) {
 					sccp_codec_combineSets(l->preferences.audio, ld->device->preferences.audio);
 				} else {
-					memcpy(&l->preferences.audio, &temp, sizeof *temp);
+					memcpy(&l->preferences.audio, &temp, sizeof(temp));
 				}
-				memset(&temp, SKINNY_CODEC_NONE, sizeof *temp);
+				memset(&temp, SKINNY_CODEC_NONE, sizeof(temp));
 				if(sccp_codec_getReducedSet(l->preferences.video, ld->device->preferences.video, temp) == 0) {
 					sccp_codec_combineSets(l->preferences.video, ld->device->preferences.video);
 				} else {
-					memcpy(&l->preferences.video, &temp, sizeof *temp);
+					memcpy(&l->preferences.video, &temp, sizeof(temp));
 				}
 			}
 		}

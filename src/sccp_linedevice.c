@@ -174,6 +174,7 @@ void sccp_linedevice_create(constDevicePtr d, constLinePtr l, uint8_t lineInstan
 	ld->device->configurationStatistic.numberOfLines++;
 
 	sccp_line_updatePreferencesFromDevicesToLine(line);
+	sccp_line_updateCapabilitiesFromDevicesToLine(line);
 
 	sccp_event_t * event = sccp_event_allocate(SCCP_EVENT_DEVICE_ATTACHED);
 	if(event) {

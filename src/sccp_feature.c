@@ -737,7 +737,7 @@ static void *sccp_feat_meetme_thread(void *data)
 	char ext[SCCP_MAX_EXTENSION];
 	char context[SCCP_MAX_CONTEXT];
 
-	char meetmeopts[SCCP_MAX_CONTEXT];
+	char meetmeopts[SCCP_MAX_EXTENSION * 3];
 
 #define SCCP_CONF_SPACER ','
 
@@ -1040,7 +1040,7 @@ int sccp_feat_sharedline_barge(constLineDevicePtr bargingLD, channelPtr bargedCh
 
 			d->indicate->remoteConnected(d, lineInstance, bargedChannel->callid, SKINNY_CALLINFO_VISIBILITY_HIDDEN);
 
-			snprintf(statusmsg, sizeof(statusmsg), SKINNY_DISP_BARGE " " SKINNY_DISP_FROM " %s", l->cid_num);
+			snprintf(statusmsg, sizeof(statusmsg), SKINNY_DISP_BARGE " " SKINNY_DISP_FROM " %.*s", (int)sizeof(statusmsg) - 8, l->cid_num);
 			sccp_dev_set_message(d, statusmsg, SCCP_DISPLAYSTATUS_TIMEOUT, FALSE, FALSE);
 			bargedChannel->setTone(bargedChannel, SKINNY_TONE_ZIP, SKINNY_TONEDIRECTION_BOTH);
 

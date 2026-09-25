@@ -179,7 +179,7 @@ channelPtr sccp_channel_allocate(constLinePtr l, constDevicePtr device)
 	}
 
 	int32_t callid = 0;
-	char designator[32];
+	char designator[StationMaxNameSize + 16];	/* SCCP/<line>-<8 hex digits>; a shorter buffer made names on long lines collide */
 	sccp_mutex_lock(&callCountLock);
 	if (callCount < 0xFFFFFFFF) {						/* callcount limit should be reset at his upper limit :) */
 		callid = callCount++;
@@ -188,7 +188,7 @@ channelPtr sccp_channel_allocate(constLinePtr l, constDevicePtr device)
 		callCount = 1;
 		callid = callCount;
 	}
-	snprintf(designator, 32, "SCCP/%s-%08X", refLine->name, callid);
+	snprintf(designator, sizeof(designator), "SCCP/%s-%08X", refLine->name, callid);
 	uint8_t callInstance = refLine->statistic.numberOfActiveChannels + refLine->statistic.numberOfHeldChannels + 1;
 	sccp_mutex_unlock(&callCountLock);
 	do {
@@ -1776,19 +1776,14 @@ static int channel_resume_locked(devicePtr d, linePtr l, channelPtr channel, boo
 		AUTO_RELEASE(sccp_linedevice_t, ld, sccp_linedevice_find(d, l));
 
 		if(ld) {
+			/* caller ID is cut to the phone's field sizes */
 			char tmpNumber[StationMaxDirnumSize] = {0};
 			char tmpName[StationMaxNameSize] = {0};
-			if(!sccp_strlen_zero(ld->subscriptionId.number)) {
-				snprintf(tmpNumber, StationMaxDirnumSize, "%s%s", channel->line->cid_num, ld->subscriptionId.number);
-			} else {
-				snprintf(tmpNumber, StationMaxDirnumSize, "%s%s", channel->line->cid_num, channel->line->defaultSubscriptionId.number);
-			}
-
-			if(!sccp_strlen_zero(ld->subscriptionId.name)) {
-				snprintf(tmpName, StationMaxNameSize, "%s%s", channel->line->cid_name, ld->subscriptionId.name);
-			} else {
-				snprintf(tmpName, StationMaxNameSize, "%s%s", channel->line->cid_name, channel->line->defaultSubscriptionId.name);
-			}
+			char full[SCCP_MAX_EXTENSION * 2 + 1];
+			snprintf(full, sizeof(full), "%s%s", channel->line->cid_num, !sccp_strlen_zero(ld->subscriptionId.number) ? ld->subscriptionId.number : channel->line->defaultSubscriptionId.number);
+			sccp_copy_string(tmpNumber, full, sizeof(tmpNumber));
+			snprintf(full, sizeof(full), "%s%s", channel->line->cid_name, !sccp_strlen_zero(ld->subscriptionId.name) ? ld->subscriptionId.name : channel->line->defaultSubscriptionId.name);
+			sccp_copy_string(tmpName, full, sizeof(tmpName));
 			if(channel->calltype == SKINNY_CALLTYPE_OUTBOUND) {
 				iCallInfo.SetCallingParty(channel->privateData->callInfo, tmpNumber, tmpName, NULL);
 				sccp_log((DEBUGCAT_CORE)) (VERBOSE_PREFIX_3 "%s: calling party set to <%s> '%s'\n", d->id, tmpNumber, tmpName);

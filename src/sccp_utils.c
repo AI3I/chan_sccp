@@ -190,8 +190,8 @@ unsigned int sccp_app_separate_args(char *buf, char delim, char **array, int arr
 void sccp_util_featureStorageBackend(const sccp_event_t * const event)
 {
 	char family[25];
-	char cfwdDeviceLineStore[60];
-	char cfwdLineDeviceStore[60];
+	char cfwdDeviceLineStore[StationMaxDeviceNameSize + StationMaxNameSize + 8];	/* must hold the full key sccp_dev_postregistration() reads back */
+	char cfwdLineDeviceStore[StationMaxDeviceNameSize + StationMaxNameSize + 8];
 	sccp_linedevice_t * ld = NULL;
 	sccp_device_t * device = NULL;
 

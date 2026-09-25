@@ -686,12 +686,16 @@ boolean_t sccp_pbx_channel_allocate(constChannelPtr channel, const void * ids, c
 		}
 
 		sccp_callinfo_t *ci = sccp_channel_getCallInfo(c);
+		/* caller ID is cut to the phone's field sizes (cid_num/cid_name) */
+		char full[SCCP_MAX_EXTENSION * 2 + 1];
 		if(ld->subscriptionId.replaceCid) {
-			snprintf(cid_num, StationMaxDirnumSize, "%s", sccp_strlen_zero(ld->subscriptionId.number) ? l->cid_num : ld->subscriptionId.number);
-			snprintf(cid_name, StationMaxNameSize, "%s", sccp_strlen_zero(ld->subscriptionId.name) ? l->cid_name : ld->subscriptionId.name);
+			sccp_copy_string(cid_num, sccp_strlen_zero(ld->subscriptionId.number) ? l->cid_num : ld->subscriptionId.number, sizeof(cid_num));
+			sccp_copy_string(cid_name, sccp_strlen_zero(ld->subscriptionId.name) ? l->cid_name : ld->subscriptionId.name, sizeof(cid_name));
 		} else {
-			snprintf(cid_num, StationMaxDirnumSize, "%s%s", l->cid_num, sccp_strlen_zero(ld->subscriptionId.number) ? "" : ld->subscriptionId.number);
-			snprintf(cid_name, StationMaxNameSize, "%s%s", l->cid_name, sccp_strlen_zero(ld->subscriptionId.name) ? "" : ld->subscriptionId.name);
+			snprintf(full, sizeof(full), "%s%s", l->cid_num, ld->subscriptionId.number);
+			sccp_copy_string(cid_num, full, sizeof(cid_num));
+			snprintf(full, sizeof(full), "%s%s", l->cid_name, ld->subscriptionId.name);
+			sccp_copy_string(cid_name, full, sizeof(cid_name));
 		}
 		switch (c->calltype) {
 			case SKINNY_CALLTYPE_INBOUND:

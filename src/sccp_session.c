@@ -572,9 +572,7 @@ static int __sccp_session_addDevice(sessionPtr session, constDevicePtr device)
 				session->device = new_device;				/* keep newly retained device */
 				pbx_mutex_unlock(&session->send_lock);
 
-				char buf[16] = "";
-				snprintf(buf, 16, "%s:%d", device->id, session->sc.fd);
-				sccp_copy_string(session->designator, buf, sizeof(session->designator));
+				snprintf(session->designator, sizeof(session->designator), "%s:%d", device->id, session->sc.fd);
 				res = 1;
 			} else {
 				res = -1;

@@ -48,7 +48,7 @@ struct ci_content {
 	sccp_callerid_presentation_t presentation;
 	boolean_t changed;										/*! Changes since last send */
 	uint8_t callInstance;
-	char designator[32];
+	char designator[StationMaxNameSize + 16];
 };
 
 struct sccp_callinfo {

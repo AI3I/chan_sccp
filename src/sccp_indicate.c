@@ -209,7 +209,7 @@ void __sccp_indicate (constDevicePtr maybe_device, channelPtr c, const sccp_chan
 						snprintf(caller,sizeof(caller), "%s", SKINNY_DISP_UNKNOWN_NUMBER);
 					}
 				}
-				snprintf(prompt, sizeof(prompt), "%s%s", (c->ringermode == SKINNY_RINGTYPE_URGENT) ? SKINNY_DISP_FLASH : SKINNY_DISP_FROM, caller);
+				snprintf(prompt, sizeof(prompt), "%s%.*s", (c->ringermode == SKINNY_RINGTYPE_URGENT) ? SKINNY_DISP_FLASH : SKINNY_DISP_FROM, (int)sizeof(prompt) - 3, caller);	/* prompt is cut to fit */
 				sccp_dev_displayprompt(d, lineInstance, c->callid, prompt, GLOB(digittimeout));
 			}
 			break;

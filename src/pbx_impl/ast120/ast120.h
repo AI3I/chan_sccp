@@ -192,7 +192,7 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 
 #	define CLI_AMI_RETURN_ERROR(fd, s, m, fmt, ...)                                                        \
 		({                                                                                              \
-			char _cli_ami_error[256];                                                               \
+			char _cli_ami_error[512];                                                               \
 			snprintf(_cli_ami_error, sizeof(_cli_ami_error), (fmt), __VA_ARGS__);                   \
 			size_t _cli_ami_len = strlen(_cli_ami_error);                                           \
 			while (_cli_ami_len && _cli_ami_error[_cli_ami_len - 1] == '\n') {                      \
@@ -208,7 +208,7 @@ int pbx_manager_register(const char *action, int authority, int (*func) (struct 
 
 #	define CLI_AMI_RETURN_DONE(fd, s, m, fmt, ...)                                                         \
 		({                                                                                              \
-			char _cli_ami_done[256];                                                                \
+			char _cli_ami_done[512];                                                                \
 			snprintf(_cli_ami_done, sizeof(_cli_ami_done), (fmt), __VA_ARGS__);                    \
 			if (NULL != (s)) {                                                                      \
 				const char * _cli_ami_id = astman_get_header((m), "ActionID");                   \

@@ -849,7 +849,7 @@ static void sccp_hint_notifySubscribers(sccp_hint_list_t * hint)
 #ifdef CS_DYNAMIC_SPEEDDIAL
 			sccp_msg_t *msg = NULL;
 			sccp_speed_t k;
-			char displayMessage[80] = "";
+			char displayMessage[StationMaxNameSize * 3] = "";	/* cut to the phone field when sent */
 			skinny_busylampfield_state_t status = SKINNY_BLF_STATUS_UNKNOWN;
 			if (d->inuseprotocolversion >= 15) {
 				sccp_dev_speed_find_byindex( d, subscriber->instance, TRUE, &k);

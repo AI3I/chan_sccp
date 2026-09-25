@@ -630,7 +630,7 @@ static void __saveLastDialedNumberToDatabase(constDevicePtr device)
 	char family[25];
 	snprintf(family, sizeof(family), "SCCP/%s", device->id);
 	if (!sccp_strlen_zero(device->redialInformation.number)) {
-		char buffer[SCCP_MAX_EXTENSION+16] = "\0";
+		char buffer[SCCP_MAX_EXTENSION + 32] = "\0";
 		snprintf (buffer, sizeof(buffer), "%s;lineInstance=%d", device->redialInformation.number, device->redialInformation.lineInstance);
 		iPbx.feature_addToDatabase(family, "lastDialedNumber", buffer);
 	} else {

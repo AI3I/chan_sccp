@@ -1,5 +1,36 @@
 # chan_sccp-modern Health Audit
 
+## Fixed — line codecs, held-call device, text cut off in buffers (2026-09-25)
+
+- A line's device codec list stayed empty ("(none)" in `sccp show line`):
+  the phone sends its capabilities before its button request, so the lines
+  were not attached yet when the capabilities were copied, and attaching a line
+  recomputed only its preferences. Attaching now also recomputes capabilities.
+- Shared-line codec preferences kept only the first codec: two `memcpy`/
+  `memset` calls used `sizeof *temp` (one element) instead of the array.
+- A held call (detached from its phone) showed "SCCP" as its device in `sccp
+  show channels` and in `SCCPChannel(device)`; now "(none)" / empty.
+- All `-Wformat-truncation` warnings in `--disable-debug` builds are gone
+  (24 before). Real bugs among them:
+  - Call names were built in 32 bytes, so a line name over 17 characters lost
+    the call ID (`SCCP/<line>-<id>`) and calls on that line got the same name;
+    also in the call info. Now sized for the longest line name.
+  - The session name ("SEP…:fd") was built in 16 bytes and always lost the
+    socket number.
+  - Call-forward database keys were written in 60 bytes but read back from a
+    100-byte key, so forwards on lines with long names were not restored at
+    the next registration.
+  - The saved last-dialed number could lose its line instance.
+  - MeetMe options (number + options) could be cut before being passed to
+    the conference application.
+  The rest only cut display text; they now use explicit precision or larger
+  buffers (caller ID is still cut to the phone's field sizes, deliberately).
+
+Validation: default and `--disable-debug` builds with no warnings, `make
+check` in both, full `alltests.sh all` on wadsworth; checked with a temporary
+37-character line name (call name and both database keys complete). Not
+deployed.
+
 ## Changed — code comments cut to the ones that explain why (2026-09-24)
 
 About 4,900 comments (roughly 8,000 lines) were removed from `src/`:

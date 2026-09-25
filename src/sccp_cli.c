@@ -1646,7 +1646,7 @@ static int sccp_show_device(int fd, sccp_cli_totals_t *totals, struct mansession
 	if (d->protocol) {
 		snprintf(protocol, sizeof(protocol), "%s %d (phone supports %d)", d->protocol->type == SCCP_PROTOCOL ? "SCCP" : "SPCP", d->inuseprotocolversion, d->protocolversion);
 	}
-	char redial[SCCP_MAX_EXTENSION + 16] = "";
+	char redial[SCCP_MAX_EXTENSION + 32] = "";
 	if (!sccp_strlen_zero(d->redialInformation.number)) {
 		snprintf(redial, sizeof(redial), "%s (line instance %d)", d->redialInformation.number, d->redialInformation.lineInstance);
 	}
@@ -1783,9 +1783,9 @@ static int sccp_show_device(int fd, sccp_cli_totals_t *totals, struct mansession
 #define CLI_AMI_TABLE_BEFORE_ITERATION                                                                                                                                                   \
 	if(buttonconfig->type == LINE) {                                                                                                                                                 \
 		AUTO_RELEASE(sccp_line_t, l, sccp_line_find_byname(buttonconfig->button.line.name, FALSE));                                                                              \
-		char subscriptionIdBuf[21] = "";                                                                                                                                         \
+		char subscriptionIdBuf[SCCP_MAX_EXTENSION * 2 + 8] = "";                                                                                                                 \
 		if(buttonconfig->button.line.subscriptionId) {                                                                                                                           \
-			snprintf(subscriptionIdBuf, 21, "(%s)%s:%s", buttonconfig->button.line.subscriptionId->replaceCid ? "=" : "+", buttonconfig->button.line.subscriptionId->number, \
+			snprintf(subscriptionIdBuf, sizeof(subscriptionIdBuf), "(%s)%s:%s", buttonconfig->button.line.subscriptionId->replaceCid ? "=" : "+", buttonconfig->button.line.subscriptionId->number, \
 				 buttonconfig->button.line.subscriptionId->name);                                                                                                        \
 		}                                                                                                                                                                        \
 		if(l) {                                                                                                                                                                  \
@@ -2326,7 +2326,7 @@ static int sccp_show_channels(int fd, sccp_cli_totals_t *totals, struct mansessi
 		CLI_AMI_TABLE_FIELD (ID, "-5", d, 5, channel->callid)                                                                          \
 		CLI_AMI_TABLE_FIELD (Name, "-25.25", s, 25, tmpname)                                                                           \
 		CLI_AMI_TABLE_UTF8_FIELD_NAMED(LineName, "Line", "-10.10", s, 10, channel->line->name)                                                      \
-		CLI_AMI_TABLE_UTF8_FIELD_NAMED(DeviceName, "Device", "-16", s, 16, channel->currentDeviceId)                                                  \
+		CLI_AMI_TABLE_UTF8_FIELD_NAMED(DeviceName, "Device", "-16", s, 16, sccp_strequals(channel->currentDeviceId, "SCCP") ? (s ? "" : "(none)") : channel->currentDeviceId)                                                  \
 		CLI_AMI_TABLE_FIELD_NAMED(NumCalled, "Dialed Number", "-10.10", s, 10, channel->dialedNumber)                                                        \
 		CLI_AMI_TABLE_FIELD_NAMED (PBXState, "PBX State", "-10.10", s, 10, (channel->owner) ? pbx_state2str (iPbx.getChannelState (channel)) : "(none)") \
 		CLI_AMI_TABLE_FIELD_NAMED (SCCPState, "SCCP State", "-10.10", s, 10, sccp_channelstate2str (channel->state))                                      \
@@ -2340,7 +2340,7 @@ static int sccp_show_channels(int fd, sccp_cli_totals_t *totals, struct mansessi
 		CLI_AMI_TABLE_FIELD (ID, "-5", d, 5, channel->callid)                                                                          \
 		CLI_AMI_TABLE_FIELD (Name, "-25.25", s, 25, tmpname)                                                                           \
 		CLI_AMI_TABLE_UTF8_FIELD_NAMED(LineName, "Line", "-10.10", s, 10, channel->line->name)                                                      \
-		CLI_AMI_TABLE_UTF8_FIELD_NAMED(DeviceName, "Device", "-16", s, 16, channel->currentDeviceId)                                                  \
+		CLI_AMI_TABLE_UTF8_FIELD_NAMED(DeviceName, "Device", "-16", s, 16, sccp_strequals(channel->currentDeviceId, "SCCP") ? (s ? "" : "(none)") : channel->currentDeviceId)                                                  \
 		CLI_AMI_TABLE_FIELD_NAMED(NumCalled, "Dialed Number", "-10.10", s, 10, channel->dialedNumber)                                                        \
 		CLI_AMI_TABLE_FIELD_NAMED (PBXState, "PBX State", "-10.10", s, 10, (channel->owner) ? pbx_state2str (iPbx.getChannelState (channel)) : "(none)") \
 		CLI_AMI_TABLE_FIELD_NAMED (SCCPState, "SCCP State", "-10.10", s, 10, sccp_channelstate2str (channel->state))                                      \
@@ -3169,13 +3169,13 @@ static int sccp_generate_cnf(int fd, sccp_cli_totals_t * totals, struct mansessi
 
 	int fdout = open(fn, O_CREAT | O_EXCL | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fdout == -1) {
-		CLI_AMI_RETURN_ERROR(fd, s, m, "%s not written: %s", fn, errno == EEXIST ? "the file already exists" : strerror(errno));
+		CLI_AMI_RETURN_ERROR(fd, s, m, "%.200s not written: %s", fn, errno == EEXIST ? "the file already exists" : strerror(errno));
 	}
 	FILE * f = fdopen(fdout, "w");
 	if (!f) {
 		int err = errno;
 		close(fdout);
-		CLI_AMI_RETURN_ERROR(fd, s, m, "%s not written: %s", fn, strerror(err));
+		CLI_AMI_RETURN_ERROR(fd, s, m, "%.200s not written: %s", fn, strerror(err));
 	}
 
 	char date_buf[64];
@@ -3224,9 +3224,9 @@ static int sccp_generate_cnf(int fd, sccp_cli_totals_t * totals, struct mansessi
 	fprintf(f, "  <dscpForCm2Dvce>%d</dscpForCm2Dvce>\n", d->audio_tos);
 	fprintf(f, "</device>\n");
 	if (fclose(f) != 0) {
-		CLI_AMI_RETURN_ERROR(fd, s, m, "%s not written completely: %s", fn, strerror(errno));
+		CLI_AMI_RETURN_ERROR(fd, s, m, "%.200s not written completely: %s", fn, strerror(errno));
 	}
-	CLI_AMI_RETURN_DONE(fd, s, m, "%s written (server %s port %u, from %s)", fn, server, port ? port : 2000, source);
+	CLI_AMI_RETURN_DONE(fd, s, m, "%.200s written (server %s port %u, from %s)", fn, server, port ? port : 2000, source);
 }
 
 static char cli_generate_cnf_usage[] = "Usage: sccp generate cnf <device> [file [server-address]]\n"
@@ -3342,8 +3342,8 @@ static int sccp_set_device(int fd, sccp_cli_totals_t * totals, struct mansession
 			CLI_AMI_RETURN_DONE(fd, s, m, "Debug for %s turned on with categories core, device, line, action, channel, indicate, softkey; other devices' debug output is suppressed", d->id);
 		}
 		char * categories = sccp_get_debugcategories(GLOB(debug));
-		char   msg[512];
-		snprintf(msg, sizeof(msg), "Debug for %s turned on with categories %s; other devices' debug output is suppressed", d->id, categories ? categories : "none");
+		char   msg[480];
+		snprintf(msg, sizeof(msg), "Debug for %s turned on with categories %.360s; other devices' debug output is suppressed", d->id, categories ? categories : "none");
 		sccp_free(categories);
 		CLI_AMI_RETURN_DONE(fd, s, m, "%s", msg);
 	}

@@ -248,9 +248,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 ETAGS = @ETAGS@
-EVENT_CFLAGS = @EVENT_CFLAGS@
-EVENT_LIBS = @EVENT_LIBS@
-EVENT_TYPE = @EVENT_TYPE@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
@@ -417,9 +414,9 @@ AUTOMAKE_OPTIONS = gnu
 MOSTLYCLEANFILES = *.gcda *.gcno *.gcov
 #AM_CFLAGS 		+= -I${abs_builddir} -I$(top_builddir)/src/ -I$(top_srcdir)/src/ -I$(top_srcdir)/src/pbx_impl/ -I$(top_srcdir)/src/pbx_impl/ast/ -I$(top_srcdir)/src/$(PBX_COND_SUBDIR) -I$(top_srcdir)/src/$(PBXVER_COND_SUBDIR) -I$(top_srcdir)/src/$(PBXVER_COND_ANNOUNCE_SUBDIR)
 AM_CFLAGS = $(PBX_CFLAGS) $(GDB_FLAGS) $(PTHREAD_CFLAGS) \
-	$(COVERAGE_CFLAGS) $(EVENT_CFLAGS) $(LIBEXSLT_CFLAGS) \
-	$(LIBCURL_CFLAGS) $(SUPPORTED_CFLAGS) $(SANITIZE_CFLAGS) \
-	-I$(top_builddir)/src/ -I$(top_srcdir)/src/ \
+	$(COVERAGE_CFLAGS) $(LIBEXSLT_CFLAGS) $(LIBCURL_CFLAGS) \
+	$(SUPPORTED_CFLAGS) $(SANITIZE_CFLAGS) -I$(top_builddir)/src/ \
+	-I$(top_srcdir)/src/ \
 	-DAST_MODULE_SELF_SYM=__internal_chan_sccp_la_self \
 	-DAST_MODULE=\"chan_sccp\" $(AST_CLANG_BLOCKS) -D_REENTRANT \
 	-D_GNU_SOURCE -DCRYPTO -fPIC -pipe -Wall

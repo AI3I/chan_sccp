@@ -351,15 +351,6 @@
 /* Define to 1 if you have the 'crypto' library (-lcrypto). */
 #undef HAVE_LIBCRYPTO
 
-/* Define to 1 if libev is available */
-#undef HAVE_LIBEV
-
-/* Define to 1 if libevent is available */
-#undef HAVE_LIBEVENT
-
-/* Define to 1 if libev-libevent is available */
-#undef HAVE_LIBEVENT_COMPAT
-
 /* Found 'LIBEXSLT' */
 #undef HAVE_LIBEXSLT
 

@@ -259,7 +259,7 @@ dnl	])
 
 AC_DEFUN([CS_DISABLE_TLS], [
 	AC_ARG_ENABLE(tls, 
-		[AC_HELP_STRING([--disable-tls], [disable Transport Layer Security (EXPERIMENTAL)])], 
+		[AC_HELP_STRING([--disable-tls], [leave out TLS (SCCPS) signalling support])],
 		[ac_cv_tls=$enableval], 
 		[ac_cv_tls=yes]
 	)
@@ -292,7 +292,7 @@ AC_DEFUN([CS_CHECK_CROSSCOMPILE],[
 
 AC_DEFUN([CS_WITH_CCACHE],[
 	AC_ARG_WITH(ccache,
-		AC_HELP_STRING([--with-ccache[=PATH]], [use ccache during compile]), [ac_cv_use_ccache="${withval}"], [ac_cv_use_ccache="yes"])
+		AC_HELP_STRING([--with-ccache[=PATH]], [compile through ccache when it is installed (default: yes)]), [ac_cv_use_ccache="${withval}"], [ac_cv_use_ccache="yes"])
 	AS_IF([test "_${ac_cv_use_ccache}" != "_no"], [
 		AC_PATH_PROGS(CCACHE,ccache,[No],${withval}:${PATH})
 		if test "${CCACHE}" != "No"; then
@@ -383,7 +383,7 @@ AC_DEFUN([AST_SET_PBX_AMCONDITIONALS],[
 
 AC_DEFUN([CS_WITH_PBX], [
 	AC_ARG_WITH([asterisk],
-		[AC_HELP_STRING([--with-asterisk=PATH],	[Location of the Asterisk installation])],
+		[AC_HELP_STRING([--with-asterisk=PATH],	[Asterisk install prefix with the development headers (default: search the usual locations)])],
 		[NEW_PBX_PATH="${withval}"]
 	)
 
@@ -427,13 +427,13 @@ AC_DEFUN([CS_WITH_PBX], [
 ])
 
 AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
-	AC_ARG_ENABLE(optimization, [
-		AC_HELP_STRING([--enable-optimization],[do not detecti or tune flags for cpu version])], 
+	AC_ARG_ENABLE(optimization,
+		[AC_HELP_STRING([--enable-optimization],[build with -O3 and hardening flags, and strip the installed module (default: yes for release archives, no for git checkouts)])],
 		[enable_optimization=$enableval],
 		[enable_optimization=no; if test "${REPOS_TYPE}" = "TGZ"; then enable_optimization=yes; fi]
 	)
 	AC_ARG_ENABLE(debug,
-		[AC_HELP_STRING([--disable-debug],[disable debug information])], 
+		[AC_HELP_STRING([--disable-debug],[leave out debug symbols and the 'sccp debug' log output (default: disabled for release archives)])],
 		[enable_debug=$enableval], 
 		[enable_debug=yes;if test "${REPOS_TYPE}" = "TGZ"; then enable_debug=no; fi]
 	)
@@ -723,7 +723,7 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 AC_DEFUN([CS_ENABLE_LINK_TIME_OPTIMIZATION], [
 	AC_ARG_ENABLE(
 		[lto],
-		AC_HELP_STRING([--enable-lto],[Enable link-time optimization (disabled by default)]),
+		AC_HELP_STRING([--enable-lto],[use link-time optimization (default: no)]),
 	    	[
 			enable_lto="$enableval"
 			case $enableval in
@@ -768,7 +768,7 @@ AC_DEFUN([CS_ENABLE_GCOV], [
 	COVERAGE_CFLAGS=''
 	COVERAGE_LDFLAGS=''
 	AC_ARG_ENABLE([gcov],
-		[AS_HELP_STRING([--enable-gcov], [generate Gcov to profile sources])],
+		[AS_HELP_STRING([--enable-gcov], [build with gcov coverage instrumentation (developer only)])],
 		[ac_cv_enable_gcov=$enableval], 
 		[ac_cv_enable_gcov=no]
 	)
@@ -783,7 +783,7 @@ AC_DEFUN([CS_ENABLE_GCOV], [
 
 AC_DEFUN([CS_ENABLE_REFCOUNT_DEBUG], [
 	AC_ARG_ENABLE(refcount_debug, 
-		[AC_HELP_STRING([--enable-refcount-debug], [enable refcount debugging (developer only)])], 
+		[AC_HELP_STRING([--enable-refcount-debug], [track reference counts for leak hunting (developer only)])],
 		[ac_cv_refcount_debug=$enableval], 
 		[ac_cv_refcount_debug=no]
 	)
@@ -795,7 +795,7 @@ AC_DEFUN([CS_ENABLE_ASTOBJ_REFCOUNT], [
 	AS_IF([test "${ASTOBJ2_AVAILABLE}" = "yes"],
 	[
 		AC_ARG_ENABLE(astobj_refcount, 
-			[AC_HELP_STRING([--enable-astobj2-refcount], [enable using astobj2 refcount implementation])], 
+			[AC_HELP_STRING([--enable-astobj2-refcount], [use Asterisk's astobj2 reference counting instead of chan_sccp's own (developer only)])],
 			[ac_cv_astobj_refcount=$enableval], 
 			[ac_cv_astobj_refcount=no]
 		)
@@ -808,7 +808,7 @@ AC_DEFUN([CS_ENABLE_ASTOBJ_REFCOUNT], [
 
 AC_DEFUN([CS_ENABLE_LOCK_DEBUG], [
 	AC_ARG_ENABLE(lock_debug, 
-		[AC_HELP_STRING([--enable-lock-debug], [enable lock debugging (developer only)])], 
+		[AC_HELP_STRING([--enable-lock-debug], [track lock use to find deadlocks (developer only)])],
 		[ac_cv_lock_debug=$enableval], 
 		[ac_cv_lock_debug=no]
 	)
@@ -819,7 +819,7 @@ AC_DEFUN([CS_ENABLE_LOCK_DEBUG], [
 
 AC_DEFUN([CS_ENABLE_STRIP], [
 	AC_ARG_ENABLE(strip, 
-		[AC_HELP_STRING([--enable-strip], [strip the symbols from the binary during installation])], 
+		[AC_HELP_STRING([--enable-strip], [strip the installed module and keep its debug symbols in a separate file (default: same as --enable-optimization)])],
 		[ac_cv_enable_strip=$enableval], 
 		[ac_cv_enable_strip=no; if [ test "x$enable_optimization" = "xyes"; ] then ac_cv_enable_strip="yes";fi]
 	)
@@ -837,7 +837,7 @@ AC_DEFUN([CS_DISABLE_SECTION_RELOCATION], [
 		;;
 	*)
 		AC_ARG_ENABLE(section_relocation,
-			[AC_HELP_STRING([--enable-section-relocation], [enable compiler section relocation])],
+			[AC_HELP_STRING([--enable-section-relocation], [let the linker drop unused code (-ffunction-sections, --gc-sections)])],
 			[ac_cv_section_relocation=$enableval], 
 			[ac_cv_section_relocation=no]
 		)
@@ -854,7 +854,7 @@ AC_DEFUN([CS_DISABLE_SECTION_RELOCATION], [
 
 AC_DEFUN([CS_DISABLE_PICKUP], [
 	AC_ARG_ENABLE(pickup, 
-		[AC_HELP_STRING([--disable-pickup], [disable pickup function])], 
+		[AC_HELP_STRING([--disable-pickup], [leave out call pickup and group pickup])],
 		[ac_cv_use_pickup=$enableval], 
 		[ac_cv_use_pickup=yes]
 	)
@@ -864,7 +864,7 @@ AC_DEFUN([CS_DISABLE_PICKUP], [
 
 AC_DEFUN([CS_DISABLE_PARK], [
 	AC_ARG_ENABLE(park,
-		[AC_HELP_STRING([--disable-park], [disable park functionality])],
+		[AC_HELP_STRING([--disable-park], [leave out call parking])],
 		[ac_cv_use_park=$enableval],
 		[ac_cv_use_park=yes]
 	)
@@ -874,7 +874,7 @@ AC_DEFUN([CS_DISABLE_PARK], [
 
 AC_DEFUN([CS_DISABLE_DIRTRFR], [
 	AC_ARG_ENABLE(dirtrfr, 
-		[AC_HELP_STRING([--disable-dirtrfr], [disable direct transfer])], 
+		[AC_HELP_STRING([--disable-dirtrfr], [leave out direct transfer])],
 		[ac_cv_use_dirtrfr=$enableval], 
 		[ac_cv_use_dirtrfr=yes]
 	)
@@ -884,7 +884,7 @@ AC_DEFUN([CS_DISABLE_DIRTRFR], [
 
 AC_DEFUN([CS_DISABLE_MONITOR], [
 	AC_ARG_ENABLE(monitor, 
-		[AC_HELP_STRING([--disable-monitor], [disable feature monitor)])], 
+		[AC_HELP_STRING([--disable-monitor], [leave out the call recording (monitor) feature])],
 		[ac_cv_use_monitor=$enableval], 
 		[ac_cv_use_monitor=yes]
 	)
@@ -894,7 +894,7 @@ AC_DEFUN([CS_DISABLE_MONITOR], [
 
 AC_DEFUN([CS_ENABLE_CONFERENCE], [
 	AC_ARG_ENABLE(conference, 
-		[AC_HELP_STRING([--enable-conference], [enable conference (>ast 1.6.2)])], 
+		[AC_HELP_STRING([--enable-conference], [include ad hoc conferencing (default: no)])],
 		[ac_cv_use_conference=$enableval], 
 		[ac_cv_use_conference=no]
 	)
@@ -904,7 +904,7 @@ AC_DEFUN([CS_ENABLE_CONFERENCE], [
 
 AC_DEFUN([CS_DISABLE_MANAGER], [
 	AC_ARG_ENABLE(manager, 
-		[AC_HELP_STRING([--disable-manager], [disabled ast manager events])], 
+		[AC_HELP_STRING([--disable-manager], [leave out the AMI actions and events])],
 		[ac_cv_use_manager=$enableval], 
 		[ac_cv_use_manager=yes]
 	)
@@ -917,7 +917,7 @@ AC_DEFUN([CS_DISABLE_MANAGER], [
 
 AC_DEFUN([CS_DISABLE_FUNCTIONS], [
 	AC_ARG_ENABLE(functions, 
-		[AC_HELP_STRING([--disable-functions], [disabled Dialplan functions])], 
+		[AC_HELP_STRING([--disable-functions], [leave out the SCCP dialplan functions and applications])],
 		[ac_cv_use_functions=$enableval], 
 		[ac_cv_use_functions=yes]
 	)
@@ -925,19 +925,9 @@ AC_DEFUN([CS_DISABLE_FUNCTIONS], [
 	AC_MSG_RESULT([--enable-functions: ${ac_cv_use_functions}])
 ])
 
-AC_DEFUN([CS_ENABLE_INDICATIONS], [
-	AC_ARG_ENABLE(indications, 
-		[AC_HELP_STRING([--enable-indications], [enable debug indications]]), 
-		[ac_cv_debug_indications=$enableval], 
-		[ac_cv_debug_indications=no]
-	)
-	AS_IF([test "_${ac_cv_debug_indications}" = "_yes"], [AC_DEFINE(CS_DEBUG_INDICATIONS, 1, [debug indications enabled])])
-	AC_MSG_RESULT([--enable-indications: ${ac_cv_debug_indications}])
-])
-
 AC_DEFUN([CS_DISABLE_REALTIME], [
 	AC_ARG_ENABLE(realtime, 
-		[AC_HELP_STRING([--disable-realtime], [disable realtime support])], 
+		[AC_HELP_STRING([--disable-realtime], [leave out Asterisk realtime configuration support])],
 		[ac_cv_realtime=$enableval], 
 		[ac_cv_realtime=yes]
 	)
@@ -945,19 +935,9 @@ AC_DEFUN([CS_DISABLE_REALTIME], [
 	AC_MSG_RESULT([--enable-realtime: ${ac_cv_realtime}])
 ])
 
-AC_DEFUN([CS_DISABLE_FEATURE_MONITOR], [
-	AC_ARG_ENABLE(feature_monitor, 
-		[AC_HELP_STRING([--disable-feature-monitor], [disable feature monitor])], 
-		[ac_cv_feature_monitor=$enableval],
-		[ac_cv_feature_monitor=yes]
-	)
-	AS_IF([test "_${ac_cv_feature_monitor}" = "_yes"], [AC_DEFINE(CS_SCCP_FEATURE_MONITOR, 1, [feature monitor enabled])])
-	AC_MSG_RESULT([--enable-feature-monitor: ${ac_cv_feature_monitor}])
-])
-
 AC_DEFUN([CS_ENABLE_ADVANCED_FUNCTIONS], [
 	AC_ARG_ENABLE(advanced_functions, 
-		[AC_HELP_STRING([--enable-advanced-functions], [enable advanced functions (experimental)])], 
+		[AC_HELP_STRING([--enable-advanced-functions], [show the unfinished Callback and cBarge softkeys (experimental)])],
 		[ac_cv_advanced_functions=$enableval], 
 		[ac_cv_advanced_functions=no]
 	)
@@ -967,7 +947,7 @@ AC_DEFUN([CS_ENABLE_ADVANCED_FUNCTIONS], [
 
 AC_DEFUN([CS_ENABLE_EXPERIMENTAL_MODE], [
 	AC_ARG_ENABLE(experimental_mode, 
-		[AC_HELP_STRING([--enable-experimental-mode], [enable experimental mode (only for developers)])], 
+		[AC_HELP_STRING([--enable-experimental-mode], [include unfinished code paths (developer only)])],
 		[ac_cv_experimental_mode=$enableval], 
 		[ac_cv_experimental_mode=no]
 	)
@@ -982,7 +962,7 @@ AC_DEFUN([CS_ENABLE_EXPERIMENTAL_XML], [
 	CPPFLAGS_save=${CPPFLAGS}
 	LDFLAGS_save=${LDFLAGS}
 	AC_ARG_ENABLE(experimental_xml, 
-		[AC_HELP_STRING([--enable-experimental-xml], [enable experimental xml (only for developers)])], 
+		[AC_HELP_STRING([--enable-experimental-xml], [include XML/XSLT support for phone services (needs libxml2 and libxslt)])],
 		[ac_cv_experimental_xml=$enableval], 
 		[ac_cv_experimental_xml=no]
 	)
@@ -1041,7 +1021,7 @@ AC_DEFUN([CS_ENABLE_EXPERIMENTAL_XML], [
 
 AC_DEFUN([CS_DISABLE_DEVSTATE_FEATURE], [
 	AC_ARG_ENABLE(devstate_feature, 
-		[AC_HELP_STRING([--disable-devstate-feature], [disable device state feature button])], 
+		[AC_HELP_STRING([--disable-devstate-feature], [leave out device state (DevState) feature buttons])],
 		[ac_cv_devstate_feature=$enableval], 
 		[ac_cv_devstate_feature=yes]
 	)
@@ -1052,7 +1032,7 @@ AC_DEFUN([CS_DISABLE_DEVSTATE_FEATURE], [
 
 AC_DEFUN([CS_DISABLE_DYNAMIC_SPEEDDIAL], [
 	AC_ARG_ENABLE(dynamic_speeddial, 
-		[AC_HELP_STRING([--disable-dynamic-speeddial], [disable dynamic speeddials])], 
+		[AC_HELP_STRING([--disable-dynamic-speeddial], [leave out dynamic speed dials])],
 		[ac_cv_dynamic_speeddial=$enableval], 
 		[ac_cv_dynamic_speeddial=yes]
 	)
@@ -1062,7 +1042,7 @@ AC_DEFUN([CS_DISABLE_DYNAMIC_SPEEDDIAL], [
 
 AC_DEFUN([CS_DISABLE_DYNAMIC_SPEEDDIAL_CID], [
 	AC_ARG_ENABLE(dynamic_speeddial_cid, 
-		[AC_HELP_STRING([--disable-dynamic-speeddial-cid], [disable dynamic speeddials with call info])], 
+		[AC_HELP_STRING([--disable-dynamic-speeddial-cid], [leave out caller information on dynamic speed dials])],
 		[ac_cv_dynamic_speeddial_cid=$enableval], 
 		[ac_cv_dynamic_speeddial_cid=yes]
 	)
@@ -1076,7 +1056,7 @@ AC_DEFUN([CS_DISABLE_DYNAMIC_SPEEDDIAL_CID], [
 
 AC_DEFUN([CS_ENABLE_VIDEO], [
 	AC_ARG_ENABLE(video, 
-		[AC_HELP_STRING([--enable-video], [enable streaming video (experimental)])], 
+		[AC_HELP_STRING([--enable-video], [include video calls (experimental)])],
 		[ac_cv_streaming_video=$enableval], 
 		[ac_cv_streaming_video=no]
 	)
@@ -1086,7 +1066,7 @@ AC_DEFUN([CS_ENABLE_VIDEO], [
 
 AC_DEFUN([CS_WITH_HASH_SIZE], [
 	AC_ARG_WITH(hash_size, 
-		[AC_HELP_STRING([--with-hash-size], [to provide room for higher number of phones (>100), specify a prime number, bigger then number of phones times 4 (default=563)])], 
+		[AC_HELP_STRING([--with-hash-size=PRIME], [size of the object hash table; for more than 100 phones use a prime above 4 times the number of phones (default: 563)])],
 		[ac_cv_set_hashsize=$withval], [ac_cv_set_hashsize=563])
 	AS_CASE([${ac_cv_set_hashsize}],
 		[''|'yes'|'no'|*[!0-9]*], [
@@ -1120,7 +1100,6 @@ AC_DEFUN([CS_PARSE_WITH_AND_ENABLE], [
 	CS_DISABLE_MANAGER
 	CS_DISABLE_FUNCTIONS
 	CS_DISABLE_REALTIME
-	CS_DISABLE_FEATURE_MONITOR
 	CS_ENABLE_ADVANCED_FUNCTIONS
 	CS_DISABLE_DEVSTATE_FEATURE
 	CS_DISABLE_DYNAMIC_SPEEDDIAL
@@ -1133,7 +1112,7 @@ AC_DEFUN([CS_PARSE_WITH_AND_ENABLE], [
 
 AC_DEFUN([CS_SETUP_MODULE_DIR], [
 	AC_ARG_WITH([astmoddir],
-		[AC_HELP_STRING([--with-astmoddir=PATH],[Location of the Asterisk Module Directory])],
+		[AC_HELP_STRING([--with-astmoddir=PATH],[Asterisk modules directory to install into (default: from Asterisk)])],
 		[PBX_MODDIR="${withval}"],
 		[PBX_MODDIR=${PBX_TEMPMODDIR}
 		case "${host}" in
@@ -1164,74 +1143,4 @@ AC_DEFUN([CS_SETUP_MODULE_DIR], [
 	csmoddir=${PBX_MODDIR}
 	AC_SUBST([csmoddir])
 	AC_SUBST([PBX_DEBUGMODDIR])
-])
-
-AC_DEFUN([CS_PARSE_WITH_LIBEV], [
-	EVENT_LIBS=""
-	EVENT_CFLAGS=""
-	EVENT_TYPE=""
-	AC_ARG_WITH(libevent,
-		[AC_HELP_STRING([--with-libevent=yes|no],[use garbage collector (libgc) as allocator (experimental)])],
-		uselibevent="$withval")
-	if test "x$uselibevent" = "xyes"; then
-		if test -z "$EVENT_HOME" ; then
-			AC_CHECK_LIB([ev], [event_init], [HAVE_EVENT="yes"], [])
-			if test "$HAVE_EVENT" = "yes" ; then
-				EVENT_LIBS="-lev"
-				EVENT_TYPE="ev"
-			else 
-				AC_CHECK_LIB([event], [event_init], [HAVE_EVENT="yes"], [])
-				if test "$HAVE_EVENT" = "yes" ; then
-					EVENT_LIBS="-levent"
-					EVENT_TYPE="event"
-				fi
-			fi	
-		else
-			EVENT_OLD_LDFLAGS="$LDFLAGS" ; LDFLAGS="$LDFLAGS -L$EVENT_HOME/lib"
-			EVENT_OLD_CFLAGS="$CFLAGS" ; CFLAGS="$CFLAGS -I$EVENT_HOME/include"
-			AC_CHECK_LIB([ev], [event_init], [HAVE_EVENT="yes"], [])
-			if test "$HAVE_EVENT" = "yes"; then
-				CFLAGS="$EVENT_OLD_CFLAGS"
-				LDFLAGS="$EVENT_OLD_LDFLAGS"
-				if test "$HAVE_EVENT" = "yes" ; then
-					EVENT_LIBS="-L$EVENT_HOME/lib -lev"
-					test -d "$EVENT_HOME/include" && EVENT_CFLAGS="-I$EVENT_HOME/include"
-					EVENT_TYPE="ev"
-				fi
-			else
-				AC_CHECK_LIB([event], [event_init], [HAVE_EVENT="yes"], [])
-				CFLAGS="$EVENT_OLD_CFLAGS"
-				LDFLAGS="$EVENT_OLD_LDFLAGS"
-				if test "$HAVE_EVENT" = "yes" ; then
-					EVENT_LIBS="-L$EVENT_HOME/lib -levent"
-					test -d "$EVENT_HOME/include" && EVENT_CFLAGS="-I$EVENT_HOME/include"
-					EVENT_TYPE="event"
-				fi
-			fi
-		fi
-		AC_MSG_CHECKING([for libev/libevent...])
-		if test "$HAVE_EVENT" = "yes" ; then
-			if test "$EVENT_TYPE" = "ev"; then
-				AC_MSG_RESULT([libev])
-				AC_DEFINE(HAVE_LIBEV, 1, [Define to 1 if libev is available])
-				AC_DEFINE(HAVE_LIBEVENT_COMPAT, 1, [Define to 1 if libev-libevent is available])
-			else
-				AC_MSG_RESULT([libevent])
-				AC_DEFINE(HAVE_LIBEVENT, 1, [Define to 1 if libevent is available])
-			fi
-		else
-			AC_MSG_RESULT([no])
-	dnl		AC_MSG_ERROR([
-	dnl			*** ERROR: cannot find libev or libevent!
-	dnl			***
-	dnl			*** Either install libev + libev-libevent-dev (preferred) or the older libevent
-	dnl			*** Sources can be found here: http://software.schmorp.de/pkg/libev.html or http://www.monkey.org/~provos/libevent/
-	dnl			*** If it's already installed, specify its path using --with-libevent=PATH
-	dnl		])
-		fi
-	fi
-	AM_CONDITIONAL([BUILD_WITH_LIBEVENT], test "$EVENT_TYPE" != "")
-	AC_SUBST([EVENT_LIBS])
-	AC_SUBST([EVENT_CFLAGS])
-	AC_SUBST([EVENT_TYPE])
 ])

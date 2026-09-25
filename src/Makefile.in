@@ -381,9 +381,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 ETAGS = @ETAGS@
-EVENT_CFLAGS = @EVENT_CFLAGS@
-EVENT_LIBS = @EVENT_LIBS@
-EVENT_TYPE = @EVENT_TYPE@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FILECMD = @FILECMD@
@@ -550,9 +547,9 @@ AUTOMAKE_OPTIONS = gnu
 MOSTLYCLEANFILES = *.gcda *.gcno *.gcov
 #AM_CFLAGS 		+= -I${abs_builddir} -I$(top_builddir)/src/ -I$(top_srcdir)/src/ -I$(top_srcdir)/src/pbx_impl/ -I$(top_srcdir)/src/pbx_impl/ast/ -I$(top_srcdir)/src/$(PBX_COND_SUBDIR) -I$(top_srcdir)/src/$(PBXVER_COND_SUBDIR) -I$(top_srcdir)/src/$(PBXVER_COND_ANNOUNCE_SUBDIR)
 AM_CFLAGS = $(PBX_CFLAGS) $(GDB_FLAGS) $(PTHREAD_CFLAGS) \
-	$(COVERAGE_CFLAGS) $(EVENT_CFLAGS) $(LIBEXSLT_CFLAGS) \
-	$(LIBCURL_CFLAGS) $(SUPPORTED_CFLAGS) $(SANITIZE_CFLAGS) \
-	-I$(top_builddir)/src/ -I$(top_srcdir)/src/ \
+	$(COVERAGE_CFLAGS) $(LIBEXSLT_CFLAGS) $(LIBCURL_CFLAGS) \
+	$(SUPPORTED_CFLAGS) $(SANITIZE_CFLAGS) -I$(top_builddir)/src/ \
+	-I$(top_srcdir)/src/ \
 	-DAST_MODULE_SELF_SYM=__internal_chan_sccp_la_self \
 	-DAST_MODULE=\"chan_sccp\" $(AST_CLANG_BLOCKS) -D_REENTRANT \
 	-D_GNU_SOURCE -DCRYPTO -fPIC -pipe -Wall
@@ -598,9 +595,9 @@ chan_sccp_la_LIBADD = libsccp.la $(PBX_COND_LIBADD) $(PBXVER_COND_LIBADD) $(PBXV
 chan_sccp_la_DEPENDENCIES = $(chan_sccp_la_LIBADD)
 chan_sccp_la_CFLAGS = $(AM_CFLAGS)
 chan_sccp_la_LDFLAGS = $(LIBS) $(AM_LDFLAGS) $(PBX_LDFLAGS) \
-	$(PTHREAD_LIBS) $(EVENT_LIBS) $(LIBEXSLT_LIBS) $(LIBCURL_LIBS) \
-	$(EVENT_LIBS) $(LIBEXECINFO) $(LTLIBICONV) -avoid-version \
-	-module -lm -s -rdynamic
+	$(PTHREAD_LIBS) $(LIBEXSLT_LIBS) $(LIBCURL_LIBS) \
+	$(LIBEXECINFO) $(LTLIBICONV) -avoid-version -module -lm -s \
+	-rdynamic
 all: $(BUILT_SOURCES) config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

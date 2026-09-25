@@ -7,7 +7,7 @@ dnl CREATED BY: Largely stolen from Qthreads
 AC_DEFUN([SCCP_CHECK_ATOMICS], [
 AC_ARG_ENABLE([builtin-atomics],
      [AS_HELP_STRING([--disable-builtin-atomics],
-	                 [force the use of inline-assembly (if possible) rather than compiler-builtins for atomics. This is useful for working around some compiler bugs; normally, it's preferable to use compiler builtins.])])
+	                 [use inline assembly instead of the compiler's atomic builtins (only to work around a compiler bug)])])
 AS_IF([test "x$enable_builtin_atomics" != xno], [
 AC_CHECK_HEADERS([ia64intrin.h ia32intrin.h])
 AC_CACHE_CHECK([whether compiler supports builtin atomic CAS-32],
@@ -131,7 +131,7 @@ AS_IF([test "x$sccp_cv_cmpxchg16b" = "xyes"],
   [sccp_cv_cpu_cmpxchg16b],
   [AC_ARG_ENABLE([cross-cmpxchg16b],
      [AS_HELP_STRING([--enable-cross-cmpxchg16b],
-	     [when cross compiling, ordinarily we asume that cmpxchg16b is not available, however this option forces us to assume that cmpxchg16b IS available])])
+	     [when cross compiling, assume the target CPU has cmpxchg16b (default: assume it does not)])])
    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdint.h> /* for uint64_t */
 struct m128 {
@@ -197,7 +197,7 @@ AS_IF([test "$sccp_cv_atomic_CAS32" = "yes" -a "x$sccp_cv_atomic_CASptr" = "xyes
 AC_DEFUN([SCCP_CHECK_ATOMIC_OPS], [
 	AC_ARG_ENABLE([atomic_ops],
 	     [AS_HELP_STRING([--disable-atomic-ops],
-	                 [fallback if compiler-builtins for atomic functions are not available (using http://www.hpl.hp.com/research/linux/atomic_ops)])
+	                 [do not fall back to the libatomic_ops library when the compiler has no atomic builtins])
 	],enable_atomic_ops=$enableval, enable_atomic_ops=yes)
 	AS_IF([test "x$using_atomic_buildin" = "xno" -a "x$enable_atomic_ops" = "xyes"],[
                 AC_CHECK_HEADERS([atomic_ops.h],[

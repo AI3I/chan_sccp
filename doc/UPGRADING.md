@@ -107,6 +107,12 @@ reported as an error instead of being ignored.
   `--enable-backtrace-detail` (libbfd backtraces), `--enable-devdoc` and all
   `--enable-doxygen-*` flags, and the bundled libltdl flags
   (`--with-included-ltdl`, `--with-ltdl-include`, `--with-ltdl-lib`,
-  `--enable-ltdl-install`).
+  `--enable-ltdl-install`), `--with-libevent` (nothing used it) and
+  `--disable-feature-monitor`. `--disable-monitor` now leaves out call
+  recording by itself; before, both flags were needed.
+- The example `conf/sccp.conf`, which `make install` copies when no
+  `sccp.conf` exists, was replaced. The old one let any phone register as a
+  guest (`hotline_enabled = yes`) and turned on debug output. An existing
+  `sccp.conf` is never overwritten.
 - `make check` runs standalone regression tests (it used to print `Success`
   without running anything).

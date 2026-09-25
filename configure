@@ -675,11 +675,6 @@ SUPPORTED_LDFLAGS
 SUPPORTED_CFLAGS
 COVERAGE_LDFLAGS
 COVERAGE_CFLAGS
-EVENT_TYPE
-EVENT_CFLAGS
-EVENT_LIBS
-BUILD_WITH_LIBEVENT_FALSE
-BUILD_WITH_LIBEVENT_TRUE
 LIBEXSLT_LIBS
 LIBEXSLT_CFLAGS
 CS_EXPERIMENTAL_XML_FALSE
@@ -904,7 +899,6 @@ enable_tls
 with_asterisk
 with_asterisk_version
 enable_experimental_xml
-with_libevent
 enable_section_relocation
 enable_gcov
 enable_refcount_debug
@@ -919,7 +913,6 @@ enable_conference
 enable_manager
 enable_functions
 enable_realtime
-enable_feature_monitor
 enable_advanced_functions
 enable_devstate_feature
 enable_dynamic_speeddial
@@ -1577,22 +1570,20 @@ Optional Features:
   --enable-silent-rules   less verbose build output (undo: "make V=1")
   --disable-silent-rules  verbose build output (undo: "make V=0")
   --enable-static[=PKGS]  build static libraries [default=no]
-
-		  --enable-optimization   do not detecti or tune flags for cpu version
-  --disable-debug         disable debug information
-  --enable-lto            Enable link-time optimization (disabled by default)
+  --enable-optimization   build with -O3 and hardening flags, and strip the
+                          installed module (default: yes for release archives,
+                          no for git checkouts)
+  --disable-debug         leave out debug symbols and the 'sccp debug' log
+                          output (default: disabled for release archives)
+  --enable-lto            use link-time optimization (default: no)
   --disable-builtin-atomics
-                          force the use of inline-assembly (if possible)
-                          rather than compiler-builtins for atomics. This is
-                          useful for working around some compiler bugs;
-                          normally, it's preferable to use compiler builtins.
+                          use inline assembly instead of the compiler's atomic
+                          builtins (only to work around a compiler bug)
   --enable-cross-cmpxchg16b
-                          when cross compiling, ordinarily we asume that
-                          cmpxchg16b is not available, however this option
-                          forces us to assume that cmpxchg16b IS available
-  --disable-atomic-ops    fallback if compiler-builtins for atomic functions
-                          are not available (using
-                          http://www.hpl.hp.com/research/linux/atomic_ops)
+                          when cross compiling, assume the target CPU has
+                          cmpxchg16b (default: assume it does not)
+  --disable-atomic-ops    do not fall back to the libatomic_ops library when
+                          the compiler has no atomic builtins
 
   --enable-shared[=PKGS]  build shared libraries [default=yes]
   --enable-pic[=PKGS]     try to use only PIC/non-PIC objects [default=use
@@ -1604,39 +1595,45 @@ Optional Features:
                           provide on AIX, [default=aix].
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --disable-rpath         do not hardcode runtime library paths
-  --disable-tls           disable Transport Layer Security (EXPERIMENTAL)
+  --disable-tls           leave out TLS (SCCPS) signalling support
   --enable-experimental-xml
-                          enable experimental xml (only for developers)
+                          include XML/XSLT support for phone services (needs
+                          libxml2 and libxslt)
   --enable-section-relocation
-                          enable compiler section relocation
-  --enable-gcov           generate Gcov to profile sources
-  --enable-refcount-debug enable refcount debugging (developer only)
+                          let the linker drop unused code
+                          (-ffunction-sections, --gc-sections)
+  --enable-gcov           build with gcov coverage instrumentation (developer
+                          only)
+  --enable-refcount-debug track reference counts for leak hunting (developer
+                          only)
   --enable-astobj2-refcount
-                          enable using astobj2 refcount implementation
-  --enable-lock-debug     enable lock debugging (developer only)
-  --enable-strip          strip the symbols from the binary during
-                          installation
-  --disable-pickup        disable pickup function
-  --disable-park          disable park functionality
-  --disable-dirtrfr       disable direct transfer
-  --disable-monitor       disable feature monitor)
-  --enable-conference     enable conference (>ast 1.6.2)
-  --disable-manager       disabled ast manager events
-  --disable-functions     disabled Dialplan functions
-  --disable-realtime      disable realtime support
-  --disable-feature-monitor
-                          disable feature monitor
+                          use Asterisk's astobj2 reference counting instead of
+                          chan_sccp's own (developer only)
+  --enable-lock-debug     track lock use to find deadlocks (developer only)
+  --enable-strip          strip the installed module and keep its debug
+                          symbols in a separate file (default: same as
+                          --enable-optimization)
+  --disable-pickup        leave out call pickup and group pickup
+  --disable-park          leave out call parking
+  --disable-dirtrfr       leave out direct transfer
+  --disable-monitor       leave out the call recording (monitor) feature
+  --enable-conference     include ad hoc conferencing (default: no)
+  --disable-manager       leave out the AMI actions and events
+  --disable-functions     leave out the SCCP dialplan functions and
+                          applications
+  --disable-realtime      leave out Asterisk realtime configuration support
   --enable-advanced-functions
-                          enable advanced functions (experimental)
+                          show the unfinished Callback and cBarge softkeys
+                          (experimental)
   --disable-devstate-feature
-                          disable device state feature button
+                          leave out device state (DevState) feature buttons
   --disable-dynamic-speeddial
-                          disable dynamic speeddials
+                          leave out dynamic speed dials
   --disable-dynamic-speeddial-cid
-                          disable dynamic speeddials with call info
-  --enable-video          enable streaming video (experimental)
+                          leave out caller information on dynamic speed dials
+  --enable-video          include video calls (experimental)
   --enable-experimental-mode
-                          enable experimental mode (only for developers)
+                          include unfinished code paths (developer only)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1644,19 +1641,20 @@ Optional Packages:
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
   --with-sysroot[=DIR]    Search for dependent libraries within DIR (or the
                           compiler's sysroot if not specified).
-  --with-ccache=PATH      use ccache during compile
+  --with-ccache=PATH      compile through ccache when it is installed
+                          (default: yes)
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
   --with-libiconv-prefix[=DIR]  search for libiconv in DIR/include and DIR/lib
   --without-libiconv-prefix     don't search for libiconv in includedir and libdir
-  --with-asterisk=PATH    Location of the Asterisk installation
+  --with-asterisk=PATH    Asterisk install prefix with the development headers
+                          (default: search the usual locations)
   --with-asterisk-version=MAJOR.MINOR
                           Asterisk 20 through 24 release version
-  --with-libevent=yes|no  use garbage collector (libgc) as allocator
-                          (experimental)
-  --with-hash-size        to provide room for higher number of phones (>100),
-                          specify a prime number, bigger then number of phones
-                          times 4 (default=563)
-  --with-astmoddir=PATH   Location of the Asterisk Module Directory
+  --with-hash-size=PRIME  size of the object hash table; for more than 100
+                          phones use a prime above 4 times the number of
+                          phones (default: 563)
+  --with-astmoddir=PATH   Asterisk modules directory to install into (default:
+                          from Asterisk)
 
 Some influential environment variables:
   CC          C compiler command
@@ -27144,277 +27142,6 @@ printf "%s\n" "" >&6; }
 printf "%s\n" "${T_MD}Checking Enable/Disable:${T_ME}" >&6; }
 
 
-	EVENT_LIBS=""
-	EVENT_CFLAGS=""
-	EVENT_TYPE=""
-
-# Check whether --with-libevent was given.
-if test ${with_libevent+y}
-then :
-  withval=$with_libevent; uselibevent="$withval"
-fi
-
-	if test "x$uselibevent" = "xyes"; then
-		if test -z "$EVENT_HOME" ; then
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for event_init in -lev" >&5
-printf %s "checking for event_init in -lev... " >&6; }
-if test ${ac_cv_lib_ev_event_init+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lev  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char event_init (void);
-int
-main (void)
-{
-return event_init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_ev_event_init=yes
-else case e in #(
-  e) ac_cv_lib_ev_event_init=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ev_event_init" >&5
-printf "%s\n" "$ac_cv_lib_ev_event_init" >&6; }
-if test "x$ac_cv_lib_ev_event_init" = xyes
-then :
-  HAVE_EVENT="yes"
-fi
-
-			if test "$HAVE_EVENT" = "yes" ; then
-				EVENT_LIBS="-lev"
-				EVENT_TYPE="ev"
-			else
-				{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for event_init in -levent" >&5
-printf %s "checking for event_init in -levent... " >&6; }
-if test ${ac_cv_lib_event_event_init+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-levent  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char event_init (void);
-int
-main (void)
-{
-return event_init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_event_event_init=yes
-else case e in #(
-  e) ac_cv_lib_event_event_init=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_event_event_init" >&5
-printf "%s\n" "$ac_cv_lib_event_event_init" >&6; }
-if test "x$ac_cv_lib_event_event_init" = xyes
-then :
-  HAVE_EVENT="yes"
-fi
-
-				if test "$HAVE_EVENT" = "yes" ; then
-					EVENT_LIBS="-levent"
-					EVENT_TYPE="event"
-				fi
-			fi
-		else
-			EVENT_OLD_LDFLAGS="$LDFLAGS" ; LDFLAGS="$LDFLAGS -L$EVENT_HOME/lib"
-			EVENT_OLD_CFLAGS="$CFLAGS" ; CFLAGS="$CFLAGS -I$EVENT_HOME/include"
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for event_init in -lev" >&5
-printf %s "checking for event_init in -lev... " >&6; }
-if test ${ac_cv_lib_ev_event_init+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lev  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char event_init (void);
-int
-main (void)
-{
-return event_init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_ev_event_init=yes
-else case e in #(
-  e) ac_cv_lib_ev_event_init=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ev_event_init" >&5
-printf "%s\n" "$ac_cv_lib_ev_event_init" >&6; }
-if test "x$ac_cv_lib_ev_event_init" = xyes
-then :
-  HAVE_EVENT="yes"
-fi
-
-			if test "$HAVE_EVENT" = "yes"; then
-				CFLAGS="$EVENT_OLD_CFLAGS"
-				LDFLAGS="$EVENT_OLD_LDFLAGS"
-				if test "$HAVE_EVENT" = "yes" ; then
-					EVENT_LIBS="-L$EVENT_HOME/lib -lev"
-					test -d "$EVENT_HOME/include" && EVENT_CFLAGS="-I$EVENT_HOME/include"
-					EVENT_TYPE="ev"
-				fi
-			else
-				{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for event_init in -levent" >&5
-printf %s "checking for event_init in -levent... " >&6; }
-if test ${ac_cv_lib_event_event_init+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-levent  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char event_init (void);
-int
-main (void)
-{
-return event_init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_event_event_init=yes
-else case e in #(
-  e) ac_cv_lib_event_event_init=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_event_event_init" >&5
-printf "%s\n" "$ac_cv_lib_event_event_init" >&6; }
-if test "x$ac_cv_lib_event_event_init" = xyes
-then :
-  HAVE_EVENT="yes"
-fi
-
-				CFLAGS="$EVENT_OLD_CFLAGS"
-				LDFLAGS="$EVENT_OLD_LDFLAGS"
-				if test "$HAVE_EVENT" = "yes" ; then
-					EVENT_LIBS="-L$EVENT_HOME/lib -levent"
-					test -d "$EVENT_HOME/include" && EVENT_CFLAGS="-I$EVENT_HOME/include"
-					EVENT_TYPE="event"
-				fi
-			fi
-		fi
-		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libev/libevent..." >&5
-printf %s "checking for libev/libevent...... " >&6; }
-		if test "$HAVE_EVENT" = "yes" ; then
-			if test "$EVENT_TYPE" = "ev"; then
-				{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: libev" >&5
-printf "%s\n" "libev" >&6; }
-
-printf "%s\n" "#define HAVE_LIBEV 1" >>confdefs.h
-
-
-printf "%s\n" "#define HAVE_LIBEVENT_COMPAT 1" >>confdefs.h
-
-			else
-				{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: libevent" >&5
-printf "%s\n" "libevent" >&6; }
-
-printf "%s\n" "#define HAVE_LIBEVENT 1" >>confdefs.h
-
-			fi
-		else
-			{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-									fi
-	fi
-	 if test "$EVENT_TYPE" != ""; then
-  BUILD_WITH_LIBEVENT_TRUE=
-  BUILD_WITH_LIBEVENT_FALSE='#'
-else
-  BUILD_WITH_LIBEVENT_TRUE='#'
-  BUILD_WITH_LIBEVENT_FALSE=
-fi
-
-
-
-
-
-
 
 	case "${host}" in
 	*-*-darwin*)
@@ -27730,26 +27457,6 @@ printf "%s\n" "#define CS_SCCP_REALTIME 1" >>confdefs.h
 fi
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: --enable-realtime: ${ac_cv_realtime}" >&5
 printf "%s\n" "--enable-realtime: ${ac_cv_realtime}" >&6; }
-
-
-	# Check whether --enable-feature_monitor was given.
-if test ${enable_feature_monitor+y}
-then :
-  enableval=$enable_feature_monitor; ac_cv_feature_monitor=$enableval
-else case e in #(
-  e) ac_cv_feature_monitor=yes
-	 ;;
-esac
-fi
-
-	if test "_${ac_cv_feature_monitor}" = "_yes"
-then :
-
-printf "%s\n" "#define CS_SCCP_FEATURE_MONITOR 1" >>confdefs.h
-
-fi
-	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: --enable-feature-monitor: ${ac_cv_feature_monitor}" >&5
-printf "%s\n" "--enable-feature-monitor: ${ac_cv_feature_monitor}" >&6; }
 
 
 	# Check whether --enable-advanced_functions was given.
@@ -28190,10 +27897,6 @@ fi
 
 if test -z "${CS_EXPERIMENTAL_XML_TRUE}" && test -z "${CS_EXPERIMENTAL_XML_FALSE}"; then
   as_fn_error $? "conditional \"CS_EXPERIMENTAL_XML\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${BUILD_WITH_LIBEVENT_TRUE}" && test -z "${BUILD_WITH_LIBEVENT_FALSE}"; then
-  as_fn_error $? "conditional \"BUILD_WITH_LIBEVENT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_AST_TRUE}" && test -z "${BUILD_AST_FALSE}"; then
@@ -30380,9 +30083,9 @@ echo "             CPP : ${CPP}"
 if test -n "$HOST_CC" ; then
 echo "         HOST_CC : ${CC}"
 fi
-echo "          CFLAGS : ${CFLAGS} ${AM_CFLAGS} ${PBX_CFLAGS} ${GDB_FLAGS} ${PTHREAD_CFLAGS} ${COVERAGE_CFLAGS} ${EVENT_CFLAGS} ${LIBEXSLT_CFLAGS} ${LIBCURL_CFLAGS}"
+echo "          CFLAGS : ${CFLAGS} ${AM_CFLAGS} ${PBX_CFLAGS} ${GDB_FLAGS} ${PTHREAD_CFLAGS} ${COVERAGE_CFLAGS} ${LIBEXSLT_CFLAGS} ${LIBCURL_CFLAGS}"
 echo "        CPPFLAGS : ${CPPFLAGS} ${AM_CPPFLAGS} ${PBX_CPPFLAGS} ${SANITIZE_CFLAGS} ${GDB_FLAGS} ${PTHREAD_CPPFLAGS} ${COVERAGE_CPPFLAGS} ${EVENT_CPPFLAGS} ${LIBEXSLT_CPPFLAGS} ${LIBCURL_CPPFLAGS}"
-echo "         LDFLAGS : ${LDFLAGS} ${LIBS} ${SANITIZE_LDFLAGS} ${SUPPORTED_LDFLAGS} ${PBX_LDFLAGS} ${PTHREAD_LIBS} ${EVENT_LIBS} ${LIBEXSLT_LIBS} ${LIBCURL_LIBS} ${AST_CLANG_BLOCKS_LIBS} ${LIBEXECINFO} ${LTLIBICONV}"
+echo "         LDFLAGS : ${LDFLAGS} ${LIBS} ${SANITIZE_LDFLAGS} ${SUPPORTED_LDFLAGS} ${PBX_LDFLAGS} ${PTHREAD_LIBS} ${LIBEXSLT_LIBS} ${LIBCURL_LIBS} ${AST_CLANG_BLOCKS_LIBS} ${LIBEXECINFO} ${LTLIBICONV}"
 echo "        PBX_TYPE : ${PBX_TYPE}"
 echo "      PBX_PREFIX : ${PBX_PREFIX}"
 echo "         PBX_ETC : ${PBX_ETC}"

@@ -92,6 +92,12 @@ Version: 5.0.0 (unreleased)
    configure and make install run under a POSIX shell (dash); before, on a
    system without bash, every --enable option was silently ignored, and
    make install never stripped the module when optimization was enabled.
+   ./configure --help describes each option and its default;
+   --with-libevent (unused) and --disable-feature-monitor (a duplicate of
+   --disable-monitor) are gone.
+
+ - The example sccp.conf installed when none exists is a short, commented
+   configuration: hotline guest registration off, no debug output.
 
 Version: v4.3.4_DEV
 ==========================

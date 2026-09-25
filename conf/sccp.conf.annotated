@@ -144,7 +144,7 @@ regcontext = ""                                                                 
                                                                                   ; to register as a guest device. All such devices will register on a single shared line called 'hotline'.
 ;hotline_extension = 111                                                          ; Extension automatically dialed when going offhook with this device (adhoc/plar)
 ;hotline_context = default                                                        ; Context used when dialing the hotline_extension
-;hotline_label = hotline                                                          ; Label on the display for this hotline
+;hotline_label = Hotline                                                          ; Label on the display for this hotline
 ;fallback = no                                                                    ; Immediately fallback to primary/master server when it becomes available (master/slave asterisk cluster) (TokenRequest)
                                                                                   ; Possible values are: true/false/odd/even/script. Odd/even use the final hexadecimal device-ID digit.
                                                                                   ; active/passive cluster: true on active/false on passive

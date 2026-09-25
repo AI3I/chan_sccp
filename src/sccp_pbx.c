@@ -1179,7 +1179,7 @@ void * sccp_pbx_softswitch(constChannelPtr channel)
 						sccp_log((DEBUGCAT_PBX)) (VERBOSE_PREFIX_1 "%s: dialplan started\n", DEV_ID_LOG(d));
 #ifdef CS_MANAGER_EVENTS
 						if (GLOB(callevents)) {
-							manager_event(EVENT_FLAG_SYSTEM, "ChannelUpdate", "Channel: %s\r\nUniqueid: %s\r\nChanneltype: %s\r\nSCCPdevice: %s\r\nSCCPline: %s\r\nSCCPcallid: %08X\r\nSCCPCallDesignator: %s\r\n",
+							manager_event(EVENT_FLAG_SYSTEM, "ChannelUpdate", "Channel: %s\r\nUniqueid: %s\r\nChannelType: %s\r\nSCCPDevice: %s\r\nSCCPLine: %s\r\nSCCPCallID: %08X\r\nSCCPCallDesignator: %s\r\n",
 								(pbx_channel) ? pbx_channel_name(pbx_channel) : "",
 								(pbx_channel) ? pbx_channel_uniqueid(pbx_channel) : "",
 								"SCCP",

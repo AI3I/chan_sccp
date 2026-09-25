@@ -74,6 +74,8 @@ reported as an error instead of being ignored.
   when empty), and its `TableEnd` has `TableEntries`.
 - `ListItems` in `<Action>Complete` is the number of events sent. 4.x counted
   output lines.
+- The `ChannelUpdate` event's fields are `ChannelType`, `SCCPDevice`, `SCCPLine`
+  and `SCCPCallID` (4.x: `Channeltype`, `SCCPdevice`, `SCCPline`, `SCCPcallid`).
 - `SCCPConfigMetadata` returns valid JSON: `null` for options without a
   default, `PossibleValues` for enumerated options.
 

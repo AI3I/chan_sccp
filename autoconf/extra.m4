@@ -172,8 +172,6 @@ AC_DEFUN([CS_SETUP_HOST_PLATFORM],[
 ])
 
 AC_DEFUN([CS_SETUP_ENVIRONMENT], [
-	AC_LANG_SAVE
-	AC_LANG_C
 	AC_DISABLE_STATIC
 	AS_IF(
 		dnl [test -z "`${CC} -std=gnu2c -fgnu89-inline -dM -E - </dev/null 2>&1 |grep 'unrecognized command line option'`" && test $? == 0],		[CFLAGS_saved="$CFLAGS_saved -std=gnu2x -fgnu89-inline"],
@@ -191,8 +189,6 @@ AC_DEFUN([CS_SETUP_ENVIRONMENT], [
 ])
 
 AC_DEFUN([CS_FIND_PROGRAMS], [
-	AC_LANG_SAVE
-	AC_LANG_C
 	AC_PATH_PROGS([GIT],[git],[No],[${PATH}:/opt/csw/bin])
 	AC_PATH_PROGS([SHELL],[bash sh],[echo No compatible shell found])
 	AC_PATH_PROGS([SH],[bash sh],[echo No compatible shell found])
@@ -210,7 +206,6 @@ AC_DEFUN([CS_FIND_PROGRAMS], [
 	AC_PATH_PROGS([OPENSSL], [openssl], [No])
 	AC_PROG_CC([clang llvm-gcc gcc])
 	AC_PROG_CC_C_O
-	AC_PROG_GCC_TRADITIONAL
 	AC_PROG_CPP
 	AC_PROG_INSTALL
 	AC_PROG_AWK
@@ -218,7 +213,7 @@ AC_DEFUN([CS_FIND_PROGRAMS], [
 	AC_PROG_MAKE_SET
 	AC_C_CONST
 	AC_C_INLINE
-	AC_PROG_LIBTOOL
+	LT_INIT
 	AC_SUBST([GIT])
 	AC_SUBST([GREP])
 	AC_SUBST([OBJCOPY])
@@ -249,7 +244,6 @@ dnl	])
 	AM_ICONV
 	AC_CHECK_LIB([iconv], [main])
 	AC_CHECK_FUNCS([gethostbyname inet_ntoa mkdir]) 
-	AC_HEADER_STDC    
 	AC_HEADER_STDBOOL 
 	AC_CHECK_HEADERS([netinet/in.h fcntl.h signal.h sys/signal.h stdio.h errno.h ctype.h assert.h sys/sysinfo.h])
 	AC_STRUCT_TM
@@ -259,7 +253,7 @@ dnl	])
 
 AC_DEFUN([CS_DISABLE_TLS], [
 	AC_ARG_ENABLE(tls, 
-		[AC_HELP_STRING([--disable-tls], [leave out TLS (SCCPS) signalling support])],
+		[AS_HELP_STRING([--disable-tls], [leave out TLS (SCCPS) signalling support])],
 		[ac_cv_tls=$enableval], 
 		[ac_cv_tls=yes]
 	)
@@ -292,7 +286,7 @@ AC_DEFUN([CS_CHECK_CROSSCOMPILE],[
 
 AC_DEFUN([CS_WITH_CCACHE],[
 	AC_ARG_WITH(ccache,
-		AC_HELP_STRING([--with-ccache[=PATH]], [compile through ccache when it is installed (default: yes)]), [ac_cv_use_ccache="${withval}"], [ac_cv_use_ccache="yes"])
+		AS_HELP_STRING([--with-ccache[=PATH]], [compile through ccache when it is installed (default: yes)]), [ac_cv_use_ccache="${withval}"], [ac_cv_use_ccache="yes"])
 	AS_IF([test "_${ac_cv_use_ccache}" != "_no"], [
 		AC_PATH_PROGS(CCACHE,ccache,[No],${withval}:${PATH})
 		if test "${CCACHE}" != "No"; then
@@ -383,7 +377,7 @@ AC_DEFUN([AST_SET_PBX_AMCONDITIONALS],[
 
 AC_DEFUN([CS_WITH_PBX], [
 	AC_ARG_WITH([asterisk],
-		[AC_HELP_STRING([--with-asterisk=PATH],	[Asterisk install prefix with the development headers (default: search the usual locations)])],
+		[AS_HELP_STRING([--with-asterisk=PATH],	[Asterisk install prefix with the development headers (default: search the usual locations)])],
 		[NEW_PBX_PATH="${withval}"]
 	)
 
@@ -428,12 +422,12 @@ AC_DEFUN([CS_WITH_PBX], [
 
 AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 	AC_ARG_ENABLE(optimization,
-		[AC_HELP_STRING([--enable-optimization],[build with -O3 and hardening flags, and strip the installed module (default: yes for release archives, no for git checkouts)])],
+		[AS_HELP_STRING([--enable-optimization],[build with -O3 and hardening flags, and strip the installed module (default: yes for release archives, no for git checkouts)])],
 		[enable_optimization=$enableval],
 		[enable_optimization=no; if test "${REPOS_TYPE}" = "TGZ"; then enable_optimization=yes; fi]
 	)
 	AC_ARG_ENABLE(debug,
-		[AC_HELP_STRING([--disable-debug],[leave out debug symbols and the 'sccp debug' log output (default: disabled for release archives)])],
+		[AS_HELP_STRING([--disable-debug],[leave out debug symbols and the 'sccp debug' log output (default: disabled for release archives)])],
 		[enable_debug=$enableval], 
 		[enable_debug=yes;if test "${REPOS_TYPE}" = "TGZ"; then enable_debug=no; fi]
 	)
@@ -453,8 +447,6 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 	 	CPPFLAGS_saved="${CPPFLAGS_saved} -D_FORTIFY_SOURCE=2"
 		GDB_FLAGS=""
 		AS_IF([test "x${GCC}" = "xyes"], [
-			AC_LANG_SAVE
-			AC_LANG_C
 			AX_APPEND_COMPILE_FLAGS([ dnl
 				-fvisibility=hidden dnl
 				-fvisibility-inlines-hidden dnl
@@ -494,8 +486,6 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 		GDB_FLAGS="-g3 -ggdb3"
 		
 		AS_IF([test "x${GCC}" = "xyes"], [
-			AC_LANG_SAVE
-			AC_LANG_C
 			AX_APPEND_COMPILE_FLAGS([ dnl
 				-fexcess-precision=fast dnl
 				-fno-delete-null-pointer-checks dnl
@@ -604,8 +594,6 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 			], SUPPORTED_CFLAGS)
 		])
 		AS_IF([test "X${USE_MAINTAINER_MODE}" = "Xyes"], [
-			AC_LANG_SAVE
-			AC_LANG_C
 			AX_APPEND_COMPILE_FLAGS([ dnl
 				-Wsuggest-attribute=cold dnl
 				-Wsuggest-attribute=const dnl
@@ -641,8 +629,6 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 		])
 
 		AS_IF([test "x${AST_C_COMPILER_FAMILY}" = "xgcc"], [
-			AC_LANG_SAVE
-			AC_LANG_C
 			AX_APPEND_COMPILE_FLAGS([ dnl
 				-Wshadow dnl
 				-fno-strict-overflow dnl
@@ -652,8 +638,6 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 			], SUPPORTED_CFLAGS)
 		])
 		AS_IF([test "x${AST_C_COMPILER_FAMILY}" = "xclang"], [
-			AC_LANG_SAVE
-			AC_LANG_C
 			AX_APPEND_COMPILE_FLAGS([ dnl
 				-Warray-bounds dnl
 				-Wparentheses-equality dnl
@@ -661,8 +645,6 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 			], SUPPORTED_CFLAGS)
 		])
 		AS_IF([test ! -z "`echo ${CC} | grep ccc-analyzer`"], [
-			AC_LANG_SAVE
-			AC_LANG_C
 			AX_APPEND_COMPILE_FLAGS([ dnl
 				 -Wno-pointer-bool-conversion dnl Compensate for including NONENULL() attribute, null pointer checks should however remain for other compiler types
 			], SUPPORTED_CFLAGS)
@@ -692,8 +674,6 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 		enable_debug_mutex="no"
 		CFLAGS_saved="${CFLAGS_saved}"
 		AS_IF([test "x${GCC}" = "xyes"], [
-			AC_LANG_SAVE
-			AC_LANG_C
 			AX_APPEND_COMPILE_FLAGS([ dnl
 				-fstack-protector dnl
 				-Wno-long-long dnl
@@ -705,8 +685,6 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 			], SUPPORTED_CFLAGS)
 		])
 	])
-	AC_LANG_SAVE
-	AC_LANG_C
 	CFLAGS_saved="`echo ${CFLAGS_saved}|sed 's/^[ \t]*//;s/[ \t]*$//'`"
 	CFLAGS_saved="${CFLAGS_saved} -I."		dnl include our own directory first, so that we can find config.h when using a builddir
 	CFLAGS="${CFLAGS_saved} "
@@ -723,7 +701,7 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 AC_DEFUN([CS_ENABLE_LINK_TIME_OPTIMIZATION], [
 	AC_ARG_ENABLE(
 		[lto],
-		AC_HELP_STRING([--enable-lto],[use link-time optimization (default: no)]),
+		AS_HELP_STRING([--enable-lto],[use link-time optimization (default: no)]),
 	    	[
 			enable_lto="$enableval"
 			case $enableval in
@@ -783,7 +761,7 @@ AC_DEFUN([CS_ENABLE_GCOV], [
 
 AC_DEFUN([CS_ENABLE_REFCOUNT_DEBUG], [
 	AC_ARG_ENABLE(refcount_debug, 
-		[AC_HELP_STRING([--enable-refcount-debug], [track reference counts for leak hunting (developer only)])],
+		[AS_HELP_STRING([--enable-refcount-debug], [track reference counts for leak hunting (developer only)])],
 		[ac_cv_refcount_debug=$enableval], 
 		[ac_cv_refcount_debug=no]
 	)
@@ -795,7 +773,7 @@ AC_DEFUN([CS_ENABLE_ASTOBJ_REFCOUNT], [
 	AS_IF([test "${ASTOBJ2_AVAILABLE}" = "yes"],
 	[
 		AC_ARG_ENABLE(astobj_refcount, 
-			[AC_HELP_STRING([--enable-astobj2-refcount], [use Asterisk's astobj2 reference counting instead of chan_sccp's own (developer only)])],
+			[AS_HELP_STRING([--enable-astobj2-refcount], [use Asterisk's astobj2 reference counting instead of chan_sccp's own (developer only)])],
 			[ac_cv_astobj_refcount=$enableval], 
 			[ac_cv_astobj_refcount=no]
 		)
@@ -808,7 +786,7 @@ AC_DEFUN([CS_ENABLE_ASTOBJ_REFCOUNT], [
 
 AC_DEFUN([CS_ENABLE_LOCK_DEBUG], [
 	AC_ARG_ENABLE(lock_debug, 
-		[AC_HELP_STRING([--enable-lock-debug], [track lock use to find deadlocks (developer only)])],
+		[AS_HELP_STRING([--enable-lock-debug], [track lock use to find deadlocks (developer only)])],
 		[ac_cv_lock_debug=$enableval], 
 		[ac_cv_lock_debug=no]
 	)
@@ -819,7 +797,7 @@ AC_DEFUN([CS_ENABLE_LOCK_DEBUG], [
 
 AC_DEFUN([CS_ENABLE_STRIP], [
 	AC_ARG_ENABLE(strip, 
-		[AC_HELP_STRING([--enable-strip], [strip the installed module and keep its debug symbols in a separate file (default: same as --enable-optimization)])],
+		[AS_HELP_STRING([--enable-strip], [strip the installed module and keep its debug symbols in a separate file (default: same as --enable-optimization)])],
 		[ac_cv_enable_strip=$enableval], 
 		[ac_cv_enable_strip=no; if [ test "x$enable_optimization" = "xyes"; ] then ac_cv_enable_strip="yes";fi]
 	)
@@ -837,7 +815,7 @@ AC_DEFUN([CS_DISABLE_SECTION_RELOCATION], [
 		;;
 	*)
 		AC_ARG_ENABLE(section_relocation,
-			[AC_HELP_STRING([--enable-section-relocation], [let the linker drop unused code (-ffunction-sections, --gc-sections)])],
+			[AS_HELP_STRING([--enable-section-relocation], [let the linker drop unused code (-ffunction-sections, --gc-sections)])],
 			[ac_cv_section_relocation=$enableval], 
 			[ac_cv_section_relocation=no]
 		)
@@ -854,7 +832,7 @@ AC_DEFUN([CS_DISABLE_SECTION_RELOCATION], [
 
 AC_DEFUN([CS_DISABLE_PICKUP], [
 	AC_ARG_ENABLE(pickup, 
-		[AC_HELP_STRING([--disable-pickup], [leave out call pickup and group pickup])],
+		[AS_HELP_STRING([--disable-pickup], [leave out call pickup and group pickup])],
 		[ac_cv_use_pickup=$enableval], 
 		[ac_cv_use_pickup=yes]
 	)
@@ -864,7 +842,7 @@ AC_DEFUN([CS_DISABLE_PICKUP], [
 
 AC_DEFUN([CS_DISABLE_PARK], [
 	AC_ARG_ENABLE(park,
-		[AC_HELP_STRING([--disable-park], [leave out call parking])],
+		[AS_HELP_STRING([--disable-park], [leave out call parking])],
 		[ac_cv_use_park=$enableval],
 		[ac_cv_use_park=yes]
 	)
@@ -874,7 +852,7 @@ AC_DEFUN([CS_DISABLE_PARK], [
 
 AC_DEFUN([CS_DISABLE_DIRTRFR], [
 	AC_ARG_ENABLE(dirtrfr, 
-		[AC_HELP_STRING([--disable-dirtrfr], [leave out direct transfer])],
+		[AS_HELP_STRING([--disable-dirtrfr], [leave out direct transfer])],
 		[ac_cv_use_dirtrfr=$enableval], 
 		[ac_cv_use_dirtrfr=yes]
 	)
@@ -884,7 +862,7 @@ AC_DEFUN([CS_DISABLE_DIRTRFR], [
 
 AC_DEFUN([CS_DISABLE_MONITOR], [
 	AC_ARG_ENABLE(monitor, 
-		[AC_HELP_STRING([--disable-monitor], [leave out the call recording (monitor) feature])],
+		[AS_HELP_STRING([--disable-monitor], [leave out the call recording (monitor) feature])],
 		[ac_cv_use_monitor=$enableval], 
 		[ac_cv_use_monitor=yes]
 	)
@@ -894,7 +872,7 @@ AC_DEFUN([CS_DISABLE_MONITOR], [
 
 AC_DEFUN([CS_ENABLE_CONFERENCE], [
 	AC_ARG_ENABLE(conference, 
-		[AC_HELP_STRING([--enable-conference], [include ad hoc conferencing (default: no)])],
+		[AS_HELP_STRING([--enable-conference], [include ad hoc conferencing (default: no)])],
 		[ac_cv_use_conference=$enableval], 
 		[ac_cv_use_conference=no]
 	)
@@ -904,7 +882,7 @@ AC_DEFUN([CS_ENABLE_CONFERENCE], [
 
 AC_DEFUN([CS_DISABLE_MANAGER], [
 	AC_ARG_ENABLE(manager, 
-		[AC_HELP_STRING([--disable-manager], [leave out the AMI actions and events])],
+		[AS_HELP_STRING([--disable-manager], [leave out the AMI actions and events])],
 		[ac_cv_use_manager=$enableval], 
 		[ac_cv_use_manager=yes]
 	)
@@ -917,7 +895,7 @@ AC_DEFUN([CS_DISABLE_MANAGER], [
 
 AC_DEFUN([CS_DISABLE_FUNCTIONS], [
 	AC_ARG_ENABLE(functions, 
-		[AC_HELP_STRING([--disable-functions], [leave out the SCCP dialplan functions and applications])],
+		[AS_HELP_STRING([--disable-functions], [leave out the SCCP dialplan functions and applications])],
 		[ac_cv_use_functions=$enableval], 
 		[ac_cv_use_functions=yes]
 	)
@@ -927,7 +905,7 @@ AC_DEFUN([CS_DISABLE_FUNCTIONS], [
 
 AC_DEFUN([CS_DISABLE_REALTIME], [
 	AC_ARG_ENABLE(realtime, 
-		[AC_HELP_STRING([--disable-realtime], [leave out Asterisk realtime configuration support])],
+		[AS_HELP_STRING([--disable-realtime], [leave out Asterisk realtime configuration support])],
 		[ac_cv_realtime=$enableval], 
 		[ac_cv_realtime=yes]
 	)
@@ -937,7 +915,7 @@ AC_DEFUN([CS_DISABLE_REALTIME], [
 
 AC_DEFUN([CS_ENABLE_ADVANCED_FUNCTIONS], [
 	AC_ARG_ENABLE(advanced_functions, 
-		[AC_HELP_STRING([--enable-advanced-functions], [show the unfinished Callback and cBarge softkeys (experimental)])],
+		[AS_HELP_STRING([--enable-advanced-functions], [show the unfinished Callback and cBarge softkeys (experimental)])],
 		[ac_cv_advanced_functions=$enableval], 
 		[ac_cv_advanced_functions=no]
 	)
@@ -947,7 +925,7 @@ AC_DEFUN([CS_ENABLE_ADVANCED_FUNCTIONS], [
 
 AC_DEFUN([CS_ENABLE_EXPERIMENTAL_MODE], [
 	AC_ARG_ENABLE(experimental_mode, 
-		[AC_HELP_STRING([--enable-experimental-mode], [include unfinished code paths (developer only)])],
+		[AS_HELP_STRING([--enable-experimental-mode], [include unfinished code paths (developer only)])],
 		[ac_cv_experimental_mode=$enableval], 
 		[ac_cv_experimental_mode=no]
 	)
@@ -956,13 +934,11 @@ AC_DEFUN([CS_ENABLE_EXPERIMENTAL_MODE], [
 ])
 
 AC_DEFUN([CS_ENABLE_EXPERIMENTAL_XML], [
-	AC_LANG_SAVE
-	AC_LANG_C
 	CFLAGS_save=${CFLAGS}
 	CPPFLAGS_save=${CPPFLAGS}
 	LDFLAGS_save=${LDFLAGS}
 	AC_ARG_ENABLE(experimental_xml, 
-		[AC_HELP_STRING([--enable-experimental-xml], [include XML/XSLT support for phone services (needs libxml2 and libxslt)])],
+		[AS_HELP_STRING([--enable-experimental-xml], [include XML/XSLT support for phone services (needs libxml2 and libxslt)])],
 		[ac_cv_experimental_xml=$enableval], 
 		[ac_cv_experimental_xml=no]
 	)
@@ -1021,7 +997,7 @@ AC_DEFUN([CS_ENABLE_EXPERIMENTAL_XML], [
 
 AC_DEFUN([CS_DISABLE_DEVSTATE_FEATURE], [
 	AC_ARG_ENABLE(devstate_feature, 
-		[AC_HELP_STRING([--disable-devstate-feature], [leave out device state (DevState) feature buttons])],
+		[AS_HELP_STRING([--disable-devstate-feature], [leave out device state (DevState) feature buttons])],
 		[ac_cv_devstate_feature=$enableval], 
 		[ac_cv_devstate_feature=yes]
 	)
@@ -1032,7 +1008,7 @@ AC_DEFUN([CS_DISABLE_DEVSTATE_FEATURE], [
 
 AC_DEFUN([CS_DISABLE_DYNAMIC_SPEEDDIAL], [
 	AC_ARG_ENABLE(dynamic_speeddial, 
-		[AC_HELP_STRING([--disable-dynamic-speeddial], [leave out dynamic speed dials])],
+		[AS_HELP_STRING([--disable-dynamic-speeddial], [leave out dynamic speed dials])],
 		[ac_cv_dynamic_speeddial=$enableval], 
 		[ac_cv_dynamic_speeddial=yes]
 	)
@@ -1042,7 +1018,7 @@ AC_DEFUN([CS_DISABLE_DYNAMIC_SPEEDDIAL], [
 
 AC_DEFUN([CS_DISABLE_DYNAMIC_SPEEDDIAL_CID], [
 	AC_ARG_ENABLE(dynamic_speeddial_cid, 
-		[AC_HELP_STRING([--disable-dynamic-speeddial-cid], [leave out caller information on dynamic speed dials])],
+		[AS_HELP_STRING([--disable-dynamic-speeddial-cid], [leave out caller information on dynamic speed dials])],
 		[ac_cv_dynamic_speeddial_cid=$enableval], 
 		[ac_cv_dynamic_speeddial_cid=yes]
 	)
@@ -1056,7 +1032,7 @@ AC_DEFUN([CS_DISABLE_DYNAMIC_SPEEDDIAL_CID], [
 
 AC_DEFUN([CS_ENABLE_VIDEO], [
 	AC_ARG_ENABLE(video, 
-		[AC_HELP_STRING([--enable-video], [include video calls (experimental)])],
+		[AS_HELP_STRING([--enable-video], [include video calls (experimental)])],
 		[ac_cv_streaming_video=$enableval], 
 		[ac_cv_streaming_video=no]
 	)
@@ -1066,7 +1042,7 @@ AC_DEFUN([CS_ENABLE_VIDEO], [
 
 AC_DEFUN([CS_WITH_HASH_SIZE], [
 	AC_ARG_WITH(hash_size, 
-		[AC_HELP_STRING([--with-hash-size=PRIME], [size of the object hash table; for more than 100 phones use a prime above 4 times the number of phones (default: 563)])],
+		[AS_HELP_STRING([--with-hash-size=PRIME], [size of the object hash table; for more than 100 phones use a prime above 4 times the number of phones (default: 563)])],
 		[ac_cv_set_hashsize=$withval], [ac_cv_set_hashsize=563])
 	AS_CASE([${ac_cv_set_hashsize}],
 		[''|'yes'|'no'|*[!0-9]*], [
@@ -1112,7 +1088,7 @@ AC_DEFUN([CS_PARSE_WITH_AND_ENABLE], [
 
 AC_DEFUN([CS_SETUP_MODULE_DIR], [
 	AC_ARG_WITH([astmoddir],
-		[AC_HELP_STRING([--with-astmoddir=PATH],[Asterisk modules directory to install into (default: from Asterisk)])],
+		[AS_HELP_STRING([--with-astmoddir=PATH],[Asterisk modules directory to install into (default: from Asterisk)])],
 		[PBX_MODDIR="${withval}"],
 		[PBX_MODDIR=${PBX_TEMPMODDIR}
 		case "${host}" in

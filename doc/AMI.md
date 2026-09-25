@@ -152,7 +152,7 @@ These are sent without a request. Events marked *callevents* need
 | `CallForward` | A call-forward changes on a line. |
 | `CallAnswered` | *callevents*: a phone answers a call. |
 | `Hold` | *callevents*: a phone holds (`Status: On`) or resumes (`Status: Off`) a call. |
-| `ChannelUpdate` | *callevents*: a call from a phone enters the dialplan. |
+| `ChannelUpdate` | *callevents*: a call from a phone enters the dialplan (`SCCPDevice`, `SCCPLine`, `SCCPCallID`, `SCCPCallDesignator`). |
 | `SCCPConfStart`, `SCCPConfStarted`, `SCCPConfEnd` | *callevents*: a conference is created, starts, ends. |
 | `SCCPConfEntered`, `SCCPConfLeft`, `SCCPConfLeave` | *callevents*: a participant joins or leaves. |
 | `SCCPConfParticipantKicked`, `SCCPConfParticipantMute`, `SCCPConfParticipantPromotion` | *callevents*: a participant is kicked, muted or unmuted, promoted or demoted. |

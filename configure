@@ -6087,13 +6087,6 @@ fi
 then :
 
 
-			ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
 for flag in  				-fvisibility=hidden 				-fvisibility-inlines-hidden 				-fexcess-precision=fast 				-fvisibility=hidden 				-fwrapv 				-fno-delete-null-pointer-checks 				-xldscope=hidden 				-Wl,--as-needed 				-fPIE 				-fPIE -pie 				-Wno-format-truncation 			; do
   as_CACHEVAR=`printf "%s\n" "ax_cv_check_cflags__$flag" | sed "$as_sed_sh"`
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $flag" >&5
@@ -6251,13 +6244,6 @@ printf "%s\n" "#define DEBUG 1" >>confdefs.h
 then :
 
 
-			ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
 for flag in  				-fexcess-precision=fast 				-fno-delete-null-pointer-checks 				-fPIE 				-fPIE -pie 				-fstack-protector-all 				-fvisibility=hidden 				-fvisibility-inlines-hidden 				-fwrapv 				-Wall 				-Waddress 				-Waggressive-loop-optimizations 				-Wanalyzer-double-fclose 				-Wanalyzer-double-free 				-Wanalyzer-exposure-through-output-file 				-Wanalyzer-file-leak 				-Wanalyzer-free-of-non-heap 				-Wanalyzer-malloc-leak 				-Wanalyzer-null-argument 				-Wanalyzer-null-dereference 				-Wanalyzer-possible-null-argument 				-Wanalyzer-possible-null-dereference 				-Wanalyzer-stale-setjmp-buffer 				-Wanalyzer-tainted-array-index 				-Wanalyzer-too-complex 				-Wanalyzer-unsafe-call-within-signal-handler 				-Wanalyzer-use-after-free 				-Wanalyzer-use-of-pointer-in-stale-stack-frame 				-Warray-bounds 				-Wattribute-alias 				-Wattributes 				-Wattribute-warning 				-Wcannot-profile 				-Wcast-align 				-Wcoverage-mismatch 				-Wdeprecated-declarations 				-Wdisabled-optimization 				-Wdiv-by-zero 				-Wempty-body 				-Wendif-labels 				-Werror=implicit 				-Wfatal-errors 				-Wformat-security 				-Wfree-nonheap-object 				-Wheader-guard 				-Whsa 								-Wimplicit-function-declaration 				-Winit-self 				-Winvalid-memory-model 				-Wl,--as-needed 				-Wlto-type-mismatch 				-Wmisleading-indentation 				-Wmissing-format-attribute 				-Wmissing-include-dirs 				-Wmissing-noreturn 				-Wmissing-noreturn 				-Wmissing-parameter-type 				-Wmissing-profile 				-Wmissing-prototypes 				-Wnested-externs 				-Wno-format-truncation 				-Wno-long-long 				-Wno-missing-field-initializers 				-Wmissing-declarations 				-Wnonnull-compare 				-Wnonnull 				-Wno-overlength-strings 				-Wno-pointer-sign 				-Wnull-dereference 				-Wodr 				-Wold-style-definition 				-Woverflow 				-Woverride-init 				-Wpacked 				-Wpragmas 				-Wreturn-local-addr 				-Wreturn-type 				-Wshadow=compatible-local 				-Wshadow 				-Wshadow=global 				-Wshadow-local 				-Wshadow=local 				-Wshift-negative-value 				-Wsign-compare 				-Wstrict-aliasing 				-Wstrict-overflow 				-Wstrict-prototypes 				-Wswitch 				-Wswitch-unreachable 				-Wtrampolines 				-Wtype-limits 				-Wuninitialized 				-Wunreachable-code 				-Wunsafe-loop-optimizations 				-Wunused-but-set-parameter 				-Wunused-but-set-variable 				-Wunused-const-variable 				-Wunused 				-Wunused-function 				-Wunused-label 				-Wunused-local-typedefs 				-Wunused-value 				-Wvector-operation-performance 				-xldscope=hidden 			; do
   as_CACHEVAR=`printf "%s\n" "ax_cv_check_cflags__$flag" | sed "$as_sed_sh"`
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $flag" >&5
@@ -6342,13 +6328,6 @@ done
 fi
 		if test "X${USE_MAINTAINER_MODE}" = "Xyes"
 then :
-
-
-			ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 for flag in  				-Wsuggest-attribute=cold 				-Wsuggest-attribute=const 				-Wsuggest-attribute=malloc 				-Wsuggest-attribute=noreturn 				-Wsuggest-attribute=pure 				-Wsuggest-final-methods 				-Wsuggest-final-types 				-Wc++-compat 				-Wenum-compare 				-Wformat-truncation 																																																																															; do
@@ -6441,13 +6420,6 @@ fi
 then :
 
 
-			ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
 for flag in  				-Wshadow 				-fno-strict-overflow 				-Wshorten-64-to-32 				-Wno-pointer-arith 							; do
   as_CACHEVAR=`printf "%s\n" "ax_cv_check_cflags__$flag" | sed "$as_sed_sh"`
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $flag" >&5
@@ -6534,13 +6506,6 @@ fi
 then :
 
 
-			ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
 for flag in  				-Warray-bounds 				-Wparentheses-equality 				-Wunevaluated-expression 			; do
   as_CACHEVAR=`printf "%s\n" "ax_cv_check_cflags__$flag" | sed "$as_sed_sh"`
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $flag" >&5
@@ -6625,13 +6590,6 @@ done
 fi
 		if test ! -z "`echo ${CC} | grep ccc-analyzer`"
 then :
-
-
-			ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 for flag in  				 -Wno-pointer-bool-conversion 			; do
@@ -6972,13 +6930,6 @@ printf "%s\n" "#define DEBUG 0" >>confdefs.h
 then :
 
 
-			ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
 for flag in  				-fstack-protector 				-Wno-long-long 				-Wno-ignored-qualifiers 				-Wno-missing-field-initializers 															; do
   as_CACHEVAR=`printf "%s\n" "ax_cv_check_cflags__$flag" | sed "$as_sed_sh"`
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $flag" >&5
@@ -7064,13 +7015,6 @@ fi
 	 ;;
 esac
 fi
-
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
 	CFLAGS_saved="`echo ${CFLAGS_saved}|sed 's/^ \t*//;s/ \t*$//'`"
 	CFLAGS_saved="${CFLAGS_saved} -I."			CFLAGS="${CFLAGS_saved} "
 	CPPFLAGS="${CPPFLAGS_saved} -I. "
@@ -7158,7 +7102,7 @@ int main()
 {
   char* string = malloc(40);
   int i;
-  for (i=0; i < 40; i++) string[[i]] = i;
+  for (i=0; i < 40; i++) string[i] = i;
   {
      void* s = string;
      int* p = s+1;
@@ -7172,9 +7116,9 @@ int main()
 _ACEOF
 if ac_fn_c_try_run "$LINENO"
 then :
-  ax_cv_have_aligned_access_required=yes
+  ax_cv_have_aligned_access_required=no
 else case e in #(
-  e) ax_cv_have_aligned_access_required=no ;;
+  e) ax_cv_have_aligned_access_required=yes ;;
 esac
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
@@ -7440,13 +7384,6 @@ printf "%s\n" "#define CS_USE_POLL_COMPAT 1" >>confdefs.h
 printf "%s\n" "Running on: ${host}" >&6; }
 
 
-
-
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	# Check whether --enable-static was given.
 if test ${enable_static+y}
@@ -12058,13 +11995,6 @@ then :
 fi
 
 
-
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
 	for ac_prog in git
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -13462,7 +13392,6 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
 
 
 	ac_ext=c
@@ -18870,7 +18799,6 @@ CC=$lt_save_CC
 
 
 
-
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -21249,87 +21177,6 @@ then :
   printf "%s\n" "#define HAVE_MKDIR 1" >>confdefs.h
 
 fi
-
-	# Autoupdate added the next two lines to ensure that your configure
-# script's behavior did not change.  They are probably safe to remove.
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for egrep" >&5
-printf %s "checking for egrep... " >&6; }
-if test ${ac_cv_path_EGREP+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) if echo a | $GREP -E '(a|b)' >/dev/null 2>&1
-   then ac_cv_path_EGREP="$GREP -E"
-   else
-     if test -z "$EGREP"; then
-  ac_path_EGREP_found=false
-  # Loop through the user's path and test for each of PROGNAME-LIST
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
-do
-  IFS=$as_save_IFS
-  case $as_dir in #(((
-    '') as_dir=./ ;;
-    */) ;;
-    *) as_dir=$as_dir/ ;;
-  esac
-    for ac_prog in egrep
-   do
-    for ac_exec_ext in '' $ac_executable_extensions; do
-      ac_path_EGREP="$as_dir$ac_prog$ac_exec_ext"
-      as_fn_executable_p "$ac_path_EGREP" || continue
-# Check for GNU ac_path_EGREP and select it if it is found.
-  # Check for GNU $ac_path_EGREP
-case `"$ac_path_EGREP" --version 2>&1` in #(
-*GNU*)
-  ac_cv_path_EGREP="$ac_path_EGREP" ac_path_EGREP_found=:;;
-#(
-*)
-  ac_count=0
-  printf %s 0123456789 >"conftest.in"
-  while :
-  do
-    cat "conftest.in" "conftest.in" >"conftest.tmp"
-    mv "conftest.tmp" "conftest.in"
-    cp "conftest.in" "conftest.nl"
-    printf "%s\n" 'EGREP' >> "conftest.nl"
-    "$ac_path_EGREP" 'EGREP$' < "conftest.nl" >"conftest.out" 2>/dev/null || break
-    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
-    as_fn_arith $ac_count + 1 && ac_count=$as_val
-    if test $ac_count -gt ${ac_path_EGREP_max-0}; then
-      # Best one so far, save it but keep looking for a better one
-      ac_cv_path_EGREP="$ac_path_EGREP"
-      ac_path_EGREP_max=$ac_count
-    fi
-    # 10*(2^10) chars as input seems more than enough
-    test $ac_count -gt 10 && break
-  done
-  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
-esac
-
-      $ac_path_EGREP_found && break 3
-    done
-  done
-  done
-IFS=$as_save_IFS
-  if test -z "$ac_cv_path_EGREP"; then
-    as_fn_error $? "no acceptable egrep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" "$LINENO" 5
-  fi
-else
-  ac_cv_path_EGREP=$EGREP
-fi
-
-   fi ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_EGREP" >&5
-printf "%s\n" "$ac_cv_path_EGREP" >&6; }
- EGREP="$ac_cv_path_EGREP"
-
-         EGREP_TRADITIONAL=$EGREP
- ac_cv_path_EGREP_TRADITIONAL=$EGREP
-
 
 	ac_fn_c_check_type "$LINENO" "_Bool" "ac_cv_type__Bool" "$ac_includes_default"
 if test "x$ac_cv_type__Bool" = xyes
@@ -26652,13 +26499,6 @@ printf "%s\n" "#define HAVE_CALLWEAVER 1" >>confdefs.h
 
 
 
-
-
-	ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 	CFLAGS_save=${CFLAGS}
 	CPPFLAGS_save=${CPPFLAGS}

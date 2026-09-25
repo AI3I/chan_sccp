@@ -58,6 +58,9 @@ Version: 5.0.0 (unreleased)
    Complete event counts events (4.x counted output lines); SCCPShowLines
    sends ActionID only when given and reports TableEntries. SCCPShowConference
    sends a proper SCCPShowConference event and a Complete event.
+   The ChannelUpdate event uses ChannelType, SCCPDevice, SCCPLine and
+   SCCPCallID like the other events (was Channeltype, SCCPdevice, SCCPline,
+   SCCPcallid).
 
  - New commands: sccp show devices [registered | unregistered | model <x> |
    line <l> | firmware <x>], sccp show firmware, sccp show device <dev> calls

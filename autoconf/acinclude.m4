@@ -315,7 +315,7 @@ AC_DEFUN([CS_EXT_LIB_SETUP],
 [
 $1_DESCRIP="$2"
 $1_OPTION="$3"
-AC_ARG_WITH([$3], AC_HELP_STRING([--with-$3=PATH],[use $2 files in PATH $4]),[
+AC_ARG_WITH([$3], AS_HELP_STRING([--with-$3=PATH],[use $2 files in PATH $4]),[
 case ${withval} in
      n|no)
      USE_$1=no
@@ -520,7 +520,7 @@ AC_DEFUN([CS_GET_VERSION], [
 AC_DEFUN([AX_CHECK_ALIGNED_ACCESS_REQUIRED],
 [AC_CACHE_CHECK([if pointers to integers require aligned access],
   [ax_cv_have_aligned_access_required],
-  [AC_TRY_RUN([
+  [AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -528,7 +528,7 @@ int main()
 {
   char* string = malloc(40);
   int i;
-  for (i=0; i < 40; i++) string[[i]] = i;
+  for (i=0; i < 40; i++) string[i] = i;
   {
      void* s = string;
      int* p = s+1;
@@ -538,9 +538,9 @@ int main()
   }
   return 0;
 }
-              ],
-     [ax_cv_have_aligned_access_required=yes],
+              ]])],
      [ax_cv_have_aligned_access_required=no],
+     [ax_cv_have_aligned_access_required=yes],
      [ax_cv_have_aligned_access_required=no])
   ])
 if test "$ax_cv_have_aligned_access_required" = yes ; then
@@ -552,7 +552,7 @@ fi
 AC_DEFUN([AX_CHECK_UNALIGNED_BUSERROR],
 [AC_CACHE_CHECK([whether uint64_t misalignment causes a buserror on this system],
   [ax_cv_have_unaligned_buserror],
-  [AC_TRY_RUN([
+  [AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -566,7 +566,7 @@ int main()
           /* Either bad result or SIGBUS on some systems */
           return (*((uint64_t*)p) == 0x4242424242424242ull) ? 0 : 1;
 }
-              ],
+              ]])],
      [ax_cv_have_unaligned_buserror=no],
      [ax_cv_have_unaligned_buserror=yes],
      [ax_cv_have_unaligned_buserror=no])

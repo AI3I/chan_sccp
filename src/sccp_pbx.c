@@ -1180,13 +1180,13 @@ void * sccp_pbx_softswitch(constChannelPtr channel)
 #ifdef CS_MANAGER_EVENTS
 						if (GLOB(callevents)) {
 							manager_event(EVENT_FLAG_SYSTEM, "ChannelUpdate", "Channel: %s\r\nUniqueid: %s\r\nChanneltype: %s\r\nSCCPdevice: %s\r\nSCCPline: %s\r\nSCCPcallid: %08X\r\nSCCPCallDesignator: %s\r\n",
-								(pbx_channel) ? pbx_channel_name(pbx_channel) : "(null)",
-								(pbx_channel) ? pbx_channel_uniqueid(pbx_channel) : "(null)",
+								(pbx_channel) ? pbx_channel_name(pbx_channel) : "",
+								(pbx_channel) ? pbx_channel_uniqueid(pbx_channel) : "",
 								"SCCP",
-								(d) ? d->id : "(null)",
-								(l) ? l->name : "(null)",
+								(d) ? d->id : "",
+								(l) ? l->name : "",
 								(c && c->callid) ? c->callid : 0,
-								(c) ? c->designator : "(null)");
+								(c) ? c->designator : "");
 						}
 #endif														// CS_MANAGER_EVENTS
 						break;

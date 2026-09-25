@@ -89,6 +89,9 @@ Version: 5.0.0 (unreleased)
 
  - Build: Asterisk 20-24 matrix, C only, thread-pool rework, libbfd
    backtraces removed, standalone regression tests (make check).
+   configure and make install run under a POSIX shell (dash); before, on a
+   system without bash, every --enable option was silently ignored, and
+   make install never stripped the module when optimization was enabled.
 
 Version: v4.3.4_DEV
 ==========================

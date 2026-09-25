@@ -163,7 +163,7 @@ static const SCCPConfigOption sccpGlobalConfigOptions[]={
 																																					"The hotline function can be used in different circumstances, for example at a door, where you want people to be\n"
 																																					"able to only call one number, or for unprovisioned phones to only be able to call the helpdesk to get their phone\n"
 																																					"set up. If hotline_enabled = yes, any device which is not included in the configuration explicitly will be allowed\n"
-																																					"to register as a guest device. All such devices will register on a single shared line called 'hotline'.\n"},
+																																					"to register as a guest device. All such devices will register on a single shared line called 'Hotline'.\n"},
 	{"hotline_extension", 		offsize(sccp_hotline_t,exten),offsetof(struct sccp_global_vars,hotline),		TYPE_PARSER(sccp_config_parse_hotline_exten),	SCCP_CONFIG_FLAG_NONE,				SCCP_CONFIG_NEEDDEVICERESET,		"111",				"Extension automatically dialed when going offhook with this device (adhoc/plar)"},
 	{"hotline_context",		offsize(sccp_line_t,context),offsetof(struct sccp_global_vars,hotline),			TYPE_PARSER(sccp_config_parse_hotline_context),	SCCP_CONFIG_FLAG_NONE,				SCCP_CONFIG_NEEDDEVICERESET,		"default",			"Context used when dialing the hotline_extension"},
 	{"hotline_label", 		offsize(sccp_line_t,label),offsetof(struct sccp_global_vars,hotline),			TYPE_PARSER(sccp_config_parse_hotline_label),	SCCP_CONFIG_FLAG_NONE,				SCCP_CONFIG_NEEDDEVICERESET,		"Hotline",			"Label on the display for this hotline"},

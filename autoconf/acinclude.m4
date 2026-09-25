@@ -10,7 +10,7 @@ dnl          See the LICENSE file at the top of the source tree.
 AC_DEFUN([CS_CHECK_PBX], [
 	found_pbx="no";
 	found_asterisk="no";
-	AS_IF([test -z "`${CC} -isystem /usr/include -dM -E - </dev/null 2>&1 >/dev/null`" && test $? == 0],[replace_include_with_isystem=1],[replace_include_with_isystem=0])
+	AS_IF([test -z "`${CC} -isystem /usr/include -dM -E - </dev/null 2>&1 >/dev/null`" && test $? = 0],[replace_include_with_isystem=1],[replace_include_with_isystem=0])
 	if test -z "$NEW_PBX_PATH" && test ! x"${PKGCONFIG}" = xNo; then
 		AC_MSG_CHECKING([pkg-config asterisk])
 	 	if $(${PKGCONFIG} --exists asterisk); then
@@ -69,7 +69,7 @@ AC_DEFUN([CS_CHECK_PBX], [
 	if test x_$HAVE_ASTERISK != x_yes; then
 		AC_MSG_CHECKING([Search Path: $PBX_PATH])
 		for dir in $PBX_PATH; do
-			if test "`echo $dir | cut -c1`" == "."; then 
+			if test "`echo $dir | cut -c1`" = "."; then 
 				checkdir="`pwd`/${dir%/}"
 			else
 				checkdir="${dir%/}"

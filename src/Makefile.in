@@ -1433,24 +1433,17 @@ gen_enum:
 install-csmodLTLIBRARIES:
 	@$(NORMAL_INSTALL)
 	@test -d "$(DESTDIR)$(csmoddir)" || $(MKDIR_P) "$(DESTDIR)$(csmoddir)"
-	@if test "x$(strip_binaries)" == "xyes" ; then 											\
-		test -d "$(DESTDIR)$(PBX_DEBUGMODDIR)" || $(MKDIR_P) "$(DESTDIR)$(PBX_DEBUGMODDIR)";					\
-		$(OBJCOPY) --only-keep-debug ".libs/chan_sccp.so" "$(DESTDIR)$(PBX_DEBUGMODDIR)/chan_sccp.so";				\
-		$(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) -s ".libs/chan_sccp.so" "$(DESTDIR)$(csmoddir)";\
-		$(OBJCOPY) --add-gnu-debuglink="$(DESTDIR)$(PBX_DEBUGMODDIR)/chan_sccp.so" "$(DESTDIR)$(csmoddir)/chan_sccp.so";	\
-		echo    "==============================================================================================="; 		\
-		echo    "Installed Stripped chan_sccp.so to '$(DESTDIR)$(csmoddir)'...";           					\
-		echo    "===============================================================================================";		\
-	else 																\
+	@if test "x$(strip_binaries)" = "xyes" ; then \
+		test -d "$(DESTDIR)$(PBX_DEBUGMODDIR)" || $(MKDIR_P) "$(DESTDIR)$(PBX_DEBUGMODDIR)"; \
+		$(OBJCOPY) --only-keep-debug ".libs/chan_sccp.so" "$(DESTDIR)$(PBX_DEBUGMODDIR)/chan_sccp.so"; \
+		$(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) -s ".libs/chan_sccp.so" "$(DESTDIR)$(csmoddir)"; \
+		$(OBJCOPY) --add-gnu-debuglink="$(DESTDIR)$(PBX_DEBUGMODDIR)/chan_sccp.so" "$(DESTDIR)$(csmoddir)/chan_sccp.so"; \
+		echo "Installed stripped chan_sccp.so in $(DESTDIR)$(csmoddir), debug symbols in $(DESTDIR)$(PBX_DEBUGMODDIR)"; \
+	else \
 		$(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) ".libs/chan_sccp.so" "$(DESTDIR)$(csmoddir)"; \
-		echo    "==============================================================================================="; 		\
-		echo    "Installed chan_sccp.so to '$(DESTDIR)$(csmoddir)'...";           						\
-		echo    "===============================================================================================";		\
+		echo "Installed chan_sccp.so in $(DESTDIR)$(csmoddir)"; \
 	fi
-	@if test -d "$(DESTDIR)$(csmoddir)"; then                                          						\
-		echo    "Please restart asterisk or reload the module to use the new version of chan_sccp.so"; 				\
-		echo    "==============================================================================================="; 		\
-	fi
+	@echo "A running Asterisk keeps the old module until chan_sccp.so is unloaded and loaded again, or Asterisk restarts"
 
 install-data-local:
 	@test -d $(DESTDIR)$(PBX_ETC) || $(mkinstalldirs) $(DESTDIR)$(PBX_ETC);								\

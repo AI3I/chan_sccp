@@ -5892,7 +5892,7 @@ _ACEOF
 		fi
 	fi
 
-	if test "${AWK}" == "No"
+	if test "${AWK}" = "No"
 then :
 
 		echo "Utility 'awk' is missing"
@@ -6073,7 +6073,7 @@ fi
  	fi
  	LDFLAGS_saved="${LDFLAGS}"
 
-	if test "X$enable_optimization" == "Xyes"
+	if test "X$enable_optimization" = "Xyes"
 then :
 
 		strip_binaries="yes"
@@ -6236,7 +6236,7 @@ fi
 esac
 fi
 
-	if test "X${enable_debug}" == "Xyes"
+	if test "X${enable_debug}" = "Xyes"
 then :
 
 
@@ -7480,16 +7480,16 @@ fi
 
 
 
-	if 		test -z "`${CC} -std=gnu11 -fgnu89-inline -dM -E - </dev/null 2>&1 |grep 'unrecognized command line option'`" && test $? == 0
+	if 		test -z "`${CC} -std=gnu11 -fgnu89-inline -dM -E - </dev/null 2>&1 |grep 'unrecognized command line option'`" && test $? = 0
 then :
   CFLAGS_saved="$CFLAGS_saved -std=gnu11 -fgnu89-inline"
-elif test -n "`${CC} -std=gnu99 -fgnu89-inline -Wno-ignored-qualifiers -dM -E - </dev/null 2>&1 |grep '__STDC_VERSION__ 1999'`" && test $? == 0
+elif test -n "`${CC} -std=gnu99 -fgnu89-inline -Wno-ignored-qualifiers -dM -E - </dev/null 2>&1 |grep '__STDC_VERSION__ 1999'`" && test $? = 0
 then :
   CFLAGS_saved="$CFLAGS_saved -std=gnu99 -fgnu89-inline -Wno-ignored-qualifiers"
-elif test -n "`${CC} -std=gnu99 -fgnu89-inline -Wno-return-type -dM -E - </dev/null 2>&1 |grep '__STDC_VERSION__ 1999'`" && test $? == 0
+elif test -n "`${CC} -std=gnu99 -fgnu89-inline -Wno-return-type -dM -E - </dev/null 2>&1 |grep '__STDC_VERSION__ 1999'`" && test $? = 0
 then :
   CFLAGS_saved="$CFLAGS_saved -std=gnu99 -fgnu89-inline -Wno-return-type"
-elif test -n "`${CC} -std=gnu89 -Wno-return-type -dM -E - </dev/null 2>&1 |grep '__STDC__ 1'`" && test $? == 0
+elif test -n "`${CC} -std=gnu89 -Wno-return-type -dM -E - </dev/null 2>&1 |grep '__STDC__ 1'`" && test $? = 0
 then :
   CFLAGS_saved="$CFLAGS_saved -std=gnu89 -Wno-return-type";CC_works=0
 else case e in #(
@@ -8106,7 +8106,7 @@ fi
 
    if test "$cross_compiling" = yes
 then :
-  if test "x$enable_cross_cmpxchg16b" == "xyes"
+  if test "x$enable_cross_cmpxchg16b" = "xyes"
 then :
   sccp_cv_cpu_cmpxchg16b="assuming yes"
 else case e in #(
@@ -8154,11 +8154,11 @@ fi
 printf "%s\n" "$sccp_cv_cpu_cmpxchg16b" >&6; }
 
 fi
-if test "x$sccp_cv_cpu_cmpxchg16b" == "xassuming yes"
+if test "x$sccp_cv_cpu_cmpxchg16b" = "xassuming yes"
 then :
   sccp_cv_cpu_cmpxchg16b="yes"
 fi
-if test "x$sccp_cv_cpu_cmpxchg16b" == "xyes"
+if test "x$sccp_cv_cpu_cmpxchg16b" = "xyes"
 then :
 
 printf "%s\n" "#define HAVE_CMPXCHG16B 1" >>confdefs.h
@@ -21611,10 +21611,10 @@ else case e in #(
 esac
 fi
 
-	if test "${ac_cv_tls}" == "yes"
+	if test "${ac_cv_tls}" = "yes"
 then :
 
-		if test "${ac_cv_tls}" == "yes"
+		if test "${ac_cv_tls}" = "yes"
 then :
 
 
@@ -22105,7 +22105,7 @@ fi
 
 	found_pbx="no";
 	found_asterisk="no";
-	if test -z "`${CC} -isystem /usr/include -dM -E - </dev/null 2>&1 >/dev/null`" && test $? == 0
+	if test -z "`${CC} -isystem /usr/include -dM -E - </dev/null 2>&1 >/dev/null`" && test $? = 0
 then :
   replace_include_with_isystem=1
 else case e in #(
@@ -22177,7 +22177,7 @@ printf "%s\n" "not found" >&6; }
 		{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking Search Path: $PBX_PATH" >&5
 printf %s "checking Search Path: $PBX_PATH... " >&6; }
 		for dir in $PBX_PATH; do
-			if test "`echo $dir | cut -c1`" == "."; then
+			if test "`echo $dir | cut -c1`" = "."; then
 				checkdir="`pwd`/${dir%/}"
 			else
 				checkdir="${dir%/}"
@@ -25080,7 +25080,7 @@ then :
 
 printf "%s\n" "#define HAVE_PBX_FEATURES_H 1" >>confdefs.h
 
-			if test "${ast_pickup_h}" == 0
+			if test "${ast_pickup_h}" = 0
 then :
 
 				{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking  - availability 'ast_do_pickup'..." >&5
@@ -26675,7 +26675,7 @@ else case e in #(
 esac
 fi
 
-	 if test "_${ac_cv_experimental_xml}" == "_yes"; then
+	 if test "_${ac_cv_experimental_xml}" = "_yes"; then
   CS_EXPERIMENTAL_XML_TRUE=
   CS_EXPERIMENTAL_XML_FALSE='#'
 else
@@ -26683,7 +26683,7 @@ else
   CS_EXPERIMENTAL_XML_FALSE=
 fi
 
-	if test "_${ac_cv_experimental_xml}" == "_yes"
+	if test "_${ac_cv_experimental_xml}" = "_yes"
 then :
 
 
@@ -27092,10 +27092,10 @@ fi
 
 
 
-		if test "_${HAVE_LIBEXSLT}" == "_yes"
+		if test "_${HAVE_LIBEXSLT}" = "_yes"
 then :
 
-			if test "_${HAVE_PBX_HTTP}" == "_yes"
+			if test "_${HAVE_PBX_HTTP}" = "_yes"
 then :
 
 
@@ -27434,7 +27434,7 @@ else case e in #(
 esac
 fi
 
-		if test "_${ac_cv_section_relocation}" == "_no"
+		if test "_${ac_cv_section_relocation}" = "_no"
 then :
 
 			SECTION_LDFLAGS=""
@@ -27490,7 +27490,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_refcount_debug}" == "_yes"
+	if test "_${ac_cv_refcount_debug}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_REFCOUNT_DEBUG 1" >>confdefs.h
@@ -27500,7 +27500,7 @@ fi
 printf "%s\n" "--enable-refcount-debug: ${ac_cv_refcount_debug}" >&6; }
 
 
-	if test "${ASTOBJ2_AVAILABLE}" == "yes"
+	if test "${ASTOBJ2_AVAILABLE}" = "yes"
 then :
 
 		# Check whether --enable-astobj_refcount was given.
@@ -27513,7 +27513,7 @@ else case e in #(
 esac
 fi
 
-		if test "_${ac_cv_astobj_refcount}" == "_yes"
+		if test "_${ac_cv_astobj_refcount}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_ASTOBJ_REFCOUNT 1" >>confdefs.h
@@ -27541,7 +27541,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_lock_debug}" == "_yes"
+	if test "_${ac_cv_lock_debug}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_LOCK_DEBUG 1" >>confdefs.h
@@ -27556,7 +27556,7 @@ if test ${enable_strip+y}
 then :
   enableval=$enable_strip; ac_cv_enable_strip=$enableval
 else case e in #(
-  e) ac_cv_enable_strip=no; if  test "x$enable_optimization" == "xyes";  then ac_cv_enable_strip="yes";fi
+  e) ac_cv_enable_strip=no; if  test "x$enable_optimization" = "xyes";  then ac_cv_enable_strip="yes";fi
 	 ;;
 esac
 fi
@@ -27577,7 +27577,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_use_pickup}" == "_yes"
+	if test "_${ac_cv_use_pickup}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_SCCP_PICKUP 1" >>confdefs.h
@@ -27597,7 +27597,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_use_park}" == "_yes"
+	if test "_${ac_cv_use_park}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_SCCP_PARK 1" >>confdefs.h
@@ -27617,7 +27617,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_use_dirtrfr}" == "_yes"
+	if test "_${ac_cv_use_dirtrfr}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_SCCP_DIRTRFR 1" >>confdefs.h
@@ -27637,7 +27637,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_use_monitor}" == "_yes"
+	if test "_${ac_cv_use_monitor}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_SCCP_FEATURE_MONITOR 1" >>confdefs.h
@@ -27657,7 +27657,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_use_conference}" == "_yes"
+	if test "_${ac_cv_use_conference}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_SCCP_CONFERENCE 1" >>confdefs.h
@@ -27677,7 +27677,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_use_manager}" == "_yes"
+	if test "_${ac_cv_use_manager}" = "_yes"
 then :
 
 
@@ -27702,7 +27702,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_use_functions}" == "_yes"
+	if test "_${ac_cv_use_functions}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_SCCP_FUNCTIONS 1" >>confdefs.h
@@ -27722,7 +27722,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_realtime}" == "_yes"
+	if test "_${ac_cv_realtime}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_SCCP_REALTIME 1" >>confdefs.h
@@ -27742,7 +27742,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_feature_monitor}" == "_yes"
+	if test "_${ac_cv_feature_monitor}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_SCCP_FEATURE_MONITOR 1" >>confdefs.h
@@ -27762,7 +27762,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_advanced_functions}" == "_yes"
+	if test "_${ac_cv_advanced_functions}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_ADV_FEATURES 1" >>confdefs.h
@@ -27786,7 +27786,7 @@ fi
 then :
   ac_cv_devstate_feature=no
 fi
-	if test "_${ac_cv_devstate_feature}" == "_yes"
+	if test "_${ac_cv_devstate_feature}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_DEVSTATE_FEATURE 1" >>confdefs.h
@@ -27806,7 +27806,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_dynamic_speeddial}" == "_yes"
+	if test "_${ac_cv_dynamic_speeddial}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_DYNAMIC_SPEEDDIAL 1" >>confdefs.h
@@ -27826,10 +27826,10 @@ else case e in #(
 esac
 fi
 
-	if test "${ac_cv_dynamic_speeddial}" == "yes"
+	if test "${ac_cv_dynamic_speeddial}" = "yes"
 then :
 
-		if test "${ac_cv_dynamic_speeddial_cid}" == "yes"
+		if test "${ac_cv_dynamic_speeddial_cid}" = "yes"
 then :
 
 
@@ -27853,7 +27853,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_streaming_video}" == "_yes"
+	if test "_${ac_cv_streaming_video}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_SCCP_VIDEO 1" >>confdefs.h
@@ -27873,7 +27873,7 @@ else case e in #(
 esac
 fi
 
-	if test "_${ac_cv_experimental_mode}" == "_yes"
+	if test "_${ac_cv_experimental_mode}" = "_yes"
 then :
 
 printf "%s\n" "#define CS_EXPERIMENTAL 1" >>confdefs.h
@@ -27999,7 +27999,7 @@ ac_config_commands="$ac_config_commands src/sccp_enum.h"
 ac_config_files="$ac_config_files Makefile src/Makefile src/pbx_impl/Makefile src/pbx_impl/ast/Makefile src/pbx_impl/ast_announce/Makefile src/pbx_impl/ast120/Makefile"
 
 
-	 if test "$PBX_TYPE" == "Asterisk"; then
+	 if test "$PBX_TYPE" = "Asterisk"; then
   BUILD_AST_TRUE=
   BUILD_AST_FALSE='#'
 else
@@ -28013,7 +28013,7 @@ fi
 	PBXVER_COND_LIBADD=
 	PBXVER_COND_ANNOUNCE_SUBDIR=
 	PBXVER_COND_ANNOUNCE_LIBADD=
-	if test "$PBX_TYPE" == "Asterisk"; then
+	if test "$PBX_TYPE" = "Asterisk"; then
 		PBX_COND_SUBDIR=pbx_impl/ast
 		PBX_COND_LIBADD=pbx_impl/ast/libast.la
 		PBXVER_COND_SUBDIR=pbx_impl/ast120/

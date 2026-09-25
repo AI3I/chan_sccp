@@ -646,7 +646,7 @@ dnl 	CFLAGS="${CFLAGS_saved} -Werror=implicit-function-declaration"
 		AC_CHECK_HEADER([asterisk/features.h],
 		[
 			AC_DEFINE([HAVE_PBX_FEATURES_H],1,[Found 'asterisk/features.h'])
-			AS_IF([test "${ast_pickup_h}" == 0], [
+			AS_IF([test "${ast_pickup_h}" = 0], [
 				AC_MSG_CHECKING([ - availability 'ast_do_pickup'...])
 				AC_EGREP_CPP([ast_do_pickup], [
 					$HEADER_INCLUDE

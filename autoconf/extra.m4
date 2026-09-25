@@ -51,7 +51,7 @@ AC_DEFUN([CS_SETUP_BUILD],[
 		fi
 	fi
 	
-	AS_IF([test "${AWK}" == "No"],[
+	AS_IF([test "${AWK}" = "No"],[
 		echo "Utility 'awk' is missing"
  		echo "==================================="
 		echo "The awk programm is missing on your platform, this is required though."
@@ -177,10 +177,10 @@ AC_DEFUN([CS_SETUP_ENVIRONMENT], [
 	AC_DISABLE_STATIC
 	AS_IF(
 		dnl [test -z "`${CC} -std=gnu2c -fgnu89-inline -dM -E - </dev/null 2>&1 |grep 'unrecognized command line option'`" && test $? == 0],		[CFLAGS_saved="$CFLAGS_saved -std=gnu2x -fgnu89-inline"],
-		[test -z "`${CC} -std=gnu11 -fgnu89-inline -dM -E - </dev/null 2>&1 |grep 'unrecognized command line option'`" && test $? == 0],		[CFLAGS_saved="$CFLAGS_saved -std=gnu11 -fgnu89-inline"],
-		[test -n "`${CC} -std=gnu99 -fgnu89-inline -Wno-ignored-qualifiers -dM -E - </dev/null 2>&1 |grep '__STDC_VERSION__ 1999'`" && test $? == 0],	[CFLAGS_saved="$CFLAGS_saved -std=gnu99 -fgnu89-inline -Wno-ignored-qualifiers"],
-		[test -n "`${CC} -std=gnu99 -fgnu89-inline -Wno-return-type -dM -E - </dev/null 2>&1 |grep '__STDC_VERSION__ 1999'`" && test $? == 0],		[CFLAGS_saved="$CFLAGS_saved -std=gnu99 -fgnu89-inline -Wno-return-type"],
-		[test -n "`${CC} -std=gnu89 -Wno-return-type -dM -E - </dev/null 2>&1 |grep '__STDC__ 1'`" && test $? == 0], 					[CFLAGS_saved="$CFLAGS_saved -std=gnu89 -Wno-return-type";CC_works=0],
+		[test -z "`${CC} -std=gnu11 -fgnu89-inline -dM -E - </dev/null 2>&1 |grep 'unrecognized command line option'`" && test $? = 0],		[CFLAGS_saved="$CFLAGS_saved -std=gnu11 -fgnu89-inline"],
+		[test -n "`${CC} -std=gnu99 -fgnu89-inline -Wno-ignored-qualifiers -dM -E - </dev/null 2>&1 |grep '__STDC_VERSION__ 1999'`" && test $? = 0],	[CFLAGS_saved="$CFLAGS_saved -std=gnu99 -fgnu89-inline -Wno-ignored-qualifiers"],
+		[test -n "`${CC} -std=gnu99 -fgnu89-inline -Wno-return-type -dM -E - </dev/null 2>&1 |grep '__STDC_VERSION__ 1999'`" && test $? = 0],		[CFLAGS_saved="$CFLAGS_saved -std=gnu99 -fgnu89-inline -Wno-return-type"],
+		[test -n "`${CC} -std=gnu89 -Wno-return-type -dM -E - </dev/null 2>&1 |grep '__STDC__ 1'`" && test $? = 0], 					[CFLAGS_saved="$CFLAGS_saved -std=gnu89 -Wno-return-type";CC_works=0],
 		[CFLAGS_saved="$CFLAGS_saved -Wno-return-type";CC_works=0])
 	AS_IF(	[test "${cross_compiling}" = "yes"], 
 	[
@@ -263,8 +263,8 @@ AC_DEFUN([CS_DISABLE_TLS], [
 		[ac_cv_tls=$enableval], 
 		[ac_cv_tls=yes]
 	)
-	AS_IF([test "${ac_cv_tls}" == "yes"], [
-		AS_IF([test "${ac_cv_tls}" == "yes"], [
+	AS_IF([test "${ac_cv_tls}" = "yes"], [
+		AS_IF([test "${ac_cv_tls}" = "yes"], [
 			AC_DEFINE(CS_TLS, 1, [Transport Layer Security (EXPERIMENTAL) enabled])
 		])
 	])
@@ -358,14 +358,14 @@ AC_DEFUN([CS_CHECK_TYPES], [
 
 dnl Conditional Makefile.am Macros
 AC_DEFUN([AST_SET_PBX_AMCONDITIONALS],[
-	AM_CONDITIONAL([BUILD_AST], test "$PBX_TYPE" == "Asterisk")
+	AM_CONDITIONAL([BUILD_AST], test "$PBX_TYPE" = "Asterisk")
 	PBX_COND_SUBDIR=
 	PBX_COND_LIBADD=
 	PBXVER_COND_SUBDIR=
 	PBXVER_COND_LIBADD=
 	PBXVER_COND_ANNOUNCE_SUBDIR=
 	PBXVER_COND_ANNOUNCE_LIBADD=
-	if test "$PBX_TYPE" == "Asterisk"; then
+	if test "$PBX_TYPE" = "Asterisk"; then
 		PBX_COND_SUBDIR=pbx_impl/ast
 		PBX_COND_LIBADD=pbx_impl/ast/libast.la
 		PBXVER_COND_SUBDIR=pbx_impl/ast120/
@@ -445,7 +445,7 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
  	fi
  	LDFLAGS_saved="${LDFLAGS}"
  	
-	AS_IF([test "X$enable_optimization" == "Xyes"], [
+	AS_IF([test "X$enable_optimization" = "Xyes"], [
 		strip_binaries="yes"
 		AS_IF([test -z "`echo \"${CFLAGS_saved}\" | grep -e '\-O[0-9]'`"], [
 			CFLAGS_saved="${CFLAGS_saved} -O3 "
@@ -483,7 +483,7 @@ AC_DEFUN([CS_ENABLE_OPTIMIZATION], [
 		CFLAGS_saved="${CFLAGS_saved} ${optimize_flag} "
 	])
 	
-	AS_IF([test "X${enable_debug}" == "Xyes"], [
+	AS_IF([test "X${enable_debug}" = "Xyes"], [
 		AC_DEFINE([DEBUG],[1],[Extra debugging.])
 		DEBUG=1
 		enable_do_crash="yes"
@@ -787,19 +787,19 @@ AC_DEFUN([CS_ENABLE_REFCOUNT_DEBUG], [
 		[ac_cv_refcount_debug=$enableval], 
 		[ac_cv_refcount_debug=no]
 	)
-	AS_IF([test "_${ac_cv_refcount_debug}" == "_yes"], [AC_DEFINE(CS_REFCOUNT_DEBUG, 1, [refcount debug enabled])])
+	AS_IF([test "_${ac_cv_refcount_debug}" = "_yes"], [AC_DEFINE(CS_REFCOUNT_DEBUG, 1, [refcount debug enabled])])
 	AC_MSG_RESULT([--enable-refcount-debug: ${ac_cv_refcount_debug}])
 ])
 
 AC_DEFUN([CS_ENABLE_ASTOBJ_REFCOUNT], [
-	AS_IF([test "${ASTOBJ2_AVAILABLE}" == "yes"],
+	AS_IF([test "${ASTOBJ2_AVAILABLE}" = "yes"],
 	[
 		AC_ARG_ENABLE(astobj_refcount, 
 			[AC_HELP_STRING([--enable-astobj2-refcount], [enable using astobj2 refcount implementation])], 
 			[ac_cv_astobj_refcount=$enableval], 
 			[ac_cv_astobj_refcount=no]
 		)
-		AS_IF([test "_${ac_cv_astobj_refcount}" == "_yes"], [AC_DEFINE(CS_ASTOBJ_REFCOUNT, 1, [astobj2 refcount enabled])])
+		AS_IF([test "_${ac_cv_astobj_refcount}" = "_yes"], [AC_DEFINE(CS_ASTOBJ_REFCOUNT, 1, [astobj2 refcount enabled])])
 		AC_MSG_RESULT([--enable-astobj2-refcount: ${ac_cv_astobj_refcount}])
 	], [
 		AC_MSG_RESULT([--enable-astobj2-refcount: no (astobj2.h not available)])
@@ -812,7 +812,7 @@ AC_DEFUN([CS_ENABLE_LOCK_DEBUG], [
 		[ac_cv_lock_debug=$enableval], 
 		[ac_cv_lock_debug=no]
 	)
-	AS_IF([test "_${ac_cv_lock_debug}" == "_yes"], [AC_DEFINE(CS_LOCK_DEBUG, 1, [lock debug enabled])])
+	AS_IF([test "_${ac_cv_lock_debug}" = "_yes"], [AC_DEFINE(CS_LOCK_DEBUG, 1, [lock debug enabled])])
 	AC_MSG_RESULT([--enable-lock-debug: ${ac_cv_lock_debug}])
 ])
 
@@ -821,7 +821,7 @@ AC_DEFUN([CS_ENABLE_STRIP], [
 	AC_ARG_ENABLE(strip, 
 		[AC_HELP_STRING([--enable-strip], [strip the symbols from the binary during installation])], 
 		[ac_cv_enable_strip=$enableval], 
-		[ac_cv_enable_strip=no; if [ test "x$enable_optimization" == "xyes"; ] then ac_cv_enable_strip="yes";fi]
+		[ac_cv_enable_strip=no; if [ test "x$enable_optimization" = "xyes"; ] then ac_cv_enable_strip="yes";fi]
 	)
 	strip_binaries="${ac_cv_enable_strip}"
 	AC_MSG_RESULT([--enable-strip: ${ac_cv_enable_strip}])
@@ -841,7 +841,7 @@ AC_DEFUN([CS_DISABLE_SECTION_RELOCATION], [
 			[ac_cv_section_relocation=$enableval], 
 			[ac_cv_section_relocation=no]
 		)
-		AS_IF([test "_${ac_cv_section_relocation}" == "_no"], [
+		AS_IF([test "_${ac_cv_section_relocation}" = "_no"], [
 			SECTION_LDFLAGS=""
 			SECTION_CFLAGS=""
 		])
@@ -858,7 +858,7 @@ AC_DEFUN([CS_DISABLE_PICKUP], [
 		[ac_cv_use_pickup=$enableval], 
 		[ac_cv_use_pickup=yes]
 	)
-	AS_IF([test "_${ac_cv_use_pickup}" == "_yes"], [AC_DEFINE(CS_SCCP_PICKUP, 1, [pickup function enabled])])
+	AS_IF([test "_${ac_cv_use_pickup}" = "_yes"], [AC_DEFINE(CS_SCCP_PICKUP, 1, [pickup function enabled])])
 	AC_MSG_RESULT([--enable-pickup: ${ac_cv_use_pickup}])
 ])
 
@@ -868,7 +868,7 @@ AC_DEFUN([CS_DISABLE_PARK], [
 		[ac_cv_use_park=$enableval],
 		[ac_cv_use_park=yes]
 	)
-	AS_IF([test "_${ac_cv_use_park}" == "_yes"], [AC_DEFINE(CS_SCCP_PARK, 1, [park functionality enabled])])
+	AS_IF([test "_${ac_cv_use_park}" = "_yes"], [AC_DEFINE(CS_SCCP_PARK, 1, [park functionality enabled])])
 	AC_MSG_RESULT([--enable-park: ${ac_cv_use_park}])
 ])
 
@@ -878,7 +878,7 @@ AC_DEFUN([CS_DISABLE_DIRTRFR], [
 		[ac_cv_use_dirtrfr=$enableval], 
 		[ac_cv_use_dirtrfr=yes]
 	)
-	AS_IF([test "_${ac_cv_use_dirtrfr}" == "_yes"], [AC_DEFINE(CS_SCCP_DIRTRFR, 1, [direct transfer enabled])])
+	AS_IF([test "_${ac_cv_use_dirtrfr}" = "_yes"], [AC_DEFINE(CS_SCCP_DIRTRFR, 1, [direct transfer enabled])])
 	AC_MSG_RESULT([--enable-dirtrfr: ${ac_cv_use_dirtrfr}])
 ])
 
@@ -888,7 +888,7 @@ AC_DEFUN([CS_DISABLE_MONITOR], [
 		[ac_cv_use_monitor=$enableval], 
 		[ac_cv_use_monitor=yes]
 	)
-	AS_IF([test "_${ac_cv_use_monitor}" == "_yes"], [AC_DEFINE(CS_SCCP_FEATURE_MONITOR, 1, [feature monitor enabled])])
+	AS_IF([test "_${ac_cv_use_monitor}" = "_yes"], [AC_DEFINE(CS_SCCP_FEATURE_MONITOR, 1, [feature monitor enabled])])
 	AC_MSG_RESULT([--enable-monitor: ${ac_cv_use_monitor}])
 ])
 
@@ -898,7 +898,7 @@ AC_DEFUN([CS_ENABLE_CONFERENCE], [
 		[ac_cv_use_conference=$enableval], 
 		[ac_cv_use_conference=no]
 	)
-	AS_IF([test "_${ac_cv_use_conference}" == "_yes"], [AC_DEFINE(CS_SCCP_CONFERENCE, 1, [conference enabled])])
+	AS_IF([test "_${ac_cv_use_conference}" = "_yes"], [AC_DEFINE(CS_SCCP_CONFERENCE, 1, [conference enabled])])
 	AC_MSG_RESULT([--enable-conference: ${ac_cv_use_conference}])
 ])
 
@@ -908,7 +908,7 @@ AC_DEFUN([CS_DISABLE_MANAGER], [
 		[ac_cv_use_manager=$enableval], 
 		[ac_cv_use_manager=yes]
 	)
-	AS_IF([test "_${ac_cv_use_manager}" == "_yes"], [
+	AS_IF([test "_${ac_cv_use_manager}" = "_yes"], [
 		AC_DEFINE(CS_MANAGER_EVENTS, 1, [manager events enabled])
 		AC_DEFINE(CS_SCCP_MANAGER, 1, [manager console control enabled])
 	])
@@ -921,7 +921,7 @@ AC_DEFUN([CS_DISABLE_FUNCTIONS], [
 		[ac_cv_use_functions=$enableval], 
 		[ac_cv_use_functions=yes]
 	)
-	AS_IF([test "_${ac_cv_use_functions}" == "_yes"], [AC_DEFINE(CS_SCCP_FUNCTIONS, 1, [dialplan function enabled])])
+	AS_IF([test "_${ac_cv_use_functions}" = "_yes"], [AC_DEFINE(CS_SCCP_FUNCTIONS, 1, [dialplan function enabled])])
 	AC_MSG_RESULT([--enable-functions: ${ac_cv_use_functions}])
 ])
 
@@ -931,7 +931,7 @@ AC_DEFUN([CS_ENABLE_INDICATIONS], [
 		[ac_cv_debug_indications=$enableval], 
 		[ac_cv_debug_indications=no]
 	)
-	AS_IF([test "_${ac_cv_debug_indications}" == "_yes"], [AC_DEFINE(CS_DEBUG_INDICATIONS, 1, [debug indications enabled])])
+	AS_IF([test "_${ac_cv_debug_indications}" = "_yes"], [AC_DEFINE(CS_DEBUG_INDICATIONS, 1, [debug indications enabled])])
 	AC_MSG_RESULT([--enable-indications: ${ac_cv_debug_indications}])
 ])
 
@@ -941,7 +941,7 @@ AC_DEFUN([CS_DISABLE_REALTIME], [
 		[ac_cv_realtime=$enableval], 
 		[ac_cv_realtime=yes]
 	)
-	AS_IF([test "_${ac_cv_realtime}" == "_yes"], [AC_DEFINE(CS_SCCP_REALTIME, 1, [realtime enabled])])
+	AS_IF([test "_${ac_cv_realtime}" = "_yes"], [AC_DEFINE(CS_SCCP_REALTIME, 1, [realtime enabled])])
 	AC_MSG_RESULT([--enable-realtime: ${ac_cv_realtime}])
 ])
 
@@ -951,7 +951,7 @@ AC_DEFUN([CS_DISABLE_FEATURE_MONITOR], [
 		[ac_cv_feature_monitor=$enableval],
 		[ac_cv_feature_monitor=yes]
 	)
-	AS_IF([test "_${ac_cv_feature_monitor}" == "_yes"], [AC_DEFINE(CS_SCCP_FEATURE_MONITOR, 1, [feature monitor enabled])])
+	AS_IF([test "_${ac_cv_feature_monitor}" = "_yes"], [AC_DEFINE(CS_SCCP_FEATURE_MONITOR, 1, [feature monitor enabled])])
 	AC_MSG_RESULT([--enable-feature-monitor: ${ac_cv_feature_monitor}])
 ])
 
@@ -961,7 +961,7 @@ AC_DEFUN([CS_ENABLE_ADVANCED_FUNCTIONS], [
 		[ac_cv_advanced_functions=$enableval], 
 		[ac_cv_advanced_functions=no]
 	)
-	AS_IF([test "_${ac_cv_advanced_functions}" == "_yes"], [AC_DEFINE(CS_ADV_FEATURES, 1, [advanced functions enabled])])
+	AS_IF([test "_${ac_cv_advanced_functions}" = "_yes"], [AC_DEFINE(CS_ADV_FEATURES, 1, [advanced functions enabled])])
 	AC_MSG_RESULT([--enable-advanced-functions: ${ac_cv_advanced_functions}])
 ])
 
@@ -971,7 +971,7 @@ AC_DEFUN([CS_ENABLE_EXPERIMENTAL_MODE], [
 		[ac_cv_experimental_mode=$enableval], 
 		[ac_cv_experimental_mode=no]
 	)
-	AS_IF([test "_${ac_cv_experimental_mode}" == "_yes"], [AC_DEFINE(CS_EXPERIMENTAL, 1, [experimental mode enabled])])
+	AS_IF([test "_${ac_cv_experimental_mode}" = "_yes"], [AC_DEFINE(CS_EXPERIMENTAL, 1, [experimental mode enabled])])
 	AC_MSG_RESULT([--enable-experimental-mode: ${ac_cv_experimental_mode} (only for developers)])
 ])
 
@@ -986,8 +986,8 @@ AC_DEFUN([CS_ENABLE_EXPERIMENTAL_XML], [
 		[ac_cv_experimental_xml=$enableval], 
 		[ac_cv_experimental_xml=no]
 	)
-	AM_CONDITIONAL([CS_EXPERIMENTAL_XML], test "_${ac_cv_experimental_xml}" == "_yes")
-	AS_IF([test "_${ac_cv_experimental_xml}" == "_yes" ], [
+	AM_CONDITIONAL([CS_EXPERIMENTAL_XML], test "_${ac_cv_experimental_xml}" = "_yes")
+	AS_IF([test "_${ac_cv_experimental_xml}" = "_yes" ], [
 		CONFIGURE_PART([Checking XML2/EXSLT:])
 		LIBEXSLT_CFLAGS=`${PKGCONFIG} libexslt --cflags`
 		LIBEXSLT_LIBS=`${PKGCONFIG} libexslt --libs`
@@ -1023,8 +1023,8 @@ AC_DEFUN([CS_ENABLE_EXPERIMENTAL_XML], [
 		AC_CHECK_LIB([exslt],[exsltRegisterAll],[HAVE_LIBEXSLT=yes],[HAVE_LIBEXSLT=no])
 		AC_SUBST([LIBEXSLT_CFLAGS])
 		AC_SUBST([LIBEXSLT_LIBS])
-		AS_IF([test "_${HAVE_LIBEXSLT}" == "_yes"],[
-			AS_IF([test "_${HAVE_PBX_HTTP}" == "_yes"], [
+		AS_IF([test "_${HAVE_LIBEXSLT}" = "_yes"],[
+			AS_IF([test "_${HAVE_PBX_HTTP}" = "_yes"], [
 				AC_DEFINE(CS_EXPERIMENTAL_XML, 1, [experimental xml enabled])
 				CPPFLAGS_saved="${CPPFLAGS_saved} $LIBEXSLT_CFLAGS"
 			],[
@@ -1046,7 +1046,7 @@ AC_DEFUN([CS_DISABLE_DEVSTATE_FEATURE], [
 		[ac_cv_devstate_feature=yes]
 	)
 	AS_IF([test "_${DEVICESTATE_H}" != "_yes"], [ac_cv_devstate_feature=no])
-	AS_IF([test "_${ac_cv_devstate_feature}" == "_yes"], [AC_DEFINE(CS_DEVSTATE_FEATURE, 1, [devstate feature enabled])])
+	AS_IF([test "_${ac_cv_devstate_feature}" = "_yes"], [AC_DEFINE(CS_DEVSTATE_FEATURE, 1, [devstate feature enabled])])
 	AC_MSG_RESULT([--enable-devstate-feature: ${ac_cv_devstate_feature}])
 ])
 
@@ -1056,7 +1056,7 @@ AC_DEFUN([CS_DISABLE_DYNAMIC_SPEEDDIAL], [
 		[ac_cv_dynamic_speeddial=$enableval], 
 		[ac_cv_dynamic_speeddial=yes]
 	)
-	AS_IF([test "_${ac_cv_dynamic_speeddial}" == "_yes"], [AC_DEFINE(CS_DYNAMIC_SPEEDDIAL, 1, [dynamic speeddials enabled])])
+	AS_IF([test "_${ac_cv_dynamic_speeddial}" = "_yes"], [AC_DEFINE(CS_DYNAMIC_SPEEDDIAL, 1, [dynamic speeddials enabled])])
 	AC_MSG_RESULT([--enable-dynamic-speeddial: ${ac_cv_dynamic_speeddial}])
 ])
 
@@ -1066,8 +1066,8 @@ AC_DEFUN([CS_DISABLE_DYNAMIC_SPEEDDIAL_CID], [
 		[ac_cv_dynamic_speeddial_cid=$enableval], 
 		[ac_cv_dynamic_speeddial_cid=yes]
 	)
-	AS_IF([test "${ac_cv_dynamic_speeddial}" == "yes"], [
-		AS_IF([test "${ac_cv_dynamic_speeddial_cid}" == "yes"], [
+	AS_IF([test "${ac_cv_dynamic_speeddial}" = "yes"], [
+		AS_IF([test "${ac_cv_dynamic_speeddial_cid}" = "yes"], [
 			AC_DEFINE(CS_DYNAMIC_SPEEDDIAL_CID, 1, [dynamic speeddials with callinfo enabled])
 		])
 	])
@@ -1080,7 +1080,7 @@ AC_DEFUN([CS_ENABLE_VIDEO], [
 		[ac_cv_streaming_video=$enableval], 
 		[ac_cv_streaming_video=no]
 	)
-	AS_IF([test "_${ac_cv_streaming_video}" == "_yes"], [AC_DEFINE(CS_SCCP_VIDEO, 1, [Using streaming video])])
+	AS_IF([test "_${ac_cv_streaming_video}" = "_yes"], [AC_DEFINE(CS_SCCP_VIDEO, 1, [Using streaming video])])
 	AC_MSG_RESULT([--enable-video: ${ac_cv_streaming_video}])
 ])
 

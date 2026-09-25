@@ -153,12 +153,12 @@ return 0;
 }]])],
     [sccp_cv_cpu_cmpxchg16b="yes"],
 	[sccp_cv_cpu_cmpxchg16b="no"],
-	[AS_IF([test "x$enable_cross_cmpxchg16b" == "xyes"],
+	[AS_IF([test "x$enable_cross_cmpxchg16b" = "xyes"],
 	       [sccp_cv_cpu_cmpxchg16b="assuming yes"],
 	       [sccp_cv_cpu_cmpxchg16b="assuming no"])])])
 		   ])
-AS_IF([test "x$sccp_cv_cpu_cmpxchg16b" == "xassuming yes"],[sccp_cv_cpu_cmpxchg16b="yes"])
-AS_IF([test "x$sccp_cv_cpu_cmpxchg16b" == "xyes"],
+AS_IF([test "x$sccp_cv_cpu_cmpxchg16b" = "xassuming yes"],[sccp_cv_cpu_cmpxchg16b="yes"])
+AS_IF([test "x$sccp_cv_cpu_cmpxchg16b" = "xyes"],
       [AC_DEFINE([HAVE_CMPXCHG16B],[1],[if the compiler and cpu can both handle the 128-bit CMPXCHG16B instruction])])
 AS_IF([test "$sccp_cv_require_ia64intrin_h" = "yes"],
 	  [AC_DEFINE([SCCP_NEEDS_INTEL_INTRIN],[1],[if this header is necessary for builtin atomics])])

@@ -94,7 +94,9 @@ Version: 5.0.0 (unreleased)
    forever after one token refusal, lines lost after a repeated button
    template request, call-forwards on long line names not restored, call
    names colliding on long line names, unescaped text in phone XML screens,
-   the "internal" permit range, and truncated text in many buffers.
+   the "internal" permit range, truncated text in many buffers, and errors
+   on connections that had not registered yet logged under the server's own
+   address instead of the phone's.
 
  - Build: Asterisk 20-24 matrix, C only, thread-pool rework, libbfd
    backtraces removed, standalone regression tests (make check).

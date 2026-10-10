@@ -328,7 +328,7 @@ static int session_dissect_header(sccp_session_t * s, sccp_header_t * header, st
 	sccp_mid_t messageId = letohl(header->lel_messageId);
 	do {
 		if (packetSize < 4 || packetSize > SCCP_MAX_PACKET - 8) {
-			pbx_log(LOG_ERROR, "%s: received a packet with payload length %u (message 0x%04X, protocol %u); valid lengths are %d-%d, so the connection is closed\n", DEV_ID_LOG(s->device), packetSize, messageId, protocolVersion, 4, (int) (SCCP_MAX_PACKET - 8));
+			pbx_log(LOG_ERROR, "%s: received a packet with payload length %u (message 0x%04X, protocol %u); valid lengths are %d-%d, so the connection is closed\n", s->designator, packetSize, messageId, protocolVersion, 4, (int) (SCCP_MAX_PACKET - 8));
 			return -2;
 		}
 
@@ -396,7 +396,7 @@ static gcc_inline int process_buffer(sccp_session_t * s, sccp_msg_t * msg, unsig
 		memcpy(&header_len, buffer, 4);
 		uint32_t payload_len = letohl(header_len) + (SCCP_PACKET_HEADER - 4);
 		if (dont_expect(payload_len < SCCP_PACKET_HEADER || payload_len > SCCP_MAX_PACKET)) {
-			pbx_log(LOG_ERROR, "%s: received a packet with payload length %u, outside the valid range %d-%d; the connection is closed\n", DEV_ID_LOG(s->device), payload_len, (int)SCCP_PACKET_HEADER, (int)SCCP_MAX_PACKET);
+			pbx_log(LOG_ERROR, "%s: received a packet with payload length %u, outside the valid range %d-%d; the connection is closed\n", s->designator, payload_len, (int)SCCP_PACKET_HEADER, (int)SCCP_MAX_PACKET);
 			res = -1;
 			break;
 		}

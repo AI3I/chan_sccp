@@ -1,6 +1,6 @@
 # Project status
 
-Updated 2026-09-25 for 5.0.0 (unreleased).
+Updated 2026-10-10 for 5.0.0 (unreleased).
 
 This fork continues [chan-sccp/chan-sccp](https://github.com/chan-sccp/chan-sccp)
 for Asterisk 20 to 24. The 5.0 cleanup is finished in code:
@@ -29,8 +29,13 @@ The working log of the cleanup is kept in [history/](history/).
   hold and resume, answer, hang-up, reload, messages, softkey presses, device
   reset and re-registration, and graceful shutdown. The simulator is not part
   of this repository.
-- **Production:** the PBX this fork was made for ran earlier builds. The 5.0
-  changes have not been deployed there yet.
+- **Production:** 5.0.0 runs on the PBX this fork was made for, Asterisk
+  22.8.2: commit 002fa297 from 2026-09-25, and since 2026-10-10 commit
+  c98b8df8, which names the phone's address in errors on connections that
+  have not registered yet (that PBX's fail2ban jail for SCCP relies on it).
+  Both times the configuration loaded without warnings, and all registered
+  phones (Cisco 7965 and 7975) re-registered within seconds of the module
+  swap.
 
 ## Needs real phones
 

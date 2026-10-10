@@ -328,7 +328,7 @@ static int session_dissect_header(sccp_session_t * s, sccp_header_t * header, st
 	sccp_mid_t messageId = letohl(header->lel_messageId);
 	do {
 		if (packetSize < 4 || packetSize > SCCP_MAX_PACKET - 8) {
-			pbx_log(LOG_ERROR, "%s: received a packet with payload length %u (message 0x%04X, protocol %u); valid lengths are %d-%d, so the connection is closed\n", DEV_ID_LOG(s->device), packetSize, messageId, protocolVersion, 4, (int) (SCCP_MAX_PACKET - 8));
+			pbx_log(LOG_ERROR, "%s: received a packet with payload length %u (message 0x%04X, protocol %u); valid lengths are %d-%d, so the connection is closed\n", s->designator, packetSize, messageId, protocolVersion, 4, (int) (SCCP_MAX_PACKET - 8));
 			return -2;
 		}
 
@@ -396,7 +396,7 @@ static gcc_inline int process_buffer(sccp_session_t * s, sccp_msg_t * msg, unsig
 		memcpy(&header_len, buffer, 4);
 		uint32_t payload_len = letohl(header_len) + (SCCP_PACKET_HEADER - 4);
 		if (dont_expect(payload_len < SCCP_PACKET_HEADER || payload_len > SCCP_MAX_PACKET)) {
-			pbx_log(LOG_ERROR, "%s: received a packet with payload length %u, outside the valid range %d-%d; the connection is closed\n", DEV_ID_LOG(s->device), payload_len, (int)SCCP_PACKET_HEADER, (int)SCCP_MAX_PACKET);
+			pbx_log(LOG_ERROR, "%s: received a packet with payload length %u, outside the valid range %d-%d; the connection is closed\n", s->designator, payload_len, (int)SCCP_PACKET_HEADER, (int)SCCP_MAX_PACKET);
 			res = -1;
 			break;
 		}
@@ -549,7 +549,7 @@ static sccp_device_t *__sccp_session_removeDevice(sessionPtr session)
 		}
 	}
 	sccp_session_lock(session);
-	sccp_copy_string(session->designator, sccp_netsock_stringify(&session->ourip), sizeof(session->designator));
+	sccp_copy_string(session->designator, sccp_netsock_stringify(&session->sin), sizeof(session->designator));
 	sccp_session_unlock(session);
 	return return_device;
 }
@@ -949,8 +949,9 @@ static boolean_t sccp_session_set_ourip(sccp_session_t * s)
 	} else {
 		memcpy(&s->ourip, &GLOB(bindaddr), sizeof(s->ourip));
 	}
-	sccp_copy_string(s->designator, sccp_netsock_stringify(&s->ourip), sizeof(s->designator));
-	sccp_log((DEBUGCAT_SOCKET))(VERBOSE_PREFIX_3 "SCCP: connected to the server via %s\n", s->designator);
+	/* Until a device registers, the phone's own address is the only way to tell sessions apart in the log. */
+	sccp_copy_string(s->designator, sccp_netsock_stringify(&s->sin), sizeof(s->designator));
+	sccp_log((DEBUGCAT_SOCKET))(VERBOSE_PREFIX_3 "%s: connected to the server via %s\n", s->designator, sccp_netsock_stringify(&s->ourip));
 	return TRUE;
 }
 
